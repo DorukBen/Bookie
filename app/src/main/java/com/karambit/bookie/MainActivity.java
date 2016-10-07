@@ -28,6 +28,7 @@ public class MainActivity extends AppCompatActivity implements TabHost.OnTabChan
 
     private TabHost mTabHost;
     private ViewPager mViewPager;
+    private int mOldPos = 0; //Specifys old position for tab view
 
     //This can be used for listeners
     private HomeFragment mHomeFragment;
@@ -121,6 +122,7 @@ public class MainActivity extends AppCompatActivity implements TabHost.OnTabChan
         int pos = mTabHost.getCurrentTab();
 
         if (pos != 2){
+            mOldPos = pos;
             mTabHost.getTabWidget().dispatchSetSelected(false);
             mTabHost.getCurrentTabView().setSelected(true);
             mIndicator.findViewById(R.id.tab_strip).setVisibility(View.INVISIBLE);
@@ -136,7 +138,8 @@ public class MainActivity extends AppCompatActivity implements TabHost.OnTabChan
                 mViewPager.setCurrentItem(pos);
             }
         }else {
-            mIndicator.setSelected(true);
+            mIndicator.setSelected(false);
+            mTabHost.setCurrentTab(mOldPos);
             //TODO: OnAddBook selected add code here
             Toast.makeText(MainActivity.this, "hele", Toast.LENGTH_SHORT).show();
         }
