@@ -35,6 +35,9 @@ public class ProfileTimelineAdapter extends RecyclerView.Adapter<RecyclerView.Vi
     private Context mContext;
     private User.Details mUserDetails;
 
+    private BookClickListener mBookClickListener;
+    private HeaderClickListeners mHeaderClickListeners;
+
     private boolean mProgressBarActive;
 
     public ProfileTimelineAdapter(Context context, User.Details userDetails) {
@@ -191,11 +194,9 @@ public class ProfileTimelineAdapter extends RecyclerView.Adapter<RecyclerView.Vi
             case TYPE_FOOTER:
                 View footerView = LayoutInflater.from(parent.getContext()).inflate(R.layout.item_footer, parent, false);
                 return new FooterViewHolder(footerView);
-//
+
             default:
-//                throw new IllegalArgumentException("Invalid view type variable: viewType=" + viewType);
-                bookView = LayoutInflater.from(parent.getContext()).inflate(R.layout.item_book, parent, false);
-                return new BookViewHolder(bookView);
+                throw new IllegalArgumentException("Invalid view type variable: viewType=" + viewType);
         }
     }
 
@@ -207,6 +208,15 @@ public class ProfileTimelineAdapter extends RecyclerView.Adapter<RecyclerView.Vi
             case TYPE_HEADER: {
                 HeaderViewHolder headerViewHolder = (HeaderViewHolder) holder;
 
+                if (mHeaderClickListeners != null) {
+                    headerViewHolder.mProfilePicture.setOnClickListener(new View.OnClickListener() {
+                        @Override
+                        public void onClick(View v) {
+                            mHeaderClickListeners.onProfilePictureClick(mUserDetails);
+                        }
+                    });
+                }
+
                 Glide.with(mContext)
                         .load(mUserDetails.getUser().getThumbnailUrl())
                         .asBitmap()
@@ -215,7 +225,18 @@ public class ProfileTimelineAdapter extends RecyclerView.Adapter<RecyclerView.Vi
                         .into(headerViewHolder.mProfilePicture);
                 headerViewHolder.mUserName.setText(mUserDetails.getUser().getName());
                 headerViewHolder.mBio.setText(mUserDetails.getBio());
+
                 headerViewHolder.mLocation.setText("Location"); //TODO Location
+
+                if (mHeaderClickListeners != null) {
+                    headerViewHolder.mProfilePicture.setOnClickListener(new View.OnClickListener() {
+                        @Override
+                        public void onClick(View v) {
+                            mHeaderClickListeners.onLocationClick(mUserDetails);
+                        }
+                    });
+                }
+
                 headerViewHolder.mReadedBooks.setText(String.valueOf(mUserDetails.getReadedBooksCount()));
                 headerViewHolder.mPoint.setText(String.valueOf(mUserDetails.getPoint()));
                 headerViewHolder.mSharedBooks.setText(String.valueOf(mUserDetails.getSharedBooksCount()));
@@ -243,15 +264,18 @@ public class ProfileTimelineAdapter extends RecyclerView.Adapter<RecyclerView.Vi
 
                 BookViewHolder bookHolder = (BookViewHolder) holder;
 
-                Book book = mUserDetails.getBooksOnHand().get(position - 3); // - Header - Currently Reading - Subtitle
+                final Book book = mUserDetails.getBooksOnHand().get(position - 3); // - Header - Currently Reading - Subtitle
+
+                if (mBookClickListener != null) {
+                    bookHolder.itemView.setOnClickListener(new View.OnClickListener() {
+                        @Override
+                        public void onClick(View view) {
+                            mBookClickListener.onBookClick(book);
+                        }
+                    });
+                }
 
                 bookHolder.mBookName.setText(book.getName());
-                bookHolder.itemView.setOnClickListener(new View.OnClickListener() {
-                    @Override
-                    public void onClick(View view) {
-                        // TODO Click Listener
-                    }
-                });
 
                 bookHolder.mBookAuthor.setText(book.getAuthor());
 
@@ -279,14 +303,16 @@ public class ProfileTimelineAdapter extends RecyclerView.Adapter<RecyclerView.Vi
                 BookViewHolder bookHolder = (BookViewHolder) holder;
 
                 int arrayPosition = position - mUserDetails.getBooksOnHandCount() - 4; // - Header - Currently Reading - Subtitle - Subtitle
-                Book book = mUserDetails.getReadedBooks().get(arrayPosition);
+                final Book book = mUserDetails.getReadedBooks().get(arrayPosition);
 
-                bookHolder.itemView.setOnClickListener(new View.OnClickListener() {
-                    @Override
-                    public void onClick(View view) {
-                        // TODO Click Listener
-                    }
-                });
+                if (mBookClickListener != null) {
+                    bookHolder.itemView.setOnClickListener(new View.OnClickListener() {
+                        @Override
+                        public void onClick(View view) {
+                            mBookClickListener.onBookClick(book);
+                        }
+                    });
+                }
 
                 bookHolder.mBookName.setText(book.getName());
 
@@ -319,6 +345,31 @@ public class ProfileTimelineAdapter extends RecyclerView.Adapter<RecyclerView.Vi
     public void setProgressBar(boolean active) {
         mProgressBarActive = active;
         notifyDataSetChanged();
+    }
+
+    public BookClickListener getBookClickListener() {
+        return mBookClickListener;
+    }
+
+    public void setBookClickListener(BookClickListener bookClickListener) {
+        mBookClickListener = bookClickListener;
+    }
+
+    public HeaderClickListeners getHeaderClickListeners() {
+        return mHeaderClickListeners;
+    }
+
+    public void setHeaderClickListeners(HeaderClickListeners headerClickListeners) {
+        mHeaderClickListeners = headerClickListeners;
+    }
+
+    public interface HeaderClickListeners {
+        void onProfilePictureClick(User.Details details);
+        void onLocationClick(User.Details details);
+    }
+
+    public interface BookClickListener {
+        void onBookClick(Book book);
     }
 
 

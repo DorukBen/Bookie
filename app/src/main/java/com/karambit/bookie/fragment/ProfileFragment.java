@@ -8,16 +8,17 @@ import android.support.v7.widget.RecyclerView;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Toast;
 
 import com.karambit.bookie.R;
 import com.karambit.bookie.helper.ProfileTimelineAdapter;
+import com.karambit.bookie.model.Book;
 import com.karambit.bookie.model.User;
 
 /**
  * A simple {@link Fragment} subclass.
  */
 public class ProfileFragment extends Fragment {
-
 
     public ProfileFragment() {
         // Required empty public constructor
@@ -32,7 +33,16 @@ public class ProfileFragment extends Fragment {
 
         RecyclerView recyclerView = (RecyclerView) rootView.findViewById(R.id.profileRecyclerView);
         recyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
-        recyclerView.setAdapter(new ProfileTimelineAdapter(getContext(), User.GENERATOR.generateUserDetails()));
+
+        ProfileTimelineAdapter adapter = new ProfileTimelineAdapter(getContext(), User.GENERATOR.generateUserDetails());
+        adapter.setBookClickListener(new ProfileTimelineAdapter.BookClickListener() {
+            @Override
+            public void onBookClick(Book book) {
+                // TODO Book click listener
+            }
+        });
+
+        recyclerView.setAdapter(adapter);
 
         return rootView;
     }
