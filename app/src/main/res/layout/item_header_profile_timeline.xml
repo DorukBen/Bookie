@@ -85,7 +85,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="8dp"
-                android:text="READED"
+                android:text="@string/readed"
                 android:textColor="@color/secondaryTextColor"
                 android:textSize="12sp"/>
 
@@ -111,7 +111,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="8dp"
-                android:text="POINT"
+                android:text="@string/point"
                 android:textColor="@color/secondaryTextColor"
                 android:textSize="12sp"/>
 
@@ -137,7 +137,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="8dp"
-                android:text="SHARED"
+                android:text="@string/shared"
                 android:textColor="@color/secondaryTextColor"
                 android:textSize="12sp"/>
 

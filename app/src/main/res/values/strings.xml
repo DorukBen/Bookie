@@ -3,4 +3,9 @@
 
     <!-- TODO: Remove or change this placeholder text -->
     <string name="hello_blank_fragment">Hello blank fragment</string>
+    <string name="x_books_readed">"%s books readed"</string>
+    <string name="x_books_on_hand">"%s books on hand"</string>
+    <string name="readed">READED</string>
+    <string name="point">POINT</string>
+    <string name="shared">SHARED</string>
 </resources>
