@@ -26,10 +26,10 @@ public class ProfileTimelineAdapter extends RecyclerView.Adapter<RecyclerView.Vi
 
     private static final int TYPE_HEADER = 0;
     private static final int TYPE_CURRENTLY_READING = 1;
-    private static final int TYPE_READED_BOOKS = 3;
+    private static final int TYPE_READ_BOOKS = 3;
     private static final int TYPE_BOOKS_ON_HAND = 4;
     private static final int TYPE_SUBTITLE_BOOKS_ON_HAND = 5;
-    private static final int TYPE_SUBTITLE_READED_BOOKS = 6;
+    private static final int TYPE_SUBTITLE_READ_BOOKS = 6;
     private static final int TYPE_FOOTER = 7;
 
     private Context mContext;
@@ -53,7 +53,7 @@ public class ProfileTimelineAdapter extends RecyclerView.Adapter<RecyclerView.Vi
         private TextView mUserName;
         private TextView mBio;
         private TextView mLocation;
-        private TextView mReadedBooks;
+        private TextView mReadBooks;
         private TextView mPoint;
         private TextView mSharedBooks;
 
@@ -64,7 +64,7 @@ public class ProfileTimelineAdapter extends RecyclerView.Adapter<RecyclerView.Vi
             mUserName = (TextView) headerView.findViewById(R.id.userNameHeaderTextView);
             mBio = (TextView) headerView.findViewById(R.id.bioHeaderTextView);
             mLocation = (TextView) headerView.findViewById(R.id.locationHeaderTextView);
-            mReadedBooks = (TextView) headerView.findViewById(R.id.readedBooksHeaderTextView);
+            mReadBooks = (TextView) headerView.findViewById(R.id.readBooksHeaderTextView);
             mPoint = (TextView) headerView.findViewById(R.id.pointTextView);
             mSharedBooks = (TextView) headerView.findViewById(R.id.sharedBooksTextView);
         }
@@ -137,8 +137,8 @@ public class ProfileTimelineAdapter extends RecyclerView.Adapter<RecyclerView.Vi
         CURRENTLY READING
         SUBTITLE BOOKS ON HAND
         BOOKS ON HAND
-        SUBTITLE READED BOOKS
-        READED BOOKS
+        SUBTITLE READ BOOKS
+        READ BOOKS
         FOOTER
      */
     @Override
@@ -157,10 +157,10 @@ public class ProfileTimelineAdapter extends RecyclerView.Adapter<RecyclerView.Vi
             return TYPE_BOOKS_ON_HAND;
 
         } else if (position == mUserDetails.getBooksOnHandCount() + 3) {
-            return TYPE_SUBTITLE_READED_BOOKS;
+            return TYPE_SUBTITLE_READ_BOOKS;
 
         } else if (position < mUserDetails.getBooksOnHandCount() + mUserDetails.getReadedBooksCount() + 4) {
-            return TYPE_READED_BOOKS;
+            return TYPE_READ_BOOKS;
 
         } else if (position == getItemCount() - 1) {
             return TYPE_FOOTER;
@@ -183,11 +183,11 @@ public class ProfileTimelineAdapter extends RecyclerView.Adapter<RecyclerView.Vi
                 View currentlyReadingView = LayoutInflater.from(parent.getContext()).inflate(R.layout.item_currently_reading_profile_timeline, parent, false);
                 return new CurrentlyReadingViewHolder(currentlyReadingView);
 
-            case TYPE_BOOKS_ON_HAND:case TYPE_READED_BOOKS:
+            case TYPE_BOOKS_ON_HAND:case TYPE_READ_BOOKS:
                 View bookView = LayoutInflater.from(parent.getContext()).inflate(R.layout.item_book, parent, false);
                 return new BookViewHolder(bookView);
 
-            case TYPE_SUBTITLE_BOOKS_ON_HAND:case TYPE_SUBTITLE_READED_BOOKS:
+            case TYPE_SUBTITLE_BOOKS_ON_HAND:case TYPE_SUBTITLE_READ_BOOKS:
                 View subtitleView = LayoutInflater.from(parent.getContext()).inflate(R.layout.item_subtitle, parent, false);
                 return new SubtitleViewHolder(subtitleView);
 
@@ -237,7 +237,7 @@ public class ProfileTimelineAdapter extends RecyclerView.Adapter<RecyclerView.Vi
                     });
                 }
 
-                headerViewHolder.mReadedBooks.setText(String.valueOf(mUserDetails.getReadedBooksCount()));
+                headerViewHolder.mReadBooks.setText(String.valueOf(mUserDetails.getReadedBooksCount()));
                 headerViewHolder.mPoint.setText(String.valueOf(mUserDetails.getPoint()));
                 headerViewHolder.mSharedBooks.setText(String.valueOf(mUserDetails.getSharedBooksCount()));
 
@@ -289,16 +289,16 @@ public class ProfileTimelineAdapter extends RecyclerView.Adapter<RecyclerView.Vi
                 break;
             }
 
-            case TYPE_SUBTITLE_READED_BOOKS: {
+            case TYPE_SUBTITLE_READ_BOOKS: {
 
                 SubtitleViewHolder subtitleHolder = (SubtitleViewHolder) holder;
 
-                subtitleHolder.mSubtitle.setText(mContext.getString(R.string.books_readed));
+                subtitleHolder.mSubtitle.setText(mContext.getString(R.string.read_books));
 
                 break;
             }
 
-            case TYPE_READED_BOOKS: {
+            case TYPE_READ_BOOKS: {
 
                 BookViewHolder bookHolder = (BookViewHolder) holder;
 

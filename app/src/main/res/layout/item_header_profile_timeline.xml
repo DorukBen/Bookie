@@ -6,7 +6,7 @@
               android:orientation="vertical"
               android:paddingBottom="16dp"
               android:paddingTop="24dp">
-
+3
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
@@ -73,7 +73,7 @@
             android:orientation="vertical">
 
             <TextView
-                android:id="@+id/readedBooksHeaderTextView"
+                android:id="@+id/readBooksHeaderTextView"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="--"
@@ -85,7 +85,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="8dp"
-                android:text="READED"
+                android:text="@string/read"
                 android:textColor="@color/secondaryTextColor"
                 android:textSize="12sp"/>
 
@@ -111,7 +111,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="8dp"
-                android:text="POINT"
+                android:text="@string/point"
                 android:textColor="@color/secondaryTextColor"
                 android:textSize="12sp"/>
 
@@ -137,7 +137,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="8dp"
-                android:text="SHARED"
+                android:text="@string/shared"
                 android:textColor="@color/secondaryTextColor"
                 android:textSize="12sp"/>
 
