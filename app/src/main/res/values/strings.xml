@@ -8,4 +8,6 @@
     <string name="readed">READED</string>
     <string name="point">POINT</string>
     <string name="shared">SHARED</string>
+    <string name="books_readed">READED BOOKS</string>
+    <string name="books_on_hand">BOOKS ON HAND</string>
 </resources>

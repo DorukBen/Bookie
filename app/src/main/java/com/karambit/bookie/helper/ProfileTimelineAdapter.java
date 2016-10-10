@@ -255,7 +255,7 @@ public class ProfileTimelineAdapter extends RecyclerView.Adapter<RecyclerView.Vi
 
                 SubtitleViewHolder subtitleHolder = (SubtitleViewHolder) holder;
 
-                subtitleHolder.mSubtitle.setText(mContext.getString(R.string.x_books_on_hand, String.valueOf(mUserDetails.getBooksOnHandCount())));
+                subtitleHolder.mSubtitle.setText(R.string.books_on_hand);
 
                 break;
             }
@@ -293,7 +293,7 @@ public class ProfileTimelineAdapter extends RecyclerView.Adapter<RecyclerView.Vi
 
                 SubtitleViewHolder subtitleHolder = (SubtitleViewHolder) holder;
 
-                subtitleHolder.mSubtitle.setText(mContext.getString(R.string.x_books_readed, String.valueOf(mUserDetails.getReadedBooksCount())));
+                subtitleHolder.mSubtitle.setText(mContext.getString(R.string.books_readed));
 
                 break;
             }
