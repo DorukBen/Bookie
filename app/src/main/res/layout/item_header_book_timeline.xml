@@ -55,16 +55,17 @@
 
     </LinearLayout>
 
-    <View
-        android:layout_width="128dp"
-        android:layout_height="1dp"
-        android:layout_marginTop="36dp"
-        android:alpha="0.36"
-        android:background="@color/secondaryTextColor"/>
+    <!--<View-->
+        <!--android:layout_width="128dp"-->
+        <!--android:layout_height="1dp"-->
+        <!--android:layout_marginTop="36dp"-->
+        <!--android:alpha="0.36"-->
+        <!--android:background="@color/secondaryTextColor"/>-->
 
     <RelativeLayout
         android:layout_width="match_parent"
         android:layout_height="72dp"
+        android:layout_marginTop="16dp"
         android:orientation="horizontal">
 
         <com.karambit.bookie.helper.CircleImageView

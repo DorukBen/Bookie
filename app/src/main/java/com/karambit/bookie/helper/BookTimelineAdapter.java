@@ -2,7 +2,6 @@ package com.karambit.bookie.helper;
 
 import android.content.Context;
 import android.support.v7.widget.RecyclerView;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -65,13 +64,13 @@ public class BookTimelineAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
         }
     }
 
-    public static class BookProcessViewHolder extends RecyclerView.ViewHolder {
+    private static class BookProcessViewHolder extends RecyclerView.ViewHolder {
         private ImageView mProcessImage;
         private TextView mProcessChange;
         private View mTopLine;
         private View mBottomLine;
 
-        public BookProcessViewHolder(View itemView) {
+        private BookProcessViewHolder(View itemView) {
             super(itemView);
             mProcessImage = (ImageView) itemView.findViewById(R.id.bookProcessImageView);
             mProcessChange = (TextView) itemView.findViewById(R.id.bookProcessChangeTextView);
@@ -226,7 +225,7 @@ public class BookTimelineAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
                 final BookProcessViewHolder itemHolder = (BookProcessViewHolder) holder;
 
 
-                // Timeline items setup
+                // TopLine BottomLine setup
 //                if (mBookDetails.getBookProcesses().size() == 1) {
 //                    itemHolder.mTopLine.setVisibility(View.INVISIBLE);
 //                    itemHolder.mBottomLine.setVisibility(View.INVISIBLE);
@@ -259,27 +258,27 @@ public class BookTimelineAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
 
                             case ADD:
 //                                itemHolder.mProcessImage.setImageResource(R.drawable.reading_24dp);
-                                itemHolder.mProcessChange.setText(interaction.getUser().getName() + " added this book");
+                                itemHolder.mProcessChange.setText( mContext.getString(R.string.x_added_this_book, interaction.getUser().getName()));
                                 break;
 
                             case READ_START:
 //                                itemHolder.mProcessImage.setImageResource(R.drawable.reading_24dp);
-                                itemHolder.mProcessChange.setText(interaction.getUser().getName() + " started to read this book");
+                                itemHolder.mProcessChange.setText(mContext.getString(R.string.x_started_to_read_this_book, interaction.getUser().getName()));
                                 break;
 
                             case READ_STOP:
 //                                itemHolder.mProcessImage.setImageResource(R.drawable.reading_24dp);
-                                itemHolder.mProcessChange.setText(interaction.getUser().getName() + " finished to read this book");
+                                itemHolder.mProcessChange.setText(mContext.getString(R.string.x_finished_to_read_this_book, interaction.getUser().getName()));
                                 break;
 
                             case CLOSE_TO_SHARE:
 //                                itemHolder.mProcessImage.setImageResource(R.drawable.close_to_share_24dp);
-                                itemHolder.mProcessChange.setText(interaction.getUser().getName() + " closed sharing for this book");
+                                itemHolder.mProcessChange.setText(mContext.getString(R.string.x_closed_sharing_for_this_book, interaction.getUser().getName()));
                                 break;
 
                             case OPEN_TO_SHARE:
 //                                itemHolder.mProcessImage.setImageResource(R.drawable.open_to_share_24dp);
-                                itemHolder.mProcessChange.setText(interaction.getUser().getName() + " opened sharing for this book");
+                                itemHolder.mProcessChange.setText(mContext.getString(R.string.x_opened_sharing_for_this_book, interaction.getUser().getName()));
                                 break;
 
                             default:
@@ -296,18 +295,18 @@ public class BookTimelineAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
 
                             case COME_TO_HAND:
 //                                itemHolder.mProcessImage.setImageResource(R.drawable.on_road_24dp);
-                                itemHolder.mProcessChange.setText(transaction.getToUser().getName() + " take the book");
+                                itemHolder.mProcessChange.setText(mContext.getString(R.string.x_took_the_book, transaction.getToUser().getName()));
                                 break;
 
                             case DISPACTH:
 //                                itemHolder.mProcessImage.setImageResource(R.drawable.on_road_24dp);
-                                itemHolder.mProcessChange.setText(transaction.getFromUser().getName() + " send the book to " + transaction.getToUser().getName());
+                                itemHolder.mProcessChange.setText(mContext.getString(R.string.x_sent_the_book_to_y, transaction.getFromUser().getName(), transaction.getToUser().getName()));
                                 break;
 
                             case LOST:
+
 //                                itemHolder.mProcessImage.setImageResource(R.drawable.lost_24dp);
-                                itemHolder.mProcessChange.setText("Book sent from " + transaction.getFromUser().getName() +
-                                        " to " + transaction.getToUser().getName() + " and its lost!");
+                                itemHolder.mProcessChange.setText(mContext.getString(R.string.book_sent_from_x_to_y_and_its_lost, transaction.getFromUser().getName(), transaction.getToUser().getName()));
                                 break;
 
                             default:
@@ -323,15 +322,15 @@ public class BookTimelineAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
                         switch (request.getRequestType()) {
 
                             case SEND:
-                                itemHolder.mProcessChange.setText(request.getFromUser().getName() + " sent request to " + request.getToUser().getName());
+                                itemHolder.mProcessChange.setText(mContext.getString(R.string.x_sent_request_to_y, request.getFromUser().getName(), request.getToUser().getName()));
                                 break;
 
                             case ACCEPT:
-                                itemHolder.mProcessChange.setText(request.getFromUser().getName() + " accepted " + request.getToUser().getName() + "\'s request");
+                                itemHolder.mProcessChange.setText(mContext.getString(R.string.x_accepted_ys_request, request.getFromUser().getName(), request.getToUser().getName()));
                                 break;
 
                             case REJECT:
-                                itemHolder.mProcessChange.setText(request.getFromUser().getName() + " rejected " + request.getToUser().getName() + "\'s request");
+                                itemHolder.mProcessChange.setText(mContext.getString(R.string.x_rejected_ys_request, request.getFromUser().getName(), request.getToUser().getName()));
                                 break;
 
                             default:
@@ -380,8 +379,13 @@ public class BookTimelineAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
             default:
                 return null;
         }
-
     }
+
+//    public interface HeaderClickListeners {
+//        void onRequestButtonClick(Book.Details details);
+//        void onOwnerClick(User owner);
+//        void onBookPictureClick(Book.Details details);
+//    }
 
 
 }
