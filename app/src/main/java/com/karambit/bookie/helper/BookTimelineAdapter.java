@@ -226,21 +226,21 @@ public class BookTimelineAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
 
 
                 // TopLine BottomLine setup
-//                if (mBookDetails.getBookProcesses().size() == 1) {
-//                    itemHolder.mTopLine.setVisibility(View.INVISIBLE);
-//                    itemHolder.mBottomLine.setVisibility(View.INVISIBLE);
-//                } else {
-//                    if (position == 1) {
-//                        itemHolder.mTopLine.setVisibility(View.INVISIBLE);
-//                        itemHolder.mBottomLine.setVisibility(View.VISIBLE);
-//                    } else if (position == getItemCount() - 2) {
-//                        itemHolder.mTopLine.setVisibility(View.VISIBLE);
-//                        itemHolder.mBottomLine.setVisibility(View.INVISIBLE);
-//                    } else {
-//                        itemHolder.mTopLine.setVisibility(View.VISIBLE);
-//                        itemHolder.mBottomLine.setVisibility(View.VISIBLE);
-//                    }
-//                }
+                if (mBookDetails.getBookProcesses().size() == 1) {
+                    itemHolder.mTopLine.setVisibility(View.INVISIBLE);
+                    itemHolder.mBottomLine.setVisibility(View.INVISIBLE);
+                } else {
+                    if (position == 2) {
+                        itemHolder.mTopLine.setVisibility(View.INVISIBLE);
+                        itemHolder.mBottomLine.setVisibility(View.VISIBLE);
+                    } else if (position == getItemCount() - 2) {
+                        itemHolder.mTopLine.setVisibility(View.VISIBLE);
+                        itemHolder.mBottomLine.setVisibility(View.INVISIBLE);
+                    } else {
+                        itemHolder.mTopLine.setVisibility(View.VISIBLE);
+                        itemHolder.mBottomLine.setVisibility(View.VISIBLE);
+                    }
+                }
 
                 final Book.BookProcess item = mBookDetails.getBookProcesses().get(position - 2); // - Header - Subtitle
 
