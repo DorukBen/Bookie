@@ -41,6 +41,7 @@ public class Book implements Parcelable {
         mImageURL = in.readString();
         mThumbnailURL = in.readString();
         mAuthor = in.readString();
+        mState = (State) in.readSerializable();
         mOwner = in.readParcelable(User.class.getClassLoader());
     }
 
@@ -68,6 +69,7 @@ public class Book implements Parcelable {
         dest.writeString(mImageURL);
         dest.writeString(mThumbnailURL);
         dest.writeString(mAuthor);
+        dest.writeSerializable(mState);
         dest.writeParcelable(mOwner, flags);
     }
 

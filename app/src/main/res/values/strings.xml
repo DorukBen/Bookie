@@ -11,4 +11,10 @@
     <string name="books_on_hand">BOOKS ON HAND</string>
     <string name="read">READ</string>
     <string name="unverified_user">UNVERIFIED USER</string>
+    <string name="reading">Reading</string>
+    <string name="opened_to_share">Opened to share</string>
+    <string name="closed_to_share">Closed  to share</string>
+    <string name="on_road">On road</string>
+    <string name="lost">Lost</string>
+    <string name="pass_through">PASS THROUGH</string>
 </resources>
