@@ -1,6 +1,7 @@
 package com.karambit.bookie.helper;
 
 import android.content.Context;
+import android.support.v4.content.ContextCompat;
 import android.support.v4.view.ViewCompat;
 import android.support.v7.widget.CardView;
 import android.support.v7.widget.RecyclerView;
@@ -56,6 +57,7 @@ public class ProfileTimelineAdapter extends RecyclerView.Adapter<RecyclerView.Vi
         private TextView mReadBooks;
         private TextView mPoint;
         private TextView mSharedBooks;
+        private TextView mVerificationIndicator;
 
         private HeaderViewHolder(View headerView) {
             super(headerView);
@@ -67,6 +69,7 @@ public class ProfileTimelineAdapter extends RecyclerView.Adapter<RecyclerView.Vi
             mReadBooks = (TextView) headerView.findViewById(R.id.readBooksHeaderTextView);
             mPoint = (TextView) headerView.findViewById(R.id.pointTextView);
             mSharedBooks = (TextView) headerView.findViewById(R.id.sharedBooksTextView);
+            mVerificationIndicator = (TextView) headerView.findViewById(R.id.verificationIndicatorHeaderTextView);
         }
     }
 
@@ -208,13 +211,30 @@ public class ProfileTimelineAdapter extends RecyclerView.Adapter<RecyclerView.Vi
             case TYPE_HEADER: {
                 HeaderViewHolder headerViewHolder = (HeaderViewHolder) holder;
 
+                // TODO Empty states (Bio, Location)
+
+                // Listener setup
                 if (mHeaderClickListeners != null) {
+                    headerViewHolder.mLocation.setOnClickListener(new View.OnClickListener() {
+                        @Override
+                        public void onClick(View v) {
+                            mHeaderClickListeners.onLocationClick(mUserDetails);
+                        }
+                    });
+
                     headerViewHolder.mProfilePicture.setOnClickListener(new View.OnClickListener() {
                         @Override
                         public void onClick(View v) {
                             mHeaderClickListeners.onProfilePictureClick(mUserDetails);
                         }
                     });
+                }
+
+                // Verification indication
+                if (! mUserDetails.isVerified()) {
+                    headerViewHolder.mVerificationIndicator.setVisibility(View.VISIBLE);
+                } else {
+                    headerViewHolder.mVerificationIndicator.setVisibility(View.GONE);
                 }
 
                 Glide.with(mContext)
@@ -227,15 +247,6 @@ public class ProfileTimelineAdapter extends RecyclerView.Adapter<RecyclerView.Vi
                 headerViewHolder.mBio.setText(mUserDetails.getBio());
 
                 headerViewHolder.mLocation.setText("Location"); //TODO Location
-
-                if (mHeaderClickListeners != null) {
-                    headerViewHolder.mProfilePicture.setOnClickListener(new View.OnClickListener() {
-                        @Override
-                        public void onClick(View v) {
-                            mHeaderClickListeners.onLocationClick(mUserDetails);
-                        }
-                    });
-                }
 
                 headerViewHolder.mReadBooks.setText(String.valueOf(mUserDetails.getReadedBooksCount()));
                 headerViewHolder.mPoint.setText(String.valueOf(mUserDetails.getPoint()));
@@ -252,6 +263,8 @@ public class ProfileTimelineAdapter extends RecyclerView.Adapter<RecyclerView.Vi
             }
 
             case TYPE_SUBTITLE_BOOKS_ON_HAND: {
+
+                // TODO Empty state
 
                 SubtitleViewHolder subtitleHolder = (SubtitleViewHolder) holder;
 
@@ -290,6 +303,8 @@ public class ProfileTimelineAdapter extends RecyclerView.Adapter<RecyclerView.Vi
             }
 
             case TYPE_SUBTITLE_READ_BOOKS: {
+
+                // TODO Empty state
 
                 SubtitleViewHolder subtitleHolder = (SubtitleViewHolder) holder;
 
@@ -331,6 +346,7 @@ public class ProfileTimelineAdapter extends RecyclerView.Adapter<RecyclerView.Vi
             case TYPE_FOOTER: {
 
                 FooterViewHolder footerHolder = (FooterViewHolder) holder;
+
                 if (mProgressBarActive) {
                     footerHolder.mProgressBar.setVisibility(View.VISIBLE);
                 } else {

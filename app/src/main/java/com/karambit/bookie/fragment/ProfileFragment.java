@@ -31,6 +31,8 @@ public class ProfileFragment extends Fragment {
         // Inflate the layout for this fragment
         View rootView = inflater.inflate(R.layout.fragment_profile, container, false);
 
+        // TODO Control which user's profile is going to displayed
+
         RecyclerView recyclerView = (RecyclerView) rootView.findViewById(R.id.profileRecyclerView);
         recyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
 
