@@ -12,8 +12,10 @@ import android.widget.ProgressBar;
 import android.widget.TextView;
 
 import com.bumptech.glide.Glide;
+import com.karambit.bookie.BookActivity;
 import com.karambit.bookie.R;
 import com.karambit.bookie.model.Book;
+import com.karambit.bookie.model.User;
 
 /**
  * Created by orcan on 10/12/16.
@@ -30,6 +32,8 @@ public class BookTimelineAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
 
     private Context mContext;
     private Book.Details mBookDetails;
+
+    private HeaderClickListeners mHeaderClickListeners;
 
     private boolean mProgressBarActive;
 
@@ -48,6 +52,7 @@ public class BookTimelineAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
         private TextView mGenre;
         private CircleImageView mOwnerPicture;
         private TextView mOwnerName;
+        private View mOwnerClickArea;
         private TextView mBookState;
         private Button mRequest;
 
@@ -60,6 +65,7 @@ public class BookTimelineAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
             mGenre = (TextView) headerView.findViewById(R.id.genreHeaderTextView);
             mOwnerPicture = (CircleImageView) headerView.findViewById(R.id.ownerPictureHeaderCircleImageView);
             mOwnerName = (TextView) headerView.findViewById(R.id.ownerNameHeaderTextView);
+            mOwnerClickArea = headerView.findViewById(R.id.ownerClickAreaRelativeLayout);
             mBookState = (TextView) headerView.findViewById(R.id.bookStateHeaderTextView);
             mRequest = (Button) headerView.findViewById(R.id.requestHeaderButton);
         }
@@ -162,9 +168,6 @@ public class BookTimelineAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
     }
 
 
-
-
-
     @Override
     public void onBindViewHolder(RecyclerView.ViewHolder holder, int position) {
 
@@ -174,7 +177,33 @@ public class BookTimelineAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
 
                 HeaderViewHolder headerViewHolder = (HeaderViewHolder) holder;
 
-                // TODO Listener setup
+                // Header click listeners setup
+                if (mHeaderClickListeners != null) {
+
+                    // Book picture click listener setup
+                    headerViewHolder.mBookPicture.setOnClickListener(new View.OnClickListener() {
+                        @Override
+                        public void onClick(View v) {
+                            mHeaderClickListeners.onBookPictureClick(mBookDetails);
+                        }
+                    });
+
+                    // Owner click listener setup
+                    headerViewHolder.mOwnerClickArea.setOnClickListener(new View.OnClickListener() {
+                        @Override
+                        public void onClick(View v) {
+                            mHeaderClickListeners.onOwnerClick(mBookDetails.getBook().getOwner());
+                        }
+                    });
+
+                    // Request button click listener setup
+                    headerViewHolder.mRequest.setOnClickListener(new View.OnClickListener() {
+                        @Override
+                        public void onClick(View v) {
+                            mHeaderClickListeners.onRequestButtonClick(mBookDetails);
+                        }
+                    });
+                }
 
                 Glide.with(mContext)
                         .load(mBookDetails.getBook().getThumbnailURL())
@@ -229,6 +258,7 @@ public class BookTimelineAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
 
                 final BookProcessViewHolder itemHolder = (BookProcessViewHolder) holder;
 
+                // TODO Listener setup
 
                 // TopLine BottomLine setup
                 if (mBookDetails.getBookProcesses().size() == 1) {
@@ -263,7 +293,7 @@ public class BookTimelineAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
 
                             case ADD:
 //                                itemHolder.mProcessImage.setImageResource(R.drawable.reading_24dp);
-                                itemHolder.mProcessChange.setText( mContext.getString(R.string.x_added_this_book, interaction.getUser().getName()));
+                                itemHolder.mProcessChange.setText(mContext.getString(R.string.x_added_this_book, interaction.getUser().getName()));
                                 break;
 
                             case READ_START:
@@ -386,11 +416,20 @@ public class BookTimelineAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
         }
     }
 
-//    public interface HeaderClickListeners {
-//        void onRequestButtonClick(Book.Details details);
-//        void onOwnerClick(User owner);
-//        void onBookPictureClick(Book.Details details);
-//    }
+    public interface HeaderClickListeners {
+        void onRequestButtonClick(Book.Details details);
 
+        void onOwnerClick(User owner);
 
+        void onBookPictureClick(Book.Details details);
+    }
+
+    public HeaderClickListeners getHeaderClickListeners() {
+        return mHeaderClickListeners;
+    }
+
+    public void setHeaderClickListeners(HeaderClickListeners headerClickListeners) {
+        mHeaderClickListeners = headerClickListeners;
+        notifyItemChanged(0);
+    }
 }
