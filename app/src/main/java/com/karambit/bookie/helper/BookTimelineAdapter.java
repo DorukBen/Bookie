@@ -1,6 +1,7 @@
 package com.karambit.bookie.helper;
 
 import android.content.Context;
+import android.support.v4.content.ContextCompat;
 import android.support.v7.widget.RecyclerView;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -204,8 +205,12 @@ public class BookTimelineAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
                 // Enable or disable book request button
                 if (state == Book.State.OPENED_TO_SHARE) {
                     headerViewHolder.mRequest.setEnabled(true);
+                    headerViewHolder.mRequest.setTextColor(ContextCompat.getColor(mContext, R.color.colorAccent));
+                    headerViewHolder.mRequest.setAlpha(1f);
                 } else {
                     headerViewHolder.mRequest.setEnabled(false);
+                    headerViewHolder.mRequest.setTextColor(ContextCompat.getColor(mContext, R.color.secondaryTextColor));
+                    headerViewHolder.mRequest.setAlpha(0.5f);
                 }
 
                 break;
