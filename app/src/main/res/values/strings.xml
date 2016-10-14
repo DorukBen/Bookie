@@ -11,4 +11,21 @@
     <string name="books_on_hand">BOOKS ON HAND</string>
     <string name="read">READ</string>
     <string name="unverified_user">UNVERIFIED USER</string>
+    <string name="reading">Reading</string>
+    <string name="opened_to_share">Opened to share</string>
+    <string name="closed_to_share">Closed  to share</string>
+    <string name="on_road">On road</string>
+    <string name="lost">Lost</string>
+    <string name="pass_through">PASS THROUGH</string>
+    <string name="x_added_this_book">"%s added this book"</string>
+    <string name="x_started_to_read_this_book">"%s started to read this book"</string>
+    <string name="x_finished_to_read_this_book">%s finished to read this book</string>
+    <string name="x_closed_sharing_for_this_book">%s closed sharing for this book</string>
+    <string name="x_opened_sharing_for_this_book">%s opened sharing for this book</string>
+    <string name="x_took_the_book">%s took the book</string>
+    <string name="x_sent_the_book_to_y">"%1$s sent the book to %2$s"</string>
+    <string name="book_sent_from_x_to_y_and_its_lost">Book sent from %1$s to %2$s and its lost!</string>
+    <string name="x_sent_request_to_y">%1$s sent request to %2$s</string>
+    <string name="x_accepted_ys_request">%1$s accepted %2$s\'s request</string>
+    <string name="x_rejected_ys_request">%1$s rejected %2$s\'s request</string>
 </resources>
