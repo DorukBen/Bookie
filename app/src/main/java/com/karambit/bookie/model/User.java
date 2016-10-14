@@ -2,6 +2,7 @@ package com.karambit.bookie.model;
 
 import android.os.Parcel;
 import android.os.Parcelable;
+import android.support.annotation.Nullable;
 
 import com.karambit.bookie.helper.ImageLinkSource;
 
@@ -137,18 +138,21 @@ public class User implements Parcelable {
         private ArrayList<Book> mCurrentlyReading;
         private ArrayList<Book> mReadedBooks;
         private ArrayList<Book> mBooksOnHand;
+        private ArrayList<Book> mSharedBooks;
 
-        public Details(String password, String email, boolean verified, String bio, int bookCounter,
-                       int point, ArrayList<Book> currentlyReading, ArrayList<Book> readedBooks, ArrayList<Book> booksOnHand) {
+        public Details(String password, String email, boolean verified, @Nullable String bio, int bookCounter,
+                       int point, ArrayList<Book> currentlyReading, @Nullable ArrayList<Book> readedBooks,
+                       @Nullable ArrayList<Book> booksOnHand, @Nullable ArrayList<Book> sharedBooks) {
             mPassword = password;
             mEmail = email;
             mVerified = verified;
-            mBio = bio;
+            mBio = bio != null ? bio : "";
             mBookCounter = bookCounter;
             mPoint = point;
             mCurrentlyReading = currentlyReading;
             mReadedBooks = readedBooks;
             mBooksOnHand = booksOnHand;
+            mSharedBooks = sharedBooks;
         }
 
         public Details(String password, String email, boolean verified, String bio, int bookCounter, int point) {
@@ -220,6 +224,10 @@ public class User implements Parcelable {
             return mReadedBooks;
         }
 
+        public int getReadedBooksCount() {
+            return mReadedBooks != null ? mReadedBooks.size() : 0;
+        }
+
         public void setReadedBooks(ArrayList<Book> readedBooks) {
             mReadedBooks = readedBooks;
         }
@@ -228,8 +236,24 @@ public class User implements Parcelable {
             return mBooksOnHand;
         }
 
+        public int getBooksOnHandCount() {
+            return mBooksOnHand != null ? mBooksOnHand.size() : 0;
+        }
+
         public void setBooksOnHand(ArrayList<Book> booksOnHand) {
             mBooksOnHand = booksOnHand;
+        }
+
+        public ArrayList<Book> getSharedBooks() {
+            return mSharedBooks;
+        }
+
+        public int getSharedBooksCount() {
+            return mSharedBooks != null ? mSharedBooks.size() : 0;
+        }
+
+        public void setSharedBooks(ArrayList<Book> sharedBooks) {
+            mSharedBooks = sharedBooks;
         }
 
         public User getUser() {
@@ -247,7 +271,8 @@ public class User implements Parcelable {
                     ", mPoint=" + mPoint +
                     ",\nmCurrentlyReading=" + mCurrentlyReading +
                     ",\nmReadedBooks=" + mReadedBooks +
-                    ",\nmBooksOnHand=" + mBooksOnHand + '}';
+                    ",\nmBooksOnHand=" + mBooksOnHand +
+                    ",\nmBooksOnHand=" + mSharedBooks + '}';
         }
     }
 
@@ -320,9 +345,11 @@ public class User implements Parcelable {
 
             ArrayList<Book> booksOnHand = Book.GENERATOR.generateBookList(random.nextInt(15));
             ArrayList<Book> booksReaded = Book.GENERATOR.generateBookList(random.nextInt(15));
+            ArrayList<Book> booksShared = Book.GENERATOR.generateBookList(random.nextInt(15));
+
 
             return user.new Details("********", name2Email(user.mName), true, BIO, random.nextInt(5),
-                                    random.nextInt(300), currentlyReading, booksReaded, booksOnHand);
+                                    random.nextInt(300), currentlyReading, booksReaded, booksOnHand, booksShared);
         }
 
         private static String name2Email(String name) {

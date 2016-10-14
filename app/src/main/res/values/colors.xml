@@ -4,6 +4,8 @@
     <color name="colorPrimaryDark">#ECEFF1</color>
     <color name="colorAccent">#0DD199</color>
     <color name="actionBarTextColor">#455A64</color>
+    <color name="primaryTextColor">#455A64</color>
+    <color name="secondaryTextColor">#78909C</color>
     <color name="transparent">#00000000</color>
     <color name="colorAccentDark">#455A64</color>
 </resources>
