@@ -5,28 +5,12 @@
               android:orientation="horizontal"
     android:paddingBottom="24dp">
 
-    <RelativeLayout
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:gravity="center"
-        android:layout_weight="1">
-
         <include
             android:id="@+id/presentationalBookLeft"
             layout="@layout/item_presentational_book"/>
 
-    </RelativeLayout>
-
-    <RelativeLayout
-        android:layout_width="match_parent"
-        android:gravity="center"
-        android:layout_height="match_parent"
-        android:layout_weight="1">
-
         <include
             android:id="@+id/presentationalBookRight"
             layout="@layout/item_presentational_book"/>
-
-    </RelativeLayout>
 
 </LinearLayout>
