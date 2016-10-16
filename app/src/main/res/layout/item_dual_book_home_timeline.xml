@@ -3,14 +3,14 @@
               android:layout_width="match_parent"
               android:layout_height="wrap_content"
               android:orientation="horizontal"
-    android:paddingBottom="24dp">
+              android:paddingBottom="24dp">
 
-        <include
-            android:id="@+id/presentationalBookLeft"
-            layout="@layout/item_presentational_book"/>
+    <include
+        android:id="@+id/presentationalBookLeft"
+        layout="@layout/item_presentational_book"/>
 
-        <include
-            android:id="@+id/presentationalBookRight"
-            layout="@layout/item_presentational_book"/>
+    <include
+        android:id="@+id/presentationalBookRight"
+        layout="@layout/item_presentational_book"/>
 
 </LinearLayout>

@@ -1,6 +1,7 @@
 package com.karambit.bookie.helper;
 
 import android.content.Context;
+import android.media.Image;
 import android.support.v7.widget.RecyclerView;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -47,9 +48,16 @@ public class HomeTimelineAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
 
         // TODO Header
 
+        private ImageView mBookImage;
+        private TextView mBookName;
+        private TextView mAuthor;
+
         private HeaderViewHolder(View headerView) {
             super(headerView);
 
+            mBookImage = (ImageView) headerView.findViewById(R.id.bookImageHeaderImageView);
+            mBookName = (TextView) headerView.findViewById(R.id.bookNameHeaderTextView);
+            mAuthor = (TextView) headerView.findViewById(R.id.authorHeaderTextView);
         }
     }
 
@@ -167,8 +175,22 @@ public class HomeTimelineAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
         switch (getItemViewType(position)) {
 
             case TYPE_HEADER: {
+
                 HeaderViewHolder headerViewHolder = (HeaderViewHolder) holder;
 
+                // TODO Header
+
+                Book book = mHeaderBooks.get(0);
+
+                Glide.with(mContext)
+                        .load(book.getThumbnailURL())
+                        .crossFade()
+                        .placeholder(R.drawable.placeholder_book)
+                        .centerCrop()
+                        .into(headerViewHolder.mBookImage);
+
+                headerViewHolder.mBookName.setText(book.getName());
+                headerViewHolder.mAuthor.setText(book.getAuthor());
 
                 break;
             }
@@ -232,6 +254,11 @@ public class HomeTimelineAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
                 break;
             }
         }
+    }
+
+    public void setProgressBarActive(boolean progressBarActive) {
+        mProgressBarActive = progressBarActive;
+        notifyItemChanged(getItemCount() - 1);
     }
 
     private int getFeedBooksSize() {
