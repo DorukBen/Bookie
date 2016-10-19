@@ -1,6 +1,8 @@
 package com.karambit.bookie.helper;
 
+import android.app.Activity;
 import android.content.Context;
+import android.content.Intent;
 import android.media.Image;
 import android.support.v7.widget.RecyclerView;
 import android.util.Log;
@@ -12,6 +14,7 @@ import android.widget.ProgressBar;
 import android.widget.TextView;
 
 import com.bumptech.glide.Glide;
+import com.karambit.bookie.BookActivity;
 import com.karambit.bookie.R;
 import com.karambit.bookie.model.Book;
 
@@ -211,7 +214,16 @@ public class HomeTimelineAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
                 // Left
                 int leftIndex = getLeftBookIndexForPosition(position);
 
-                Book bookLeft = mFeedBooks.get(leftIndex);
+                final Book bookLeft = mFeedBooks.get(leftIndex);
+
+                dualBookViewHolder.mPresentationalLeft.setOnClickListener(new View.OnClickListener() {
+                    @Override
+                    public void onClick(View v) {
+                        Intent intent = new Intent(mContext, BookActivity.class);
+                        intent.putExtra("book", bookLeft);
+                        mContext.startActivity(intent);
+                    }
+                });
 
                 Glide.with(mContext)
                         .load(bookLeft.getImageURL())
@@ -224,7 +236,17 @@ public class HomeTimelineAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
                 dualBookViewHolder.mAuthorLeft.setText(bookLeft.getAuthor());
 
                 // Right
-                Book bookRight = mFeedBooks.get(leftIndex + 1); // Rigth
+                final Book bookRight = mFeedBooks.get(leftIndex + 1); // Rigth
+
+                dualBookViewHolder.mPresentationalRight.setOnClickListener(new View.OnClickListener() {
+                    @Override
+                    public void onClick(View v) {
+                        Intent intent = new Intent(mContext, BookActivity.class);
+                        intent.putExtra("book", bookRight);
+                        mContext.startActivity(intent);
+                    }
+                });
+
 
                 Glide.with(mContext)
                         .load(bookRight.getImageURL())
