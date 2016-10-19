@@ -28,4 +28,5 @@
     <string name="x_sent_request_to_y">%1$s sent request to %2$s</string>
     <string name="x_accepted_ys_request">%1$s accepted %2$s\'s request</string>
     <string name="x_rejected_ys_request">%1$s rejected %2$s\'s request</string>
+    <string name="search_book_hint">Search for books</string>
 </resources>

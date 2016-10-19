@@ -30,7 +30,12 @@
                     android:layout_height="match_parent"
                     android:layout_marginRight="8dp"
                     android:layout_weight="1"
-                    android:background="@color/transparent"/>
+                    android:background="@color/transparent"
+                    android:hint="@string/search_book_hint"
+                    android:maxLines="1"
+                    android:textColor="@color/primaryTextColor"
+                    android:textColorHint="@color/secondaryTextColor"
+                    android:textSize="16sp"/>
 
                 <ImageButton
                     android:id="@+id/searchButton"
@@ -50,6 +55,7 @@
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:clipToPadding="false"
+            android:overScrollMode="never"
             android:paddingTop="80dp"/>
 
     </RelativeLayout>
