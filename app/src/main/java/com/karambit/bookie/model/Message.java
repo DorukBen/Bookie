@@ -13,16 +13,20 @@ import java.util.Random;
  * Created by orcan on 10/25/16.
  */
 
-public class Message implements Parcelable{
+public class Message implements Parcelable {
+
+    public enum State { PENDING, SENT, DELIVERED, SEEN, ERROR }
 
     private String mText;
     private User mSender;
     private Calendar mCreatedAt;
+    private State mState;
 
-    public Message(String text, User sender, Calendar createdAt) {
+    public Message(String text, User sender, Calendar createdAt, State state) {
         mText = text;
         mSender = sender;
         mCreatedAt = createdAt;
+        mState = state;
     }
 
     protected Message(Parcel in) {
@@ -31,6 +35,8 @@ public class Message implements Parcelable{
 
         mCreatedAt = Calendar.getInstance();
         mCreatedAt.setTimeInMillis(in.readLong());
+
+        mState = (State) in.readSerializable();
     }
 
     public String getText() {
@@ -55,6 +61,14 @@ public class Message implements Parcelable{
 
     public void setCreatedAt(Calendar createdAt) {
         mCreatedAt = createdAt;
+    }
+
+    public State getState() {
+        return mState;
+    }
+
+    public void setState(State state) {
+        mState = state;
     }
 
     public static class GENERATOR {
@@ -121,6 +135,7 @@ public class Message implements Parcelable{
         dest.writeString(mText);
         dest.writeParcelable(mSender, flags);
         dest.writeLong(mCreatedAt.getTimeInMillis());
+        dest.writeSerializable(mState);
     }
 
     @Override
@@ -128,6 +143,7 @@ public class Message implements Parcelable{
         return "Message{" +
                 "mText='" + mText + '\'' +
                 ", mSender=" + mSender +
+                ", mState=" + mState +
                 ", mCreatedAt=" + mCreatedAt + '}';
     }
 }
