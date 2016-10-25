@@ -89,7 +89,7 @@ public class Message implements Parcelable {
                 Calendar createdAt = Calendar.getInstance();
                 createdAt.setTimeInMillis(createdMillis);
 
-                messages.add(new Message(generateRandomText(), sender, createdAt));
+                messages.add(new Message(generateRandomText(), sender, createdAt, State.DELIVERED));
 
                 createdMillis -= MIN_IN_MILLIS * RANDOM.nextInt(5);
             }
