@@ -29,4 +29,5 @@
     <string name="x_accepted_ys_request">%1$s accepted %2$s\'s request</string>
     <string name="x_rejected_ys_request">%1$s rejected %2$s\'s request</string>
     <string name="search_book_hint">Search for books</string>
+    <string name="type_message">Type a message...</string>
 </resources>

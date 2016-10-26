@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/activity_messaging"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context="com.karambit.bookie.MessagingActivity">
+
+    <android.support.v7.widget.RecyclerView
+        android:id="@+id/messagingRecyclerView"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:clipToPadding="false"
+        android:paddingBottom="64dp"/>
+
+    <android.support.v7.widget.CardView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true"
+        android:layout_margin="16dp"
+        app:cardCornerRadius="@dimen/cardview_default_radius"
+        app:cardElevation="4dp">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
+
+            <EditText
+                android:id="@+id/messageEditText"
+                android:layout_width="match_parent"
+                android:layout_height="48dp"
+                android:layout_marginRight="8dp"
+                android:layout_weight="1"
+                android:background="@color/transparent"
+                android:hint="@string/type_message"
+                android:paddingBottom="4dp"
+                android:paddingLeft="16dp"
+                android:paddingTop="4dp"
+                android:textColor="@color/primaryTextColor"
+                android:textColorHint="@color/secondaryTextColor"
+                android:inputType="textLongMessage"
+                android:textSize="16sp"/>
+
+            <ImageButton
+                android:id="@+id/messageSendButton"
+                style="@style/Widget.AppCompat.ActionButton"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:layout_weight="0"
+                android:src="@drawable/ic_send_black_24dp"
+                android:tint="@color/secondaryTextColor"/>
+
+        </LinearLayout>
+
+    </android.support.v7.widget.CardView>
+
+</RelativeLayout>
