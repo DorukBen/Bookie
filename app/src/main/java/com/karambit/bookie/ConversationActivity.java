@@ -26,6 +26,8 @@ public class ConversationActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_conversation);
 
+        User oppositeUser = getIntent().getExtras().getParcelable("user");
+
         final EditText messageEditText = (EditText) findViewById(R.id.messageEditText);
         final ImageButton sendMessageButton = (ImageButton) findViewById(R.id.messageSendButton);
 
@@ -37,7 +39,6 @@ public class ConversationActivity extends AppCompatActivity {
         recyclerView.setLayoutManager(layoutManager);
 
         final User phoneOwner = User.GENERATOR.generateUser();
-        User oppositeUser = User.GENERATOR.generateUser();
 
         final ArrayList<Message> messages = Message.GENERATOR.generateMessageList(phoneOwner, oppositeUser, 50);
 

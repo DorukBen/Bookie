@@ -11,13 +11,13 @@ import java.util.Random;
 
 /**
  * Message model
- *
+ * <p>
  * Created by orcan on 10/25/16.
  */
 
 public class Message implements Parcelable, Comparable<Message> {
 
-    public enum State { PENDING, SENT, DELIVERED, SEEN, ERROR }
+    public enum State {PENDING, SENT, DELIVERED, SEEN, ERROR}
 
     private String mText;
     private User mSender;
@@ -92,6 +92,28 @@ public class Message implements Parcelable, Comparable<Message> {
                 createdAt.setTimeInMillis(createdMillis);
 
                 messages.add(new Message(generateRandomText(), sender, createdAt, State.DELIVERED));
+
+                createdMillis -= MIN_IN_MILLIS * RANDOM.nextInt(5);
+            }
+
+            Collections.sort(messages);
+
+            return messages;
+        }
+
+        public static ArrayList<Message> generateMessageList(User phoneOwner, int count) {
+            ArrayList<Message> messages = new ArrayList<>(count);
+
+            long createdMillis = System.currentTimeMillis();
+
+            for (int i = 0; i < count; i++) {
+
+                User sender = RANDOM.nextBoolean() ? User.GENERATOR.generateUser() : phoneOwner;
+
+                Calendar createdAt = Calendar.getInstance();
+                createdAt.setTimeInMillis(createdMillis);
+
+                messages.add(new Message(generateRandomText(), sender, createdAt, State.SEEN));
 
                 createdMillis -= MIN_IN_MILLIS * RANDOM.nextInt(5);
             }
