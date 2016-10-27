@@ -14,7 +14,7 @@ import android.widget.TabHost;
 import android.widget.Toast;
 
 import com.karambit.bookie.fragment.HomeFragment;
-import com.karambit.bookie.fragment.NotificationFragment;
+import com.karambit.bookie.fragment.MessageFragment;
 import com.karambit.bookie.fragment.ProfileFragment;
 import com.karambit.bookie.fragment.SearchFragment;
 import com.karambit.bookie.helper.TabFactory;
@@ -34,7 +34,7 @@ public class MainActivity extends AppCompatActivity implements TabHost.OnTabChan
     private HomeFragment mHomeFragment;
     private SearchFragment mSearchFragment;
     private ProfileFragment mProfileFragment;
-    private NotificationFragment mNotificationFragment;
+    private MessageFragment mMessageFragment;
 
     private View mIndicator;
 
@@ -110,11 +110,11 @@ public class MainActivity extends AppCompatActivity implements TabHost.OnTabChan
         mHomeFragment = new HomeFragment();
         mSearchFragment = new SearchFragment();
         mProfileFragment = new ProfileFragment();
-        mNotificationFragment = new NotificationFragment();
+        mMessageFragment = new MessageFragment();
         fList.add(mHomeFragment);
         fList.add(mSearchFragment);
         fList.add(mProfileFragment);
-        fList.add(mNotificationFragment);
+        fList.add(mMessageFragment);
 
         return fList;
     }
