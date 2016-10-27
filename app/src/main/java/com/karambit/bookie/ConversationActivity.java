@@ -29,7 +29,7 @@ public class ConversationActivity extends AppCompatActivity {
         final EditText messageEditText = (EditText) findViewById(R.id.messageEditText);
         final ImageButton sendMessageButton = (ImageButton) findViewById(R.id.messageSendButton);
 
-        final RecyclerView recyclerView = (RecyclerView) findViewById(R.id.messagingRecyclerView);
+        final RecyclerView recyclerView = (RecyclerView) findViewById(R.id.conversationRecyclerView);
 
         LinearLayoutManager layoutManager = new LinearLayoutManager(this);
         layoutManager.setReverseLayout(true);
