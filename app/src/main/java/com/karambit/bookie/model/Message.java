@@ -2,9 +2,11 @@ package com.karambit.bookie.model;
 
 import android.os.Parcel;
 import android.os.Parcelable;
+import android.support.annotation.NonNull;
 
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.Collections;
 import java.util.Random;
 
 /**
@@ -13,7 +15,7 @@ import java.util.Random;
  * Created by orcan on 10/25/16.
  */
 
-public class Message implements Parcelable {
+public class Message implements Parcelable, Comparable<Message> {
 
     public enum State { PENDING, SENT, DELIVERED, SEEN, ERROR }
 
@@ -94,6 +96,8 @@ public class Message implements Parcelable {
                 createdMillis -= MIN_IN_MILLIS * RANDOM.nextInt(5);
             }
 
+            Collections.sort(messages);
+
             return messages;
         }
 
@@ -111,6 +115,11 @@ public class Message implements Parcelable {
             return generateRandomText(RANDOM.nextInt(38) + 2); // Min 2 characters
         }
 
+    }
+
+    @Override
+    public int compareTo(@NonNull Message otherMessage) {
+        return (int) (otherMessage.getCreatedAt().getTimeInMillis() - this.mCreatedAt.getTimeInMillis());
     }
 
     public static final Creator<Message> CREATOR = new Creator<Message>() {
