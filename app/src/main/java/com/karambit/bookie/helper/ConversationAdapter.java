@@ -16,6 +16,7 @@ import com.karambit.bookie.model.User;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.Collections;
 import java.util.Locale;
 
 /**
@@ -26,6 +27,8 @@ public class ConversationAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
 
     private static final int TYPE_PHONE_OWNER = 0;
     private static final int TYPE_OPPOSITE_USER = 1;
+
+    private RecyclerView mRecyclerView;
 
     private Context mContext;
     private User mPhoneOwner;
@@ -186,5 +189,62 @@ public class ConversationAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
         SimpleDateFormat df = new SimpleDateFormat("kk:mm", Locale.getDefault());
 
         return df.format(calendar.getTime());
+    }
+
+    public void insertNewMessage(Message message) {
+        mMessages.add(0, message);
+        notifyItemInserted(0);
+
+        if (mRecyclerView != null) {
+            mRecyclerView.smoothScrollToPosition(0);
+        }
+    }
+
+    public void insertNewMessageList(ArrayList<Message> messages) {
+        if (messages.size() > 0) {
+            mMessages.addAll(messages);
+            Collections.sort(mMessages);
+            notifyItemRangeInserted(0, messages.size() - 1);
+
+            if (mRecyclerView != null) {
+                mRecyclerView.smoothScrollToPosition(0);
+            }
+        }
+    }
+
+    @Override
+    public void onAttachedToRecyclerView(RecyclerView recyclerView) {
+        super.onAttachedToRecyclerView(recyclerView);
+
+        mRecyclerView = recyclerView;
+    }
+
+    public User getPhoneOwner() {
+        return mPhoneOwner;
+    }
+
+    public void setPhoneOwner(User phoneOwner) {
+        mPhoneOwner = phoneOwner;
+    }
+
+    public User getOppositeUser() {
+        return mOppositeUser;
+    }
+
+    public void setOppositeUser(User oppositeUser) {
+        mOppositeUser = oppositeUser;
+    }
+
+    public ArrayList<Message> getMessages() {
+        return mMessages;
+    }
+
+    public void setMessages(ArrayList<Message> messages) {
+        mMessages = messages;
+        notifyDataSetChanged();
+
+        if (mRecyclerView != null) {
+            mRecyclerView.smoothScrollToPosition(0);
+        }
     }
 }

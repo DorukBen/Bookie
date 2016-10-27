@@ -9,7 +9,6 @@ import android.support.v7.widget.RecyclerView;
 import android.text.Editable;
 import android.text.TextWatcher;
 import android.view.View;
-import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageButton;
 
@@ -49,7 +48,6 @@ public class MessagingActivity extends AppCompatActivity {
         messageEditText.addTextChangedListener(new TextWatcher() {
             @Override
             public void beforeTextChanged(CharSequence s, int start, int count, int after) {
-
             }
 
             @Override
@@ -63,7 +61,6 @@ public class MessagingActivity extends AppCompatActivity {
 
             @Override
             public void afterTextChanged(Editable s) {
-
             }
         });
 
@@ -74,9 +71,7 @@ public class MessagingActivity extends AppCompatActivity {
 
                 Message message = new Message(messageText, phoneOwner, Calendar.getInstance(), Message.State.DELIVERED);
 
-                messages.add(0, message);
-                conversationAdapter.notifyItemInserted(0);
-                recyclerView.smoothScrollToPosition(0);
+                conversationAdapter.insertNewMessage(message);
 
                 messageEditText.setText("");
             }
