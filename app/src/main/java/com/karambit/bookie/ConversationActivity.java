@@ -19,12 +19,12 @@ import com.karambit.bookie.model.User;
 import java.util.ArrayList;
 import java.util.Calendar;
 
-public class MessagingActivity extends AppCompatActivity {
+public class ConversationActivity extends AppCompatActivity {
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_messaging);
+        setContentView(R.layout.activity_conversation);
 
         final EditText messageEditText = (EditText) findViewById(R.id.messageEditText);
         final ImageButton sendMessageButton = (ImageButton) findViewById(R.id.messageSendButton);
@@ -79,7 +79,7 @@ public class MessagingActivity extends AppCompatActivity {
     }
 
     public static void start(Context context) {
-        Intent starter = new Intent(context, MessagingActivity.class);
+        Intent starter = new Intent(context, ConversationActivity.class);
         context.startActivity(starter);
     }
 }

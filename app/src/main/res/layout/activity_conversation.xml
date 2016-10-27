@@ -7,7 +7,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@color/colorPrimary"
-    tools:context="com.karambit.bookie.MessagingActivity">
+    tools:context="com.karambit.bookie.ConversationActivity">
 
     <android.support.v7.widget.RecyclerView
         android:id="@+id/messagingRecyclerView"

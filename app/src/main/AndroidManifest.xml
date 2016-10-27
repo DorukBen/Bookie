@@ -21,7 +21,7 @@
         </activity>
         <activity android:name=".BookActivity">
         </activity>
-        <activity android:name=".MessagingActivity">
+        <activity android:name=".ConversationActivity">
         </activity>
     </application>
 
