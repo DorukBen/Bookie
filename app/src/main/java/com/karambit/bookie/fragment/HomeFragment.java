@@ -9,6 +9,7 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 
+import com.karambit.bookie.MainActivity;
 import com.karambit.bookie.R;
 import com.karambit.bookie.adapter.HomeTimelineAdapter;
 import com.karambit.bookie.model.Book;
@@ -23,7 +24,6 @@ public class HomeFragment extends Fragment {
         // Required empty public constructor
     }
 
-
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
@@ -32,6 +32,8 @@ public class HomeFragment extends Fragment {
         View rootView = inflater.inflate(R.layout.fragment_home, container, false);
 
         RecyclerView recyclerView = (RecyclerView) rootView.findViewById(R.id.homeRecyclerView);
+
+        recyclerView.setOnScrollListener(new ElevationScrollListener((MainActivity) getActivity()));
 
         recyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
 

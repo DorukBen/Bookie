@@ -9,6 +9,7 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 
+import com.karambit.bookie.MainActivity;
 import com.karambit.bookie.R;
 import com.karambit.bookie.adapter.SearchAdapter;
 import com.karambit.bookie.model.Book;
@@ -33,6 +34,8 @@ public class SearchFragment extends Fragment {
         RecyclerView recyclerView = (RecyclerView) rootView.findViewById(R.id.searchResultsRecyclerView);
         recyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
         recyclerView.setAdapter(new SearchAdapter(getContext(), Book.GENERATOR.generateBookList(15)));
+
+        recyclerView.setOnScrollListener(new ElevationScrollListener((MainActivity) getActivity()));
 
         return rootView;
     }

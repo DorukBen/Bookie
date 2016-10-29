@@ -3,10 +3,12 @@ package com.karambit.bookie;
 import android.support.v4.app.Fragment;
 import android.support.v4.view.ViewCompat;
 import android.support.v4.view.ViewPager;
+import android.support.v7.app.ActionBar;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.text.Spannable;
 import android.text.SpannableString;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.ImageView;
@@ -22,6 +24,7 @@ import com.karambit.bookie.helper.TypefaceSpan;
 import com.karambit.bookie.helper.ViewPagerAdapter;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 public class MainActivity extends AppCompatActivity implements TabHost.OnTabChangeListener {
@@ -35,6 +38,9 @@ public class MainActivity extends AppCompatActivity implements TabHost.OnTabChan
     private SearchFragment mSearchFragment;
     private ProfileFragment mProfileFragment;
     private MessageFragment mMessageFragment;
+
+    private ActionBar mAcitonBar;
+    private float[] mElevations;
 
     private View mIndicator;
 
@@ -61,6 +67,8 @@ public class MainActivity extends AppCompatActivity implements TabHost.OnTabChan
         mViewPager.setOffscreenPageLimit(4);
         ViewPagerAdapter adapter = new ViewPagerAdapter(getSupportFragmentManager() ,getFragments());
         mViewPager.setAdapter(adapter);
+
+        mAcitonBar = getSupportActionBar();
     }
 
     /**
@@ -114,12 +122,17 @@ public class MainActivity extends AppCompatActivity implements TabHost.OnTabChan
         fList.add(mProfileFragment);
         fList.add(mMessageFragment);
 
+//        mElevations = new float[4];
+//        Arrays.fill(mElevations, 0);
+
         return fList;
     }
 
     @Override
     public void onTabChanged(String s) {
         int pos = mTabHost.getCurrentTab();
+
+//        mAcitonBar.setElevation(mElevations[pos]);
 
         if (pos != 2){
             mOldPos = pos;
@@ -150,5 +163,12 @@ public class MainActivity extends AppCompatActivity implements TabHost.OnTabChan
             //TODO: OnAddBook selected add code here
             Toast.makeText(MainActivity.this, "hele", Toast.LENGTH_SHORT).show();
         }
+    }
+
+    public void setActionBarElevation(float dp) {
+        if (mAcitonBar != null) {
+            mAcitonBar.setElevation(dp);
+        }
+//        mElevations[mTabHost.getCurrentTab()] = dp;
     }
 }

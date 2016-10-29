@@ -11,6 +11,7 @@ import android.view.View;
 import android.view.ViewGroup;
 
 import com.karambit.bookie.BookActivity;
+import com.karambit.bookie.MainActivity;
 import com.karambit.bookie.R;
 import com.karambit.bookie.adapter.ProfileTimelineAdapter;
 import com.karambit.bookie.model.Book;
@@ -48,6 +49,8 @@ public class ProfileFragment extends Fragment {
         });
 
         recyclerView.setAdapter(adapter);
+
+        recyclerView.setOnScrollListener(new ElevationScrollListener((MainActivity) getActivity()));
 
         return rootView;
     }
