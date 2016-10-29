@@ -12,7 +12,6 @@ import android.widget.ProgressBar;
 import android.widget.TextView;
 
 import com.bumptech.glide.Glide;
-import com.karambit.bookie.BookActivity;
 import com.karambit.bookie.R;
 import com.karambit.bookie.model.Book;
 import com.karambit.bookie.model.User;
@@ -46,7 +45,7 @@ public class BookTimelineAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
 
     private static class HeaderViewHolder extends RecyclerView.ViewHolder {
 
-        private CircleImageView mBookPicture;
+        private ImageView mBookPicture;
         private TextView mBookName;
         private TextView mAuthor;
         private TextView mGenre;
@@ -59,7 +58,7 @@ public class BookTimelineAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
         private HeaderViewHolder(View headerView) {
             super(headerView);
 
-            mBookPicture = (CircleImageView) headerView.findViewById(R.id.bookPictureHeaderCircleImageView);
+            mBookPicture = (ImageView) headerView.findViewById(R.id.bookPictureHeaderImageView);
             mBookName = (TextView) headerView.findViewById(R.id.bookNameHeaderTextView);
             mAuthor = (TextView) headerView.findViewById(R.id.authorHeaderTextView);
             mGenre = (TextView) headerView.findViewById(R.id.genreHeaderTextView);
