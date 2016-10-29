@@ -1,0 +1,147 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    tools:context="com.karambit.bookie.AddBookActivity">
+
+    <com.nirhart.parallaxscroll.views.ParallaxScrollView
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:overScrollMode="never"
+        android:scrollbarThumbVertical="@color/transparent"
+        app:parallax_factor="1.9">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:orientation="vertical">
+
+            <RelativeLayout
+                android:id="@+id/parallaxLayout"
+                android:layout_width="match_parent"
+                android:layout_height="240dp"
+                android:layout_weight="4"
+                android:background="@color/colorPickImage">
+
+                <ImageView
+                    android:id="@+id/addImageButton"
+                    android:layout_width="124dp"
+                    android:layout_height="124dp"
+                    android:layout_centerInParent="true"
+                    android:onClick="onClickAddBookImage"
+                    android:src="@drawable/circle"/>
+
+                <ImageView
+                    android:id="@+id/cameraIconImageView"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_centerInParent="true"
+                    android:src="@drawable/ic_photo_camera_white_48dp"
+                    android:tint="@color/colorPickImage"/>
+
+                <LinearLayout
+                    android:id="@+id/infoTextLayout"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_below="@+id/addImageButton"
+                    android:layout_centerHorizontal="true"
+                    android:layout_marginTop="16dp"
+                    android:gravity="center"
+                    android:orientation="horizontal">
+
+                    <ImageView
+                        android:layout_width="24dp"
+                        android:layout_height="24dp"
+                        android:src="@drawable/ic_photo_camera_white_48dp"
+                        android:tint="@color/colorPrimary"/>
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginLeft="4dp"
+                        android:text="Add Image"
+                        android:textColor="@color/colorPrimary"
+                        android:textSize="16sp"
+                        android:textStyle="bold"/>
+                </LinearLayout>
+
+                <ImageView
+                    android:id="@+id/bookImageImageView"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:onClick="onClickAddBookImage"/>
+
+            </RelativeLayout>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:layout_weight="5"
+                android:background="@color/colorPrimary"
+                android:orientation="vertical">
+
+                <EditText
+                    android:id="@+id/bookNameEditText"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginLeft="24dp"
+                    android:layout_marginRight="24dp"
+                    android:layout_marginTop="24dp"
+                    android:hint="Book Name"
+                    android:singleLine="true"
+                    android:textAlignment="center"
+                    android:textColor="#B4B4B4"
+                    android:textColorHint="#B4B4B4"
+                    android:textSize="18sp"/>
+
+                <EditText
+                    android:id="@+id/authorEditText"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginLeft="24dp"
+                    android:layout_marginRight="24dp"
+                    android:layout_marginTop="8dp"
+                    android:hint="Author"
+                    android:singleLine="true"
+                    android:textAlignment="center"
+                    android:textColor="#B4B4B4"
+                    android:textColorHint="#B4B4B4"
+                    android:textSize="18sp"/>
+
+
+                <Button
+                    android:id="@+id/genreButton"
+                    style="@style/Base.Widget.AppCompat.ActionButton"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="8dp"
+                    android:layout_marginLeft="16dp"
+                    android:layout_marginRight="16dp"
+                    android:text="Genre"
+                    android:textColor="#B4B4B4"
+                    android:textSize="18sp"/>
+            </LinearLayout>
+
+        </LinearLayout>
+    </com.nirhart.parallaxscroll.views.ParallaxScrollView>
+
+    <ImageButton
+        android:id="@+id/closeButton"
+        style="@style/Base.Widget.AppCompat.ActionButton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentLeft="true"
+        android:src="@drawable/ic_close_white_24dp"/>
+
+    <ImageButton
+        android:id="@+id/doneButton"
+        style="@style/Base.Widget.AppCompat.ActionButton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentRight="true"
+        android:src="@drawable/ic_done_white_24dp"/>
+
+</RelativeLayout>

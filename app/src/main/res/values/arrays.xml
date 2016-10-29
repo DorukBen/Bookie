@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string-array name="genre_types">
+        <item>Science fiction</item>
+        <item>Satire</item>
+        <item>Drama</item>
+        <item>Action and Adventure</item>
+        <item>Romance</item>
+        <item>Mystery</item>
+        <item>Horror</item>
+        <item>Self help</item>
+        <item>Health</item>
+        <item>Guide</item>
+        <item>Travel</item>
+        <item>Religion, Spirituality and New Age</item>
+        <item>Children\'s</item>
+        <item>Science</item>
+        <item>History</item>
+        <item>Math</item>
+        <item>Anthology</item>
+        <item>Poetry</item>
+        <item>Encyclopedias</item>
+        <item>Dictionaries</item>
+        <item>Comics</item>
+        <item>Art</item>
+        <item>Cookbooks</item>
+        <item>Diaries</item>
+        <item>Journals</item>
+        <item>Prayer books</item>
+        <item>Series</item>
+        <item>Trilogy</item>
+        <item>Biographies</item>
+        <item>Autobiographies</item>
+        <item>Fantasy</item>
+    </string-array>
+</resources>

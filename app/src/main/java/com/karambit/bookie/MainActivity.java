@@ -1,5 +1,6 @@
 package com.karambit.bookie;
 
+import android.content.Intent;
 import android.support.v4.app.Fragment;
 import android.support.v4.view.ViewCompat;
 import android.support.v4.view.ViewPager;
@@ -13,7 +14,6 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.ImageView;
 import android.widget.TabHost;
-import android.widget.Toast;
 
 import com.karambit.bookie.fragment.HomeFragment;
 import com.karambit.bookie.fragment.MessageFragment;
@@ -159,8 +159,7 @@ public class MainActivity extends AppCompatActivity implements TabHost.OnTabChan
         }else {
             mIndicator.setSelected(false);
             mTabHost.setCurrentTab(mOldPos);
-            //TODO: OnAddBook selected add code here
-            Toast.makeText(MainActivity.this, "hele", Toast.LENGTH_SHORT).show();
+            startActivity(new Intent(this,AddBookActivity.class));
         }
 
         mAcitonBar.setElevation(mElevations[pos]);
