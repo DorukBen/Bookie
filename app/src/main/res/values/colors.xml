@@ -8,4 +8,5 @@
     <color name="secondaryTextColor">#78909C</color>
     <color name="transparent">#00000000</color>
     <color name="colorAccentDark">#455A64</color>
+    <color name="colorPickImage">#78909C</color>
 </resources>

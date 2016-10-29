@@ -23,6 +23,8 @@
         </activity>
         <activity android:name=".ConversationActivity">
         </activity>
+        <activity android:name=".AddBookActivity">
+        </activity>
     </application>
 
 </manifest>

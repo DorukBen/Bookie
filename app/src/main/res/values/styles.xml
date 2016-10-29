@@ -7,6 +7,11 @@
         <item name="colorPrimaryDark">@color/colorPrimaryDark</item>
         <item name="colorAccent">@color/colorAccent</item>
         <item name="actionBarStyle">@style/WhiteActionBar</item>
+
+
+        <item name="colorControlNormal">#D5D5D6 </item>
+        <item name="colorControlActivated">#D5D5D6 </item>
+        <item name="colorControlHighlight">#D5D5D6 </item>
     </style>
 
     <style name="WhiteActionBar" parent="@style/Widget.AppCompat.ActionBar.Solid">

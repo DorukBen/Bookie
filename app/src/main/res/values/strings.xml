@@ -30,4 +30,5 @@
     <string name="x_rejected_ys_request">%1$s rejected %2$s\'s request</string>
     <string name="search_book_hint">Search for books</string>
     <string name="type_message">Type a message...</string>
+    <string name="pick_image_intent_text">Pick Image</string>
 </resources>
