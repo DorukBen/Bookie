@@ -1,11 +1,13 @@
 package com.karambit.bookie;
 
+import android.support.v7.app.ActionBar;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 
 import com.karambit.bookie.adapter.BookTimelineAdapter;
+import com.karambit.bookie.helper.ElevationScrollListener;
 import com.karambit.bookie.model.Book;
 import com.karambit.bookie.model.User;
 
@@ -46,5 +48,21 @@ public class BookActivity extends AppCompatActivity {
         });
 
         bookRecyclerView.setAdapter(adapter);
+
+        bookRecyclerView.setOnScrollListener(new RecyclerView.OnScrollListener() {
+
+            ActionBar actionBar = getSupportActionBar();
+            int totalScrolled = 0;
+
+            @Override
+            public void onScrolled(RecyclerView recyclerView, int dx, int dy) {
+                super.onScrolled(recyclerView, dx, dy);
+
+                totalScrolled += dy;
+                totalScrolled = Math.abs(totalScrolled);
+
+                actionBar.setElevation(ElevationScrollListener.getActionbarElevation(totalScrolled));
+            }
+        });
     }
 }
