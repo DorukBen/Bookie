@@ -122,8 +122,8 @@ public class MainActivity extends AppCompatActivity implements TabHost.OnTabChan
         fList.add(mProfileFragment);
         fList.add(mMessageFragment);
 
-//        mElevations = new float[4];
-//        Arrays.fill(mElevations, 0);
+        mElevations = new float[5];
+        Arrays.fill(mElevations, 0);
 
         return fList;
     }
@@ -132,7 +132,7 @@ public class MainActivity extends AppCompatActivity implements TabHost.OnTabChan
     public void onTabChanged(String s) {
         int pos = mTabHost.getCurrentTab();
 
-//        mAcitonBar.setElevation(mElevations[pos]);
+        mAcitonBar.setElevation(mElevations[pos]);
 
         if (pos != 2){
             mOldPos = pos;
@@ -169,6 +169,6 @@ public class MainActivity extends AppCompatActivity implements TabHost.OnTabChan
         if (mAcitonBar != null) {
             mAcitonBar.setElevation(dp);
         }
-//        mElevations[mTabHost.getCurrentTab()] = dp;
+        mElevations[mTabHost.getCurrentTab()] = dp;
     }
 }
