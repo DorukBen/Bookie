@@ -1,4 +1,4 @@
-package com.karambit.bookie.fragment;
+package com.karambit.bookie.helper;
 
 import android.support.v7.widget.RecyclerView;
 
@@ -8,10 +8,10 @@ import com.karambit.bookie.helper.LayoutUtils;
 /**
  * Created by orcan on 10/29/16.
  */
-class ElevationScrollListener extends RecyclerView.OnScrollListener {
+public class ElevationScrollListener extends RecyclerView.OnScrollListener {
 
     public static final int ELEVATION_SCROLL_MAX = 120;
-    public static final int ACTIONBAR_ELEVATION_DP = 4;
+    public static final int ACTIONBAR_ELEVATION_DP = 8;
 
     private MainActivity mA;
     private int totalScrolled = 0;

@@ -14,6 +14,7 @@ import com.karambit.bookie.BookActivity;
 import com.karambit.bookie.MainActivity;
 import com.karambit.bookie.R;
 import com.karambit.bookie.adapter.ProfileTimelineAdapter;
+import com.karambit.bookie.helper.ElevationScrollListener;
 import com.karambit.bookie.model.Book;
 import com.karambit.bookie.model.User;
 

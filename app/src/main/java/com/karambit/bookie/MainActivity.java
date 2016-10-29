@@ -29,6 +29,7 @@ import java.util.List;
 
 public class MainActivity extends AppCompatActivity implements TabHost.OnTabChangeListener {
 
+    private static final String TAG = MainActivity.class.getSimpleName();
     private TabHost mTabHost;
     private ViewPager mViewPager;
     private int mOldPos = 0; //Specifys old position for tab view
@@ -132,8 +133,6 @@ public class MainActivity extends AppCompatActivity implements TabHost.OnTabChan
     public void onTabChanged(String s) {
         int pos = mTabHost.getCurrentTab();
 
-        mAcitonBar.setElevation(mElevations[pos]);
-
         if (pos != 2){
             mOldPos = pos;
             mTabHost.getTabWidget().dispatchSetSelected(false);
@@ -163,6 +162,10 @@ public class MainActivity extends AppCompatActivity implements TabHost.OnTabChan
             //TODO: OnAddBook selected add code here
             Toast.makeText(MainActivity.this, "hele", Toast.LENGTH_SHORT).show();
         }
+
+        mAcitonBar.setElevation(mElevations[pos]);
+
+        Log.d(TAG, "onTabChanged: Elevation = " + mElevations[pos]);
     }
 
     public void setActionBarElevation(float dp) {

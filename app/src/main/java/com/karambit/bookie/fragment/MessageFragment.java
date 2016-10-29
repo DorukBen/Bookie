@@ -14,6 +14,7 @@ import com.karambit.bookie.ConversationActivity;
 import com.karambit.bookie.MainActivity;
 import com.karambit.bookie.R;
 import com.karambit.bookie.adapter.MessageAdapter;
+import com.karambit.bookie.helper.ElevationScrollListener;
 import com.karambit.bookie.model.Message;
 import com.karambit.bookie.model.User;
 

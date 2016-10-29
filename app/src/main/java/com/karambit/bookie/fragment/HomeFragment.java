@@ -12,6 +12,7 @@ import android.view.ViewGroup;
 import com.karambit.bookie.MainActivity;
 import com.karambit.bookie.R;
 import com.karambit.bookie.adapter.HomeTimelineAdapter;
+import com.karambit.bookie.helper.ElevationScrollListener;
 import com.karambit.bookie.model.Book;
 
 /**
