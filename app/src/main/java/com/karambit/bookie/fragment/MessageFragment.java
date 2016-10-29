@@ -12,7 +12,7 @@ import android.view.ViewGroup;
 
 import com.karambit.bookie.ConversationActivity;
 import com.karambit.bookie.R;
-import com.karambit.bookie.helper.MessageAdapter;
+import com.karambit.bookie.adapter.MessageAdapter;
 import com.karambit.bookie.model.Message;
 import com.karambit.bookie.model.User;
 

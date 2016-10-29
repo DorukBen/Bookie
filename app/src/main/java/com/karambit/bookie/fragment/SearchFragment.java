@@ -10,7 +10,7 @@ import android.view.View;
 import android.view.ViewGroup;
 
 import com.karambit.bookie.R;
-import com.karambit.bookie.helper.SearchAdapter;
+import com.karambit.bookie.adapter.SearchAdapter;
 import com.karambit.bookie.model.Book;
 
 /**

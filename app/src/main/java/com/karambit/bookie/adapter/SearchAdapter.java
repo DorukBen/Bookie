@@ -1,4 +1,4 @@
-package com.karambit.bookie.helper;
+package com.karambit.bookie.adapter;
 
 import android.content.Context;
 import android.support.v4.view.ViewCompat;
@@ -13,6 +13,7 @@ import android.widget.TextView;
 
 import com.bumptech.glide.Glide;
 import com.karambit.bookie.R;
+import com.karambit.bookie.helper.LayoutUtils;
 import com.karambit.bookie.model.Book;
 
 import java.util.ArrayList;

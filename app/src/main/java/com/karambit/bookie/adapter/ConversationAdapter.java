@@ -1,4 +1,4 @@
-package com.karambit.bookie.helper;
+package com.karambit.bookie.adapter;
 
 import android.content.Context;
 import android.support.v7.widget.RecyclerView;
@@ -10,6 +10,7 @@ import android.widget.Toast;
 
 import com.bumptech.glide.Glide;
 import com.karambit.bookie.R;
+import com.karambit.bookie.helper.CircleImageView;
 import com.karambit.bookie.model.Message;
 import com.karambit.bookie.model.User;
 

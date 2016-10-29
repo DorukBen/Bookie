@@ -12,7 +12,7 @@ import android.view.View;
 import android.widget.EditText;
 import android.widget.ImageButton;
 
-import com.karambit.bookie.helper.ConversationAdapter;
+import com.karambit.bookie.adapter.ConversationAdapter;
 import com.karambit.bookie.model.Message;
 import com.karambit.bookie.model.User;
 
