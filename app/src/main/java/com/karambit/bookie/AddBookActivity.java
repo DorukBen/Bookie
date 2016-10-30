@@ -7,6 +7,9 @@ import android.graphics.Bitmap;
 import android.graphics.Point;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.text.Spannable;
+import android.text.SpannableString;
+import android.text.style.AbsoluteSizeSpan;
 import android.view.Display;
 import android.view.View;
 import android.view.WindowManager;
@@ -16,6 +19,7 @@ import android.widget.NumberPicker;
 
 import com.karambit.bookie.helper.ImagePicker;
 import com.karambit.bookie.helper.ImageScaler;
+import com.karambit.bookie.helper.TypefaceSpan;
 
 public class AddBookActivity extends AppCompatActivity {
 
@@ -29,6 +33,19 @@ public class AddBookActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_add_book);
+
+        //Changes action bar font style by getting font.ttf from assets/fonts action bars font style doesn't
+        // change from styles.xml
+        SpannableString s = new SpannableString(getResources().getString(R.string.app_name));
+        s.setSpan(new TypefaceSpan(this, "autograf.ttf"), 0, s.length(),
+                Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+        s.setSpan(new AbsoluteSizeSpan(120), 0, s.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+
+        // Update the action bar title with the TypefaceSpan instance
+        if(getSupportActionBar() != null){
+            getSupportActionBar().setTitle(s);
+            getSupportActionBar().setElevation(0);
+        }
 
         this.getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_HIDDEN);
 
