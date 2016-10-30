@@ -44,7 +44,6 @@ public class AddBookActivity extends AppCompatActivity {
         // Update the action bar title with the TypefaceSpan instance
         if(getSupportActionBar() != null){
             getSupportActionBar().setTitle(s);
-            getSupportActionBar().setElevation(0);
         }
 
         this.getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_HIDDEN);

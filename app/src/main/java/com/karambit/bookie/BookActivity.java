@@ -32,7 +32,6 @@ public class BookActivity extends AppCompatActivity {
         // Update the action bar title with the TypefaceSpan instance
         if(getSupportActionBar() != null){
             getSupportActionBar().setTitle(s);
-            getSupportActionBar().setElevation(0);
         }
 
         Book book = getIntent().getParcelableExtra("book");
