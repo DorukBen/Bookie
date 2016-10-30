@@ -5,9 +5,13 @@ import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
+import android.text.Spannable;
+import android.text.SpannableString;
+import android.text.style.AbsoluteSizeSpan;
 
 import com.karambit.bookie.adapter.BookTimelineAdapter;
 import com.karambit.bookie.helper.ElevationScrollListener;
+import com.karambit.bookie.helper.TypefaceSpan;
 import com.karambit.bookie.model.Book;
 import com.karambit.bookie.model.User;
 
@@ -17,6 +21,19 @@ public class BookActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_book);
+
+        //Changes action bar font style by getting font.ttf from assets/fonts action bars font style doesn't
+        // change from styles.xml
+        SpannableString s = new SpannableString(getResources().getString(R.string.app_name));
+        s.setSpan(new TypefaceSpan(this, "autograf.ttf"), 0, s.length(),
+                Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+        s.setSpan(new AbsoluteSizeSpan(120), 0, s.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+
+        // Update the action bar title with the TypefaceSpan instance
+        if(getSupportActionBar() != null){
+            getSupportActionBar().setTitle(s);
+            getSupportActionBar().setElevation(0);
+        }
 
         Book book = getIntent().getParcelableExtra("book");
 
