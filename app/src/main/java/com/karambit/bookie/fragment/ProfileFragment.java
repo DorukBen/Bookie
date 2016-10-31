@@ -23,6 +23,8 @@ import com.karambit.bookie.model.User;
  */
 public class ProfileFragment extends Fragment {
 
+    public static final int PROFILE_FRAGMENT_TAB_INEX = 3;
+
     public ProfileFragment() {
         // Required empty public constructor
     }
@@ -51,7 +53,7 @@ public class ProfileFragment extends Fragment {
 
         recyclerView.setAdapter(adapter);
 
-        recyclerView.setOnScrollListener(new ElevationScrollListener((MainActivity) getActivity()));
+        recyclerView.setOnScrollListener(new ElevationScrollListener((MainActivity) getActivity(), PROFILE_FRAGMENT_TAB_INEX));
 
         return rootView;
     }

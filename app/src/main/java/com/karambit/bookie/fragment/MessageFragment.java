@@ -23,6 +23,8 @@ import com.karambit.bookie.model.User;
  */
 public class MessageFragment extends Fragment {
 
+    public static final int MESSAGE_FRAGMENT_TAB_INEX = 4;
+
 
     public MessageFragment() {
         // Required empty public constructor
@@ -51,7 +53,7 @@ public class MessageFragment extends Fragment {
 
         recyclerView.setAdapter(messageAdapter);
 
-        recyclerView.setOnScrollListener(new ElevationScrollListener((MainActivity) getActivity()));
+        recyclerView.setOnScrollListener(new ElevationScrollListener((MainActivity) getActivity(), MESSAGE_FRAGMENT_TAB_INEX));
 
         return rootView;
     }

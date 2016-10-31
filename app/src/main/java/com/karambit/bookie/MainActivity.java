@@ -172,10 +172,10 @@ public class MainActivity extends AppCompatActivity implements TabHost.OnTabChan
         Log.d(TAG, "onTabChanged: Elevation = " + mElevations[pos]);
     }
 
-    public void setActionBarElevation(float dp) {
-        if (mAcitonBar != null) {
+    public void setActionBarElevation(float dp, int tabIndex) {
+        if (mAcitonBar != null && tabIndex == mTabHost.getCurrentTab()) {
             mAcitonBar.setElevation(dp);
         }
-        mElevations[mTabHost.getCurrentTab()] = dp;
+        mElevations[tabIndex] = dp;
     }
 }

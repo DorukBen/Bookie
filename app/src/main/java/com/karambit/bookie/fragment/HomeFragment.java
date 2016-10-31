@@ -20,6 +20,8 @@ import com.karambit.bookie.model.Book;
  */
 public class HomeFragment extends Fragment {
 
+    public static final int HOME_FRAGMENT_TAB_INEX = 0;
+
 
     public HomeFragment() {
         // Required empty public constructor
@@ -34,7 +36,7 @@ public class HomeFragment extends Fragment {
 
         RecyclerView recyclerView = (RecyclerView) rootView.findViewById(R.id.homeRecyclerView);
 
-        recyclerView.setOnScrollListener(new ElevationScrollListener((MainActivity) getActivity()));
+        recyclerView.setOnScrollListener(new ElevationScrollListener((MainActivity) getActivity(), HOME_FRAGMENT_TAB_INEX));
 
         recyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
 

@@ -13,9 +13,11 @@ public class ElevationScrollListener extends RecyclerView.OnScrollListener {
     public static final int ACTIONBAR_ELEVATION_DP = 8;
 
     private MainActivity mA;
+    private int mTabIndex;
 
-    public ElevationScrollListener(MainActivity mainActivity) {
+    public ElevationScrollListener(MainActivity mainActivity, int tabIndex) {
         mA = mainActivity;
+        mTabIndex = tabIndex;
     }
 
     @Override
@@ -24,7 +26,7 @@ public class ElevationScrollListener extends RecyclerView.OnScrollListener {
 
         float elevation = getActionbarElevation(recyclerView.computeVerticalScrollOffset());
 
-        mA.setActionBarElevation(elevation);
+        mA.setActionBarElevation(elevation, mTabIndex);
     }
 
     public static float getActionbarElevation(int scroll) {
