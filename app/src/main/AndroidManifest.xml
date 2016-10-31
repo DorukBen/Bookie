@@ -25,6 +25,8 @@
         </activity>
         <activity android:name=".AddBookActivity">
         </activity>
+        <activity android:name=".LoginRegisterActivity">
+        </activity>
     </application>
 
 </manifest>

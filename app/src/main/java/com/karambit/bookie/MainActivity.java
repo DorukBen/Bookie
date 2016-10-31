@@ -152,7 +152,10 @@ public class MainActivity extends AppCompatActivity implements TabHost.OnTabChan
                 mViewPager.setCurrentItem(pos);
             }
 
-            getSupportActionBar().setShowHideAnimationEnabled(false);
+            if (getSupportActionBar() != null){
+                getSupportActionBar().setShowHideAnimationEnabled(false);
+            }
+
             if (pos == 1) {
                 getSupportActionBar().hide();
             } else {
