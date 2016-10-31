@@ -13,7 +13,6 @@ public class ElevationScrollListener extends RecyclerView.OnScrollListener {
     public static final int ACTIONBAR_ELEVATION_DP = 8;
 
     private MainActivity mA;
-    private int totalScrolled = 0;
 
     public ElevationScrollListener(MainActivity mainActivity) {
         mA = mainActivity;
@@ -23,9 +22,7 @@ public class ElevationScrollListener extends RecyclerView.OnScrollListener {
     public void onScrolled(RecyclerView recyclerView, int dx, int dy) {
         super.onScrolled(recyclerView, dx, dy);
 
-        totalScrolled += dy;
-
-        float elevation = getActionbarElevation(totalScrolled);
+        float elevation = getActionbarElevation(recyclerView.computeVerticalScrollOffset());
 
         mA.setActionBarElevation(elevation);
     }
