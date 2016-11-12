@@ -26,36 +26,6 @@ public class LoginRegisterActivity extends AppCompatActivity {
 
         ((TextView)findViewById(R.id.app_name)).setText(s);
 
-        SpannableString hint = new SpannableString(getResources().getString(R.string.name));
-        hint.setSpan(new TypefaceSpan(this, "montserratalternates_extralight.otf"), 0, hint.length(),
-                Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
-
-        ((TextView)findViewById(R.id.nameEditText)).setHint(hint);
-
-        hint = new SpannableString(getResources().getString(R.string.surname));
-        hint.setSpan(new TypefaceSpan(this, "montserratalternates_extralight.otf"), 0, hint.length(),
-                Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
-
-        ((TextView)findViewById(R.id.surnameEditText)).setHint(hint);
-
-        hint = new SpannableString(getResources().getString(R.string.email));
-        hint.setSpan(new TypefaceSpan(this, "montserratalternates_extralight.otf"), 0, hint.length(),
-                Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
-
-        ((TextView)findViewById(R.id.emailEditText)).setHint(hint);
-
-        hint = new SpannableString(getResources().getString(R.string.password));
-        hint.setSpan(new TypefaceSpan(this, "montserratalternates_extralight.otf"), 0, hint.length(),
-                Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
-
-        ((TextView)findViewById(R.id.passwordEditText)).setHint(hint);
-
-        hint = new SpannableString(getResources().getString(R.string.repassword));
-        hint.setSpan(new TypefaceSpan(this, "montserratalternates_extralight.otf"), 0, hint.length(),
-                Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
-
-        ((TextView)findViewById(R.id.repasswordEditText)).setHint(hint);
-
         findViewById(R.id.createNewAccountTextView).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {

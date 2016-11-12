@@ -29,7 +29,7 @@
     <string name="x_accepted_ys_request">%1$s accepted %2$s\'s request</string>
     <string name="x_rejected_ys_request">%1$s rejected %2$s\'s request</string>
     <string name="search_book_hint">Search for books</string>
-    <string name="type_message">Type a message...</string>
+    <string name="type_message">Type a message…</string>
     <string name="pick_image_intent_text">Pick Image</string>
     <string name="desc">description</string>
     <string name="name">Name</string>
@@ -39,8 +39,9 @@
     <string name="repassword">rePassword</string>
     <string name="start_reading">Start Reading</string>
     <string name="no_account_yet">No account yet?</string>
-    <string name="create_new_account">Create new account.</string>
+    <string name="create_new_account">Create a new account.</string>
     <string name="forgot_your_password">Forgot your Password?</string>
-    <string name="already_have_account">Already have account?</string>
+    <string name="already_have_account">Already have an account?</string>
     <string name="member_login">Member login.</string>
+    <string name="had_an_account_but">Had an account but</string>
 </resources>
