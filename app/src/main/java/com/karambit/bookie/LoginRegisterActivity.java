@@ -43,15 +43,14 @@ public class LoginRegisterActivity extends AppCompatActivity {
 
         Button startReadingButton =  (Button) findViewById(R.id.startReadingButton);
 
-        final TextView newAccountButton = (TextView) findViewById(R.id.createNewAccountTextView);
-
+        // Bookie font
         SpannableString s = new SpannableString(getResources().getString(R.string.app_name));
         s.setSpan(new TypefaceSpan(this, "autograf.ttf"), 0, s.length(),
                 Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
 
         ((TextView)findViewById(R.id.app_name)).setText(s);
 
-        newAccountButton.setOnClickListener(new View.OnClickListener() {
+        findViewById(R.id.createNewAccountContainer).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
 
@@ -60,7 +59,7 @@ public class LoginRegisterActivity extends AppCompatActivity {
                     findViewById(R.id.surnameContainer).setVisibility(View.VISIBLE);
                     findViewById(R.id.repasswordContainer).setVisibility(View.VISIBLE);
 
-                    newAccountButton.setText(getResources().getString(R.string.login));
+                    ((TextView) findViewById(R.id.createNewAccountTextView)).setText(getResources().getString(R.string.login));
                     ((TextView)findViewById(R.id.noAccountYetTextView)).setText(getResources().getString(R.string.already_have_account));
                     findViewById(R.id.forgotPasswordTextView).setVisibility(View.GONE);
 
@@ -71,7 +70,7 @@ public class LoginRegisterActivity extends AppCompatActivity {
                     findViewById(R.id.surnameContainer).setVisibility(View.GONE);
                     findViewById(R.id.repasswordContainer).setVisibility(View.GONE);
 
-                    newAccountButton.setText(getResources().getString(R.string.create_new_account));
+                    ((TextView) findViewById(R.id.createNewAccountTextView)).setText(getResources().getString(R.string.create_new_account));
                     ((TextView)findViewById(R.id.noAccountYetTextView)).setText(getResources().getString(R.string.no_account_yet));
                     findViewById(R.id.forgotPasswordTextView).setVisibility(View.VISIBLE);
 

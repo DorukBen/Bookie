@@ -212,11 +212,13 @@
             android:orientation="horizontal">
 
             <LinearLayout
+                android:id="@+id/createNewAccountContainer"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
                 android:gravity="start"
                 android:orientation="vertical"
+                android:padding="4dp"
                 >
 
                 <TextView
@@ -248,6 +250,7 @@
                 android:layout_gravity="bottom"
                 android:layout_weight="1"
                 android:gravity="end"
+                android:padding="4dp"
                 android:text="@string/forgot_your_password"
                 android:textColor="@color/primaryTextColor"
                 android:textSize="13sp"/>
