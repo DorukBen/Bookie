@@ -1,5 +1,8 @@
 package com.karambit.bookie;
 
+import android.app.ProgressDialog;
+import android.support.annotation.NonNull;
+import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.text.Spannable;
@@ -13,6 +16,15 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.karambit.bookie.helper.TypefaceSpan;
+import com.karambit.bookie.rest_api.BookieClient;
+import com.karambit.bookie.rest_api.UserApi;
+
+import java.io.IOException;
+
+import okhttp3.ResponseBody;
+import retrofit2.Call;
+import retrofit2.Callback;
+import retrofit2.Response;
 
 public class LoginRegisterActivity extends AppCompatActivity {
 
@@ -20,6 +32,7 @@ public class LoginRegisterActivity extends AppCompatActivity {
     public static final int PASSWORD_LENGTH_MAX = 128;
 
     private boolean mIsLogin = true;
+
     private EditText mNameEditText;
     private EditText mSurnameEditText;
     private EditText mEmailEditText;
@@ -31,9 +44,10 @@ public class LoginRegisterActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_login_register);
 
-        if (getSupportActionBar() != null){
+        if (getSupportActionBar() != null) {
             getSupportActionBar().hide();
         }
+
 
         mNameEditText = (EditText) findViewById(R.id.nameEditText);
         mSurnameEditText = (EditText) findViewById(R.id.surnameEditText);
@@ -41,26 +55,30 @@ public class LoginRegisterActivity extends AppCompatActivity {
         mPasswordEditText = (EditText) findViewById(R.id.passwordEditText);
         mRePasswordEditText = (EditText) findViewById(R.id.repasswordEditText);
 
-        Button startReadingButton =  (Button) findViewById(R.id.startReadingButton);
+        Button startReadingButton = (Button) findViewById(R.id.startReadingButton);
+
 
         // Bookie font
         SpannableString s = new SpannableString(getResources().getString(R.string.app_name));
         s.setSpan(new TypefaceSpan(this, "autograf.ttf"), 0, s.length(),
                 Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
 
-        ((TextView)findViewById(R.id.app_name)).setText(s);
+        ((TextView) findViewById(R.id.app_name)).setText(s);
 
+
+
+        // Switch UI process
         findViewById(R.id.createNewAccountContainer).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
 
-                if(mIsLogin){
+                if (mIsLogin) {
                     findViewById(R.id.nameContainer).setVisibility(View.VISIBLE);
                     findViewById(R.id.surnameContainer).setVisibility(View.VISIBLE);
                     findViewById(R.id.repasswordContainer).setVisibility(View.VISIBLE);
 
                     ((TextView) findViewById(R.id.createNewAccountTextView)).setText(getResources().getString(R.string.login));
-                    ((TextView)findViewById(R.id.noAccountYetTextView)).setText(getResources().getString(R.string.already_have_account));
+                    ((TextView) findViewById(R.id.noAccountYetTextView)).setText(getResources().getString(R.string.already_have_account));
                     findViewById(R.id.forgotPasswordTextView).setVisibility(View.GONE);
 
                     mIsLogin = false;
@@ -71,7 +89,7 @@ public class LoginRegisterActivity extends AppCompatActivity {
                     findViewById(R.id.repasswordContainer).setVisibility(View.GONE);
 
                     ((TextView) findViewById(R.id.createNewAccountTextView)).setText(getResources().getString(R.string.create_new_account));
-                    ((TextView)findViewById(R.id.noAccountYetTextView)).setText(getResources().getString(R.string.no_account_yet));
+                    ((TextView) findViewById(R.id.noAccountYetTextView)).setText(getResources().getString(R.string.no_account_yet));
                     findViewById(R.id.forgotPasswordTextView).setVisibility(View.VISIBLE);
 
                     mIsLogin = true;
@@ -79,14 +97,19 @@ public class LoginRegisterActivity extends AppCompatActivity {
             }
         });
 
+
         startReadingButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
 
                 if (areAllInputsValid()) {
-                    Toast.makeText(LoginRegisterActivity.this, "OK!", Toast.LENGTH_SHORT).show();
-                }
 
+                    if (mIsLogin) {
+                        attemptLogin();
+                    } else {
+                        attemptRegister();
+                    }
+                }
             }
         });
     }
@@ -102,7 +125,7 @@ public class LoginRegisterActivity extends AppCompatActivity {
             ok = false;
             mEmailEditText.setError(getString(R.string.empty_field_message));
 
-        } else if (! Patterns.EMAIL_ADDRESS.matcher(emailText).matches()) {
+        } else if (!Patterns.EMAIL_ADDRESS.matcher(emailText).matches()) {
             ok = false;
             mEmailEditText.setError(getString(R.string.invalid_email_address));
         }
@@ -112,7 +135,7 @@ public class LoginRegisterActivity extends AppCompatActivity {
 
         if (TextUtils.isEmpty(passwordText)) {
             ok = false;
-            mPasswordEditText.setError(getString(R.string.invalid_email_address));
+            mPasswordEditText.setError(getString(R.string.empty_field_message));
 
         } else if (passwordText.length() < PASSWORD_LENGTH_MIN) {
             ok = false;
@@ -124,28 +147,78 @@ public class LoginRegisterActivity extends AppCompatActivity {
         }
 
         // Register checks
-        if (! mIsLogin) {
+        if (!mIsLogin) {
 
             // Name
+            mNameEditText.setText(mNameEditText.getText().toString().trim());
+
             if (TextUtils.isEmpty(mNameEditText.getText())) {
                 ok = false;
                 mNameEditText.setError(getString(R.string.empty_field_message));
             }
 
             // Surname
+            mSurnameEditText.setText(mSurnameEditText.getText().toString().trim());
+
             if (TextUtils.isEmpty(mSurnameEditText.getText())) {
                 ok = false;
                 mSurnameEditText.setError(getString(R.string.empty_field_message));
             }
 
             // rePassword
-            if (! mRePasswordEditText.getText().toString().equals(mPasswordEditText.getText().toString())) {
+            if (!mRePasswordEditText.getText().toString().equals(mPasswordEditText.getText().toString())) {
                 mRePasswordEditText.setError(getString(R.string.passwords_must_be_same));
             }
         }
 
-
-
         return ok;
     }
+
+
+    private void attemptRegister() {
+        final ProgressDialog progressDialog = new ProgressDialog(this);
+        progressDialog.setMessage(getString(R.string.please_wait));
+        progressDialog.setIndeterminate(true);
+        progressDialog.setCancelable(false);
+        progressDialog.show();
+
+
+    }
+
+    private void attemptLogin() {
+        
+        final ProgressDialog progressDialog = new ProgressDialog(this);
+        progressDialog.setMessage(getString(R.string.please_wait));
+        progressDialog.setIndeterminate(true);
+        progressDialog.setCancelable(false);
+        progressDialog.show();
+
+        UserApi userApi = BookieClient.getClient().create(UserApi.class);
+        String email = mEmailEditText.getText().toString();
+        String password = mPasswordEditText.getText().toString();
+        Call<ResponseBody> login = userApi.login(email, password);
+
+        login.enqueue(new Callback<ResponseBody>() {
+            @Override
+            public void onResponse(Call<ResponseBody> call, Response<ResponseBody> response) {
+                progressDialog.dismiss();
+
+                try {
+                    new AlertDialog.Builder(LoginRegisterActivity.this)
+                            .setTitle("Response")
+                            .setMessage(response.body().string())
+                            .create().show();
+                } catch (IOException ignored) {}
+            }
+
+            @Override
+            public void onFailure(Call<ResponseBody> call, Throwable t) {
+                progressDialog.dismiss();
+
+                Toast.makeText(LoginRegisterActivity.this, "There was an error: " + t.getMessage(), Toast.LENGTH_SHORT).show();
+            }
+        });
+
+    }
+
 }

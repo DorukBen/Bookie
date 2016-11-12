@@ -49,4 +49,5 @@
     <string name="password_must_be_longer_than">Password must be longer than %d!</string>
     <string name="password_must_be_shorter_than">Password must be shorter than %d!</string>
     <string name="passwords_must_be_same">Passwords must be same!</string>
+    <string name="please_wait">Please wait…</string>
 </resources>
