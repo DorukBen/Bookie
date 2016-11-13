@@ -1,13 +1,13 @@
 package com.karambit.bookie;
 
 import android.app.ProgressDialog;
-import android.support.annotation.NonNull;
-import android.support.v7.app.AlertDialog;
-import android.support.v7.app.AppCompatActivity;
+import android.content.Intent;
 import android.os.Bundle;
+import android.support.v7.app.AppCompatActivity;
 import android.text.Spannable;
 import android.text.SpannableString;
 import android.text.TextUtils;
+import android.util.Log;
 import android.util.Patterns;
 import android.view.View;
 import android.widget.Button;
@@ -15,9 +15,17 @@ import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.karambit.bookie.helper.DBHandler;
+import com.karambit.bookie.helper.NetworkChecker;
+import com.karambit.bookie.helper.SessionManager;
 import com.karambit.bookie.helper.TypefaceSpan;
+import com.karambit.bookie.model.User;
 import com.karambit.bookie.rest_api.BookieClient;
+import com.karambit.bookie.rest_api.ErrorCodes;
 import com.karambit.bookie.rest_api.UserApi;
+
+import org.json.JSONException;
+import org.json.JSONObject;
 
 import java.io.IOException;
 
@@ -27,6 +35,8 @@ import retrofit2.Callback;
 import retrofit2.Response;
 
 public class LoginRegisterActivity extends AppCompatActivity {
+
+    private static final String TAG = LoginRegisterActivity.class.getSimpleName();
 
     public static final int PASSWORD_LENGTH_MIN = 6;
     public static final int PASSWORD_LENGTH_MAX = 128;
@@ -39,6 +49,8 @@ public class LoginRegisterActivity extends AppCompatActivity {
     private EditText mPasswordEditText;
     private EditText mRePasswordEditText;
 
+    private DBHandler mDBHandler;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -48,6 +60,7 @@ public class LoginRegisterActivity extends AppCompatActivity {
             getSupportActionBar().hide();
         }
 
+        mDBHandler = new DBHandler(this);
 
         mNameEditText = (EditText) findViewById(R.id.nameEditText);
         mSurnameEditText = (EditText) findViewById(R.id.surnameEditText);
@@ -64,7 +77,6 @@ public class LoginRegisterActivity extends AppCompatActivity {
                 Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
 
         ((TextView) findViewById(R.id.app_name)).setText(s);
-
 
 
         // Switch UI process
@@ -102,7 +114,10 @@ public class LoginRegisterActivity extends AppCompatActivity {
             @Override
             public void onClick(View v) {
 
-                if (areAllInputsValid()) {
+                if (!NetworkChecker.isNetworkAvailable(LoginRegisterActivity.this)) {
+                    Toast.makeText(LoginRegisterActivity.this, R.string.no_internet_connection, Toast.LENGTH_SHORT).show();
+
+                } else if (areAllInputsValid()) {
 
                     if (mIsLogin) {
                         attemptLogin();
@@ -167,6 +182,7 @@ public class LoginRegisterActivity extends AppCompatActivity {
 
             // rePassword
             if (!mRePasswordEditText.getText().toString().equals(mPasswordEditText.getText().toString())) {
+                ok = false;
                 mRePasswordEditText.setError(getString(R.string.passwords_must_be_same));
             }
         }
@@ -182,11 +198,67 @@ public class LoginRegisterActivity extends AppCompatActivity {
         progressDialog.setCancelable(false);
         progressDialog.show();
 
+        UserApi userApi = BookieClient.getClient().create(UserApi.class);
+        String nameSurname = mNameEditText.getText().toString() + " " + mSurnameEditText.getText().toString();
+        String email = mEmailEditText.getText().toString();
+        String password = mPasswordEditText.getText().toString();
+        Call<ResponseBody> register = userApi.register(nameSurname, email, password);
 
+        register.enqueue(new Callback<ResponseBody>() {
+            @Override
+            public void onResponse(Call<ResponseBody> call, Response<ResponseBody> response) {
+                progressDialog.dismiss();
+
+                try {
+                    String json = response.body().string();
+
+                    JSONObject responseObject = new JSONObject(json);
+                    boolean error = responseObject.getBoolean("error");
+
+                    if (!error) {
+
+                        JSONObject userObject = responseObject.getJSONObject("user");
+                        User.Details userDetails = User.jsonObjectToUserDetails(userObject);
+
+                        mDBHandler.insertCurrentUser(userDetails);
+                        SessionManager.login(LoginRegisterActivity.this);
+
+                        startActivity(new Intent(LoginRegisterActivity.this, MainActivity.class));
+
+                        Log.i(TAG, "Registered!");
+
+                    } else {
+
+                        int errorCode = responseObject.getInt("error_code");
+
+                        if (errorCode == ErrorCodes.EMAIL_TAKEN) {
+                            mEmailEditText.setError(getString(R.string.email_taken));
+                        } else {
+                            Toast.makeText(LoginRegisterActivity.this, R.string.unknown_error, Toast.LENGTH_SHORT).show();
+                            Log.e(TAG, "onResponse: errorCode = " + errorCode);
+                        }
+                    }
+
+                } catch (IOException | JSONException e) {
+                    e.printStackTrace();
+
+                    Toast.makeText(LoginRegisterActivity.this, R.string.unknown_error, Toast.LENGTH_SHORT).show();
+                }
+            }
+
+            @Override
+            public void onFailure(Call<ResponseBody> call, Throwable t) {
+                progressDialog.dismiss();
+
+                Log.e(TAG, "Register onFailure: " + t.getMessage());
+
+                Toast.makeText(LoginRegisterActivity.this, R.string.unknown_error, Toast.LENGTH_SHORT).show();
+            }
+        });
     }
 
     private void attemptLogin() {
-        
+
         final ProgressDialog progressDialog = new ProgressDialog(this);
         progressDialog.setMessage(getString(R.string.please_wait));
         progressDialog.setIndeterminate(true);
@@ -204,21 +276,58 @@ public class LoginRegisterActivity extends AppCompatActivity {
                 progressDialog.dismiss();
 
                 try {
-                    new AlertDialog.Builder(LoginRegisterActivity.this)
-                            .setTitle("Response")
-                            .setMessage(response.body().string())
-                            .create().show();
-                } catch (IOException ignored) {}
+                    String json = response.body().string();
+
+                    JSONObject responseObject = new JSONObject(json);
+                    boolean error = responseObject.getBoolean("error");
+
+                    if (!error) {
+                        User.Details userDetails = User.jsonObjectToUserDetails(responseObject.getJSONObject("user"));
+
+                        mDBHandler.insertCurrentUser(userDetails);
+                        SessionManager.login(LoginRegisterActivity.this);
+
+                        startActivity(new Intent(LoginRegisterActivity.this, MainActivity.class));
+
+                        Log.i(TAG, "Logged in!");
+
+                    } else {
+
+                        int errorCode = responseObject.getInt("error_code");
+
+                        switch (errorCode) {
+
+                            case ErrorCodes.EMAIL_NOT_FOUND:
+                                mEmailEditText.setError(getString(R.string.email_not_found, getString(R.string.app_name)));
+                                break;
+
+                            case ErrorCodes.FALSE_COMBINATION:
+                                mPasswordEditText.setError(getString(R.string.false_combination));
+                                break;
+
+                            default:
+                                Toast.makeText(LoginRegisterActivity.this, R.string.unknown_error, Toast.LENGTH_SHORT).show();
+                                Log.e(TAG, "onResponse: errorCode = " + errorCode);
+                        }
+                    }
+
+                } catch (IOException | JSONException e) {
+                    e.printStackTrace();
+
+                    Toast.makeText(LoginRegisterActivity.this, R.string.unknown_error, Toast.LENGTH_SHORT).show();
+                }
             }
 
             @Override
             public void onFailure(Call<ResponseBody> call, Throwable t) {
                 progressDialog.dismiss();
 
-                Toast.makeText(LoginRegisterActivity.this, "There was an error: " + t.getMessage(), Toast.LENGTH_SHORT).show();
+                Log.e(TAG, "Login onFailure: " + t.getMessage());
+
+                Toast.makeText(LoginRegisterActivity.this, R.string.unknown_error, Toast.LENGTH_SHORT).show();
             }
         });
-
     }
+
 
 }

@@ -1,16 +1,15 @@
 package com.karambit.bookie;
 
 import android.content.Intent;
+import android.os.Bundle;
 import android.support.v4.app.Fragment;
 import android.support.v4.view.ViewCompat;
 import android.support.v4.view.ViewPager;
 import android.support.v7.app.ActionBar;
 import android.support.v7.app.AppCompatActivity;
-import android.os.Bundle;
 import android.text.Spannable;
 import android.text.SpannableString;
 import android.text.style.AbsoluteSizeSpan;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.ImageView;
@@ -20,6 +19,7 @@ import com.karambit.bookie.fragment.HomeFragment;
 import com.karambit.bookie.fragment.MessageFragment;
 import com.karambit.bookie.fragment.ProfileFragment;
 import com.karambit.bookie.fragment.SearchFragment;
+import com.karambit.bookie.helper.SessionManager;
 import com.karambit.bookie.helper.TabFactory;
 import com.karambit.bookie.helper.TypefaceSpan;
 import com.karambit.bookie.helper.ViewPagerAdapter;
@@ -51,7 +51,10 @@ public class MainActivity extends AppCompatActivity implements TabHost.OnTabChan
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        startActivity(new Intent(this, LoginRegisterActivity.class));
+        if (! SessionManager.isLoggedIn(this)) {
+            startActivity(new Intent(this, LoginRegisterActivity.class));
+            finish();
+        }
 
         //Changes action bar font style by getting font.ttf from assets/fonts action bars font style doesn't
         // change from styles.xml
@@ -170,8 +173,6 @@ public class MainActivity extends AppCompatActivity implements TabHost.OnTabChan
         }
 
         mAcitonBar.setElevation(mElevations[pos]);
-
-        Log.d(TAG, "onTabChanged: Elevation = " + mElevations[pos]);
     }
 
     public void setActionBarElevation(float dp, int tabIndex) {

@@ -6,12 +6,15 @@ import android.support.annotation.Nullable;
 
 import com.karambit.bookie.helper.ImageLinkSource;
 
+import org.json.JSONException;
+import org.json.JSONObject;
+
 import java.util.ArrayList;
 import java.util.Random;
 
 /**
  * Created by Orcan on 8/2/2016.
- *
+ * <p>
  * All user information will held by this Class.
  */
 public class User implements Parcelable {
@@ -67,6 +70,31 @@ public class User implements Parcelable {
             return new User[size];
         }
     };
+
+    public static User.Details jsonObjectToUserDetails(JSONObject userJsonObject) {
+        try {
+            return new User(
+                    userJsonObject.getInt("user_id"),
+                    userJsonObject.getString("name_surname"),
+                    userJsonObject.getString("profile_picture_url"),
+                    userJsonObject.getString("profile_picture_thumbnail_url"),
+                    userJsonObject.getDouble("latitude"),
+                    userJsonObject.getDouble("longitude")
+            ).new Details(
+                    userJsonObject.getString("password"),
+                    userJsonObject.getString("email"),
+                    userJsonObject.getBoolean("email_verified"),
+                    userJsonObject.getString("bio"),
+                    userJsonObject.getInt("book_counter"),
+                    userJsonObject.getInt("point")
+            );
+
+        } catch (JSONException e) {
+            e.printStackTrace();
+
+            return null;
+        }
+    }
 
     public void setID(int ID) {
         mID = ID;
@@ -278,12 +306,12 @@ public class User implements Parcelable {
 
     /**
      * This class contains all user generator methods
-     *
+     * <p>
      * TODO The "ImageLinkSource.java" must be added to project
      */
     public static class GENERATOR {
 
-        private static final String[] NAMES = new String[] {
+        private static final String[] NAMES = new String[]{
                 "Vinita Vossen",
                 "Tran Matamoros",
                 "Nilsa Laduke",
@@ -308,7 +336,7 @@ public class User implements Parcelable {
 
         private static final String BIO = "Lorem ipsum dolor sit amet, consectetur.";
 
-        public static User generateUser(){
+        public static User generateUser() {
             Random random = new Random();
 
             String name = NAMES[random.nextInt(NAMES.length)];
@@ -318,8 +346,8 @@ public class User implements Parcelable {
             String imageThumbnailUrl = ImageLinkSource.IMAGE_THUMBNAIL_URLS[randomIndex];
 
             return new User(random.nextInt(), name, imageUrl, imageThumbnailUrl,
-                            random.nextDouble() + random.nextInt(180),
-                            random.nextDouble() + random.nextInt(180));
+                    random.nextDouble() + random.nextInt(180),
+                    random.nextDouble() + random.nextInt(180));
         }
 
         public static ArrayList<User> generateUserList(int count) {
@@ -349,7 +377,7 @@ public class User implements Parcelable {
 
 
             return user.new Details("********", name2Email(user.mName), true, BIO, random.nextInt(5),
-                                    random.nextInt(300), currentlyReading, booksReaded, booksOnHand, booksShared);
+                    random.nextInt(300), currentlyReading, booksReaded, booksOnHand, booksShared);
         }
 
         private static String name2Email(String name) {
