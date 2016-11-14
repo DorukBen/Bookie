@@ -223,9 +223,10 @@ public class LoginRegisterActivity extends AppCompatActivity {
                         mDBHandler.insertCurrentUser(userDetails);
                         SessionManager.login(LoginRegisterActivity.this);
 
-                        startActivity(new Intent(LoginRegisterActivity.this, MainActivity.class));
-
                         Log.i(TAG, "Registered!");
+
+                        startActivity(new Intent(LoginRegisterActivity.this, MainActivity.class));
+                        finish();
 
                     } else {
 
@@ -287,9 +288,10 @@ public class LoginRegisterActivity extends AppCompatActivity {
                         mDBHandler.insertCurrentUser(userDetails);
                         SessionManager.login(LoginRegisterActivity.this);
 
-                        startActivity(new Intent(LoginRegisterActivity.this, MainActivity.class));
-
                         Log.i(TAG, "Logged in!");
+
+                        startActivity(new Intent(LoginRegisterActivity.this, MainActivity.class));
+                        finish();
 
                     } else {
 
