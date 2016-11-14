@@ -119,6 +119,7 @@ public class DBHandler extends SQLiteOpenHelper {
                 res.getString(res.getColumnIndex(USER_COLUMN_THUMBNAIL_URL)),
                 res.getDouble(res.getColumnIndex(USER_COLUMN_LATITUDE)),
                 res.getDouble(res.getColumnIndex(USER_COLUMN_LONGITUDE)));
+        res.close();
         return user;
     }
 
@@ -134,12 +135,16 @@ public class DBHandler extends SQLiteOpenHelper {
                 res.getDouble(res.getColumnIndex(USER_COLUMN_LONGITUDE)));
 
 
-        return user.new Details(res.getString(res.getColumnIndex(USER_COLUMN_PASSWORD)),
+        User.Details details = user.new Details(res.getString(res.getColumnIndex(USER_COLUMN_PASSWORD)),
                 res.getString(res.getColumnIndex(USER_COLUMN_EMAIL)),
                 res.getInt(res.getColumnIndex(USER_COLUMN_VERIFIED)) > 0,
                 res.getString(res.getColumnIndex(USER_COLUMN_BIO)),
                 res.getInt(res.getColumnIndex(USER_COLUMN_BOOK_COUNTER)),
                 res.getInt(res.getColumnIndex(USER_COLUMN_POINT)));
+
+        res.close();
+
+        return details;
     }
 
     public int deleteCurrentUser() {
