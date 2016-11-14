@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <RelativeLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
     tools:context="com.karambit.bookie.AddBookActivity">
 
     <com.nirhart.parallaxscroll.views.ParallaxScrollView
@@ -24,14 +24,13 @@
                 android:layout_width="match_parent"
                 android:layout_height="240dp"
                 android:layout_weight="4"
-                android:background="@color/colorPickImage">
+                android:background="@color/secondaryTextColor">
 
                 <ImageView
                     android:id="@+id/addImageButton"
                     android:layout_width="124dp"
                     android:layout_height="124dp"
                     android:layout_centerInParent="true"
-                    android:onClick="onClickAddBookImage"
                     android:src="@drawable/circle"/>
 
                 <ImageView
@@ -40,7 +39,7 @@
                     android:layout_height="wrap_content"
                     android:layout_centerInParent="true"
                     android:src="@drawable/ic_photo_camera_white_48dp"
-                    android:tint="@color/colorPickImage"/>
+                    android:tint="@color/secondaryTextColor"/>
 
                 <LinearLayout
                     android:id="@+id/infoTextLayout"
@@ -62,7 +61,7 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_marginLeft="4dp"
-                        android:text="Add Image"
+                        android:text="@string/add_image"
                         android:textColor="@color/colorPrimary"
                         android:textSize="16sp"
                         android:textStyle="bold"/>
@@ -71,8 +70,7 @@
                 <ImageView
                     android:id="@+id/bookImageImageView"
                     android:layout_width="match_parent"
-                    android:layout_height="match_parent"
-                    android:onClick="onClickAddBookImage"/>
+                    android:layout_height="match_parent"/>
 
             </RelativeLayout>
 
@@ -90,11 +88,13 @@
                     android:layout_marginLeft="24dp"
                     android:layout_marginRight="24dp"
                     android:layout_marginTop="24dp"
-                    android:hint="Book Name"
+                    android:backgroundTint="@color/secondaryTextColor"
+                    android:hint="@string/book_name"
+                    android:inputType="textCapWords"
                     android:singleLine="true"
                     android:textAlignment="center"
-                    android:textColor="#B4B4B4"
-                    android:textColorHint="#B4B4B4"
+                    android:textColor="@color/primaryTextColor"
+                    android:textColorHint="@color/secondaryTextColor"
                     android:textSize="18sp"/>
 
                 <EditText
@@ -104,11 +104,13 @@
                     android:layout_marginLeft="24dp"
                     android:layout_marginRight="24dp"
                     android:layout_marginTop="8dp"
-                    android:hint="Author"
+                    android:backgroundTint="@color/secondaryTextColor"
+                    android:hint="@string/author"
+                    android:inputType="textCapWords"
                     android:singleLine="true"
                     android:textAlignment="center"
-                    android:textColor="#B4B4B4"
-                    android:textColorHint="#B4B4B4"
+                    android:textColor="@color/primaryTextColor"
+                    android:textColorHint="@color/secondaryTextColor"
                     android:textSize="18sp"/>
 
 
@@ -120,8 +122,9 @@
                     android:layout_marginBottom="8dp"
                     android:layout_marginLeft="16dp"
                     android:layout_marginRight="16dp"
-                    android:text="Genre"
-                    android:textColor="#B4B4B4"
+                    android:hint="@string/genre"
+                    android:textColor="@color/primaryTextColor"
+                    android:textColorHint="@color/secondaryTextColor"
                     android:textSize="18sp"/>
             </LinearLayout>
 

@@ -55,4 +55,10 @@
     <string name="false_combination">Wrong password</string>
     <string name="unknown_error">Problem here... Please try again</string>
     <string name="no_internet_connection">No internet connection</string>
+    <string name="pick_image_for_book">Please pick an image for book</string>
+    <string name="select_genre">Please select genre</string>
+    <string name="genre">Genre</string>
+    <string name="author">Author</string>
+    <string name="book_name">Book name</string>
+    <string name="add_image">Add Image</string>
 </resources>
