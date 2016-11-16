@@ -12,6 +12,7 @@ import android.widget.ProgressBar;
 import android.widget.TextView;
 
 import com.bumptech.glide.Glide;
+import com.gigamole.infinitecycleviewpager.HorizontalInfiniteCycleViewPager;
 import com.karambit.bookie.R;
 import com.karambit.bookie.helper.CircleImageView;
 import com.karambit.bookie.helper.LayoutUtils;
@@ -74,12 +75,14 @@ public class ProfileTimelineAdapter extends RecyclerView.Adapter<RecyclerView.Vi
         }
     }
 
-    // TODO Currently reading setup with ViewPager
     private static class CurrentlyReadingViewHolder extends RecyclerView.ViewHolder {
+
+        HorizontalInfiniteCycleViewPager mCycleViewPager;
 
         private CurrentlyReadingViewHolder(View currentlyReadingView) {
             super(currentlyReadingView);
 
+            mCycleViewPager = (HorizontalInfiniteCycleViewPager) currentlyReadingView.findViewById(R.id.hicvp);
         }
     }
 
@@ -258,7 +261,17 @@ public class ProfileTimelineAdapter extends RecyclerView.Adapter<RecyclerView.Vi
 
             case TYPE_CURRENTLY_READING: {
 
-                // TODO Currently Reading ViewPager
+                CurrentlyReadingViewHolder currentlyReadingHolder = (CurrentlyReadingViewHolder) holder;
+
+                HorizontalPagerAdapter adapter = new HorizontalPagerAdapter(mContext, mUserDetails.getCurrentlyReading());
+                currentlyReadingHolder.mCycleViewPager.setAdapter(adapter);
+                currentlyReadingHolder.mCycleViewPager.setOffscreenPageLimit(3);
+                currentlyReadingHolder.mCycleViewPager.setScrollDuration(500);
+                currentlyReadingHolder.mCycleViewPager.setMediumScaled(true);
+                currentlyReadingHolder.mCycleViewPager.setMaxPageScale(0.8F);
+                currentlyReadingHolder.mCycleViewPager.setMinPageScale(0.5F);
+                currentlyReadingHolder.mCycleViewPager.setCenterPageScaleOffset(30.0F);
+                currentlyReadingHolder.mCycleViewPager.setMinPageScaleOffset(5.0F);
 
                 break;
             }
