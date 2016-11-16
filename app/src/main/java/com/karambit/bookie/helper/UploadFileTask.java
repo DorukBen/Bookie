@@ -158,34 +158,45 @@ public class UploadFileTask extends AsyncTask<Void, Integer, Integer> {
     protected void onPostExecute(Integer responseCode) {
         super.onPostExecute(responseCode);
 
-        switch (responseCode) {
+        if (mUploadProgressChangedListener != null) {
 
-            case HttpURLConnection.HTTP_OK:
-                Log.w(TAG, "UploadFilesTask: OK!");
-                break;// fine, go on
+            switch (responseCode) {
 
-            case HttpURLConnection.HTTP_GATEWAY_TIMEOUT:
-                Log.e(TAG, "UploadFilesTask: Gateway timeout");
-                break;// retry
+                case HttpURLConnection.HTTP_OK:
+                    Log.w(TAG, "UploadFilesTask: OK!");
 
-            case HttpURLConnection.HTTP_UNAVAILABLE:
-                Log.e(TAG, "UploadFilesTask: Unavaliable");
-                break;// retry, server is unstable
+                    mUploadProgressChangedListener.onProgressCompleted();
 
-            default:
-                Log.e(TAG, "UploadFilesTask: Unknown reponse code..!");
-                break; // abort
+                    break;// fine, go on
+
+                case HttpURLConnection.HTTP_GATEWAY_TIMEOUT:
+                    Log.e(TAG, "UploadFilesTask: Gateway timeout");
+
+                    mUploadProgressChangedListener.onProgressError();
+
+                    break;// retry
+
+                case HttpURLConnection.HTTP_UNAVAILABLE:
+                    Log.e(TAG, "UploadFilesTask: Unavaliable");
+
+                    mUploadProgressChangedListener.onProgressError();
+
+                    break;// retry, server is unstable
+
+                default:
+                    Log.e(TAG, "UploadFilesTask: Unknown reponse code..!");
+
+                    mUploadProgressChangedListener.onProgressError();
+
+                    break; // abort
+            }
         }
-
-        if (mUploadProgressChangedListener != null){
-            mUploadProgressChangedListener.onProgressCompleted();
-        }
-
     }
 
     public interface UploadProgressChangedListener{
         void onProgressChanged(int progress);
         void onProgressCompleted();
+        void onProgressError();
     }
 
     public void setUploadProgressListener(UploadProgressChangedListener uploadProgressListener){

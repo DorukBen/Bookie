@@ -250,9 +250,9 @@ public class AddBookActivity extends AppCompatActivity {
 
         mProgressDialog = new ProgressDialog(this);
         mProgressDialog.setMessage(getString(R.string.creating_book));
-        mProgressDialog.setIndeterminate(true);
         mProgressDialog.setCancelable(false);
         mProgressDialog.setCanceledOnTouchOutside(false);
+        mProgressDialog.setIndeterminate(true);
         mProgressDialog.show();
 
         // Upload Book image
@@ -291,17 +291,29 @@ public class AddBookActivity extends AppCompatActivity {
                     @Override
                     public void onProgressCompleted() {
                         Log.w(TAG, "Thumbnail upload is OK");
-
                         attemptInsertBook(mSavedBookImageFile.getName(), thumbnailFile.getName());
+                    }
+
+                    @Override
+                    public void onProgressError() {
+                        mProgressDialog.dismiss();
+                        Log.e(TAG, "Thumbnail upload ERROR");
+                        Toast.makeText(AddBookActivity.this, R.string.unknown_error, Toast.LENGTH_SHORT).show();
                     }
                 });
 
                 uftThumbnail.execute();
             }
+
+            @Override
+            public void onProgressError() {
+                mProgressDialog.dismiss();
+                Log.e(TAG, "Image upload ERROR");
+                Toast.makeText(AddBookActivity.this, R.string.unknown_error, Toast.LENGTH_SHORT).show();
+            }
         });
 
         uftImage.execute();
-
     }
 
     private void attemptInsertBook(String bookImageName, String thumbnailName) {
@@ -326,7 +338,8 @@ public class AddBookActivity extends AppCompatActivity {
 
             @Override
             public void onFailure(Call<ResponseBody> call, Throwable t) {
-                
+                mProgressDialog.dismiss();
+                Toast.makeText(AddBookActivity.this, R.string.unknown_error, Toast.LENGTH_SHORT).show();
             }
         });
     }
@@ -431,12 +444,12 @@ public class AddBookActivity extends AppCompatActivity {
         switch (requestCode) {
             case CUSTOM_PERMISSIONS_REQUEST_CODE: {
                 // If request is cancelled, the result arrays are empty.
-                if (grantResults.length > 0
-                        && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
 
                     startActivityForResult(ImagePicker.getPickImageIntent(getBaseContext()), 1);
 
                 } else {
+                    Toast.makeText(this, R.string.permission_request_message, Toast.LENGTH_SHORT).show();
                     finish();
                 }
             }
