@@ -53,7 +53,7 @@
     <string name="email_taken">This email is already in use</string>
     <string name="email_not_found">This email not exists in %s</string>
     <string name="false_combination">Wrong password</string>
-    <string name="unknown_error">Problem here... Please try again</string>
+    <string name="unknown_error">Problem here… Please try again</string>
     <string name="no_internet_connection">No internet connection</string>
     <string name="pick_image_for_book">Please pick an image for book</string>
     <string name="select_genre">Please select genre</string>
@@ -61,4 +61,9 @@
     <string name="author">Author</string>
     <string name="book_name">Book name</string>
     <string name="add_image">Add Image</string>
+    <string name="creating_book">Creating book…</string>
+    <string name="book_has_created">Your book has created!</string>
+    <string name="state_prompt_reading">I am reading this book</string>
+    <string name="state_prompt_open_to_share">I want to share this book</string>
+    <string name="state_prompt_closed_to_share">Just add this book</string>
 </resources>

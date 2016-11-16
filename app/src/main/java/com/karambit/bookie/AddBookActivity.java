@@ -2,6 +2,7 @@ package com.karambit.bookie;
 
 import android.Manifest;
 import android.app.Dialog;
+import android.app.ProgressDialog;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.content.res.Resources;
@@ -34,6 +35,7 @@ import com.karambit.bookie.helper.ImageScaler;
 import com.karambit.bookie.helper.SessionManager;
 import com.karambit.bookie.helper.TypefaceSpan;
 import com.karambit.bookie.helper.UploadFileTask;
+import com.karambit.bookie.model.Book;
 import com.karambit.bookie.model.User;
 import com.karambit.bookie.rest_api.BookApi;
 import com.karambit.bookie.rest_api.BookieClient;
@@ -68,7 +70,10 @@ public class AddBookActivity extends AppCompatActivity {
 
     private int mSelectedGenre = -1;
 
+    private Book.State mSelectedState;
+
     private File mSavedBookImageFile;
+    private ProgressDialog mProgressDialog;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -115,8 +120,54 @@ public class AddBookActivity extends AppCompatActivity {
         findViewById(R.id.doneButton).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
+
                 if (areAllInputsValid()) {
-                    attemptUploadBook();
+
+                    // State prompt dialog
+                    final Dialog statePromptDialog = new Dialog(AddBookActivity.this);
+                    statePromptDialog.setContentView(R.layout.book_state_prompt_dialog);
+
+//                    WindowManager.LayoutParams lp = new WindowManager.LayoutParams();
+//                    Window window = statePromptDialog.getWindow();
+//
+//                    lp.copyFrom(window.getAttributes());
+//                    lp.width = WindowManager.LayoutParams.MATCH_PARENT;
+//                    lp.height = WindowManager.LayoutParams.WRAP_CONTENT;
+//
+//                    window.setAttributes(lp);
+
+                    Button stateReadingButton = (Button) statePromptDialog.findViewById(R.id.stateReadingButton);
+                    Button stateOpenButton = (Button) statePromptDialog.findViewById(R.id.stateOpenToShareButton);
+                    Button stateClosedButton = (Button) statePromptDialog.findViewById(R.id.stateClosedToShareButton);
+
+                    stateReadingButton.setOnClickListener(new View.OnClickListener() {
+                        @Override
+                        public void onClick(View v) {
+                            statePromptDialog.dismiss();
+                            mSelectedState = Book.State.READING;
+                            attemptUploadBook();
+                        }
+                    });
+
+                    stateOpenButton.setOnClickListener(new View.OnClickListener() {
+                        @Override
+                        public void onClick(View v) {
+                            statePromptDialog.dismiss();
+                            mSelectedState = Book.State.OPENED_TO_SHARE;
+                            attemptUploadBook();
+                        }
+                    });
+
+                    stateClosedButton.setOnClickListener(new View.OnClickListener() {
+                        @Override
+                        public void onClick(View v) {
+                            statePromptDialog.dismiss();
+                            mSelectedState = Book.State.CLOSED_TO_SHARE;
+                            attemptUploadBook();
+                        }
+                    });
+
+                    statePromptDialog.show();
                 }
             }
         });
@@ -197,6 +248,13 @@ public class AddBookActivity extends AppCompatActivity {
 
     private void attemptUploadBook() {
 
+        mProgressDialog = new ProgressDialog(this);
+        mProgressDialog.setMessage(getString(R.string.creating_book));
+        mProgressDialog.setIndeterminate(true);
+        mProgressDialog.setCancelable(false);
+        mProgressDialog.setCanceledOnTouchOutside(false);
+        mProgressDialog.show();
+
         // Upload Book image
         String path = mSavedBookImageFile.getPath();
         String imageUrlString = BookieClient.BASE_URL + UPLOAD_IMAGE_URL;
@@ -252,19 +310,23 @@ public class AddBookActivity extends AppCompatActivity {
         BookApi bookApi = BookieClient.getClient().create(BookApi.class);
 
         Call<ResponseBody> call = bookApi.insertBook(userDetails.getEmail(), userDetails.getPassword(), mNameEditText.getText().toString(),
-                /*TODO*/ 1, mAuthorEditText.getText().toString(), mSelectedGenre, userDetails.getUser().getID(),
+                mSelectedState.getStateCode(), mAuthorEditText.getText().toString(), mSelectedGenre, userDetails.getUser().getID(),
                 SERVER_BOOK_IMAGES_FOLDER + bookImageName,
                 SERVER_BOOK_THUMBNAILS_FOLDER + thumbnailName);
 
         call.enqueue(new Callback<ResponseBody>() {
             @Override
             public void onResponse(Call<ResponseBody> call, Response<ResponseBody> response) {
-                Toast.makeText(AddBookActivity.this, "Allahina gurban", Toast.LENGTH_SHORT).show();
+                Log.i(TAG, "Book created");
+
+                mProgressDialog.dismiss();
+                Toast.makeText(AddBookActivity.this, R.string.book_has_created, Toast.LENGTH_SHORT).show();
+                finish();
             }
 
             @Override
             public void onFailure(Call<ResponseBody> call, Throwable t) {
-
+                
             }
         });
     }
@@ -287,7 +349,7 @@ public class AddBookActivity extends AppCompatActivity {
             Toast.makeText(this, getText(R.string.select_genre), Toast.LENGTH_SHORT).show();
         }
 
-        if (! (mSavedBookImageFile != null && mSavedBookImageFile.exists())) {
+        if (!(mSavedBookImageFile != null && mSavedBookImageFile.exists())) {
             ok = false;
             Toast.makeText(this, R.string.pick_image_for_book, Toast.LENGTH_SHORT).show();
         }
@@ -380,4 +442,5 @@ public class AddBookActivity extends AppCompatActivity {
             }
         }
     }
+
 }

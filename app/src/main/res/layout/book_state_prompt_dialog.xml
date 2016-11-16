@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+              android:layout_width="match_parent"
+              android:layout_height="wrap_content"
+              android:orientation="vertical"
+              android:paddingBottom="16dp"
+              android:paddingLeft="32dp"
+              android:paddingRight="32dp"
+              android:paddingTop="16dp">
+
+    <Button
+        android:id="@+id/stateReadingButton"
+        style="@style/Widget.AppCompat.ActionButton"
+        android:layout_width="match_parent"
+        android:layout_height="72dp"
+        android:gravity="center"
+        android:text="@string/state_prompt_reading"
+        android:textColor="@color/primaryTextColor"
+        android:textSize="16sp"/>
+
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:layout_gravity="center"
+        android:background="@color/secondaryTextColor"/>
+
+    <Button
+        android:id="@+id/stateOpenToShareButton"
+        style="@style/Widget.AppCompat.ActionButton"
+        android:layout_width="match_parent"
+        android:layout_height="72dp"
+        android:gravity="center"
+        android:text="@string/state_prompt_open_to_share"
+        android:textColor="@color/primaryTextColor"
+        android:textSize="16sp"/>
+
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:layout_gravity="center"
+        android:background="@color/secondaryTextColor"/>
+
+    <Button
+        android:id="@+id/stateClosedToShareButton"
+        style="@style/Widget.AppCompat.ActionButton"
+        android:layout_width="match_parent"
+        android:layout_height="72dp"
+        android:gravity="center"
+        android:text="@string/state_prompt_closed_to_share"
+        android:textColor="@color/primaryTextColor"
+        android:textSize="16sp"/>
+
+</LinearLayout>
