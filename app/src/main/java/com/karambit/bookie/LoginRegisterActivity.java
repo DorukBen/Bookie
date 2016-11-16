@@ -15,7 +15,6 @@ import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import com.karambit.bookie.helper.DBHandler;
 import com.karambit.bookie.helper.NetworkChecker;
 import com.karambit.bookie.helper.SessionManager;
 import com.karambit.bookie.helper.TypefaceSpan;
@@ -49,8 +48,6 @@ public class LoginRegisterActivity extends AppCompatActivity {
     private EditText mPasswordEditText;
     private EditText mRePasswordEditText;
 
-    private DBHandler mDBHandler;
-
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -59,8 +56,6 @@ public class LoginRegisterActivity extends AppCompatActivity {
         if (getSupportActionBar() != null) {
             getSupportActionBar().hide();
         }
-
-        mDBHandler = new DBHandler(this);
 
         mNameEditText = (EditText) findViewById(R.id.nameEditText);
         mSurnameEditText = (EditText) findViewById(R.id.surnameEditText);
@@ -220,8 +215,7 @@ public class LoginRegisterActivity extends AppCompatActivity {
                         JSONObject userObject = responseObject.getJSONObject("user");
                         User.Details userDetails = User.jsonObjectToUserDetails(userObject);
 
-                        mDBHandler.insertCurrentUser(userDetails);
-                        SessionManager.login(LoginRegisterActivity.this);
+                        SessionManager.login(LoginRegisterActivity.this, userDetails);
 
                         Log.i(TAG, "Registered!");
 
@@ -285,8 +279,7 @@ public class LoginRegisterActivity extends AppCompatActivity {
                     if (!error) {
                         User.Details userDetails = User.jsonObjectToUserDetails(responseObject.getJSONObject("user"));
 
-                        mDBHandler.insertCurrentUser(userDetails);
-                        SessionManager.login(LoginRegisterActivity.this);
+                        SessionManager.login(LoginRegisterActivity.this, userDetails);
 
                         Log.i(TAG, "Logged in!");
 

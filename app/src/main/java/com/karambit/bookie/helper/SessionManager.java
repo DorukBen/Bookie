@@ -3,6 +3,8 @@ package com.karambit.bookie.helper;
 import android.content.Context;
 import android.content.SharedPreferences;
 
+import com.karambit.bookie.model.User;
+
 /**
  * Created by orcan on 11/13/16.
  */
@@ -20,7 +22,7 @@ public class SessionManager {
         return sharedPreferences.getBoolean(IS_LOGGED_IN, false);
     }
 
-    public static void changeLoginStatus(Context context, boolean isLoggedIn) {
+    private static void changeLoginStatus(Context context, boolean isLoggedIn) {
         SharedPreferences sharedPreferences = context.getSharedPreferences(NAME_SHARED_PREFERENCES, Context.MODE_PRIVATE);
         SharedPreferences.Editor editor = sharedPreferences.edit();
         editor.putBoolean(IS_LOGGED_IN, isLoggedIn);
@@ -29,10 +31,12 @@ public class SessionManager {
     }
 
     public static void logout(Context context) {
+        new DBHandler(context).deleteCurrentUser();
         changeLoginStatus(context, false);
     }
 
-    public static void login(Context context) {
+    public static void login(Context context, User.Details userDetails) {
+        new DBHandler(context).insertCurrentUser(userDetails);
         changeLoginStatus(context, true);
     }
 

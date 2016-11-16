@@ -19,7 +19,6 @@ import com.karambit.bookie.fragment.HomeFragment;
 import com.karambit.bookie.fragment.MessageFragment;
 import com.karambit.bookie.fragment.ProfileFragment;
 import com.karambit.bookie.fragment.SearchFragment;
-import com.karambit.bookie.helper.DBHandler;
 import com.karambit.bookie.helper.SessionManager;
 import com.karambit.bookie.helper.TabFactory;
 import com.karambit.bookie.helper.TypefaceSpan;
@@ -164,7 +163,6 @@ public class MainActivity extends AppCompatActivity implements TabHost.OnTabChan
 
             if (pos == 1) {
                 getSupportActionBar().hide();
-                new DBHandler(this).deleteCurrentUser();
                 SessionManager.logout(this);
             } else {
                 getSupportActionBar().show();
