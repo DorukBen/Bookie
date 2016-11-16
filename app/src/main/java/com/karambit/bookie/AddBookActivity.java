@@ -6,6 +6,7 @@ import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.content.res.Resources;
 import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.graphics.Point;
 import android.os.Bundle;
 import android.os.Environment;
@@ -27,10 +28,10 @@ import android.widget.ImageView;
 import android.widget.NumberPicker;
 import android.widget.Toast;
 
-import com.karambit.bookie.helper.DBHandler;
 import com.karambit.bookie.helper.FileNameGenerator;
 import com.karambit.bookie.helper.ImagePicker;
 import com.karambit.bookie.helper.ImageScaler;
+import com.karambit.bookie.helper.SessionManager;
 import com.karambit.bookie.helper.TypefaceSpan;
 import com.karambit.bookie.helper.UploadFileTask;
 import com.karambit.bookie.rest_api.BookieClient;
@@ -44,6 +45,7 @@ public class AddBookActivity extends AppCompatActivity {
     private static final String TAG = AddBookActivity.class.getSimpleName();
 
     private static final String UPLOAD_IMAGE_URL = "upload_book_image.php";
+    private static final String UPLOAD_THUMBNAIL_URL = "upload_book_thumbnail.php";
 
     private static final int CUSTOM_PERMISSIONS_REQUEST_CODE = 123;
 
@@ -56,9 +58,7 @@ public class AddBookActivity extends AppCompatActivity {
 
     private int mSelectedGenre = -1;
 
-    private DBHandler mDBHandler;
-
-    private File mSavedBitmapFile;
+    private File mSavedBookImageFile;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -76,8 +76,6 @@ public class AddBookActivity extends AppCompatActivity {
         if (getSupportActionBar() != null) {
             getSupportActionBar().setTitle(s);
         }
-
-        mDBHandler = new DBHandler(this);
 
         mNameEditText = (EditText) findViewById(R.id.bookNameEditText);
         mAuthorEditText = (EditText) findViewById(R.id.authorEditText);
@@ -119,7 +117,7 @@ public class AddBookActivity extends AppCompatActivity {
                 if (checkPermissions()) {
                     startActivityForResult(ImagePicker.getPickImageIntent(getBaseContext()), 1);
 
-                    Log.d(TAG, "Permissions OK!");
+                    Log.i(TAG, "Permissions OK!");
                 } else {
                     String[] permissions = {
                             Manifest.permission.WRITE_EXTERNAL_STORAGE,
@@ -129,7 +127,7 @@ public class AddBookActivity extends AppCompatActivity {
 
                     ActivityCompat.requestPermissions(AddBookActivity.this, permissions, CUSTOM_PERMISSIONS_REQUEST_CODE);
 
-                    Log.d(TAG, "Permissions NOT OK!");
+                    Log.i(TAG, "Permissions NOT OK!");
                 }
             }
         });
@@ -172,13 +170,14 @@ public class AddBookActivity extends AppCompatActivity {
         if (requestCode == 1) {
             if (resultCode == RESULT_OK) {
                 Bitmap bitmap = ImagePicker.getImageFromResult(getBaseContext(), resultCode, data);
+                Bitmap croppedBitmap = ImageScaler.cropImage(bitmap, 72 / 96f);
 
-                mSavedBitmapFile = saveBitmap(bitmap);
+                mSavedBookImageFile = saveBitmap(croppedBitmap);
 
                 findViewById(R.id.addImageButton).setVisibility(View.GONE);
                 findViewById(R.id.cameraIconImageView).setVisibility(View.GONE);
                 findViewById(R.id.infoTextLayout).setVisibility(View.GONE);
-                ((ImageView) findViewById(R.id.bookImageImageView)).setImageBitmap(ImageScaler.cropImage(bitmap, 72 / 96f));
+                ((ImageView) findViewById(R.id.bookImageImageView)).setImageBitmap(croppedBitmap);
 
                 findViewById(R.id.parallaxLayout).getLayoutParams().height = mScreenWidth * 96 / 72;
                 findViewById(R.id.parallaxLayout).requestLayout();
@@ -187,25 +186,58 @@ public class AddBookActivity extends AppCompatActivity {
     }
 
     private void attemptUploadBook() {
-        String path = mSavedBitmapFile.getPath();
-        String urlString = BookieClient.BASE_URL + UPLOAD_IMAGE_URL;
-        String name = mSavedBitmapFile.getName();
 
-        UploadFileTask uft = new UploadFileTask(path, urlString, name);
+        // Upload Book image
+        String path = mSavedBookImageFile.getPath();
+        String imageUrlString = BookieClient.BASE_URL + UPLOAD_IMAGE_URL;
+        String name = mSavedBookImageFile.getName();
 
-        uft.setUploadProgressListener(new UploadFileTask.UploadProgressChangedListener() {
+        final UploadFileTask uftImage = new UploadFileTask(path, imageUrlString, name);
+
+        uftImage.setUploadProgressListener(new UploadFileTask.UploadProgressChangedListener() {
             @Override
             public void onProgressChanged(int progress) {
-                Log.i(TAG, "progress = " + progress);
+                Log.i(TAG, "Book image upload progress => " + progress + " / 100");
             }
 
             @Override
             public void onProgressCompleted() {
-                Toast.makeText(AddBookActivity.this, "OK", Toast.LENGTH_SHORT).show();
+
+                Log.w(TAG, "Book image upload is OK");
+
+                // Upload Thumbnail of image
+                Bitmap bookImageBitmap = BitmapFactory.decodeFile(mSavedBookImageFile.getAbsolutePath(), new BitmapFactory.Options());
+                Bitmap thumbnailBitmap = Bitmap.createScaledBitmap(bookImageBitmap, 288, 384, true);
+                File thumbnailFile = saveThumbnail(thumbnailBitmap, mSavedBookImageFile.getName());
+
+                String thumbnailUrlString = BookieClient.BASE_URL + UPLOAD_THUMBNAIL_URL;
+
+                UploadFileTask uftThumbnail = new UploadFileTask(thumbnailFile.getPath(), thumbnailUrlString, thumbnailFile.getName());
+
+                uftThumbnail.setUploadProgressListener(new UploadFileTask.UploadProgressChangedListener() {
+                    @Override
+                    public void onProgressChanged(int progress) {
+                        Log.i(TAG, "Thumbnail Upload Progress = " + progress + " / 100");
+                    }
+
+                    @Override
+                    public void onProgressCompleted() {
+                        Log.w(TAG, "Thumbnail upload is OK");
+
+                        attemptInsertBook();
+                    }
+                });
+
+                uftThumbnail.execute();
             }
         });
 
-        uft.execute();
+        uftImage.execute();
+
+    }
+
+    private void attemptInsertBook() {
+
     }
 
     private boolean areAllInputsValid() {
@@ -226,7 +258,7 @@ public class AddBookActivity extends AppCompatActivity {
             Toast.makeText(this, getText(R.string.select_genre), Toast.LENGTH_SHORT).show();
         }
 
-        if (mSavedBitmapFile == null) {
+        if (! (mSavedBookImageFile != null && mSavedBookImageFile.exists())) {
             ok = false;
             Toast.makeText(this, R.string.pick_image_for_book, Toast.LENGTH_SHORT).show();
         }
@@ -238,14 +270,12 @@ public class AddBookActivity extends AppCompatActivity {
 
         String path = Environment.getExternalStorageDirectory().getPath() + File.separator + getString(R.string.app_name) + File.separator;
 
-        Log.w(TAG, "saveBitmap: path = " + path);
-
         File file = new File(path);
         if (!file.exists()) {
             file.mkdir();
         }
 
-        String imageName = FileNameGenerator.generateBookImageName(mDBHandler.getCurrentUserDetails().getEmail());
+        String imageName = FileNameGenerator.generateBookImageName(SessionManager.getCurrentUserDetails(this).getEmail());
 
         FileOutputStream out = null;
         try {
@@ -265,6 +295,37 @@ public class AddBookActivity extends AppCompatActivity {
         }
 
         return new File(path + imageName);
+    }
+
+    private File saveThumbnail(Bitmap thumbnail, String bookImageName) {
+        String path = Environment.getExternalStorageDirectory().getPath() + File.separator +
+                getString(R.string.app_name) + File.separator + ".thumbnails" + File.separator;
+
+        File file = new File(path);
+        if (!file.exists()) {
+            file.mkdir();
+        }
+
+        String thumbnailName = FileNameGenerator.generateBookThumbnailName(bookImageName);
+
+        FileOutputStream out = null;
+        try {
+            out = new FileOutputStream(path + thumbnailName);
+            thumbnail.compress(Bitmap.CompressFormat.PNG, 100, out); // bmp is your Bitmap instance
+            // PNG is a lossless format, the compression factor (100) is ignored
+        } catch (Exception e) {
+            e.printStackTrace();
+        } finally {
+            try {
+                if (out != null) {
+                    out.close();
+                }
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+
+        return new File(path + thumbnailName);
     }
 
     private boolean checkPermissions() {

@@ -118,7 +118,7 @@ public class Book implements Parcelable {
         READ_STOP(1),
         OPEN_TO_SHARE(2),
         CLOSE_TO_SHARE(3),
-        ADD(4);
+        ADD(4);                                                 //TODO TODO TODO
 
         private final int mInteractionCode;
 

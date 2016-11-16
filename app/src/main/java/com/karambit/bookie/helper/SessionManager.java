@@ -40,5 +40,11 @@ public class SessionManager {
         changeLoginStatus(context, true);
     }
 
+    public static User.Details getCurrentUserDetails(Context context) {
+        return new DBHandler(context).getCurrentUserDetails();
+    }
 
+    public static User getCurrentUser(Context context) {
+        return new DBHandler(context).getCurrentUser();
+    }
 }
