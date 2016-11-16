@@ -34,11 +34,18 @@ import com.karambit.bookie.helper.ImageScaler;
 import com.karambit.bookie.helper.SessionManager;
 import com.karambit.bookie.helper.TypefaceSpan;
 import com.karambit.bookie.helper.UploadFileTask;
+import com.karambit.bookie.model.User;
+import com.karambit.bookie.rest_api.BookApi;
 import com.karambit.bookie.rest_api.BookieClient;
 
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+
+import okhttp3.ResponseBody;
+import retrofit2.Call;
+import retrofit2.Callback;
+import retrofit2.Response;
 
 public class AddBookActivity extends AppCompatActivity {
 
@@ -46,6 +53,9 @@ public class AddBookActivity extends AppCompatActivity {
 
     private static final String UPLOAD_IMAGE_URL = "upload_book_image.php";
     private static final String UPLOAD_THUMBNAIL_URL = "upload_book_thumbnail.php";
+
+    public static final String SERVER_BOOK_IMAGES_FOLDER = "http://46.101.171.117/bookie/book_images/";
+    public static final String SERVER_BOOK_THUMBNAILS_FOLDER = "http://46.101.171.117/bookie/book_thumbnails/";
 
     private static final int CUSTOM_PERMISSIONS_REQUEST_CODE = 123;
 
@@ -208,7 +218,7 @@ public class AddBookActivity extends AppCompatActivity {
                 // Upload Thumbnail of image
                 Bitmap bookImageBitmap = BitmapFactory.decodeFile(mSavedBookImageFile.getAbsolutePath(), new BitmapFactory.Options());
                 Bitmap thumbnailBitmap = Bitmap.createScaledBitmap(bookImageBitmap, 288, 384, true);
-                File thumbnailFile = saveThumbnail(thumbnailBitmap, mSavedBookImageFile.getName());
+                final File thumbnailFile = saveThumbnail(thumbnailBitmap, mSavedBookImageFile.getName());
 
                 String thumbnailUrlString = BookieClient.BASE_URL + UPLOAD_THUMBNAIL_URL;
 
@@ -224,7 +234,7 @@ public class AddBookActivity extends AppCompatActivity {
                     public void onProgressCompleted() {
                         Log.w(TAG, "Thumbnail upload is OK");
 
-                        attemptInsertBook();
+                        attemptInsertBook(mSavedBookImageFile.getName(), thumbnailFile.getName());
                     }
                 });
 
@@ -236,8 +246,27 @@ public class AddBookActivity extends AppCompatActivity {
 
     }
 
-    private void attemptInsertBook() {
+    private void attemptInsertBook(String bookImageName, String thumbnailName) {
+        User.Details userDetails = SessionManager.getCurrentUserDetails(this);
 
+        BookApi bookApi = BookieClient.getClient().create(BookApi.class);
+
+        Call<ResponseBody> call = bookApi.insertBook(userDetails.getEmail(), userDetails.getPassword(), mNameEditText.getText().toString(),
+                /*TODO*/ 1, mAuthorEditText.getText().toString(), mSelectedGenre, userDetails.getUser().getID(),
+                SERVER_BOOK_IMAGES_FOLDER + bookImageName,
+                SERVER_BOOK_THUMBNAILS_FOLDER + thumbnailName);
+
+        call.enqueue(new Callback<ResponseBody>() {
+            @Override
+            public void onResponse(Call<ResponseBody> call, Response<ResponseBody> response) {
+                Toast.makeText(AddBookActivity.this, "Allahina gurban", Toast.LENGTH_SHORT).show();
+            }
+
+            @Override
+            public void onFailure(Call<ResponseBody> call, Throwable t) {
+
+            }
+        });
     }
 
     private boolean areAllInputsValid() {
