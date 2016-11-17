@@ -369,7 +369,7 @@ public class User implements Parcelable {
         public static User.Details generateUserDetails(User user) {
             Random random = new Random();
 
-            ArrayList<Book> currentlyReading = Book.GENERATOR.generateBookList(random.nextInt(4));
+            ArrayList<Book> currentlyReading = Book.GENERATOR.generateBookList(random.nextInt(10));
 
             ArrayList<Book> booksOnHand = Book.GENERATOR.generateBookList(random.nextInt(15));
             ArrayList<Book> booksReaded = Book.GENERATOR.generateBookList(random.nextInt(15));

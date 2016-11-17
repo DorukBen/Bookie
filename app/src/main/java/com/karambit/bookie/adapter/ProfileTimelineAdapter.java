@@ -15,6 +15,7 @@ import com.bumptech.glide.Glide;
 import com.karambit.bookie.R;
 import com.karambit.bookie.helper.CircleImageView;
 import com.karambit.bookie.helper.LayoutUtils;
+import com.karambit.bookie.helper.infinite_viewpager.HorizontalInfiniteCycleViewPager;
 import com.karambit.bookie.model.Book;
 import com.karambit.bookie.model.User;
 
@@ -74,12 +75,14 @@ public class ProfileTimelineAdapter extends RecyclerView.Adapter<RecyclerView.Vi
         }
     }
 
-    // TODO Currently reading setup with ViewPager
     private static class CurrentlyReadingViewHolder extends RecyclerView.ViewHolder {
+
+        HorizontalInfiniteCycleViewPager mCycleViewPager;
 
         private CurrentlyReadingViewHolder(View currentlyReadingView) {
             super(currentlyReadingView);
 
+            mCycleViewPager = (HorizontalInfiniteCycleViewPager) currentlyReadingView.findViewById(R.id.hicvp);
         }
     }
 
@@ -258,7 +261,10 @@ public class ProfileTimelineAdapter extends RecyclerView.Adapter<RecyclerView.Vi
 
             case TYPE_CURRENTLY_READING: {
 
-                // TODO Currently Reading ViewPager
+                CurrentlyReadingViewHolder currentlyReadingHolder = (CurrentlyReadingViewHolder) holder;
+
+                HorizontalPagerAdapter adapter = new HorizontalPagerAdapter(mContext, mUserDetails.getCurrentlyReading());
+                currentlyReadingHolder.mCycleViewPager.setAdapter(adapter);
 
                 break;
             }
