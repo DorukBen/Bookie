@@ -2,6 +2,7 @@ package com.karambit.bookie.adapter;
 
 import android.content.Context;
 import android.content.Intent;
+import android.graphics.Bitmap;
 import android.support.v7.widget.RecyclerView;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -11,8 +12,12 @@ import android.widget.ProgressBar;
 import android.widget.TextView;
 
 import com.bumptech.glide.Glide;
+import com.bumptech.glide.request.animation.GlideAnimation;
+import com.bumptech.glide.request.target.SimpleTarget;
 import com.karambit.bookie.BookActivity;
 import com.karambit.bookie.R;
+import com.karambit.bookie.helper.ImageScaler;
+import com.karambit.bookie.helper.infinite_viewpager.HorizontalInfiniteCycleViewPager;
 import com.karambit.bookie.model.Book;
 
 import java.util.ArrayList;
@@ -46,18 +51,12 @@ public class HomeTimelineAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
 
     private static class HeaderViewHolder extends RecyclerView.ViewHolder {
 
-        // TODO Header
-
-        private ImageView mBookImage;
-        private TextView mBookName;
-        private TextView mAuthor;
+        private HorizontalInfiniteCycleViewPager mCycleViewPager;
 
         private HeaderViewHolder(View headerView) {
             super(headerView);
 
-            mBookImage = (ImageView) headerView.findViewById(R.id.bookImageHeaderImageView);
-            mBookName = (TextView) headerView.findViewById(R.id.bookNameHeaderTextView);
-            mAuthor = (TextView) headerView.findViewById(R.id.authorHeaderTextView);
+            mCycleViewPager = (HorizontalInfiniteCycleViewPager) headerView.findViewById(R.id.hicvp);
         }
     }
 
@@ -178,19 +177,9 @@ public class HomeTimelineAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
 
                 HeaderViewHolder headerViewHolder = (HeaderViewHolder) holder;
 
-                // TODO Header
+                HorizontalPagerAdapter adapter = new HorizontalPagerAdapter(mContext, mHeaderBooks);
+                headerViewHolder.mCycleViewPager.setAdapter(adapter);
 
-                Book book = mHeaderBooks.get(0);
-
-                Glide.with(mContext)
-                        .load(book.getThumbnailURL())
-                        .crossFade()
-                        .placeholder(R.drawable.placeholder_book)
-                        .centerCrop()
-                        .into(headerViewHolder.mBookImage);
-
-                headerViewHolder.mBookName.setText(book.getName());
-                headerViewHolder.mAuthor.setText(book.getAuthor());
 
                 break;
             }
@@ -206,7 +195,7 @@ public class HomeTimelineAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
 
             case TYPE_DUAL_BOOK: {
 
-                DualBookViewHolder dualBookViewHolder = (DualBookViewHolder) holder;
+                final DualBookViewHolder dualBookViewHolder = (DualBookViewHolder) holder;
 
                 // Left
                 int leftIndex = getLeftBookIndexForPosition(position);
@@ -224,10 +213,15 @@ public class HomeTimelineAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
 
                 Glide.with(mContext)
                         .load(bookLeft.getImageURL())
-                        .crossFade()
-                        .centerCrop()
+                        .asBitmap()
                         .placeholder(R.drawable.placeholder_book)
-                        .into(dualBookViewHolder.mBookImageLeft);
+                        .into(new SimpleTarget<Bitmap>() {
+                            @Override
+                            public void onResourceReady(Bitmap resource, GlideAnimation<? super Bitmap> glideAnimation) {
+                                Bitmap croppedBitmap = ImageScaler.cropImage(resource, 72 / 96f);
+                                dualBookViewHolder.mBookImageLeft.setImageBitmap(croppedBitmap);
+                            }
+                        });
 
                 dualBookViewHolder.mBookNameLeft.setText(bookLeft.getName());
                 dualBookViewHolder.mAuthorLeft.setText(bookLeft.getAuthor());

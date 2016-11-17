@@ -12,10 +12,10 @@ import android.widget.ProgressBar;
 import android.widget.TextView;
 
 import com.bumptech.glide.Glide;
-import com.gigamole.infinitecycleviewpager.HorizontalInfiniteCycleViewPager;
 import com.karambit.bookie.R;
 import com.karambit.bookie.helper.CircleImageView;
 import com.karambit.bookie.helper.LayoutUtils;
+import com.karambit.bookie.helper.infinite_viewpager.HorizontalInfiniteCycleViewPager;
 import com.karambit.bookie.model.Book;
 import com.karambit.bookie.model.User;
 
@@ -265,13 +265,6 @@ public class ProfileTimelineAdapter extends RecyclerView.Adapter<RecyclerView.Vi
 
                 HorizontalPagerAdapter adapter = new HorizontalPagerAdapter(mContext, mUserDetails.getCurrentlyReading());
                 currentlyReadingHolder.mCycleViewPager.setAdapter(adapter);
-                currentlyReadingHolder.mCycleViewPager.setOffscreenPageLimit(3);
-                currentlyReadingHolder.mCycleViewPager.setScrollDuration(500);
-                currentlyReadingHolder.mCycleViewPager.setMediumScaled(true);
-                currentlyReadingHolder.mCycleViewPager.setMaxPageScale(0.8F);
-                currentlyReadingHolder.mCycleViewPager.setMinPageScale(0.5F);
-                currentlyReadingHolder.mCycleViewPager.setCenterPageScaleOffset(30.0F);
-                currentlyReadingHolder.mCycleViewPager.setMinPageScaleOffset(5.0F);
 
                 break;
             }

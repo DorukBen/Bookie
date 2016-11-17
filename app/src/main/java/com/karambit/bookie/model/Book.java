@@ -3,8 +3,6 @@ package com.karambit.bookie.model;
 import android.os.Parcel;
 import android.os.Parcelable;
 
-import com.karambit.bookie.helper.ImageLinkSource;
-
 import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -471,6 +469,31 @@ public class Book implements Parcelable {
      * TODO The "ImageLinkSource.java" must be added to project
      */
     public static class GENERATOR {
+
+        private static final String[] BOOK_IMAGE_URLS = new String[] {
+                "https://s-media-cache-ak0.pinimg.com/236x/0b/25/55/0b2555245e181c4ddee446d42c830eb1.jpg",
+                "https://s-media-cache-ak0.pinimg.com/236x/6b/8a/ab/6b8aab839ccb7b6221a4f885eacaa2d0.jpg",
+                "https://s-media-cache-ak0.pinimg.com/236x/cb/35/ce/cb35ce56998dd787890b6424677eb7f9.jpg",
+                "http://i1.nyt.com/images/2015/12/09/books/review/09cover-kl/09cover-kl-blog480-v3.jpg",
+                "http://tgoodman.com/images/portfolio/wolf2.jpg",
+                "http://tgoodman.com/images/portfolio/wolf2.jpg",
+                "https://image.freepik.com/free-vector/book-cover-with-polygonal-design_1048-1413.jpg",
+                "http://designgrapher.com/wp-content/uploads/2013/10/book-cover-design-ideas3.jpg",
+                "https://s-media-cache-ak0.pinimg.com/originals/f2/a8/fe/f2a8fe32c3a11ffbe26a1ccf7c119b38.jpg",
+                "https://s-media-cache-ak0.pinimg.com/236x/c1/52/56/c15256d64cce734ece94c5011a1ef6a6.jpg",
+                "https://www.wired.com/wp-content/uploads/2014/08/pm-frac.jpg",
+                "https://www.wired.com/wp-content/uploads/2014/08/pm-nesbo.jpg",
+                "https://www.wired.com/wp-content/uploads/2014/08/pm-foucault.jpg",
+                "https://www.wired.com/wp-content/uploads/2014/08/pm-crime.jpg",
+                "https://s-media-cache-ak0.pinimg.com/236x/46/3c/cf/463ccf4a27abba252e57259b9b0fef7c.jpg",
+                "http://67.media.tumblr.com/tumblr_lhge766TWo1qz6f9yo1_500.jpg",
+                "https://s-media-cache-ak0.pinimg.com/236x/aa/4c/4c/aa4c4c4c952202a0ba1fd4b2eaf6d74c.jpg",
+                "https://mir-s3-cdn-cf.behance.net/projects/404/f3533838512253.Y3JvcCwxNzExLDEzMzgsNDA2LDU1.jpg",
+                "http://ecx.images-amazon.com/images/I/41HZAjABEPL._SL500_AA300_.jpg",
+                "https://d3by36x8sj6cra.cloudfront.net/assets/images/book/large/9780/7493/9780749397050.jpg",
+                "https://d2npbuaakacvlz.cloudfront.net/images/uploaded/large-present/2013/3/8/umberto-eco-1362765138.jpg"
+        };
+
         private static final String[] NAMES = new String[] {
                 "Vinita Vossen",
                 "Tran Matamoros",
@@ -524,9 +547,9 @@ public class Book implements Parcelable {
             String bookName = BOOK_NAMES[random.nextInt(BOOK_NAMES.length)];
             State state = State.values()[random.nextInt(State.values().length)];
 
-            int randomIndex = random.nextInt(ImageLinkSource.IMAGE_THUMBNAIL_URLS.length);
-            String bookImageUrl = ImageLinkSource.IMAGE_URLS[randomIndex];
-            String bookThumbnailUrl = ImageLinkSource.IMAGE_THUMBNAIL_URLS[randomIndex];
+            int randomIndex = random.nextInt(BOOK_IMAGE_URLS.length);
+            String bookImageUrl = BOOK_IMAGE_URLS[randomIndex];
+            String bookThumbnailUrl = BOOK_IMAGE_URLS[randomIndex];
 
             return new Book(random.nextInt(), bookName, bookImageUrl, bookThumbnailUrl, author, state, owner);
         }

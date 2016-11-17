@@ -1,11 +1,11 @@
 package com.karambit.bookie.adapter;
 
 import android.content.Context;
+import android.database.DataSetObserver;
 import android.support.v4.view.PagerAdapter;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.TextView;
 
@@ -70,5 +70,13 @@ public class HorizontalPagerAdapter extends PagerAdapter {
     @Override
     public void destroyItem(final ViewGroup container, final int position, final Object object) {
         container.removeView((View) object);
+    }
+
+
+    @Override
+    public void unregisterDataSetObserver(DataSetObserver observer) {
+        if (observer != null) {
+            super.unregisterDataSetObserver(observer);
+        }
     }
 }
