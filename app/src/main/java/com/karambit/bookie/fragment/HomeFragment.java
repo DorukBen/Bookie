@@ -13,9 +13,23 @@ import com.karambit.bookie.MainActivity;
 import com.karambit.bookie.R;
 import com.karambit.bookie.adapter.HomeTimelineAdapter;
 import com.karambit.bookie.helper.ElevationScrollListener;
+import com.karambit.bookie.helper.NetworkChecker;
+import com.karambit.bookie.helper.SessionManager;
 import com.karambit.bookie.model.Book;
+import com.karambit.bookie.model.User;
+import com.karambit.bookie.rest_api.BookApi;
+import com.karambit.bookie.rest_api.BookieClient;
 
+import org.json.JSONException;
+import org.json.JSONObject;
+
+import java.io.IOException;
 import java.util.ArrayList;
+
+import okhttp3.ResponseBody;
+import retrofit2.Call;
+import retrofit2.Callback;
+import retrofit2.Response;
 
 /**
  * A simple {@link Fragment} subclass.
@@ -47,21 +61,13 @@ public class HomeFragment extends Fragment {
 
         mRecyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
 
-        HomeTimelineAdapter adapter = new HomeTimelineAdapter(
-                getContext(),
-                Book.GENERATOR.generateBookList(3),
-                Book.GENERATOR.generateBookList(20)
-        );
-
-        mRecyclerView.setAdapter(adapter);
-
         return rootView;
     }
 
     @Override
     public void onResume() {
         super.onResume();
-/*
+
         if (NetworkChecker.isNetworkAvailable(getContext())) {
 
             User.Details currentUserDetails = SessionManager.getCurrentUserDetails(getContext());
@@ -78,41 +84,53 @@ public class HomeFragment extends Fragment {
                     try {
                         JSONObject responseObject = new JSONObject(response.body().string());
 
-                        if (responseObject.getBoolean("error")) {
+                        if (!responseObject.getBoolean("error")) {
 
                             // Suggested books
-                            for (int i = 0; i < responseObject.getJSONArray("suggested_books").length(); i++) {
+                            ArrayList<Book> suggestedBooks =
+                                    Book.jsonArrayToBookList(responseObject.getJSONArray("suggested_books"));
 
-                                JSONObject bookObject = responseObject.getJSONArray("suggested_books").getJSONObject(i);
+                            // List books
+                            ArrayList<Book> listBooks =
+                                    Book.jsonArrayToBookList(responseObject.getJSONArray("book_list"));
 
+                            // TODO List content control
+
+                            mSuggestedBooks = suggestedBooks;
+                            mListBooks = listBooks;
+
+                            // Update RecyclerView
+                            if (mRecyclerView.getAdapter() == null) {
+                                mRecyclerView.setAdapter(new HomeTimelineAdapter(getContext(), mSuggestedBooks, mListBooks));
+                            } else {
+                                HomeTimelineAdapter adapter = (HomeTimelineAdapter) mRecyclerView.getAdapter();
+                                adapter.setHeaderBooks(mSuggestedBooks);
+                                adapter.setFeedBooks(mListBooks);
+                                adapter.notifyDataSetChanged();
                             }
 
                         } else {
                             int errorCode = responseObject.getInt("error_code");
-                            //TODO
+
+                            //TODO Error handling
                         }
 
                     } catch (JSONException | IOException e) {
                         e.printStackTrace();
-                    }
 
-                    if (mSuggestedBooks == null && mListBooks == null) {
-
+                        //TODO Error handling
                     }
                 }
 
                 @Override
                 public void onFailure(Call<ResponseBody> call, Throwable t) {
-
+                    //TODO Error handling
                 }
             });
         } else {
 
-            if (mSuggestedBooks == null && mListBooks == null) {
+            //TODO Error handling
 
-                // TODO No connection empty screen
-            }
         }
-        */
     }
 }

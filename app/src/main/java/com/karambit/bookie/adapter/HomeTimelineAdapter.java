@@ -291,4 +291,20 @@ public class HomeTimelineAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
 
         return ((position - 2) * 2);
     }
+
+    public ArrayList<Book> getHeaderBooks() {
+        return mHeaderBooks;
+    }
+
+    public void setHeaderBooks(ArrayList<Book> headerBooks) {
+        mHeaderBooks = headerBooks;
+    }
+
+    public ArrayList<Book> getFeedBooks() {
+        return mFeedBooks;
+    }
+
+    public void setFeedBooks(ArrayList<Book> feedBooks) {
+        mFeedBooks = feedBooks;
+    }
 }
