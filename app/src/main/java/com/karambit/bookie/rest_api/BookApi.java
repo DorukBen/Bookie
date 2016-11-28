@@ -23,4 +23,10 @@ public interface BookApi {
                                   @Field("added_by") int addedBy,
                                   @Field("book_picture_url") String bookPictureUrl,
                                   @Field("book_picture_thumbnail_url") String thumbnailUrl);
+
+    @FormUrlEncoded
+    @POST("get_suggested_books.php")
+    Call<ResponseBody> fetchHomePage(@Field("email") String email,
+                                     @Field("password") String password,
+                                     @Field("user_id") int userID);
 }
