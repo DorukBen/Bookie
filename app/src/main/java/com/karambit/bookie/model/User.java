@@ -96,8 +96,8 @@ public class User implements Parcelable {
                     userJsonObject.getString("name_surname"),
                     userJsonObject.getString("profile_picture_url"),
                     userJsonObject.getString("profile_picture_thumbnail_url"),
-                    userJsonObject.getDouble("latitude"),
-                    userJsonObject.getDouble("longitude")
+                    userJsonObject.isNull("latitude") ? -1 : userJsonObject.getDouble("latitude"),
+                    userJsonObject.isNull("longitude") ? -1 : userJsonObject.getDouble("longitude")
             );
         } catch (JSONException e) {
             e.printStackTrace();

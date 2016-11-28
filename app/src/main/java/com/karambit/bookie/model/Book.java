@@ -185,8 +185,7 @@ public class Book implements Parcelable {
     public static Book.Details jsonObjectToBookDetails(JSONObject bookDetailsObject) {
         try {
             Book book = jsonObjectToBook(bookDetailsObject);
-            User added_by = null;
-            added_by = User.jsonObjectToUser(bookDetailsObject.getJSONObject("added_by"));
+            User added_by = User.jsonObjectToUser(bookDetailsObject.getJSONObject("added_by"));
 
             return book.new Details(bookDetailsObject.getInt("genre_code"),
                                     added_by,
@@ -198,18 +197,18 @@ public class Book implements Parcelable {
     }
 
     public static ArrayList<Book> jsonArrayToBookList(JSONArray bookJsonArray) {
-        try {
             ArrayList<Book> books = new ArrayList<>(bookJsonArray.length());
             for (int i = 0; i < bookJsonArray.length(); i++) {
-                JSONObject bookObject = bookJsonArray.getJSONObject(i);
-                books.add(jsonObjectToBook(bookObject));
+                try {
+                    JSONObject bookObject = bookJsonArray.getJSONObject(i);
+                    books.add(jsonObjectToBook(bookObject));
+                } catch (JSONException e) {
+                    e.printStackTrace();
+                }
             }
             return books;
-            
-        } catch (JSONException e) {
-            e.printStackTrace();
-            return null;
-        }
+
+
     }
 
     public int getID() {

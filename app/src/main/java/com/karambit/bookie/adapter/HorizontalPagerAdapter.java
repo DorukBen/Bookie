@@ -47,12 +47,21 @@ public class HorizontalPagerAdapter extends PagerAdapter {
 
         ImageView bookImage = (ImageView) view.findViewById(R.id.bookImageInfiniteCycle);
 
-        Glide.with(mContext)
-                .load(mBooks.get(position).getThumbnailURL())
-                .asBitmap()
-                .centerCrop()
-                .placeholder(R.drawable.placeholder_book)
-                .into(bookImage);
+        String thumbnailURL = mBooks.get(position).getThumbnailURL();
+        if (thumbnailURL != null) {
+            Glide.with(mContext)
+                 .load(thumbnailURL)
+                 .asBitmap()
+                 .centerCrop()
+                 .placeholder(R.drawable.placeholder_book)
+                 .into(bookImage);
+        } else {
+            Glide.with(mContext)
+                 .load(R.drawable.placeholder_book)
+                 .asBitmap()
+                 .centerCrop()
+                 .into(bookImage);
+        }
 
         ((TextView)view.findViewById(R.id.bookNameInfiniteCycleTextView)).setText(mBooks.get(position).getName());
         ((TextView)view.findViewById(R.id.authorInfiniteCycleTextView)).setText(mBooks.get(position).getAuthor());

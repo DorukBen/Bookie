@@ -180,7 +180,6 @@ public class HomeTimelineAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
                 HorizontalPagerAdapter adapter = new HorizontalPagerAdapter(mContext, mHeaderBooks);
                 headerViewHolder.mCycleViewPager.setAdapter(adapter);
 
-
                 break;
             }
 
