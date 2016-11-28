@@ -15,6 +15,8 @@ import com.karambit.bookie.adapter.HomeTimelineAdapter;
 import com.karambit.bookie.helper.ElevationScrollListener;
 import com.karambit.bookie.model.Book;
 
+import java.util.ArrayList;
+
 /**
  * A simple {@link Fragment} subclass.
  */
@@ -22,6 +24,11 @@ public class HomeFragment extends Fragment {
 
     public static final int HOME_FRAGMENT_TAB_INEX = 0;
 
+    public static final int REFRESH_INTERVAL_HOURS = 12;
+
+    private ArrayList<Book> mSuggestedBooks;
+    private ArrayList<Book> mListBooks;
+    private RecyclerView mRecyclerView;
 
     public HomeFragment() {
         // Required empty public constructor
@@ -34,11 +41,11 @@ public class HomeFragment extends Fragment {
         // Inflate the layout for this fragment
         View rootView = inflater.inflate(R.layout.fragment_home, container, false);
 
-        RecyclerView recyclerView = (RecyclerView) rootView.findViewById(R.id.homeRecyclerView);
+        mRecyclerView = (RecyclerView) rootView.findViewById(R.id.homeRecyclerView);
 
-        recyclerView.setOnScrollListener(new ElevationScrollListener((MainActivity) getActivity(), HOME_FRAGMENT_TAB_INEX));
+        mRecyclerView.setOnScrollListener(new ElevationScrollListener((MainActivity) getActivity(), HOME_FRAGMENT_TAB_INEX));
 
-        recyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
+        mRecyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
 
         HomeTimelineAdapter adapter = new HomeTimelineAdapter(
                 getContext(),
@@ -46,9 +53,66 @@ public class HomeFragment extends Fragment {
                 Book.GENERATOR.generateBookList(20)
         );
 
-        recyclerView.setAdapter(adapter);
+        mRecyclerView.setAdapter(adapter);
 
         return rootView;
     }
 
+    @Override
+    public void onResume() {
+        super.onResume();
+/*
+        if (NetworkChecker.isNetworkAvailable(getContext())) {
+
+            User.Details currentUserDetails = SessionManager.getCurrentUserDetails(getContext());
+            String email = currentUserDetails.getEmail();
+            String password = currentUserDetails.getPassword();
+            int userID = currentUserDetails.getUser().getID();
+
+            BookApi bookApi = BookieClient.getClient().create(BookApi.class);
+            Call<ResponseBody> homePageCall = bookApi.fetchHomePage(email, password, userID);
+            homePageCall.enqueue(new Callback<ResponseBody>() {
+                @Override
+                public void onResponse(Call<ResponseBody> call, Response<ResponseBody> response) {
+
+                    try {
+                        JSONObject responseObject = new JSONObject(response.body().string());
+
+                        if (responseObject.getBoolean("error")) {
+
+                            // Suggested books
+                            for (int i = 0; i < responseObject.getJSONArray("suggested_books").length(); i++) {
+
+                                JSONObject bookObject = responseObject.getJSONArray("suggested_books").getJSONObject(i);
+
+                            }
+
+                        } else {
+                            int errorCode = responseObject.getInt("error_code");
+                            //TODO
+                        }
+
+                    } catch (JSONException | IOException e) {
+                        e.printStackTrace();
+                    }
+
+                    if (mSuggestedBooks == null && mListBooks == null) {
+
+                    }
+                }
+
+                @Override
+                public void onFailure(Call<ResponseBody> call, Throwable t) {
+
+                }
+            });
+        } else {
+
+            if (mSuggestedBooks == null && mListBooks == null) {
+
+                // TODO No connection empty screen
+            }
+        }
+        */
+    }
 }

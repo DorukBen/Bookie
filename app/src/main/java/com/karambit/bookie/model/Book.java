@@ -3,6 +3,10 @@ package com.karambit.bookie.model;
 import android.os.Parcel;
 import android.os.Parcelable;
 
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
+
 import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -160,6 +164,51 @@ public class Book implements Parcelable {
 
         public int getRequestCode() {
             return mRequestCode;
+        }
+    }
+
+    public static Book jsonObjectToBook(JSONObject bookObject) {
+        try {
+            return new Book(bookObject.getInt("book_id"),
+                            bookObject.getString("book_name"),
+                            bookObject.getString("book_picture_url"),
+                            bookObject.getString("book_picture_thumbnail_url"),
+                            bookObject.getString("author"),
+                            State.valueOf(bookObject.getInt("book_state")),
+                            User.jsonObjectToUser(bookObject.getJSONObject("owner")));
+        } catch (JSONException e) {
+            e.printStackTrace();
+            return null;
+        }
+    }
+
+    public static Book.Details jsonObjectToBookDetails(JSONObject bookDetailsObject) {
+        try {
+            Book book = jsonObjectToBook(bookDetailsObject);
+            User added_by = null;
+            added_by = User.jsonObjectToUser(bookDetailsObject.getJSONObject("added_by"));
+
+            return book.new Details(bookDetailsObject.getInt("genre_code"),
+                                    added_by,
+                                    null); // TODO book process api
+        } catch (JSONException e) {
+            e.printStackTrace();
+            return null;
+        }
+    }
+
+    public static ArrayList<Book> jsonArrayToBookList(JSONArray bookJsonArray) {
+        try {
+            ArrayList<Book> books = new ArrayList<>(bookJsonArray.length());
+            for (int i = 0; i < bookJsonArray.length(); i++) {
+                JSONObject bookObject = bookJsonArray.getJSONObject(i);
+                books.add(jsonObjectToBook(bookObject));
+            }
+            return books;
+            
+        } catch (JSONException e) {
+            e.printStackTrace();
+            return null;
         }
     }
 
@@ -470,7 +519,7 @@ public class Book implements Parcelable {
      */
     public static class GENERATOR {
 
-        private static final String[] BOOK_IMAGE_URLS = new String[] {
+        private static final String[] BOOK_IMAGE_URLS = new String[]{
                 "https://s-media-cache-ak0.pinimg.com/236x/0b/25/55/0b2555245e181c4ddee446d42c830eb1.jpg",
                 "https://s-media-cache-ak0.pinimg.com/236x/6b/8a/ab/6b8aab839ccb7b6221a4f885eacaa2d0.jpg",
                 "https://s-media-cache-ak0.pinimg.com/236x/cb/35/ce/cb35ce56998dd787890b6424677eb7f9.jpg",
@@ -494,7 +543,7 @@ public class Book implements Parcelable {
                 "https://d2npbuaakacvlz.cloudfront.net/images/uploaded/large-present/2013/3/8/umberto-eco-1362765138.jpg"
         };
 
-        private static final String[] NAMES = new String[] {
+        private static final String[] NAMES = new String[]{
                 "Vinita Vossen",
                 "Tran Matamoros",
                 "Nilsa Laduke",
@@ -517,7 +566,7 @@ public class Book implements Parcelable {
                 "Rosalba Behnke"
         };
 
-        private static final String[] BOOK_NAMES = new String[] {
+        private static final String[] BOOK_NAMES = new String[]{
                 "Raven Of The Forsaken",
                 "Raven With Gold",
                 "Snakes Without Sin",

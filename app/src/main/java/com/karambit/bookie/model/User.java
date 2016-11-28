@@ -73,14 +73,7 @@ public class User implements Parcelable {
 
     public static User.Details jsonObjectToUserDetails(JSONObject userJsonObject) {
         try {
-            return new User(
-                    userJsonObject.getInt("user_id"),
-                    userJsonObject.getString("name_surname"),
-                    userJsonObject.getString("profile_picture_url"),
-                    userJsonObject.getString("profile_picture_thumbnail_url"),
-                    userJsonObject.getDouble("latitude"),
-                    userJsonObject.getDouble("longitude")
-            ).new Details(
+            return jsonObjectToUser(userJsonObject).new Details(
                     userJsonObject.getString("password"),
                     userJsonObject.getString("email"),
                     userJsonObject.getBoolean("email_verified"),
@@ -92,6 +85,22 @@ public class User implements Parcelable {
         } catch (JSONException e) {
             e.printStackTrace();
 
+            return null;
+        }
+    }
+
+    public static User jsonObjectToUser(JSONObject userJsonObject) {
+        try {
+            return new User(
+                    userJsonObject.getInt("user_id"),
+                    userJsonObject.getString("name_surname"),
+                    userJsonObject.getString("profile_picture_url"),
+                    userJsonObject.getString("profile_picture_thumbnail_url"),
+                    userJsonObject.getDouble("latitude"),
+                    userJsonObject.getDouble("longitude")
+            );
+        } catch (JSONException e) {
+            e.printStackTrace();
             return null;
         }
     }
