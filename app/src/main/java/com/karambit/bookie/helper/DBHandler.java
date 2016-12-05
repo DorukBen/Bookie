@@ -37,7 +37,6 @@ public class DBHandler extends SQLiteOpenHelper {
 
     @Override
     public void onCreate(SQLiteDatabase db) {
-        // TODO Auto-generated method stub
         db.execSQL(
                 "CREATE TABLE " + USER_TABLE_NAME +
                         " (" + USER_COLUMN_ID + " INTEGER PRIMERY KEY, " +
@@ -53,6 +52,9 @@ public class DBHandler extends SQLiteOpenHelper {
                         USER_COLUMN_BOOK_COUNTER + " INTEGER, " +
                         USER_COLUMN_POINT + " INTEGER)"
         );
+        if (db.isOpen()){
+            db.close();
+        }
     }
 
     @Override
@@ -60,6 +62,9 @@ public class DBHandler extends SQLiteOpenHelper {
         // TODO Auto-generated method stub
         db.execSQL("DROP TABLE IF EXISTS " + USER_TABLE_NAME);
         onCreate(db);
+        if (db.isOpen()){
+            db.close();
+        }
     }
 
     public boolean insertCurrentUser(int id, String name, String imageURL, String thumbnailURL, double latitude, double longitude,
@@ -79,7 +84,13 @@ public class DBHandler extends SQLiteOpenHelper {
         contentValues.put(USER_COLUMN_BOOK_COUNTER, bookCounter);
         contentValues.put(USER_COLUMN_POINT, point);
 
-        if (db.insert(USER_TABLE_NAME, null, contentValues) > 0) {
+        boolean result = db.insert(USER_TABLE_NAME, null, contentValues) > 0;
+
+        if (db.isOpen()){
+            db.close();
+        }
+
+        if (result) {
             return true;
         } else {
             return false;
@@ -102,7 +113,13 @@ public class DBHandler extends SQLiteOpenHelper {
         contentValues.put(USER_COLUMN_BOOK_COUNTER, user.getBookCounter());
         contentValues.put(USER_COLUMN_POINT, user.getPoint());
 
-        if (db.insert(USER_TABLE_NAME, null, contentValues) > 0) {
+        boolean result = db.insert(USER_TABLE_NAME, null, contentValues) > 0;
+
+        if (db.isOpen()){
+            db.close();
+        }
+
+        if (result) {
             return true;
         } else {
             return false;
@@ -120,6 +137,10 @@ public class DBHandler extends SQLiteOpenHelper {
                 res.getDouble(res.getColumnIndex(USER_COLUMN_LATITUDE)),
                 res.getDouble(res.getColumnIndex(USER_COLUMN_LONGITUDE)));
         res.close();
+
+        if (db.isOpen()){
+            db.close();
+        }
         return user;
     }
 
@@ -144,11 +165,20 @@ public class DBHandler extends SQLiteOpenHelper {
 
         res.close();
 
+        if (db.isOpen()){
+            db.close();
+        }
         return details;
     }
 
     public int deleteCurrentUser() {
         SQLiteDatabase db = this.getWritableDatabase();
-        return db.delete(USER_TABLE_NAME, null, null);
+
+        int result = db.delete(USER_TABLE_NAME, null, null);
+
+        if (db.isOpen()){
+            db.close();
+        }
+        return result;
     }
 }
