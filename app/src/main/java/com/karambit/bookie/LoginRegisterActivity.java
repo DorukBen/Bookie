@@ -18,6 +18,8 @@ import android.widget.Toast;
 import com.karambit.bookie.helper.NetworkChecker;
 import com.karambit.bookie.helper.SessionManager;
 import com.karambit.bookie.helper.TypefaceSpan;
+import com.karambit.bookie.introduction.IntroductionActivity;
+import com.karambit.bookie.introduction.PrefManager;
 import com.karambit.bookie.model.User;
 import com.karambit.bookie.rest_api.BookieClient;
 import com.karambit.bookie.rest_api.ErrorCodes;
@@ -52,6 +54,12 @@ public class LoginRegisterActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_login_register);
+
+        if (new PrefManager(this).isFirstTimeLaunch()) {
+            startActivity(new Intent(this, IntroductionActivity.class));
+            finish();
+        }
+
 
         if (getSupportActionBar() != null) {
             getSupportActionBar().hide();

@@ -33,6 +33,8 @@
         </activity>
         <activity android:name=".ProfileSettingsActivity">
         </activity>
+        <activity android:name=".introduction.IntroductionActivity">
+        </activity>
     </application>
 
 </manifest>
