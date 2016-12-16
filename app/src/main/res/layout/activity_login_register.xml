@@ -18,7 +18,7 @@
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:layout_centerInParent="true"
-            android:layout_weight="2"
+            android:layout_weight="7"
             android:gravity="center"
             android:text="@string/app_name"
             android:textColor="@color/primaryTextColor"
@@ -29,7 +29,7 @@
             android:id="@+id/editTextContainer"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:layout_weight="1"
+            android:layout_weight="6"
             android:animateLayoutChanges="true"
             android:gravity="center_vertical"
             android:orientation="vertical"
@@ -37,7 +37,7 @@
             android:paddingLeft="24dp"
             android:paddingRight="24dp">
 
-            <LinearLayout
+            <RelativeLayout
                 android:id="@+id/nameContainer"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -51,8 +51,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_centerVertical="true"
-                    android:layout_marginRight="8dp"
-                    android:layout_weight="1"
+                    android:paddingRight="24dp"
                     android:backgroundTint="@color/secondaryTextColor"
                     android:hint="@string/name"
                     android:inputType="textCapWords"
@@ -65,13 +64,15 @@
                     android:id="@+id/nameImage"
                     android:layout_width="16dp"
                     android:layout_height="16dp"
-                    android:layout_weight="0"
+                    android:layout_alignParentRight="true"
+                    android:layout_centerVertical="true"
                     android:src="@drawable/ic_person_outline_black_24dp"
-                    android:tint="@color/secondaryTextColor"/>
+                    android:tint="@color/secondaryTextColor"
+                    android:layout_marginRight="6dp"/>
 
-            </LinearLayout>
+            </RelativeLayout>
 
-            <LinearLayout
+            <RelativeLayout
                 android:id="@+id/surnameContainer"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -83,8 +84,7 @@
                     android:id="@+id/surnameEditText"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginRight="8dp"
-                    android:layout_weight="1"
+                    android:paddingRight="24dp"
                     android:backgroundTint="@color/secondaryTextColor"
                     android:hint="@string/surname"
                     android:inputType="textCapWords"
@@ -97,13 +97,15 @@
                     android:id="@+id/surnameImage"
                     android:layout_width="16dp"
                     android:layout_height="16dp"
-                    android:layout_weight="0"
+                    android:layout_alignParentRight="true"
+                    android:layout_centerVertical="true"
                     android:src="@drawable/ic_person_outline_black_24dp"
-                    android:tint="@color/secondaryTextColor"/>
+                    android:tint="@color/secondaryTextColor"
+                    android:layout_marginRight="6dp"/>
 
-            </LinearLayout>
+            </RelativeLayout>
 
-            <LinearLayout
+            <RelativeLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:gravity="center_vertical"
@@ -113,10 +115,9 @@
                     android:id="@+id/emailEditText"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginRight="8dp"
-                    android:layout_weight="1"
                     android:backgroundTint="@color/secondaryTextColor"
                     android:hint="@string/email"
+                    android:paddingRight="24dp"
                     android:inputType="textEmailAddress"
                     android:singleLine="true"
                     android:textColor="@color/primaryTextColor"
@@ -127,13 +128,15 @@
                     android:id="@+id/personImage"
                     android:layout_width="16dp"
                     android:layout_height="16dp"
-                    android:layout_weight="0"
                     android:src="@drawable/ic_person_outline_black_24dp"
-                    android:tint="@color/secondaryTextColor"/>
+                    android:tint="@color/secondaryTextColor"
+                    android:layout_alignParentRight="true"
+                    android:layout_centerVertical="true"
+                    android:layout_marginRight="6dp"/>
 
-            </LinearLayout>
+            </RelativeLayout>
 
-            <LinearLayout
+            <RelativeLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:gravity="center_vertical"
@@ -144,8 +147,7 @@
                     android:id="@+id/passwordEditText"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginRight="8dp"
-                    android:layout_weight="1"
+                    android:paddingRight="24dp"
                     android:backgroundTint="@color/secondaryTextColor"
                     android:hint="@string/password"
                     android:inputType="textPassword"
@@ -158,13 +160,15 @@
                     android:id="@+id/lockImage"
                     android:layout_width="16dp"
                     android:layout_height="16dp"
-                    android:layout_weight="0"
                     android:src="@drawable/ic_lock_outline_white_24dp"
-                    android:tint="@color/secondaryTextColor"/>
+                    android:tint="@color/secondaryTextColor"
+                    android:layout_alignParentRight="true"
+                    android:layout_centerVertical="true"
+                    android:layout_marginRight="6dp"/>
 
-            </LinearLayout>
+            </RelativeLayout>
 
-            <LinearLayout
+            <RelativeLayout
                 android:id="@+id/repasswordContainer"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -177,8 +181,7 @@
                     android:id="@+id/repasswordEditText"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginRight="8dp"
-                    android:layout_weight="1"
+                    android:paddingRight="24dp"
                     android:backgroundTint="@color/secondaryTextColor"
                     android:hint="@string/repassword"
                     android:inputType="textPassword"
@@ -191,10 +194,12 @@
                     android:id="@+id/relockImage"
                     android:layout_width="16dp"
                     android:layout_height="16dp"
-                    android:layout_weight="0"
+                    android:layout_alignParentRight="true"
+                    android:layout_centerVertical="true"
                     android:src="@drawable/ic_lock_outline_white_24dp"
-                    android:tint="@color/secondaryTextColor"/>
-            </LinearLayout>
+                    android:tint="@color/secondaryTextColor"
+                    android:layout_marginRight="6dp"/>
+            </RelativeLayout>
 
         </LinearLayout>
 
