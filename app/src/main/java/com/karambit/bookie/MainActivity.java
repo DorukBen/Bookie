@@ -11,6 +11,9 @@ import android.text.Spannable;
 import android.text.SpannableString;
 import android.text.style.AbsoluteSizeSpan;
 import android.view.LayoutInflater;
+import android.view.Menu;
+import android.view.MenuInflater;
+import android.view.MenuItem;
 import android.view.View;
 import android.widget.ImageView;
 import android.widget.TabHost;
@@ -45,6 +48,7 @@ public class MainActivity extends AppCompatActivity implements TabHost.OnTabChan
     private float[] mElevations;
 
     private View mIndicator;
+    private MenuItem mProfilePageMenuItem;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -77,6 +81,45 @@ public class MainActivity extends AppCompatActivity implements TabHost.OnTabChan
         mViewPager.setAdapter(adapter);
 
         mAcitonBar = getSupportActionBar();
+    }
+
+    @Override
+    protected void onStart() {
+        super.onStart();
+        if (! SessionManager.isLoggedIn(this)) {
+            startActivity(new Intent(this, LoginRegisterActivity.class));
+            finish();
+        }
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        switch (item.getItemId()) {
+            case R.id.action_more:
+                startActivity(new Intent(this,ProfileSettingsActivity.class));
+                return true;
+
+            default:
+                startActivity(new Intent(this,ProfileSettingsActivity.class));
+                return super.onOptionsItemSelected(item);
+
+        }
+    }
+
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        MenuInflater inflater = getMenuInflater();
+        inflater.inflate(R.menu.profile_page_menu, menu);
+
+        mProfilePageMenuItem = menu.findItem(R.id.action_more);
+
+        if (mViewPager.getCurrentItem() == 3){
+            mProfilePageMenuItem.setVisible(true);
+        }else{
+            mProfilePageMenuItem.setVisible(false);
+        }
+
+        return super.onCreateOptionsMenu(menu);
     }
 
     /**
@@ -163,10 +206,16 @@ public class MainActivity extends AppCompatActivity implements TabHost.OnTabChan
 
             if (pos == 1) {
                 getSupportActionBar().hide();
-                SessionManager.logout(this);
             } else {
                 getSupportActionBar().show();
             }
+
+            if (pos == 3){
+                mProfilePageMenuItem.setVisible(true);
+            }else{
+                mProfilePageMenuItem.setVisible(false);
+            }
+
         }else {
             mIndicator.setSelected(false);
             mTabHost.setCurrentTab(mOldPos);

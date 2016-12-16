@@ -31,6 +31,8 @@
         </activity>
         <activity android:name=".LoginRegisterActivity">
         </activity>
+        <activity android:name=".ProfileSettingsActivity">
+        </activity>
     </application>
 
 </manifest>
