@@ -52,9 +52,6 @@ public class DBHandler extends SQLiteOpenHelper {
                         USER_COLUMN_BOOK_COUNTER + " INTEGER, " +
                         USER_COLUMN_POINT + " INTEGER)"
         );
-        if (db.isOpen()){
-            db.close();
-        }
     }
 
     @Override
@@ -62,9 +59,6 @@ public class DBHandler extends SQLiteOpenHelper {
         // TODO Auto-generated method stub
         db.execSQL("DROP TABLE IF EXISTS " + USER_TABLE_NAME);
         onCreate(db);
-        if (db.isOpen()){
-            db.close();
-        }
     }
 
     public boolean insertCurrentUser(int id, String name, String imageURL, String thumbnailURL, double latitude, double longitude,
