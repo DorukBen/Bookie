@@ -9,6 +9,7 @@ import android.support.v4.view.PagerAdapter;
 import android.support.v4.view.ViewPager;
 import android.support.v7.app.AppCompatActivity;
 import android.text.Html;
+import android.text.Spanned;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -19,18 +20,14 @@ import android.widget.LinearLayout;
 import android.widget.TextView;
 
 import com.karambit.bookie.LoginRegisterActivity;
-import com.karambit.bookie.MainActivity;
 import com.karambit.bookie.R;
 
 public class IntroductionActivity extends AppCompatActivity {
 
     private ViewPager viewPager;
-    private MyViewPagerAdapter myViewPagerAdapter;
     private LinearLayout dotsLayout;
-    private TextView[] dots;
     private int[] layouts;
     private Button btnSkip, btnNext;
-    private PrefManager prefManager;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -56,9 +53,9 @@ public class IntroductionActivity extends AppCompatActivity {
         // layouts of all welcome sliders
         // add few more layouts if you want
         layouts = new int[]{
-                R.layout.welcome_slide1,
-                R.layout.welcome_slide2,
-                R.layout.welcome_slide3};
+                R.layout.introduction_first_launch_1,
+                R.layout.introduction_first_launch_2,
+                R.layout.introduction_first_launch_3};
 
         // adding bottom dots
         addBottomDots(0);
@@ -66,8 +63,7 @@ public class IntroductionActivity extends AppCompatActivity {
         // making notification bar transparent
         changeStatusBarColor();
 
-        myViewPagerAdapter = new MyViewPagerAdapter();
-        viewPager.setAdapter(myViewPagerAdapter);
+        viewPager.setAdapter(new MyViewPagerAdapter());
         viewPager.addOnPageChangeListener(viewPagerPageChangeListener);
 
         btnSkip.setOnClickListener(new View.OnClickListener() {
@@ -94,7 +90,7 @@ public class IntroductionActivity extends AppCompatActivity {
     }
 
     private void addBottomDots(int currentPage) {
-        dots = new TextView[layouts.length];
+        TextView[] dots = new TextView[layouts.length];
 
         int[] colorsActive = getResources().getIntArray(R.array.array_dot_active);
         int[] colorsInactive = getResources().getIntArray(R.array.array_dot_inactive);
@@ -102,7 +98,7 @@ public class IntroductionActivity extends AppCompatActivity {
         dotsLayout.removeAllViews();
         for (int i = 0; i < dots.length; i++) {
             dots[i] = new TextView(this);
-            dots[i].setText(Html.fromHtml("&#8226;"));
+            dots[i].setText(fromHtml("&#8226;"));
             dots[i].setTextSize(35);
             dots[i].setTextColor(colorsInactive[currentPage]);
             dotsLayout.addView(dots[i]);
@@ -117,7 +113,8 @@ public class IntroductionActivity extends AppCompatActivity {
     }
 
     private void launchHomeScreen() {
-        prefManager.setFirstTimeLaunch(false);
+
+        new IntroductionPrefManager(this).setFirstTimeLaunch(false);
         startActivity(new Intent(IntroductionActivity.this, LoginRegisterActivity.class));
         finish();
     }
@@ -132,11 +129,11 @@ public class IntroductionActivity extends AppCompatActivity {
             // changing the next button text 'NEXT' / 'GOT IT'
             if (position == layouts.length - 1) {
                 // last page. make button text to GOT IT
-                btnNext.setText("Start Now");
+                btnNext.setText(getResources().getString(R.string.start_now));
                 btnSkip.setVisibility(View.VISIBLE);
             } else {
                 // still pages are left
-                btnNext.setText("Next");
+                btnNext.setText(getResources().getString(R.string.next));
                 btnSkip.setVisibility(View.VISIBLE);
             }
         }
@@ -198,5 +195,16 @@ public class IntroductionActivity extends AppCompatActivity {
             View view = (View) object;
             container.removeView(view);
         }
+    }
+
+    @SuppressWarnings("deprecation")
+    public static Spanned fromHtml(String html){
+        Spanned result;
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.N) {
+            result = Html.fromHtml(html,Html.FROM_HTML_MODE_LEGACY);
+        } else {
+            result = Html.fromHtml(html);
+        }
+        return result;
     }
 }

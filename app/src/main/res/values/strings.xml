@@ -69,12 +69,17 @@
     <string name="permission_request_message">Grant permissions to add new book</string>
     <string name="action_more">settings</string>
 
-    <string name="slide_1_title">Hello Food!</string>
-    <string name="slide_1_desc">The easiest way to order food from your favourite restaurant!</string>
+    <string name="introduction_page_1_title">Welcome to Bookie!</string>
+    <string name="introduction_page_1_desc">A user based book share platform.</string>
 
-    <string name="slide_2_title">Movie Tickets</string>
-    <string name="slide_2_desc">Book movie tickets for your family and friends!</string>
+    <string name="introduction_page_2_title">Share and read</string>
+    <string name="introduction_page_2_desc">Take and read which you want inside of million books.</string>
 
-    <string name="slide_3_title">Great Discounts</string>
-    <string name="slide_3_desc">Best discounts on every single service we offer!</string>
+    <string name="introduction_page_3_title">Save trees</string>
+    <string name="introduction_page_3_desc">Book can read thousands times. Share your books for beautiful planet.</string>
+
+
+    <string name="start_now">Start now</string>
+    <string name="next">Next</string>
+    <string name="skip">Skip</string>
 </resources>
