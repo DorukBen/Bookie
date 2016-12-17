@@ -12,6 +12,7 @@ import android.view.ViewGroup;
 
 import com.karambit.bookie.BookActivity;
 import com.karambit.bookie.MainActivity;
+import com.karambit.bookie.ProfileActivity;
 import com.karambit.bookie.R;
 import com.karambit.bookie.adapter.ProfileTimelineAdapter;
 import com.karambit.bookie.helper.ElevationScrollListener;
@@ -23,10 +24,46 @@ import com.karambit.bookie.model.User;
  */
 public class ProfileFragment extends Fragment {
 
+    // TODO: Rename parameter arguments, choose names that match
+    // the fragment initialization parameters, e.g. ARG_ITEM_NUMBER
+    private static final String IS_CURRENT_USER = "is_current_user";
+    private static final String USER = "user";
+
+    // TODO: Rename and change types of parameters
+    private boolean mIsCurrentUser;
+    private User mUser;
+
     public static final int PROFILE_FRAGMENT_TAB_INEX = 3;
 
     public ProfileFragment() {
         // Required empty public constructor
+    }
+
+    /**
+     * Use this factory method to create a new instance of
+     * this fragment using the provided parameters.
+     *
+     * @param isCurrentUser Parameter 1.
+     * @param user Parameter 2.
+     * @return A new instance of fragment BlankFragment.
+     */
+    // TODO: Rename and change types and number of parameters
+    public static ProfileFragment newInstance(boolean isCurrentUser, User user) {
+        ProfileFragment fragment = new ProfileFragment();
+        Bundle args = new Bundle();
+        args.putBoolean(IS_CURRENT_USER, isCurrentUser);
+        args.putParcelable(USER, user);
+        fragment.setArguments(args);
+        return fragment;
+    }
+
+    @Override
+    public void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        if (getArguments() != null) {
+            mIsCurrentUser = getArguments().getBoolean(IS_CURRENT_USER);
+            mUser = getArguments().getParcelable(USER);
+        }
     }
 
 
@@ -53,7 +90,12 @@ public class ProfileFragment extends Fragment {
 
         recyclerView.setAdapter(adapter);
 
-        recyclerView.setOnScrollListener(new ElevationScrollListener((MainActivity) getActivity(), PROFILE_FRAGMENT_TAB_INEX));
+        if (mIsCurrentUser){
+            recyclerView.setOnScrollListener(new ElevationScrollListener((MainActivity) getActivity(), PROFILE_FRAGMENT_TAB_INEX));
+        }else{
+            recyclerView.setOnScrollListener(new ElevationScrollListener((ProfileActivity) getActivity()));
+        }
+
 
         return rootView;
     }

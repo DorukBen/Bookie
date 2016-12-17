@@ -1,5 +1,6 @@
 package com.karambit.bookie;
 
+import android.content.Intent;
 import android.support.v7.app.ActionBar;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
@@ -52,8 +53,11 @@ public class BookActivity extends AppCompatActivity {
 
             @Override
             public void onOwnerClick(User owner) {
-                
-                // TODO Owner
+                Intent intent = new Intent(BookActivity.this, ProfileActivity.class);
+                Bundle bundle = new Bundle();
+                bundle.putParcelable(ProfileActivity.USER, owner);
+                intent.putExtras(bundle);
+                startActivity(intent);
             }
 
             @Override

@@ -3,6 +3,7 @@ package com.karambit.bookie.helper;
 import android.support.v7.widget.RecyclerView;
 
 import com.karambit.bookie.MainActivity;
+import com.karambit.bookie.ProfileActivity;
 
 /**
  * Created by orcan on 10/29/16.
@@ -13,11 +14,16 @@ public class ElevationScrollListener extends RecyclerView.OnScrollListener {
     public static final int ACTIONBAR_ELEVATION_DP = 8;
 
     private MainActivity mA;
+    private ProfileActivity mP;
     private int mTabIndex;
 
     public ElevationScrollListener(MainActivity mainActivity, int tabIndex) {
         mA = mainActivity;
         mTabIndex = tabIndex;
+    }
+
+    public ElevationScrollListener(ProfileActivity profileActivity) {
+        mP = profileActivity;
     }
 
     @Override
@@ -26,7 +32,12 @@ public class ElevationScrollListener extends RecyclerView.OnScrollListener {
 
         float elevation = getActionbarElevation(recyclerView.computeVerticalScrollOffset());
 
-        mA.setActionBarElevation(elevation, mTabIndex);
+        if (mA != null){
+            mA.setActionBarElevation(elevation, mTabIndex);
+        }else{
+            mP.setActionBarElevation(elevation);
+        }
+
     }
 
     public static float getActionbarElevation(int scroll) {
