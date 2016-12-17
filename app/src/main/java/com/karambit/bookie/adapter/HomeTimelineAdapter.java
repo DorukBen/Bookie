@@ -113,7 +113,7 @@ public class HomeTimelineAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
 
     @Override
     public int getItemCount() {
-            return getDualRowsCount() + 2; // (Dual row count + 1 row) + Header + Footer
+        return getDualRowsCount() + 2; // (Dual row count + 1 row) + Header + Footer
     }
 
     /*
@@ -248,7 +248,6 @@ public class HomeTimelineAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
 
                 dualBookViewHolder.mBookNameRight.setText(bookRight.getName());
                 dualBookViewHolder.mAuthorRight.setText(bookRight.getAuthor());
-
 
 
                 break;
