@@ -1,11 +1,15 @@
 package com.karambit.bookie;
 
+import android.content.Intent;
 import android.support.v4.app.FragmentTransaction;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.text.Spannable;
 import android.text.SpannableString;
 import android.text.style.AbsoluteSizeSpan;
+import android.view.Menu;
+import android.view.MenuInflater;
+import android.view.MenuItem;
 
 import com.karambit.bookie.fragment.ProfileFragment;
 import com.karambit.bookie.helper.TypefaceSpan;
@@ -41,6 +45,29 @@ public class ProfileActivity extends AppCompatActivity {
         FragmentTransaction transaction = getSupportFragmentManager().beginTransaction();
         transaction.add(R.id.profileFragmentFrame, profileFragment );
         transaction.commit();
+    }
+
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        MenuInflater inflater = getMenuInflater();
+        inflater.inflate(R.menu.main_menu, menu);
+        menu.findItem(R.id.action_more).setVisible(true);
+
+        return super.onCreateOptionsMenu(menu);
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        switch (item.getItemId()) {
+            case R.id.action_more:
+                startActivity(new Intent(this,UserProfileSettingsActivity.class));
+                return true;
+
+            default:
+                startActivity(new Intent(this,UserProfileSettingsActivity.class));
+                return super.onOptionsItemSelected(item);
+
+        }
     }
 
     public void setActionBarElevation(float dp) {

@@ -8,13 +8,6 @@
     android:paddingLeft="@dimen/activity_horizontal_margin"
     android:paddingRight="@dimen/activity_horizontal_margin"
     android:paddingTop="@dimen/activity_vertical_margin"
-    tools:context=".CurrentUserProfileSettingsActivity">
+    tools:context="com.karambit.bookie.UserProfileSettingsActivity">
 
-    <Button
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="LOGOUT"
-        android:id="@+id/logoutButton"
-        android:layout_centerVertical="true"
-        android:layout_centerHorizontal="true"/>
 </RelativeLayout>

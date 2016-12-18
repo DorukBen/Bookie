@@ -97,11 +97,11 @@ public class MainActivity extends AppCompatActivity implements TabHost.OnTabChan
     public boolean onOptionsItemSelected(MenuItem item) {
         switch (item.getItemId()) {
             case R.id.action_more:
-                startActivity(new Intent(this,ProfileSettingsActivity.class));
+                startActivity(new Intent(this,CurrentUserProfileSettingsActivity.class));
                 return true;
 
             default:
-                startActivity(new Intent(this,ProfileSettingsActivity.class));
+                startActivity(new Intent(this,CurrentUserProfileSettingsActivity.class));
                 return super.onOptionsItemSelected(item);
 
         }
@@ -110,7 +110,7 @@ public class MainActivity extends AppCompatActivity implements TabHost.OnTabChan
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         MenuInflater inflater = getMenuInflater();
-        inflater.inflate(R.menu.profile_page_menu, menu);
+        inflater.inflate(R.menu.main_menu, menu);
 
         mProfilePageMenuItem = menu.findItem(R.id.action_more);
 
