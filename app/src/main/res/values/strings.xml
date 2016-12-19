@@ -82,4 +82,6 @@
     <string name="start_now">Start now</string>
     <string name="next">Next</string>
     <string name="skip">Skip</string>
+
+    <string name="loved_genres_title">Genres you love?</string>
 </resources>

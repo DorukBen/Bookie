@@ -58,9 +58,12 @@ public class MainActivity extends AppCompatActivity implements TabHost.OnTabChan
         if (! SessionManager.isLoggedIn(this)) {
             startActivity(new Intent(this, LoginRegisterActivity.class));
             finish();
+        } else if (!SessionManager.isLovedGenresSelectedLocal(this)) {
+            // TODO Server check for loved genres. If loved genres does not exists for user then start LovedGenresActivity
+            startActivity(new Intent(this, LovedGenresActivity.class));
         }
 
-        //Changes action bar font style by getting font.ttf from assets/fonts action bars font style doesn't
+            //Changes action bar font style by getting font.ttf from assets/fonts action bars font style doesn't
         // change from styles.xml
         SpannableString s = new SpannableString(getResources().getString(R.string.app_name));
         s.setSpan(new TypefaceSpan(this, "autograf.ttf"), 0, s.length(),
