@@ -84,4 +84,6 @@
     <string name="skip">Skip</string>
 
     <string name="loved_genres_title">Genres you love?</string>
+    <string name="loading">Loading…</string>
+    <string name="empty_state">Nothing to see here…</string>
 </resources>

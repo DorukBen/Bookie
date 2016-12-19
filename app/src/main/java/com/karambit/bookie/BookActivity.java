@@ -1,8 +1,8 @@
 package com.karambit.bookie;
 
+import android.os.Bundle;
 import android.support.v7.app.ActionBar;
 import android.support.v7.app.AppCompatActivity;
-import android.os.Bundle;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.text.Spannable;
@@ -36,12 +36,30 @@ public class BookActivity extends AppCompatActivity {
 
         Book book = getIntent().getParcelableExtra("book");
 
-        Book.Details bookDetails = Book.GENERATOR.generateBookDetails(book);
+        final Book.Details bookDetails = Book.GENERATOR.generateBookDetails(book);
 
-        RecyclerView bookRecyclerView = (RecyclerView) findViewById(R.id.bookRecyclerView);
+        final RecyclerView bookRecyclerView = (RecyclerView) findViewById(R.id.bookRecyclerView);
         bookRecyclerView.setLayoutManager(new LinearLayoutManager(this));
 
-        BookTimelineAdapter adapter = new BookTimelineAdapter(this, bookDetails);
+        final BookTimelineAdapter adapter = new BookTimelineAdapter(this, bookDetails);
+
+//        bookDetails.setBookProcesses(new ArrayList<Book.BookProcess>());
+//        new Thread(new Runnable() {
+//            @Override
+//            public void run() {
+//                try {
+//                    Thread.sleep(2000);
+//                    runOnUiThread(new Runnable() {
+//                        @Override
+//                        public void run() {
+//                            adapter.setBookDetails(bookDetails);
+//                        }
+//                    });
+//                } catch (InterruptedException e) {
+//                    e.printStackTrace();
+//                }
+//            }
+//        }).start();
 
         adapter.setHeaderClickListeners(new BookTimelineAdapter.HeaderClickListeners() {
             @Override

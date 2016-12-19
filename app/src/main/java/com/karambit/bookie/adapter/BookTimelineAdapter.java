@@ -29,6 +29,7 @@ public class BookTimelineAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
     private static final int TYPE_BOOK_PROCESS = 1;
     private static final int TYPE_SUBTITLE = 2;
     private static final int TYPE_FOOTER = 3;
+    private static final int TYPE_EMPTY_STATE = 4;
 
     private Context mContext;
     private Book.Details mBookDetails;
@@ -42,6 +43,12 @@ public class BookTimelineAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
         mBookDetails = bookDetails;
 
         mProgressBarActive = false;
+    }
+
+    public BookTimelineAdapter(Context context) {
+        mContext = context;
+
+        mProgressBarActive = true;
     }
 
     private static class HeaderViewHolder extends RecyclerView.ViewHolder {
@@ -112,7 +119,18 @@ public class BookTimelineAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
 
     @Override
     public int getItemCount() {
-        return mBookDetails.getBookProcesses().size() + 3; // + Header + Subtitle + Footer
+        if (mBookDetails != null) {
+
+            int size = mBookDetails.getBookProcesses().size();
+
+            if (size > 0) {
+                return size + 3; // + Header + Subtitle + Footer
+            } else {
+                return 3; // + Header + Empty State + Footer
+            }
+        } else {
+            return 1;
+        }
     }
 
     /*
@@ -124,20 +142,42 @@ public class BookTimelineAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
     @Override
     public int getItemViewType(int position) {
 
-        if (position == 0) {
-            return TYPE_HEADER;
+        if (mBookDetails != null) {
 
-        } else if (position == 1) {
-            return TYPE_SUBTITLE;
+            if (mBookDetails.getBookProcesses().size() > 0) {
 
-        } else if (position < mBookDetails.getBookProcesses().size() + 2) { // + Header + Subtitle
-            return TYPE_BOOK_PROCESS;
+                if (position == 0) {
+                    return TYPE_HEADER;
 
-        } else if (position == getItemCount() - 1) {
-            return TYPE_FOOTER;
+                } else if (position == 1) {
+                    return TYPE_SUBTITLE;
 
+                } else if (position < mBookDetails.getBookProcesses().size() + 2) { // + Header + Subtitle
+                    return TYPE_BOOK_PROCESS;
+
+                } else if (position == getItemCount() - 1) {
+                    return TYPE_FOOTER;
+
+                } else {
+                    throw new IllegalArgumentException("Invalid view type at position " + position);
+                }
+            } else {
+
+                if (position == 0) {
+                    return TYPE_HEADER;
+
+                } else if (position == 1) {
+                    return TYPE_EMPTY_STATE;
+
+                } else if (position == 2) {
+                    return TYPE_FOOTER;
+
+                } else {
+                    throw new IllegalArgumentException("Invalid view type at position " + position);
+                }
+            }
         } else {
-            throw new IllegalArgumentException("Invalid view type at position " + position);
+            return TYPE_FOOTER;
         }
     }
 
@@ -161,6 +201,10 @@ public class BookTimelineAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
             case TYPE_FOOTER:
                 View footerView = LayoutInflater.from(parent.getContext()).inflate(R.layout.item_footer, parent, false);
                 return new FooterViewHolder(footerView);
+
+            case TYPE_EMPTY_STATE:
+                View emptyStateView = LayoutInflater.from(parent.getContext()).inflate(R.layout.item_empty_state, parent, false);
+                return new FooterViewHolder(emptyStateView);
 
             default:
                 throw new IllegalArgumentException("Invalid view type variable: viewType=" + viewType);
@@ -206,11 +250,11 @@ public class BookTimelineAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
                 }
 
                 Glide.with(mContext)
-                        .load(mBookDetails.getBook().getThumbnailURL())
-                        .asBitmap()
-                        .placeholder(R.drawable.placeholder_book)
-                        .centerCrop()
-                        .into(headerViewHolder.mBookPicture);
+                     .load(mBookDetails.getBook().getThumbnailURL())
+                     .asBitmap()
+                     .placeholder(R.drawable.placeholder_book)
+                     .centerCrop()
+                     .into(headerViewHolder.mBookPicture);
 
                 headerViewHolder.mBookName.setText(mBookDetails.getBook().getName());
                 headerViewHolder.mAuthor.setText(mBookDetails.getBook().getAuthor());
@@ -219,11 +263,11 @@ public class BookTimelineAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
                 headerViewHolder.mGenre.setText("Genre");
 
                 Glide.with(mContext)
-                        .load(mBookDetails.getBook().getOwner().getThumbnailUrl())
-                        .asBitmap()
-                        .placeholder(R.drawable.placeholder_book)
-                        .centerCrop()
-                        .into(headerViewHolder.mOwnerPicture);
+                     .load(mBookDetails.getBook().getOwner().getThumbnailUrl())
+                     .asBitmap()
+                     .placeholder(R.drawable.placeholder_book)
+                     .centerCrop()
+                     .into(headerViewHolder.mOwnerPicture);
 
                 headerViewHolder.mOwnerName.setText(mBookDetails.getBook().getOwner().getName());
 
@@ -292,27 +336,27 @@ public class BookTimelineAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
                         switch (interaction.getInteractionType()) {
 
                             case ADD:
-//                                itemHolder.mProcessImage.setImageResource(R.drawable.reading_24dp);
+                                //                                itemHolder.mProcessImage.setImageResource(R.drawable.reading_24dp);
                                 itemHolder.mProcessChange.setText(mContext.getString(R.string.x_added_this_book, interaction.getUser().getName()));
                                 break;
 
                             case READ_START:
-//                                itemHolder.mProcessImage.setImageResource(R.drawable.reading_24dp);
+                                //                                itemHolder.mProcessImage.setImageResource(R.drawable.reading_24dp);
                                 itemHolder.mProcessChange.setText(mContext.getString(R.string.x_started_to_read_this_book, interaction.getUser().getName()));
                                 break;
 
                             case READ_STOP:
-//                                itemHolder.mProcessImage.setImageResource(R.drawable.reading_24dp);
+                                //                                itemHolder.mProcessImage.setImageResource(R.drawable.reading_24dp);
                                 itemHolder.mProcessChange.setText(mContext.getString(R.string.x_finished_to_read_this_book, interaction.getUser().getName()));
                                 break;
 
                             case CLOSE_TO_SHARE:
-//                                itemHolder.mProcessImage.setImageResource(R.drawable.close_to_share_24dp);
+                                //                                itemHolder.mProcessImage.setImageResource(R.drawable.close_to_share_24dp);
                                 itemHolder.mProcessChange.setText(mContext.getString(R.string.x_closed_sharing_for_this_book, interaction.getUser().getName()));
                                 break;
 
                             case OPEN_TO_SHARE:
-//                                itemHolder.mProcessImage.setImageResource(R.drawable.open_to_share_24dp);
+                                //                                itemHolder.mProcessImage.setImageResource(R.drawable.open_to_share_24dp);
                                 itemHolder.mProcessChange.setText(mContext.getString(R.string.x_opened_sharing_for_this_book, interaction.getUser().getName()));
                                 break;
 
@@ -329,18 +373,18 @@ public class BookTimelineAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
                         switch (transaction.getTransactionType()) {
 
                             case COME_TO_HAND:
-//                                itemHolder.mProcessImage.setImageResource(R.drawable.on_road_24dp);
+                                //                                itemHolder.mProcessImage.setImageResource(R.drawable.on_road_24dp);
                                 itemHolder.mProcessChange.setText(mContext.getString(R.string.x_took_the_book, transaction.getToUser().getName()));
                                 break;
 
                             case DISPACTH:
-//                                itemHolder.mProcessImage.setImageResource(R.drawable.on_road_24dp);
+                                //                                itemHolder.mProcessImage.setImageResource(R.drawable.on_road_24dp);
                                 itemHolder.mProcessChange.setText(mContext.getString(R.string.x_sent_the_book_to_y, transaction.getFromUser().getName(), transaction.getToUser().getName()));
                                 break;
 
                             case LOST:
 
-//                                itemHolder.mProcessImage.setImageResource(R.drawable.lost_24dp);
+                                //                                itemHolder.mProcessImage.setImageResource(R.drawable.lost_24dp);
                                 itemHolder.mProcessChange.setText(mContext.getString(R.string.book_sent_from_x_to_y_and_its_lost, transaction.getFromUser().getName(), transaction.getToUser().getName()));
                                 break;
 
@@ -382,8 +426,10 @@ public class BookTimelineAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
                 FooterViewHolder footerHolder = (FooterViewHolder) holder;
 
                 if (mProgressBarActive) {
+                    footerHolder.mTextView.setVisibility(View.VISIBLE);
                     footerHolder.mProgressBar.setVisibility(View.VISIBLE);
                 } else {
+                    footerHolder.mTextView.setVisibility(View.GONE);
                     footerHolder.mProgressBar.setVisibility(View.GONE);
                 }
 
@@ -424,6 +470,12 @@ public class BookTimelineAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
         void onBookPictureClick(Book.Details details);
     }
 
+    public void setBookDetails(Book.Details bookDetails) {
+        mBookDetails = bookDetails;
+        mProgressBarActive = false;
+        notifyDataSetChanged();
+    }
+
     public HeaderClickListeners getHeaderClickListeners() {
         return mHeaderClickListeners;
     }
@@ -431,5 +483,10 @@ public class BookTimelineAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
     public void setHeaderClickListeners(HeaderClickListeners headerClickListeners) {
         mHeaderClickListeners = headerClickListeners;
         notifyItemChanged(0);
+    }
+
+    public void setProgressBarActive(boolean active) {
+        mProgressBarActive = active;
+        notifyItemChanged(getItemCount() - 1);
     }
 }
