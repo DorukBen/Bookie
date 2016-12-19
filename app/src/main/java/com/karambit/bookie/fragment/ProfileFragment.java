@@ -12,6 +12,7 @@ import android.view.ViewGroup;
 
 import com.karambit.bookie.BookActivity;
 import com.karambit.bookie.MainActivity;
+import com.karambit.bookie.PhotoViewerActivity;
 import com.karambit.bookie.ProfileActivity;
 import com.karambit.bookie.R;
 import com.karambit.bookie.adapter.ProfileTimelineAdapter;
@@ -68,7 +69,7 @@ public class ProfileFragment extends Fragment {
 
 
     @Override
-    public View onCreateView(LayoutInflater inflater, ViewGroup container,
+    public View onCreateView(final LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
         // Inflate the layout for this fragment
         View rootView = inflater.inflate(R.layout.fragment_profile, container, false);
@@ -85,6 +86,22 @@ public class ProfileFragment extends Fragment {
                 Intent intent = new Intent(getContext(), BookActivity.class);
                 intent.putExtra("book", book);
                 startActivity(intent);
+            }
+        });
+
+        adapter.setHeaderClickListeners(new ProfileTimelineAdapter.HeaderClickListeners() {
+            @Override
+            public void onProfilePictureClick(User.Details details) {
+                Intent intent = new Intent(getContext(), PhotoViewerActivity.class);
+                Bundle bundle = new Bundle();
+                bundle.putString("image", details.getUser().getImageUrl());
+                intent.putExtras(bundle);
+                startActivity(intent);
+            }
+
+            @Override
+            public void onLocationClick(User.Details details) {
+
             }
         });
 

@@ -65,8 +65,11 @@ public class BookActivity extends AppCompatActivity {
 
             @Override
             public void onBookPictureClick(Book.Details details) {
-
-                // TODO Book picture
+                Intent intent = new Intent(BookActivity.this, PhotoViewerActivity.class);
+                Bundle bundle = new Bundle();
+                bundle.putString("image", details.getBook().getImageURL());
+                intent.putExtras(bundle);
+                startActivity(intent);
             }
         });
 

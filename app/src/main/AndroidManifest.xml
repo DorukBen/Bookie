@@ -41,6 +41,8 @@
         </activity>
         <activity android:name=".BookSettingsActivity">
         </activity>
+        <activity android:name=".PhotoViewerActivity">
+        </activity>
     </application>
 
 </manifest>
