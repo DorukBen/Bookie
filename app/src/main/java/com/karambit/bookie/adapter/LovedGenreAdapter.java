@@ -14,6 +14,7 @@ import com.karambit.bookie.R;
 import com.karambit.bookie.helper.LayoutUtils;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 
 /**
  * Created by orcan on 12/17/16.
@@ -24,12 +25,13 @@ public class LovedGenreAdapter extends RecyclerView.Adapter<LovedGenreAdapter.Ge
     private Context mContext;
     private SelectableGenre[] mSelectableGenres;
 
-    public LovedGenreAdapter(Context context, String[] genres) {
+    public LovedGenreAdapter(Context context, String[] genres, Integer[] selectedGenreCodes) {
         mContext = context;
         mSelectableGenres = new SelectableGenre[genres.length];
 
         for (int i = 0; i < genres.length; i++) {
-            mSelectableGenres[i] = new SelectableGenre(genres[i], i, false);
+            boolean selected = Arrays.asList(selectedGenreCodes).contains(i);
+            mSelectableGenres[i] = new SelectableGenre(genres[i], i, selected);
         }
     }
 

@@ -5,31 +5,37 @@ import android.content.Context;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
+import android.util.Log;
 
 import com.karambit.bookie.model.User;
-
-import java.util.HashMap;
 
 /**
  * Created by doruk on 12.11.2016.
  */
 public class DBHandler extends SQLiteOpenHelper {
 
-    public static final String DATABASE_NAME = "Bookie.db";
-    public static final String USER_TABLE_NAME = "user";
-    public static final String USER_COLUMN_ID = "id";
-    public static final String USER_COLUMN_NAME = "name";
-    public static final String USER_COLUMN_IMAGE_URL = "image_url";
-    public static final String USER_COLUMN_THUMBNAIL_URL = "thumbnail_url";
-    public static final String USER_COLUMN_LATITUDE = "latitude";
-    public static final String USER_COLUMN_LONGITUDE = "longitude";
-    public static final String USER_COLUMN_PASSWORD = "password";
-    public static final String USER_COLUMN_EMAIL = "email";
-    public static final String USER_COLUMN_VERIFIED = "verified";
-    public static final String USER_COLUMN_BIO = "bio";
-    public static final String USER_COLUMN_BOOK_COUNTER = "book_counter";
-    public static final String USER_COLUMN_POINT = "point";
-    private HashMap hp;
+    public static final String TAG = DBHandler.class.getSimpleName();
+
+    private static final String DATABASE_NAME = "Bookie.db";
+
+    private static final String USER_TABLE_NAME = "user";
+    private static final String USER_COLUMN_ID = "id";
+    private static final String USER_COLUMN_NAME = "name";
+    private static final String USER_COLUMN_IMAGE_URL = "image_url";
+    private static final String USER_COLUMN_THUMBNAIL_URL = "thumbnail_url";
+    private static final String USER_COLUMN_LATITUDE = "latitude";
+    private static final String USER_COLUMN_LONGITUDE = "longitude";
+    private static final String USER_COLUMN_PASSWORD = "password";
+    private static final String USER_COLUMN_EMAIL = "email";
+    private static final String USER_COLUMN_VERIFIED = "verified";
+    private static final String USER_COLUMN_BIO = "bio";
+    private static final String USER_COLUMN_BOOK_COUNTER = "book_counter";
+    private static final String USER_COLUMN_POINT = "point";
+
+    private static final String LG_TABLE_NAME = "loved_genre";
+    private static final String LG_COLUMN_ID = "loved_genre_id";
+    private static final String LG_COLUMN_USER_ID = "user_id";
+    private static final String LG_COLUMN_GENRE_CODE = "genre_code";
 
     public DBHandler(Context context) {
         super(context, DATABASE_NAME, null, 1);
@@ -38,19 +44,26 @@ public class DBHandler extends SQLiteOpenHelper {
     @Override
     public void onCreate(SQLiteDatabase db) {
         db.execSQL(
-                "CREATE TABLE " + USER_TABLE_NAME +
-                        " (" + USER_COLUMN_ID + " INTEGER PRIMERY KEY, " +
-                        USER_COLUMN_NAME + " TEXT, " +
+                "CREATE TABLE " + USER_TABLE_NAME + " (" +
+                        USER_COLUMN_ID + " INTEGER PRIMERY KEY, " +
+                        USER_COLUMN_NAME + " TEXT NOT NULL, " +
                         USER_COLUMN_IMAGE_URL + " TEXT, " +
                         USER_COLUMN_THUMBNAIL_URL + " TEXT, " +
                         USER_COLUMN_LATITUDE + " DOUBLE, " +
                         USER_COLUMN_LONGITUDE + " DOUBLE, " +
-                        USER_COLUMN_PASSWORD + " TEXT, " +
-                        USER_COLUMN_EMAIL + " TEXT, " +
-                        USER_COLUMN_VERIFIED + " BIT, " +
+                        USER_COLUMN_PASSWORD + " TEXT NOT NULL, " +
+                        USER_COLUMN_EMAIL + " TEXT NOT NULL, " +
+                        USER_COLUMN_VERIFIED + " BIT NOT NULL, " +
                         USER_COLUMN_BIO + " TEXT, " +
-                        USER_COLUMN_BOOK_COUNTER + " INTEGER, " +
-                        USER_COLUMN_POINT + " INTEGER)"
+                        USER_COLUMN_BOOK_COUNTER + " INTEGER NOT NULL, " +
+                        USER_COLUMN_POINT + " INTEGER NOT NULL)"
+        );
+
+        db.execSQL(
+                "CREATE TABLE " + LG_TABLE_NAME + " (" +
+                        LG_COLUMN_ID + " INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, " +
+                        LG_COLUMN_USER_ID + " INTEGER NOT NULL, " +
+                        LG_COLUMN_GENRE_CODE + " INTEGER NOT NULL)"
         );
     }
 
@@ -58,6 +71,7 @@ public class DBHandler extends SQLiteOpenHelper {
     public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
         // TODO Auto-generated method stub
         db.execSQL("DROP TABLE IF EXISTS " + USER_TABLE_NAME);
+        db.execSQL("DROP TABLE IF EXISTS " + LG_TABLE_NAME);
         onCreate(db);
     }
 
@@ -174,5 +188,101 @@ public class DBHandler extends SQLiteOpenHelper {
             db.close();
         }
         return result;
+    }
+
+    public boolean insertLovedGenres(User user, Integer[] lovedGenreCodes) {
+        SQLiteDatabase db = this.getWritableDatabase();
+
+        Cursor cursor = db.rawQuery("SELECT * FROM " + LG_TABLE_NAME +
+                            " WHERE " + LG_COLUMN_USER_ID + " = " + user.getID(), null);
+
+        if (cursor.getCount() > 0) {
+            resetLovedGenres(user);
+        }
+
+        cursor.close();
+
+        for (Integer lovedGenreCode : lovedGenreCodes) {
+
+            ContentValues contentValues = new ContentValues();
+            contentValues.put(LG_COLUMN_USER_ID, user.getID());
+            contentValues.put(LG_COLUMN_GENRE_CODE, lovedGenreCode);
+
+            if (db.insert(LG_TABLE_NAME, null, contentValues) <= 0) {
+                return false;
+            }
+        }
+
+        if (db.isOpen()){
+            db.close();
+        }
+
+        Log.i(TAG, "Loved Genres inserted");
+        return true;
+    }
+
+    public int[] getLovedGenres(User user) {
+        SQLiteDatabase db = this.getReadableDatabase();
+        Cursor res = db.rawQuery("SELECT * FROM " + LG_TABLE_NAME +
+                                         " WHERE " + LG_COLUMN_USER_ID + " = " + user.getID(), null);
+        res.moveToFirst();
+
+        int[] lovedGenres = new int[res.getCount()];
+        int i = 0;
+        try {
+            while (res.moveToNext()) {
+                lovedGenres[i++] = res.getInt(res.getColumnIndex(LG_COLUMN_GENRE_CODE));
+            }
+        } finally {
+
+            res.close();
+
+            if (db.isOpen()){
+                db.close();
+            }
+        }
+
+        return lovedGenres;
+    }
+
+    public Integer[] getLovedGenresAsInteger(User user) {
+
+        int[] lovedGenres = getLovedGenres(user);
+
+        Integer[] selectedGenres = new Integer[lovedGenres.length];
+        int i = 0;
+        for (int value : lovedGenres) {
+            selectedGenres[i++] = value;
+        }
+        return selectedGenres;
+    }
+
+    public void resetLovedGenres(User user) {
+        SQLiteDatabase db = this.getReadableDatabase();
+        db.delete(LG_TABLE_NAME, LG_COLUMN_USER_ID + " = " + user.getID(), null);
+
+        Log.i(TAG, "Loved Genres reset");
+    }
+
+    public boolean isLovedGenresSelected(User user) {
+        Cursor cursor = null;
+        SQLiteDatabase db = null;
+
+        try {
+            db = this.getReadableDatabase();
+            String countQuery = "SELECT * FROM " + LG_TABLE_NAME + " WHERE " + LG_COLUMN_USER_ID + " = " + user.getID();
+            cursor = db.rawQuery(countQuery, null);
+            return cursor.getCount() > 0;
+
+        } finally {
+
+            if (cursor != null) {
+                cursor.close();
+            }
+
+            if (db != null && db.isOpen()) {
+                db.close();
+            }
+        }
     }
 }
