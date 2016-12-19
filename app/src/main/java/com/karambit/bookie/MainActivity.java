@@ -55,6 +55,8 @@ public class MainActivity extends AppCompatActivity implements TabHost.OnTabChan
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+        startActivity(new Intent(this, LovedGenresActivity.class));
+
         if (! SessionManager.isLoggedIn(this)) {
             startActivity(new Intent(this, LoginRegisterActivity.class));
             finish();
