@@ -262,6 +262,8 @@ public class DBHandler extends SQLiteOpenHelper {
         db.delete(LG_TABLE_NAME, LG_COLUMN_USER_ID + " = " + user.getID(), null);
 
         Log.i(TAG, "Loved Genres reset");
+
+        db.close();
     }
 
     public boolean isLovedGenresSelected(User user) {

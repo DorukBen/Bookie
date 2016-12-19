@@ -25,6 +25,9 @@ public class LovedGenresActivity extends AppCompatActivity {
     private LovedGenreAdapter mLovedGenreAdapter;
     private DBHandler mDBHandler;
     private User mCurrentUser;
+    private boolean mLocalDone = false;
+    private boolean mServerDone = false;
+    private ProgressDialog mProgressDialog;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -68,6 +71,13 @@ public class LovedGenresActivity extends AppCompatActivity {
     }
 
     private void commitSelectedGenres() {
+        mProgressDialog = new ProgressDialog(this);
+        mProgressDialog.setMessage(getString(R.string.please_wait));
+        mProgressDialog.setIndeterminate(true);
+        mProgressDialog.setCanceledOnTouchOutside(false);
+        mProgressDialog.setCancelable(false);
+        mProgressDialog.show();
+
         Integer[] selectedGenreCodes = mLovedGenreAdapter.getSelectedGenreCodes();
 
         writeToLocalDatabase(selectedGenreCodes);
@@ -76,18 +86,20 @@ public class LovedGenresActivity extends AppCompatActivity {
     }
 
     private void writeToLocalDatabase(final Integer[] selectedGenreCodes) {
-        final ProgressDialog progressDialog = new ProgressDialog(this);
-        progressDialog.setMessage(getString(R.string.please_wait));
-        progressDialog.setIndeterminate(true);
-        progressDialog.setCanceledOnTouchOutside(false);
-        progressDialog.setCancelable(false);
-        progressDialog.show();
 
         new Thread(new Runnable() {
             @Override
             public void run() {
                 mDBHandler.insertLovedGenres(mCurrentUser, selectedGenreCodes);
-                progressDialog.dismiss();
+                mLocalDone = true;
+
+                if (mServerDone) {
+                    if (mProgressDialog.isShowing()) {
+                        mProgressDialog.dismiss();
+                    }
+
+                    finish();
+                }
             }
         }).start();
 
@@ -96,5 +108,15 @@ public class LovedGenresActivity extends AppCompatActivity {
 
     private void postToServer(Integer[] selectedGenreCodes) {
         //TODO Post to Server
+
+        mServerDone = true;
+
+        if (mLocalDone) {
+            if (mProgressDialog.isShowing()) {
+                mProgressDialog.dismiss();
+            }
+
+            finish();
+        }
     }
 }

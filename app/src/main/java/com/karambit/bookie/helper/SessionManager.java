@@ -47,4 +47,9 @@ public class SessionManager {
     public static User getCurrentUser(Context context) {
         return new DBHandler(context).getCurrentUser();
     }
+
+    public static boolean isLovedGenresSelectedLocal(Context context) {
+        DBHandler dbHandler = new DBHandler(context);
+        return dbHandler.isLovedGenresSelected(dbHandler.getCurrentUser());
+    }
 }
