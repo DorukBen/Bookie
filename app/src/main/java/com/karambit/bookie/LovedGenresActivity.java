@@ -59,7 +59,6 @@ public class LovedGenresActivity extends AppCompatActivity {
                 return true;
 
             default:
-                startActivity(new Intent(this, ProfileSettingsActivity.class));
                 return super.onOptionsItemSelected(item);
         }
     }

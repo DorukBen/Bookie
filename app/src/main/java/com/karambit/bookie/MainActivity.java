@@ -56,12 +56,15 @@ public class MainActivity extends AppCompatActivity implements TabHost.OnTabChan
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+        List<Fragment> fragments = new ArrayList<>();
+
         if (! SessionManager.isLoggedIn(this)) {
             startActivity(new Intent(this, LoginRegisterActivity.class));
             finish();
         } else if (!SessionManager.isLovedGenresSelectedLocal(this)) {
             // TODO Server check for loved genres. If loved genres does not exists for user then start LovedGenresActivity
             startActivity(new Intent(this, LovedGenresActivity.class));
+            fragments = getFragments();
         }
 
             //Changes action bar font style by getting font.ttf from assets/fonts action bars font style doesn't
@@ -81,7 +84,7 @@ public class MainActivity extends AppCompatActivity implements TabHost.OnTabChan
 
         mViewPager = (ViewPager) findViewById(R.id.viewpager);
         mViewPager.setOffscreenPageLimit(4);
-        ViewPagerAdapter adapter = new ViewPagerAdapter(getSupportFragmentManager() ,getFragments());
+        ViewPagerAdapter adapter = new ViewPagerAdapter(getSupportFragmentManager() ,fragments);
         mViewPager.setAdapter(adapter);
 
         mAcitonBar = getSupportActionBar();
