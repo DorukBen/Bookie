@@ -13,7 +13,6 @@ import com.karambit.bookie.adapter.BookTimelineAdapter;
 import com.karambit.bookie.helper.ElevationScrollListener;
 import com.karambit.bookie.helper.TypefaceSpan;
 import com.karambit.bookie.model.Book;
-import com.karambit.bookie.model.User;
 
 public class BookActivity extends AppCompatActivity {
 
@@ -62,18 +61,6 @@ public class BookActivity extends AppCompatActivity {
 //        }).start();
 
         adapter.setHeaderClickListeners(new BookTimelineAdapter.HeaderClickListeners() {
-            @Override
-            public void onRequestButtonClick(Book.Details details) {
-
-                // TODO Request
-            }
-
-            @Override
-            public void onOwnerClick(User owner) {
-                
-                // TODO Owner
-            }
-
             @Override
             public void onBookPictureClick(Book.Details details) {
 

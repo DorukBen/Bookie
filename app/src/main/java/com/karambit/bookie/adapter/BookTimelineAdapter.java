@@ -14,6 +14,7 @@ import android.widget.TextView;
 import com.bumptech.glide.Glide;
 import com.karambit.bookie.R;
 import com.karambit.bookie.helper.CircleImageView;
+import com.karambit.bookie.helper.SessionManager;
 import com.karambit.bookie.model.Book;
 import com.karambit.bookie.model.User;
 
@@ -26,15 +27,19 @@ public class BookTimelineAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
     public static final String TAG = BookTimelineAdapter.class.getSimpleName();
 
     private static final int TYPE_HEADER = 0;
-    private static final int TYPE_BOOK_PROCESS = 1;
-    private static final int TYPE_SUBTITLE = 2;
-    private static final int TYPE_FOOTER = 3;
-    private static final int TYPE_EMPTY_STATE = 4;
+    private static final int TYPE_STATE_SECTION_CURRENT_USER = 1;
+    private static final int TYPE_STATE_SECTION_OTHER_USER = 2;
+    private static final int TYPE_BOOK_PROCESS = 3;
+    private static final int TYPE_SUBTITLE = 4;
+    private static final int TYPE_FOOTER = 5;
+    private static final int TYPE_EMPTY_STATE = 6;
 
     private Context mContext;
     private Book.Details mBookDetails;
 
     private HeaderClickListeners mHeaderClickListeners;
+    private StateCurrentUserClickListeners mCurrentUserClickListeners;
+    private StateOtherUserClickListeners mOtherUserClickListeners;
 
     private boolean mProgressBarActive;
 
@@ -57,11 +62,6 @@ public class BookTimelineAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
         private TextView mBookName;
         private TextView mAuthor;
         private TextView mGenre;
-        private CircleImageView mOwnerPicture;
-        private TextView mOwnerName;
-        private View mOwnerClickArea;
-        private TextView mBookState;
-        private Button mRequest;
 
         private HeaderViewHolder(View headerView) {
             super(headerView);
@@ -70,11 +70,42 @@ public class BookTimelineAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
             mBookName = (TextView) headerView.findViewById(R.id.bookNameHeaderTextView);
             mAuthor = (TextView) headerView.findViewById(R.id.authorHeaderTextView);
             mGenre = (TextView) headerView.findViewById(R.id.genreHeaderTextView);
-            mOwnerPicture = (CircleImageView) headerView.findViewById(R.id.ownerPictureHeaderCircleImageView);
-            mOwnerName = (TextView) headerView.findViewById(R.id.ownerNameHeaderTextView);
-            mOwnerClickArea = headerView.findViewById(R.id.ownerClickAreaRelativeLayout);
-            mBookState = (TextView) headerView.findViewById(R.id.bookStateHeaderTextView);
-            mRequest = (Button) headerView.findViewById(R.id.requestHeaderButton);
+        }
+    }
+
+    private static class StateSectionOtherUserViewHolder extends RecyclerView.ViewHolder {
+        private CircleImageView mOwnerPicture;
+        private TextView mOwnerName;
+        private View mOwnerClickArea;
+        private TextView mBookState;
+        private Button mRequest;
+
+        private StateSectionOtherUserViewHolder(View stateSectionView) {
+            super(stateSectionView);
+
+            mOwnerPicture = (CircleImageView) stateSectionView.findViewById(R.id.ownerPictureCircleImageView);
+            mOwnerName = (TextView) stateSectionView.findViewById(R.id.ownerNameTextView);
+            mOwnerClickArea = stateSectionView.findViewById(R.id.ownerClickAreaRelativeLayout);
+            mBookState = (TextView) stateSectionView.findViewById(R.id.bookStateTextView);
+            mRequest = (Button) stateSectionView.findViewById(R.id.requestButton);
+        }
+    }
+
+    private static class StateSectionCurrentUserViewHolder extends RecyclerView.ViewHolder {
+        private CircleImageView mOwnerPicture;
+        private TextView mOwnerName;
+        private View mOwnerClickArea;
+        private TextView mBookState;
+        private Button mRequest;
+
+        private StateSectionCurrentUserViewHolder(View stateSectionView) {
+            super(stateSectionView);
+
+            mOwnerPicture = (CircleImageView) stateSectionView.findViewById(R.id.ownerPictureCircleImageView);
+            mOwnerName = (TextView) stateSectionView.findViewById(R.id.ownerNameTextView);
+            mOwnerClickArea = stateSectionView.findViewById(R.id.ownerClickAreaRelativeLayout);
+            mBookState = (TextView) stateSectionView.findViewById(R.id.bookStateTextView);
+            mRequest = (Button) stateSectionView.findViewById(R.id.requestButton);
         }
     }
 
@@ -124,12 +155,12 @@ public class BookTimelineAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
             int size = mBookDetails.getBookProcesses().size();
 
             if (size > 0) {
-                return size + 3; // + Header + Subtitle + Footer
+                return size + 4; // + Header + State + Subtitle + Footer
             } else {
                 return 3; // + Header + Empty State + Footer
             }
         } else {
-            return 1;
+            return 1; // Footer
         }
     }
 
@@ -150,9 +181,18 @@ public class BookTimelineAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
                     return TYPE_HEADER;
 
                 } else if (position == 1) {
+
+                    if (SessionManager.getCurrentUser(mContext).getID() == mBookDetails.getBook().getOwner().getID()) {
+                        return TYPE_STATE_SECTION_CURRENT_USER;
+
+                    } else {
+                        return TYPE_STATE_SECTION_OTHER_USER;
+                    }
+
+                } else if (position == 2) {
                     return TYPE_SUBTITLE;
 
-                } else if (position < mBookDetails.getBookProcesses().size() + 2) { // + Header + Subtitle
+                } else if (position < mBookDetails.getBookProcesses().size() + 3) { // + Header + State + Subtitle
                     return TYPE_BOOK_PROCESS;
 
                 } else if (position == getItemCount() - 1) {
@@ -189,6 +229,14 @@ public class BookTimelineAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
             case TYPE_HEADER:
                 View headerView = LayoutInflater.from(parent.getContext()).inflate(R.layout.item_header_book_timeline, parent, false);
                 return new HeaderViewHolder(headerView);
+
+            case TYPE_STATE_SECTION_CURRENT_USER:
+                View stateCurrentView = LayoutInflater.from(parent.getContext()).inflate(R.layout.item_state_section_current_user_book_timeline, parent, false);
+                return new StateSectionCurrentUserViewHolder(stateCurrentView);
+
+            case TYPE_STATE_SECTION_OTHER_USER:
+                View stateOtherView = LayoutInflater.from(parent.getContext()).inflate(R.layout.item_state_section_other_user_book_timeline, parent, false);
+                return new StateSectionOtherUserViewHolder(stateOtherView);
 
             case TYPE_BOOK_PROCESS:
                 View bookProcessView = LayoutInflater.from(parent.getContext()).inflate(R.layout.item_process_book_timeline, parent, false);
@@ -231,22 +279,6 @@ public class BookTimelineAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
                             mHeaderClickListeners.onBookPictureClick(mBookDetails);
                         }
                     });
-
-                    // Owner click listener setup
-                    headerViewHolder.mOwnerClickArea.setOnClickListener(new View.OnClickListener() {
-                        @Override
-                        public void onClick(View v) {
-                            mHeaderClickListeners.onOwnerClick(mBookDetails.getBook().getOwner());
-                        }
-                    });
-
-                    // Request button click listener setup
-                    headerViewHolder.mRequest.setOnClickListener(new View.OnClickListener() {
-                        @Override
-                        public void onClick(View v) {
-                            mHeaderClickListeners.onRequestButtonClick(mBookDetails);
-                        }
-                    });
                 }
 
                 Glide.with(mContext)
@@ -262,32 +294,57 @@ public class BookTimelineAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
                 //TODO Genre
                 headerViewHolder.mGenre.setText("Genre");
 
+                break;
+            }
+
+            case TYPE_STATE_SECTION_CURRENT_USER:
+
+                break;
+
+            case TYPE_STATE_SECTION_OTHER_USER:
+                StateSectionOtherUserViewHolder stateOtherHolder = (StateSectionOtherUserViewHolder) holder;
+
+                if (mOtherUserClickListeners != null) {
+
+                    stateOtherHolder.mOwnerClickArea.setOnClickListener(new View.OnClickListener() {
+                        @Override
+                        public void onClick(View v) {
+                            mOtherUserClickListeners.onOwnerClick(mBookDetails.getBook().getOwner());
+                        }
+                    });
+
+                    stateOtherHolder.mRequest.setOnClickListener(new View.OnClickListener() {
+                        @Override
+                        public void onClick(View v) {
+                            mOtherUserClickListeners.onRequestButtonClick(mBookDetails);
+                        }
+                    });
+                }
+
                 Glide.with(mContext)
                      .load(mBookDetails.getBook().getOwner().getThumbnailUrl())
                      .asBitmap()
                      .placeholder(R.drawable.placeholder_book)
                      .centerCrop()
-                     .into(headerViewHolder.mOwnerPicture);
+                     .into(stateOtherHolder.mOwnerPicture);
 
-                headerViewHolder.mOwnerName.setText(mBookDetails.getBook().getOwner().getName());
+                stateOtherHolder.mOwnerName.setText(mBookDetails.getBook().getOwner().getName());
 
                 Book.State state = mBookDetails.getBook().getState();
 
-                headerViewHolder.mBookState.setText(bookStateToString(state));
+                stateOtherHolder.mBookState.setText(bookStateToString(state));
 
                 // Enable or disable book request button
                 if (state == Book.State.OPENED_TO_SHARE) {
-                    headerViewHolder.mRequest.setEnabled(true);
-                    headerViewHolder.mRequest.setTextColor(ContextCompat.getColor(mContext, R.color.colorAccent));
-                    headerViewHolder.mRequest.setAlpha(1f);
+                    stateOtherHolder.mRequest.setEnabled(true);
+                    stateOtherHolder.mRequest.setTextColor(ContextCompat.getColor(mContext, R.color.colorAccent));
+                    stateOtherHolder.mRequest.setAlpha(1f);
                 } else {
-                    headerViewHolder.mRequest.setEnabled(false);
-                    headerViewHolder.mRequest.setTextColor(ContextCompat.getColor(mContext, R.color.secondaryTextColor));
-                    headerViewHolder.mRequest.setAlpha(0.5f);
+                    stateOtherHolder.mRequest.setEnabled(false);
+                    stateOtherHolder.mRequest.setTextColor(ContextCompat.getColor(mContext, R.color.secondaryTextColor));
+                    stateOtherHolder.mRequest.setAlpha(0.5f);
                 }
-
                 break;
-            }
 
             case TYPE_SUBTITLE: {
 
@@ -309,10 +366,10 @@ public class BookTimelineAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
                     itemHolder.mTopLine.setVisibility(View.INVISIBLE);
                     itemHolder.mBottomLine.setVisibility(View.INVISIBLE);
                 } else {
-                    if (position == 2) {
+                    if (position == 3) {
                         itemHolder.mTopLine.setVisibility(View.INVISIBLE);
                         itemHolder.mBottomLine.setVisibility(View.VISIBLE);
-                    } else if (position == getItemCount() - 2) {
+                    } else if (position == getItemCount() - 3) {
                         itemHolder.mTopLine.setVisibility(View.VISIBLE);
                         itemHolder.mBottomLine.setVisibility(View.INVISIBLE);
                     } else {
@@ -321,7 +378,7 @@ public class BookTimelineAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
                     }
                 }
 
-                final Book.BookProcess item = mBookDetails.getBookProcesses().get(position - 2); // - Header - Subtitle
+                final Book.BookProcess item = mBookDetails.getBookProcesses().get(position - 3); // - Header - State - Subtitle
 
                 /**
                  * Decide which Book process. Visitor pattern takes care this.
@@ -463,11 +520,16 @@ public class BookTimelineAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
     }
 
     public interface HeaderClickListeners {
-        void onRequestButtonClick(Book.Details details);
-
-        void onOwnerClick(User owner);
-
         void onBookPictureClick(Book.Details details);
+    }
+
+    public interface StateOtherUserClickListeners {
+        void onRequestButtonClick(Book.Details details);
+        void onOwnerClick(User owner);
+    }
+
+    public interface StateCurrentUserClickListeners {
+        // TODO
     }
 
     public void setBookDetails(Book.Details bookDetails) {
@@ -483,6 +545,14 @@ public class BookTimelineAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
     public void setHeaderClickListeners(HeaderClickListeners headerClickListeners) {
         mHeaderClickListeners = headerClickListeners;
         notifyItemChanged(0);
+    }
+
+    public void setCurrentUserClickListeners(StateCurrentUserClickListeners currentUserClickListeners) {
+        mCurrentUserClickListeners = currentUserClickListeners;
+    }
+
+    public void setOtherUserClickListeners(StateOtherUserClickListeners otherUserClickListeners) {
+        mOtherUserClickListeners = otherUserClickListeners;
     }
 
     public void setProgressBarActive(boolean active) {
