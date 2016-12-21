@@ -1,6 +1,7 @@
 package com.karambit.bookie.adapter;
 
 import android.content.Context;
+import android.graphics.Color;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.widget.RecyclerView;
 import android.view.LayoutInflater;
@@ -92,20 +93,18 @@ public class BookTimelineAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
     }
 
     private static class StateSectionCurrentUserViewHolder extends RecyclerView.ViewHolder {
-        private CircleImageView mOwnerPicture;
-        private TextView mOwnerName;
-        private View mOwnerClickArea;
-        private TextView mBookState;
-        private Button mRequest;
+        private View mStateClickArea;
+        private ImageView mStateIcon;
+        private TextView mStateText;
+        private Button mRequestCountButton;
 
         private StateSectionCurrentUserViewHolder(View stateSectionView) {
             super(stateSectionView);
 
-            mOwnerPicture = (CircleImageView) stateSectionView.findViewById(R.id.ownerPictureCircleImageView);
-            mOwnerName = (TextView) stateSectionView.findViewById(R.id.ownerNameTextView);
-            mOwnerClickArea = stateSectionView.findViewById(R.id.ownerClickAreaRelativeLayout);
-            mBookState = (TextView) stateSectionView.findViewById(R.id.bookStateTextView);
-            mRequest = (Button) stateSectionView.findViewById(R.id.requestButton);
+            mStateClickArea = stateSectionView.findViewById(R.id.stateClickArea);
+            mStateIcon = (ImageView) stateSectionView.findViewById(R.id.bookStateImageView);
+            mStateText = (TextView) stateSectionView.findViewById(R.id.bookStateTextView);
+            mRequestCountButton = (Button) stateSectionView.findViewById(R.id.requestCountButton);
         }
     }
 
@@ -299,9 +298,86 @@ public class BookTimelineAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
 
             case TYPE_STATE_SECTION_CURRENT_USER:
 
+                StateSectionCurrentUserViewHolder stateCurrentHolder = (StateSectionCurrentUserViewHolder) holder;
+
+                if (mCurrentUserClickListeners != null) {
+                    stateCurrentHolder.mStateClickArea.setOnClickListener(new View.OnClickListener() {
+                        @Override
+                        public void onClick(View v) {
+                            mCurrentUserClickListeners.onStateClick(mBookDetails);
+                        }
+                    });
+                }
+
+                    final int[] requestCountFinal = {0};
+                for (Book.BookProcess process : mBookDetails.getBookProcesses()) {
+                    process.accept(new Book.TimelineDisplayableVisitor() {
+                        @Override
+                        public void visit(Book.Interaction interaction) {}
+                        @Override
+                        public void visit(Book.Transaction transaction) {}
+
+                        @Override
+                        public void visit(Book.Request request) {
+                            if (request.getRequestType() == Book.RequestType.SEND) {
+                                requestCountFinal[0]++;
+                            }
+                        }
+                    });
+                }
+                int requestCount = requestCountFinal[0];
+
+                if (requestCount > 0) {
+                    stateCurrentHolder.mRequestCountButton.setVisibility(View.VISIBLE);
+                    stateCurrentHolder.mRequestCountButton.setText(String.valueOf(requestCount));
+                    if (mCurrentUserClickListeners != null) {
+                        stateCurrentHolder.mRequestCountButton.setOnClickListener(new View.OnClickListener() {
+                            @Override
+                            public void onClick(View v) {
+                                mCurrentUserClickListeners.onRequestCountClick(mBookDetails);
+                            }
+                        });
+                    }
+                } else {
+                    stateCurrentHolder.mRequestCountButton.setVisibility(View.GONE);
+                }
+
+                switch (mBookDetails.getBook().getState()) {
+
+                    case READING:
+                        stateCurrentHolder.mStateText.setText(R.string.reading);
+                        stateCurrentHolder.mStateIcon.setImageResource(R.drawable.ic_bookmark_border_black_24dp);
+                        break;
+
+                    case OPENED_TO_SHARE:
+                        stateCurrentHolder.mStateText.setText(R.string.opened_to_share);
+                        stateCurrentHolder.mStateIcon.setImageResource(R.drawable.ic_done_white_24dp);
+                        break;
+
+                    case CLOSED_TO_SHARE:
+                        stateCurrentHolder.mStateText.setText(R.string.closed_to_share);
+                        stateCurrentHolder.mStateIcon.setImageResource(R.drawable.ic_close_white_24dp);
+                        stateCurrentHolder.mRequestCountButton.setVisibility(View.GONE);
+                        break;
+
+                    case ON_ROAD:
+                        stateCurrentHolder.mStateText.setText(R.string.on_road);
+                        stateCurrentHolder.mStateIcon.setImageResource(R.drawable.ic_close_white_24dp);
+                        stateCurrentHolder.mRequestCountButton.setVisibility(View.GONE);
+                        break;
+
+                    case LOST:
+                        stateCurrentHolder.mStateText.setText(R.string.lost);
+                        stateCurrentHolder.mStateIcon.setImageResource(R.drawable.ic_close_white_24dp);
+                        stateCurrentHolder.mStateIcon.setColorFilter(Color.RED);
+                        stateCurrentHolder.mRequestCountButton.setVisibility(View.GONE);
+                        break;
+                }
+
                 break;
 
             case TYPE_STATE_SECTION_OTHER_USER:
+
                 StateSectionOtherUserViewHolder stateOtherHolder = (StateSectionOtherUserViewHolder) holder;
 
                 if (mOtherUserClickListeners != null) {
@@ -335,7 +411,7 @@ public class BookTimelineAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
                 stateOtherHolder.mBookState.setText(bookStateToString(state));
 
                 // Enable or disable book request button
-                if (state == Book.State.OPENED_TO_SHARE) {
+                if (state == Book.State.OPENED_TO_SHARE || state == Book.State.READING) {
                     stateOtherHolder.mRequest.setEnabled(true);
                     stateOtherHolder.mRequest.setTextColor(ContextCompat.getColor(mContext, R.color.colorAccent));
                     stateOtherHolder.mRequest.setAlpha(1f);
@@ -529,7 +605,8 @@ public class BookTimelineAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
     }
 
     public interface StateCurrentUserClickListeners {
-        // TODO
+        void onStateClick(Book.Details bookDetails);
+        void onRequestCountClick(Book.Details bookDetails);
     }
 
     public void setBookDetails(Book.Details bookDetails) {

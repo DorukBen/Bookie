@@ -11,6 +11,7 @@ import android.text.style.AbsoluteSizeSpan;
 
 import com.karambit.bookie.adapter.BookTimelineAdapter;
 import com.karambit.bookie.helper.ElevationScrollListener;
+import com.karambit.bookie.helper.SessionManager;
 import com.karambit.bookie.helper.TypefaceSpan;
 import com.karambit.bookie.model.Book;
 
@@ -34,6 +35,8 @@ public class BookActivity extends AppCompatActivity {
         }
 
         Book book = getIntent().getParcelableExtra("book");
+
+        book.setOwner(SessionManager.getCurrentUser(this));
 
         final Book.Details bookDetails = Book.GENERATOR.generateBookDetails(book);
 
