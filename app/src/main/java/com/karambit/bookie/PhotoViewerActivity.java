@@ -9,7 +9,6 @@ import android.graphics.RectF;
 import android.os.Build;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
-import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
 import android.widget.ImageView;
@@ -39,7 +38,6 @@ public class PhotoViewerActivity extends AppCompatActivity implements View.OnTou
 
     private float mImageWidth;
     private float mImageHeight;
-    private RectF mDrawableRect;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -69,14 +67,16 @@ public class PhotoViewerActivity extends AppCompatActivity implements View.OnTou
                     public void onResourceReady(Bitmap resource, GlideAnimation<? super Bitmap> glideAnimation) {
                         super.onResourceReady(resource, glideAnimation);
 
+                        findViewById(R.id.progressBar).setVisibility(View.INVISIBLE);
+
                         mImageWidth = resource.getWidth();
                         mImageHeight = resource.getHeight();
 
                         Point size = new Point();
                         getWindow().getWindowManager().getDefaultDisplay().getSize(size);
-                        mDrawableRect = new RectF(0, 0, resource.getWidth(), resource.getHeight());
+                        RectF drawableRect = new RectF(0, 0, resource.getWidth(), resource.getHeight());
                         RectF viewRect = new RectF(0, 0, size.x, size.y);
-                        matrix.setRectToRect(mDrawableRect, viewRect, Matrix.ScaleToFit.CENTER);
+                        matrix.setRectToRect(drawableRect, viewRect, Matrix.ScaleToFit.CENTER);
                         mPhotoView.setImageMatrix(matrix);
                     }
                 });
@@ -169,10 +169,31 @@ public class PhotoViewerActivity extends AppCompatActivity implements View.OnTou
                         float scale = (newDist / oldDist);
                         if (width * scale < size.x){
                             scale = size.x / width;
+                        }else if ((width * scale) > size.x * 3){
+                            scale = size.x / width * 3;
                         }
                         if (scale < 1){
 
-                            //TODO: küçültmeyi ayarla
+                            float totalFlowX = width - size.x;
+                            float totalFlowY = height - mImageHeight;
+                            float leftFlowX = Math.abs(globalX);
+                            float rigthFlowX = totalFlowX - leftFlowX;
+                            float topFlowY;
+                            if (globalY < 0){
+                                topFlowY = Math.abs(globalY) + (size.y - mImageHeight) / 2;
+                            }else{
+                                topFlowY = (size.y - mImageHeight) / 2 - Math.abs(globalY);
+                            }
+                            float botFlowY = totalFlowY - topFlowY;
+
+                            float deltaX;
+                            float deltaY;
+                            deltaX = (leftFlowX - rigthFlowX) / 2;
+                            deltaY = (topFlowY - botFlowY) / 2;
+
+
+                            matrix.postTranslate(deltaX, deltaY);
+                            matrix.postScale(scale, scale, size.x / 2, size.y / 2);
 
                         }else {
                             matrix.postScale(scale, scale, mid.x, mid.y);
