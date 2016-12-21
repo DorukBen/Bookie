@@ -64,6 +64,7 @@ public class MainActivity extends AppCompatActivity implements TabHost.OnTabChan
         } else if (!SessionManager.isLovedGenresSelectedLocal(this)) {
             // TODO Server check for loved genres. If loved genres does not exists for user then start LovedGenresActivity
             startActivity(new Intent(this, LovedGenresActivity.class));
+        }else{
             fragments = getFragments();
         }
 
