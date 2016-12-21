@@ -1,6 +1,7 @@
 package com.karambit.bookie.fragment;
 
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
 import android.support.v7.widget.LinearLayoutManager;
@@ -9,6 +10,7 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 
+import com.karambit.bookie.BookActivity;
 import com.karambit.bookie.MainActivity;
 import com.karambit.bookie.R;
 import com.karambit.bookie.adapter.SearchAdapter;
@@ -34,7 +36,17 @@ public class SearchFragment extends Fragment {
 
         RecyclerView recyclerView = (RecyclerView) rootView.findViewById(R.id.searchResultsRecyclerView);
         recyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
-        recyclerView.setAdapter(new SearchAdapter(getContext(), Book.GENERATOR.generateBookList(15)));
+        SearchAdapter searchAdapter = new SearchAdapter(getContext(), Book.GENERATOR.generateBookList(15));
+        searchAdapter.setBookClickListener(new SearchAdapter.BookClickListener() {
+            @Override
+            public void onBookClick(Book book) {
+                Intent intent = new Intent(getContext(), BookActivity.class);
+                intent.putExtra("book", book);
+                getContext().startActivity(intent);
+            }
+        });
+        recyclerView.setAdapter(searchAdapter);
+
 
         return rootView;
     }
