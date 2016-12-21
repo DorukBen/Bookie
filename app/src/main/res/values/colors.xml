@@ -10,6 +10,8 @@
     <color name="colorAccentDark">#455A64</color>
     <color name="colorPickImage">#78909C</color>
 
+    <color name="black">#212121</color>
+
     <!-- Screens background color-->
     <color name="bg_screen1">#f64c73</color>
     <color name="bg_screen2">#20d2bb</color>

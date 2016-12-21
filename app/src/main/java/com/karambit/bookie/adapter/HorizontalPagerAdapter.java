@@ -1,7 +1,9 @@
 package com.karambit.bookie.adapter;
 
 import android.content.Context;
+import android.content.Intent;
 import android.database.DataSetObserver;
+import android.os.Bundle;
 import android.support.v4.view.PagerAdapter;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -10,6 +12,7 @@ import android.widget.ImageView;
 import android.widget.TextView;
 
 import com.bumptech.glide.Glide;
+import com.karambit.bookie.BookActivity;
 import com.karambit.bookie.R;
 import com.karambit.bookie.model.Book;
 
@@ -57,6 +60,17 @@ public class HorizontalPagerAdapter extends PagerAdapter {
         ((TextView)view.findViewById(R.id.bookNameInfiniteCycleTextView)).setText(mBooks.get(position).getName());
         ((TextView)view.findViewById(R.id.authorInfiniteCycleTextView)).setText(mBooks.get(position).getAuthor());
 
+        view.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                Intent intent = new Intent(mContext, BookActivity.class);
+                Bundle bundle = new Bundle();
+                bundle.putParcelable("book", mBooks.get(position));
+                intent.putExtras(bundle);
+                mContext.startActivity(intent);
+
+            }
+        });
 
         container.addView(view);
         return view;

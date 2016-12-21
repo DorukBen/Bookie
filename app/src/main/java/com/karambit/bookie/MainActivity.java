@@ -22,6 +22,7 @@ import com.karambit.bookie.fragment.HomeFragment;
 import com.karambit.bookie.fragment.MessageFragment;
 import com.karambit.bookie.fragment.ProfileFragment;
 import com.karambit.bookie.fragment.SearchFragment;
+import com.karambit.bookie.helper.DBHandler;
 import com.karambit.bookie.helper.SessionManager;
 import com.karambit.bookie.helper.TabFactory;
 import com.karambit.bookie.helper.TypefaceSpan;
@@ -99,11 +100,11 @@ public class MainActivity extends AppCompatActivity implements TabHost.OnTabChan
     public boolean onOptionsItemSelected(MenuItem item) {
         switch (item.getItemId()) {
             case R.id.action_more:
-                startActivity(new Intent(this,ProfileSettingsActivity.class));
+                startActivity(new Intent(this,CurrentUserProfileSettingsActivity.class));
                 return true;
 
             default:
-                startActivity(new Intent(this,ProfileSettingsActivity.class));
+                startActivity(new Intent(this,CurrentUserProfileSettingsActivity.class));
                 return super.onOptionsItemSelected(item);
 
         }
@@ -112,7 +113,7 @@ public class MainActivity extends AppCompatActivity implements TabHost.OnTabChan
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         MenuInflater inflater = getMenuInflater();
-        inflater.inflate(R.menu.profile_page_menu, menu);
+        inflater.inflate(R.menu.main_menu, menu);
 
         mProfilePageMenuItem = menu.findItem(R.id.action_more);
 
@@ -167,9 +168,11 @@ public class MainActivity extends AppCompatActivity implements TabHost.OnTabChan
     private List<Fragment> getFragments(){
         List<Fragment> fList = new ArrayList<>();
 
+        DBHandler dbHandler = new DBHandler(MainActivity.this);
+
         mHomeFragment = new HomeFragment();
         mSearchFragment = new SearchFragment();
-        mProfileFragment = new ProfileFragment();
+        mProfileFragment = ProfileFragment.newInstance(true, dbHandler.getCurrentUser());
         mMessageFragment = new MessageFragment();
         fList.add(mHomeFragment);
         fList.add(mSearchFragment);

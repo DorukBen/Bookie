@@ -1,5 +1,6 @@
 package com.karambit.bookie;
 
+import android.content.Intent;
 import android.support.v7.app.ActionBar;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
@@ -8,6 +9,9 @@ import android.support.v7.widget.RecyclerView;
 import android.text.Spannable;
 import android.text.SpannableString;
 import android.text.style.AbsoluteSizeSpan;
+import android.view.Menu;
+import android.view.MenuInflater;
+import android.view.MenuItem;
 
 import com.karambit.bookie.adapter.BookTimelineAdapter;
 import com.karambit.bookie.helper.ElevationScrollListener;
@@ -52,14 +56,20 @@ public class BookActivity extends AppCompatActivity {
 
             @Override
             public void onOwnerClick(User owner) {
-                
-                // TODO Owner
+                Intent intent = new Intent(BookActivity.this, ProfileActivity.class);
+                Bundle bundle = new Bundle();
+                bundle.putParcelable(ProfileActivity.USER, owner);
+                intent.putExtras(bundle);
+                startActivity(intent);
             }
 
             @Override
             public void onBookPictureClick(Book.Details details) {
-
-                // TODO Book picture
+                Intent intent = new Intent(BookActivity.this, PhotoViewerActivity.class);
+                Bundle bundle = new Bundle();
+                bundle.putString("image", details.getBook().getImageURL());
+                intent.putExtras(bundle);
+                startActivity(intent);
             }
         });
 
@@ -80,5 +90,28 @@ public class BookActivity extends AppCompatActivity {
                 actionBar.setElevation(ElevationScrollListener.getActionbarElevation(totalScrolled));
             }
         });
+    }
+
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        MenuInflater inflater = getMenuInflater();
+        inflater.inflate(R.menu.main_menu, menu);
+        menu.findItem(R.id.action_more).setVisible(true);
+
+        return super.onCreateOptionsMenu(menu);
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        switch (item.getItemId()) {
+            case R.id.action_more:
+                startActivity(new Intent(this,BookSettingsActivity.class));
+                return true;
+
+            default:
+                startActivity(new Intent(this,BookSettingsActivity.class));
+                return super.onOptionsItemSelected(item);
+
+        }
     }
 }

@@ -6,7 +6,7 @@ import android.view.View;
 
 import com.karambit.bookie.helper.SessionManager;
 
-public class ProfileSettingsActivity extends AppCompatActivity {
+public class CurrentUserProfileSettingsActivity extends AppCompatActivity {
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -16,7 +16,7 @@ public class ProfileSettingsActivity extends AppCompatActivity {
         findViewById(R.id.logoutButton).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                SessionManager.logout(ProfileSettingsActivity.this);
+                SessionManager.logout(CurrentUserProfileSettingsActivity.this);
                 finish();
             }
         });
