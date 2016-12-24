@@ -485,7 +485,7 @@ public class BookTimelineAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
                     if (position == 3) {
                         itemHolder.mTopLine.setVisibility(View.INVISIBLE);
                         itemHolder.mBottomLine.setVisibility(View.VISIBLE);
-                    } else if (position == getItemCount() - 3) {
+                    } else if (position == getItemCount() - 2) {
                         itemHolder.mTopLine.setVisibility(View.VISIBLE);
                         itemHolder.mBottomLine.setVisibility(View.INVISIBLE);
                     } else {
