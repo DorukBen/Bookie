@@ -19,6 +19,10 @@ import com.karambit.bookie.helper.SessionManager;
 import com.karambit.bookie.model.Book;
 import com.karambit.bookie.model.User;
 
+import java.util.Calendar;
+import java.util.Random;
+import java.util.concurrent.TimeUnit;
+
 /**
  * Created by orcan on 10/12/16.
  */
@@ -97,6 +101,7 @@ public class BookTimelineAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
         private ImageView mStateIcon;
         private TextView mStateText;
         private Button mRequestCountButton;
+        private TextView mStateDuration;
 
         private StateSectionCurrentUserViewHolder(View stateSectionView) {
             super(stateSectionView);
@@ -105,6 +110,7 @@ public class BookTimelineAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
             mStateIcon = (ImageView) stateSectionView.findViewById(R.id.bookStateImageView);
             mStateText = (TextView) stateSectionView.findViewById(R.id.bookStateTextView);
             mRequestCountButton = (Button) stateSectionView.findViewById(R.id.requestCountButton);
+            mStateDuration = (TextView) stateSectionView.findViewById(R.id.stateDurationTextView);
         }
     }
 
@@ -290,8 +296,14 @@ public class BookTimelineAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
                 headerViewHolder.mBookName.setText(mBookDetails.getBook().getName());
                 headerViewHolder.mAuthor.setText(mBookDetails.getBook().getAuthor());
 
-                //TODO Genre
-                headerViewHolder.mGenre.setText("Genre");
+
+                String[] genres = mContext.getResources().getStringArray(R.array.genre_types);
+
+                if (mBookDetails.getGenreCode() > genres.length) { // TODO Remove this section
+                    mBookDetails.setGenreCode(new Random().nextInt(genres.length));
+                }
+
+                headerViewHolder.mGenre.setText(genres[mBookDetails.getGenreCode()]);
 
                 break;
             }
@@ -309,11 +321,39 @@ public class BookTimelineAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
                     });
                 }
 
-                    final int[] requestCountFinal = {0};
+                /////////////////////////////////////////////////////////////////////////////////////////////
+
+                Book.BookProcess lastProcess;
+                int i = 0;
+                do {
+                    lastProcess = mBookDetails.getBookProcesses().get(mBookDetails.getBookProcesses().size() - 1 - i++);
+                } while (lastProcess instanceof Book.Request || lastProcess == null);
+
+                Calendar createdAt = null;
+                if (lastProcess instanceof Book.Interaction) {
+                    createdAt = ((Book.Interaction) lastProcess).getCreatedAt();
+                } else if (lastProcess instanceof  Book.Transaction) {
+                    createdAt = ((Book.Transaction) lastProcess).getCreatedAt();
+                }
+
+                long diff = Calendar.getInstance().getTimeInMillis() - createdAt.getTimeInMillis();
+
+                int days = (int) TimeUnit.MILLISECONDS.toDays(diff);
+
+                if (days == 0) {
+                    stateCurrentHolder.mStateDuration.setText(mContext.getString(R.string.state_today));
+                } else {
+                    stateCurrentHolder.mStateDuration.setText(mContext.getString(R.string.state_duration, days));
+                }
+
+                /////////////////////////////////////////////////////////////////////////////////////////////
+
+                final int[] requestCountFinal = {0};
                 for (Book.BookProcess process : mBookDetails.getBookProcesses()) {
                     process.accept(new Book.TimelineDisplayableVisitor() {
                         @Override
                         public void visit(Book.Interaction interaction) {}
+
                         @Override
                         public void visit(Book.Transaction transaction) {}
 
@@ -454,7 +494,8 @@ public class BookTimelineAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
                     }
                 }
 
-                final Book.BookProcess item = mBookDetails.getBookProcesses().get(position - 3); // - Header - State - Subtitle
+                int size = mBookDetails.getBookProcesses().size();//Reverse order
+                final Book.BookProcess item = mBookDetails.getBookProcesses().get(size - position - 3 - 1); // - Header - State - Subtitle
 
                 /**
                  * Decide which Book process. Visitor pattern takes care this.
@@ -601,11 +642,13 @@ public class BookTimelineAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
 
     public interface StateOtherUserClickListeners {
         void onRequestButtonClick(Book.Details details);
+
         void onOwnerClick(User owner);
     }
 
     public interface StateCurrentUserClickListeners {
         void onStateClick(Book.Details bookDetails);
+
         void onRequestCountClick(Book.Details bookDetails);
     }
 
