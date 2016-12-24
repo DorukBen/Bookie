@@ -495,7 +495,7 @@ public class BookTimelineAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
                 }
 
                 int size = mBookDetails.getBookProcesses().size();//Reverse order
-                final Book.BookProcess item = mBookDetails.getBookProcesses().get(size - position - 3 - 1); // - Header - State - Subtitle
+                final Book.BookProcess item = mBookDetails.getBookProcesses().get(size - position + 3 - 1); // - Header - State - Subtitle
 
                 /**
                  * Decide which Book process. Visitor pattern takes care this.
