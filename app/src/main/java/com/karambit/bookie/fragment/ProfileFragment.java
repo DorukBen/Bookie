@@ -113,6 +113,7 @@ public class ProfileFragment extends Fragment {
             recyclerView.setOnScrollListener(new ElevationScrollListener((ProfileActivity) getActivity()));
         }
 
+        recyclerView.setDrawingCacheEnabled(false);
 
         return rootView;
     }

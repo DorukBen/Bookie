@@ -47,6 +47,7 @@ public class SearchFragment extends Fragment {
         });
         recyclerView.setAdapter(searchAdapter);
 
+        recyclerView.setDrawingCacheEnabled(false);
 
         return rootView;
     }

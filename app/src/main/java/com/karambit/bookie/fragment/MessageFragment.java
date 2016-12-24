@@ -55,6 +55,8 @@ public class MessageFragment extends Fragment {
 
         recyclerView.setOnScrollListener(new ElevationScrollListener((MainActivity) getActivity(), MESSAGE_FRAGMENT_TAB_INEX));
 
+        recyclerView.setDrawingCacheEnabled(false);
+
         return rootView;
     }
 

@@ -48,6 +48,8 @@ public class HomeFragment extends Fragment {
 
         recyclerView.setAdapter(adapter);
 
+        recyclerView.setDrawingCacheEnabled(false);
+
         return rootView;
     }
 

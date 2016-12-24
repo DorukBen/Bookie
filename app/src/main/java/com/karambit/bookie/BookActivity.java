@@ -74,6 +74,7 @@ public class BookActivity extends AppCompatActivity {
         });
 
         bookRecyclerView.setAdapter(adapter);
+        bookRecyclerView.setDrawingCacheEnabled(false);
 
         bookRecyclerView.setOnScrollListener(new RecyclerView.OnScrollListener() {
 

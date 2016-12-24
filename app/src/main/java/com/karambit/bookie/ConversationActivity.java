@@ -62,6 +62,8 @@ public class ConversationActivity extends AppCompatActivity {
 
         recyclerView.setAdapter(conversationAdapter);
 
+        recyclerView.setDrawingCacheEnabled(false);
+
         messageEditText.addTextChangedListener(new TextWatcher() {
             @Override
             public void beforeTextChanged(CharSequence s, int start, int count, int after) {
