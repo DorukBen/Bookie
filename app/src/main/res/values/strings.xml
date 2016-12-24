@@ -84,4 +84,5 @@
     <string name="skip">Skip</string>
 
     <string name="loved_genres_title">Genres you love?</string>
+    <string name="action_notification">Notification</string>
 </resources>

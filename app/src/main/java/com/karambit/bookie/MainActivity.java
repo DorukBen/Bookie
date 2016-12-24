@@ -1,8 +1,10 @@
 package com.karambit.bookie;
 
+import android.app.Notification;
 import android.content.Intent;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
+import android.support.v4.content.ContextCompat;
 import android.support.v4.view.ViewCompat;
 import android.support.v4.view.ViewPager;
 import android.support.v7.app.ActionBar;
@@ -50,6 +52,7 @@ public class MainActivity extends AppCompatActivity implements TabHost.OnTabChan
 
     private View mIndicator;
     private MenuItem mProfilePageMenuItem;
+    private MenuItem mNotificationMenuItem;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -107,6 +110,10 @@ public class MainActivity extends AppCompatActivity implements TabHost.OnTabChan
                 startActivity(new Intent(this,CurrentUserProfileSettingsActivity.class));
                 return true;
 
+            case R.id.action_notification:
+                startActivity(new Intent(this,NotificationActivity.class));
+                return true;
+
             default:
                 startActivity(new Intent(this,CurrentUserProfileSettingsActivity.class));
                 return super.onOptionsItemSelected(item);
@@ -120,12 +127,21 @@ public class MainActivity extends AppCompatActivity implements TabHost.OnTabChan
         inflater.inflate(R.menu.main_menu, menu);
 
         mProfilePageMenuItem = menu.findItem(R.id.action_more);
+        mNotificationMenuItem = menu.findItem(R.id.action_notification);
 
         if (mViewPager.getCurrentItem() == 3){
             mProfilePageMenuItem.setVisible(true);
         }else{
             mProfilePageMenuItem.setVisible(false);
         }
+
+        if (mViewPager.getCurrentItem() == 0){
+            mNotificationMenuItem.setVisible(true);
+        }else{
+            mNotificationMenuItem.setVisible(false);
+        }
+
+        setNotificationMenuItemValue(mNotificationMenuItem);
 
         return super.onCreateOptionsMenu(menu);
     }
@@ -214,6 +230,12 @@ public class MainActivity extends AppCompatActivity implements TabHost.OnTabChan
                 getSupportActionBar().setShowHideAnimationEnabled(false);
             }
 
+            if (pos == 0){
+                mNotificationMenuItem.setVisible(true);
+            }else{
+                mNotificationMenuItem.setVisible(false);
+            }
+
             if (pos == 1) {
                 getSupportActionBar().hide();
             } else {
@@ -240,5 +262,45 @@ public class MainActivity extends AppCompatActivity implements TabHost.OnTabChan
             mAcitonBar.setElevation(dp);
         }
         mElevations[tabIndex] = dp;
+    }
+
+    private void setNotificationMenuItemValue(MenuItem item) {
+        //TODO: get notification count here
+        int notificationCount = 90;
+        switch (notificationCount){
+            case 0:
+                item.setIcon(ContextCompat.getDrawable(MainActivity.this ,R.drawable.main_notification));
+                break;
+            case 1:
+                item.setIcon(ContextCompat.getDrawable(MainActivity.this ,R.drawable.main_notification_1));
+                break;
+            case 2:
+                item.setIcon(ContextCompat.getDrawable(MainActivity.this ,R.drawable.main_notification_2));
+                break;
+            case 3:
+                item.setIcon(ContextCompat.getDrawable(MainActivity.this ,R.drawable.main_notification_3));
+                break;
+            case 4:
+                item.setIcon(ContextCompat.getDrawable(MainActivity.this ,R.drawable.main_notification_4));
+                break;
+            case 5:
+                item.setIcon(ContextCompat.getDrawable(MainActivity.this ,R.drawable.main_notification_5));
+                break;
+            case 6:
+                item.setIcon(ContextCompat.getDrawable(MainActivity.this ,R.drawable.main_notification_6));
+                break;
+            case 7:
+                item.setIcon(ContextCompat.getDrawable(MainActivity.this ,R.drawable.main_notification_7));
+                break;
+            case 8:
+                item.setIcon(ContextCompat.getDrawable(MainActivity.this ,R.drawable.main_notification_8));
+                break;
+            case 9:
+                item.setIcon(ContextCompat.getDrawable(MainActivity.this ,R.drawable.main_notification_9));
+                break;
+            default:
+                item.setIcon(ContextCompat.getDrawable(MainActivity.this ,R.drawable.main_notification_9plus));
+                break;
+        }
     }
 }

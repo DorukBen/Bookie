@@ -8,4 +8,11 @@
         android:title="@string/action_more"
         android:visible="false"
         app:showAsAction="always"/>
+
+    <item
+        android:id="@+id/action_notification"
+        android:icon="@drawable/main_notification"
+        android:title="@string/action_notification"
+        android:visible="false"
+        app:showAsAction="always"/>
 </menu>
