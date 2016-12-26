@@ -1,8 +1,19 @@
 package com.karambit.bookie.adapter;
 
 import android.content.Context;
+import android.graphics.Color;
+import android.graphics.Typeface;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.widget.RecyclerView;
+import android.text.Spannable;
+import android.text.SpannableString;
+import android.text.Spanned;
+import android.text.TextPaint;
+import android.text.TextUtils;
+import android.text.method.LinkMovementMethod;
+import android.text.style.ClickableSpan;
+import android.text.style.ForegroundColorSpan;
+import android.text.style.StyleSpan;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -36,6 +47,7 @@ public class BookTimelineAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
     private HeaderClickListeners mHeaderClickListeners;
 
     private boolean mProgressBarActive;
+    private SpanTextClickListeners mSpanTextClickListener;
 
     public BookTimelineAdapter(Context context, Book.Details bookDetails) {
         mContext = context;
@@ -290,92 +302,185 @@ public class BookTimelineAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
                 item.accept(new Book.TimelineDisplayableVisitor() { // Visitor interface
 
                     @Override
-                    public void visit(Book.Interaction interaction) { // If BookProcess is a Book.Interaction object
+                    public void visit(final Book.Interaction interaction) { // If BookProcess is a Book.Interaction object
 
                         itemHolder.mProcessImage.setVisibility(View.VISIBLE);
+
+                        SpannableString spanUserName = new SpannableString(interaction.getUser().getName());
+                        ClickableSpan clickableSpanUserName = new ClickableSpan() {
+                            @Override
+                            public void onClick(View textView) {
+                                mSpanTextClickListener.onUserNameClick(interaction.getUser());
+                            }
+                            @Override
+                            public void updateDrawState(TextPaint ds) {
+                                super.updateDrawState(ds);
+                                ds.setUnderlineText(false);
+                            }
+                        };
+
+                        spanUserName.setSpan(clickableSpanUserName, 0, spanUserName.length(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+                        spanUserName.setSpan(new ForegroundColorSpan(ContextCompat.getColor(mContext, R.color.primaryTextColor)), 0, spanUserName.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+                        spanUserName.setSpan(new StyleSpan(Typeface.BOLD), 0, spanUserName.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
 
                         switch (interaction.getInteractionType()) {
 
                             case ADD:
-//                                itemHolder.mProcessImage.setImageResource(R.drawable.reading_24dp);
-                                itemHolder.mProcessChange.setText(mContext.getString(R.string.x_added_this_book, interaction.getUser().getName()));
+                                //itemHolder.mProcessImage.setImageResource(R.drawable.ic_add_circle_outline_black_24dp);
+                                itemHolder.mProcessChange.setText(TextUtils.concat( spanUserName, " " + mContext.getString(R.string.x_added_this_book)));
                                 break;
-
                             case READ_START:
-//                                itemHolder.mProcessImage.setImageResource(R.drawable.reading_24dp);
-                                itemHolder.mProcessChange.setText(mContext.getString(R.string.x_started_to_read_this_book, interaction.getUser().getName()));
+                                //itemHolder.mProcessImage.setImageResource(R.drawable.ic_bookmark_border_black_24dp);
+                                itemHolder.mProcessChange.setText(TextUtils.concat( spanUserName, " " + mContext.getString(R.string.x_started_to_read_this_book)));
                                 break;
 
                             case READ_STOP:
-//                                itemHolder.mProcessImage.setImageResource(R.drawable.reading_24dp);
-                                itemHolder.mProcessChange.setText(mContext.getString(R.string.x_finished_to_read_this_book, interaction.getUser().getName()));
+                                //itemHolder.mProcessImage.setImageResource(R.drawable.ic_bookmark_border_black_24dp);
+                                itemHolder.mProcessChange.setText(TextUtils.concat( spanUserName, " " + mContext.getString(R.string.x_finished_to_read_this_book)));
                                 break;
 
                             case CLOSE_TO_SHARE:
-//                                itemHolder.mProcessImage.setImageResource(R.drawable.close_to_share_24dp);
-                                itemHolder.mProcessChange.setText(mContext.getString(R.string.x_closed_sharing_for_this_book, interaction.getUser().getName()));
+                                //itemHolder.mProcessImage.setImageResource(R.drawable.ic_vpn_lock_black_24dp);
+                                itemHolder.mProcessChange.setText(TextUtils.concat( spanUserName, " " + mContext.getString(R.string.x_closed_sharing_for_this_book)));
                                 break;
 
                             case OPEN_TO_SHARE:
-//                                itemHolder.mProcessImage.setImageResource(R.drawable.open_to_share_24dp);
-                                itemHolder.mProcessChange.setText(mContext.getString(R.string.x_opened_sharing_for_this_book, interaction.getUser().getName()));
+                                //itemHolder.mProcessImage.setImageResource(R.drawable.ic_public_black_24dp);
+                                itemHolder.mProcessChange.setText(TextUtils.concat( spanUserName, " " + mContext.getString(R.string.x_opened_sharing_for_this_book)));
                                 break;
 
                             default:
                                 throw new IllegalArgumentException("Invalid interaction type:" + interaction.getInteractionType().name());
                         }
+
+                        itemHolder.mProcessChange.setMovementMethod(LinkMovementMethod.getInstance());
+                        itemHolder.mProcessChange.setHighlightColor(Color.TRANSPARENT);
                     }
 
                     @Override
-                    public void visit(Book.Transaction transaction) { // If BookProcess is a Book.Transaction object
+                    public void visit(final Book.Transaction transaction) { // If BookProcess is a Book.Transaction object
 
                         itemHolder.mProcessImage.setVisibility(View.VISIBLE);
+
+                        SpannableString spanFromUserName = new SpannableString(transaction.getFromUser().getName());
+                        ClickableSpan clickableSpanFromUserName = new ClickableSpan() {
+                            @Override
+                            public void onClick(View textView) {
+                                mSpanTextClickListener.onUserNameClick(transaction.getFromUser());
+                            }
+                            @Override
+                            public void updateDrawState(TextPaint ds) {
+                                super.updateDrawState(ds);
+                                ds.setUnderlineText(false);
+                            }
+                        };
+
+                        spanFromUserName.setSpan(clickableSpanFromUserName, 0, spanFromUserName.length(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+                        spanFromUserName.setSpan(new ForegroundColorSpan(ContextCompat.getColor(mContext, R.color.primaryTextColor)), 0, spanFromUserName.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+                        spanFromUserName.setSpan(new StyleSpan(Typeface.BOLD), 0, spanFromUserName.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+
+                        SpannableString spanToUserName = new SpannableString(transaction.getToUser().getName());
+                        ClickableSpan clickableSpanToUserName = new ClickableSpan() {
+                            @Override
+                            public void onClick(View textView) {
+                                mSpanTextClickListener.onUserNameClick(transaction.getToUser());
+                            }
+                            @Override
+                            public void updateDrawState(TextPaint ds) {
+                                super.updateDrawState(ds);
+                                ds.setUnderlineText(false);
+                            }
+                        };
+
+                        spanToUserName.setSpan(clickableSpanToUserName, 0, spanToUserName.length(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+                        spanToUserName.setSpan(new ForegroundColorSpan(ContextCompat.getColor(mContext, R.color.primaryTextColor)), 0, spanToUserName.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+                        spanToUserName.setSpan(new StyleSpan(Typeface.BOLD), 0, spanToUserName.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+
 
                         switch (transaction.getTransactionType()) {
 
                             case COME_TO_HAND:
-//                                itemHolder.mProcessImage.setImageResource(R.drawable.on_road_24dp);
-                                itemHolder.mProcessChange.setText(mContext.getString(R.string.x_took_the_book, transaction.getToUser().getName()));
+                                //itemHolder.mProcessImage.setImageResource(R.drawable.ic_vertical_align_bottom_black_24dp);
+                                itemHolder.mProcessChange.setText(TextUtils.concat( spanToUserName, " " + mContext.getString(R.string.x_took_the_book)));
                                 break;
 
                             case DISPACTH:
-//                                itemHolder.mProcessImage.setImageResource(R.drawable.on_road_24dp);
-                                itemHolder.mProcessChange.setText(mContext.getString(R.string.x_sent_the_book_to_y, transaction.getFromUser().getName(), transaction.getToUser().getName()));
+                                //itemHolder.mProcessImage.setImageResource(R.drawable.ic_time_to_leave_black_24dp);
+                                itemHolder.mProcessChange.setText(TextUtils.concat( spanFromUserName, " " + mContext.getString(R.string.x_sent_the_book_to_y) + " ", spanToUserName));
                                 break;
 
                             case LOST:
-
-//                                itemHolder.mProcessImage.setImageResource(R.drawable.lost_24dp);
-                                itemHolder.mProcessChange.setText(mContext.getString(R.string.book_sent_from_x_to_y_and_its_lost, transaction.getFromUser().getName(), transaction.getToUser().getName()));
+                                //itemHolder.mProcessImage.setImageResource(R.drawable.lost_outline);
+                                itemHolder.mProcessChange.setText(TextUtils.concat( mContext.getString(R.string.book_sent_from_x_to_y_and_its_lost_1) + " ", spanFromUserName, " " + mContext.getString(R.string.book_sent_from_x_to_y_and_its_lost_2) + " ", spanToUserName, " " + mContext.getString(R.string.book_sent_from_x_to_y_and_its_lost_3)));
                                 break;
 
                             default:
                                 throw new IllegalArgumentException("Invalid transaction type:" + transaction.getTransactionType().name());
                         }
+
+                        itemHolder.mProcessChange.setMovementMethod(LinkMovementMethod.getInstance());
+                        itemHolder.mProcessChange.setHighlightColor(Color.TRANSPARENT);
                     }
 
                     @Override
-                    public void visit(Book.Request request) { // If BookProcess is a Book.Request object
+                    public void visit(final Book.Request request) { // If BookProcess is a Book.Request object
 
                         itemHolder.mProcessImage.setVisibility(View.GONE);
+
+                        SpannableString spanFromUserName = new SpannableString(request.getFromUser().getName());
+                        ClickableSpan clickableSpanFromUserName = new ClickableSpan() {
+                            @Override
+                            public void onClick(View textView) {
+                                mSpanTextClickListener.onUserNameClick(request.getFromUser());
+                            }
+                            @Override
+                            public void updateDrawState(TextPaint ds) {
+                                super.updateDrawState(ds);
+                                ds.setUnderlineText(false);
+                            }
+                        };
+
+                        spanFromUserName.setSpan(clickableSpanFromUserName, 0, spanFromUserName.length(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+                        spanFromUserName.setSpan(new ForegroundColorSpan(ContextCompat.getColor(mContext, R.color.primaryTextColor)), 0, spanFromUserName.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+                        spanFromUserName.setSpan(new StyleSpan(Typeface.BOLD), 0, spanFromUserName.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+
+                        SpannableString spanToUserName = new SpannableString(request.getToUser().getName());
+                        ClickableSpan clickableSpanToUserName = new ClickableSpan() {
+                            @Override
+                            public void onClick(View textView) {
+                                mSpanTextClickListener.onUserNameClick(request.getToUser());
+                            }
+                            @Override
+                            public void updateDrawState(TextPaint ds) {
+                                super.updateDrawState(ds);
+                                ds.setUnderlineText(false);
+                            }
+                        };
+
+                        spanToUserName.setSpan(clickableSpanToUserName, 0, spanToUserName.length(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+                        spanToUserName.setSpan(new ForegroundColorSpan(ContextCompat.getColor(mContext, R.color.primaryTextColor)), 0, spanToUserName.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+                        spanToUserName.setSpan(new StyleSpan(Typeface.BOLD), 0, spanToUserName.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
 
                         switch (request.getRequestType()) {
 
                             case SEND:
-                                itemHolder.mProcessChange.setText(mContext.getString(R.string.x_sent_request_to_y, request.getFromUser().getName(), request.getToUser().getName()));
+                                itemHolder.mProcessChange.setText(TextUtils.concat( spanFromUserName, " " + mContext.getString(R.string.x_sent_request_to_y) + " ", spanToUserName));
                                 break;
 
                             case ACCEPT:
-                                itemHolder.mProcessChange.setText(mContext.getString(R.string.x_accepted_ys_request, request.getFromUser().getName(), request.getToUser().getName()));
+                                itemHolder.mProcessChange.setText(TextUtils.concat( spanFromUserName, " " + mContext.getString(R.string.x_accepted_ys_request_1) + " ", spanToUserName, "'" + mContext.getString(R.string.x_accepted_ys_request_2)));
                                 break;
 
                             case REJECT:
-                                itemHolder.mProcessChange.setText(mContext.getString(R.string.x_rejected_ys_request, request.getFromUser().getName(), request.getToUser().getName()));
+                                itemHolder.mProcessChange.setText(TextUtils.concat( spanFromUserName, " " + mContext.getString(R.string.x_rejected_ys_request_1) + " ", spanToUserName, "'" + mContext.getString(R.string.x_rejected_ys_request_2)));
                                 break;
 
                             default:
                                 throw new IllegalArgumentException("Invalid request type:" + request.getRequestType().name());
                         }
+
+                        itemHolder.mProcessChange.setMovementMethod(LinkMovementMethod.getInstance());
+                        itemHolder.mProcessChange.setHighlightColor(Color.TRANSPARENT);
                     }
                 });
 
@@ -436,5 +541,17 @@ public class BookTimelineAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
     public void setHeaderClickListeners(HeaderClickListeners headerClickListeners) {
         mHeaderClickListeners = headerClickListeners;
         notifyItemChanged(0);
+    }
+
+    public interface SpanTextClickListeners{
+        void onUserNameClick(User user);
+    }
+
+    public SpanTextClickListeners getSpanTextClickListener() {
+        return mSpanTextClickListener;
+    }
+
+    public void setSpanTextClickListener(SpanTextClickListeners spanTextClickListener){
+        mSpanTextClickListener = spanTextClickListener;
     }
 }

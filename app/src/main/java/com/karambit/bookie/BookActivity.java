@@ -76,6 +76,17 @@ public class BookActivity extends AppCompatActivity {
 
         adapter.setHasStableIds(true);
 
+        adapter.setSpanTextClickListener(new BookTimelineAdapter.SpanTextClickListeners() {
+            @Override
+            public void onUserNameClick(User user) {
+                Intent intent = new Intent(BookActivity.this, ProfileActivity.class);
+                Bundle bundle = new Bundle();
+                bundle.putParcelable(ProfileActivity.USER, user);
+                intent.putExtras(bundle);
+                startActivity(intent);
+            }
+        });
+
         bookRecyclerView.setAdapter(adapter);
 
         //For improving recyclerviews performance
