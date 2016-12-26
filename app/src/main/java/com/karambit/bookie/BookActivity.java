@@ -74,6 +74,8 @@ public class BookActivity extends AppCompatActivity {
             }
         });
 
+        adapter.setHasStableIds(true);
+
         bookRecyclerView.setAdapter(adapter);
 
         //For improving recyclerviews performance

@@ -46,6 +46,8 @@ public class HomeFragment extends Fragment {
                 Book.GENERATOR.generateBookList(20)
         );
 
+        adapter.setHasStableIds(true);
+
         recyclerView.setAdapter(adapter);
 
         //For improving recyclerviews performance

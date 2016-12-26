@@ -45,6 +45,9 @@ public class SearchFragment extends Fragment {
                 getContext().startActivity(intent);
             }
         });
+
+        searchAdapter.setHasStableIds(true);
+
         recyclerView.setAdapter(searchAdapter);
 
         //For improving recyclerviews performance

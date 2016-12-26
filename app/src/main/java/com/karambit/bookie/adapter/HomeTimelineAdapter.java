@@ -112,6 +112,11 @@ public class HomeTimelineAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
     }
 
     @Override
+    public long getItemId(int position) {
+        return position;
+    }
+
+    @Override
     public int getItemCount() {
         return getDualRowsCount() + 2; // (Dual row count + 1 row) + Header + Footer
     }

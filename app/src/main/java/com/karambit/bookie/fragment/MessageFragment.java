@@ -51,6 +51,8 @@ public class MessageFragment extends Fragment {
             }
         });
 
+        messageAdapter.setHasStableIds(true);
+
         recyclerView.setAdapter(messageAdapter);
 
         recyclerView.setOnScrollListener(new ElevationScrollListener((MainActivity) getActivity(), MESSAGE_FRAGMENT_TAB_INEX));

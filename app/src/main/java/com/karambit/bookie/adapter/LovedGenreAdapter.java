@@ -51,6 +51,11 @@ public class LovedGenreAdapter extends RecyclerView.Adapter<LovedGenreAdapter.Ge
     }
 
     @Override
+    public long getItemId(int position) {
+        return position;
+    }
+
+    @Override
     public int getItemCount() {
         return mSelectableGenres.length;
     }

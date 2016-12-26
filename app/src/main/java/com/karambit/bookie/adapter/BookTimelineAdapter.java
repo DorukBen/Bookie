@@ -111,6 +111,11 @@ public class BookTimelineAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
     }
 
     @Override
+    public long getItemId(int position) {
+        return position;
+    }
+
+    @Override
     public int getItemCount() {
         return mBookDetails.getBookProcesses().size() + 3; // + Header + Subtitle + Footer
     }

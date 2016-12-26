@@ -139,6 +139,11 @@ public class ProfileTimelineAdapter extends RecyclerView.Adapter<RecyclerView.Vi
     }
 
     @Override
+    public long getItemId(int position) {
+        return position;
+    }
+
+    @Override
     public int getItemCount() {
         return mUserDetails.getBooksOnHandCount() + mUserDetails.getReadedBooksCount() + 5; // + Header + Currently Reading + Subtitle + Subtitle + Footer)
     }

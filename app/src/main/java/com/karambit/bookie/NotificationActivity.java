@@ -84,6 +84,8 @@ public class NotificationActivity extends AppCompatActivity {
             }
         });
 
+        notificationAdapter.setHasStableIds(true);
+
         recyclerView.setAdapter(notificationAdapter);
 
         recyclerView.setOnScrollListener(new RecyclerView.OnScrollListener() {

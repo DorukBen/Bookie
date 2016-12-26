@@ -105,6 +105,8 @@ public class ProfileFragment extends Fragment {
             }
         });
 
+        adapter.setHasStableIds(true);
+
         recyclerView.setAdapter(adapter);
 
         if (mIsCurrentUser){
