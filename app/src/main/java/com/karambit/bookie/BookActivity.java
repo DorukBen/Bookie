@@ -1,5 +1,6 @@
 package com.karambit.bookie;
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.support.v7.app.ActionBar;
 import android.support.v7.app.AppCompatActivity;
@@ -8,12 +9,14 @@ import android.support.v7.widget.RecyclerView;
 import android.text.Spannable;
 import android.text.SpannableString;
 import android.text.style.AbsoluteSizeSpan;
+import android.widget.Toast;
 
 import com.karambit.bookie.adapter.BookTimelineAdapter;
 import com.karambit.bookie.helper.ElevationScrollListener;
 import com.karambit.bookie.helper.SessionManager;
 import com.karambit.bookie.helper.TypefaceSpan;
 import com.karambit.bookie.model.Book;
+import com.karambit.bookie.model.User;
 
 public class BookActivity extends AppCompatActivity {
 
@@ -68,6 +71,21 @@ public class BookActivity extends AppCompatActivity {
             public void onBookPictureClick(Book.Details details) {
 
                 // TODO Book picture
+            }
+        });
+
+        adapter.setSpanTextClickListener(new BookTimelineAdapter.SpanTextClickListeners() {
+            @Override
+            public void onUserNameClick(User user) {
+                //TODO: After merge set intent to profileActivity
+                /*
+                Intent intent = new Intent(BookActivity.this, ProfileActivity.class);
+                Bundle bundle = new Bundle();
+                bundle.putParcelable(ProfileActivity.USER, user);
+                intent.putExtras(bundle);
+                startActivity(intent);
+                */
+                Toast.makeText(BookActivity.this, "On my way to ProfileActivity", Toast.LENGTH_SHORT).show();
             }
         });
 
