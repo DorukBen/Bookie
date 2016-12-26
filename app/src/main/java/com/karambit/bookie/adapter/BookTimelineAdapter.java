@@ -510,27 +510,27 @@ public class BookTimelineAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
                         switch (interaction.getInteractionType()) {
 
                             case ADD:
-                                //                                itemHolder.mProcessImage.setImageResource(R.drawable.reading_24dp);
+                                itemHolder.mProcessImage.setImageResource(R.drawable.ic_add_circle_outline_black_24dp);
                                 itemHolder.mProcessChange.setText(mContext.getString(R.string.x_added_this_book, interaction.getUser().getName()));
                                 break;
 
                             case READ_START:
-                                //                                itemHolder.mProcessImage.setImageResource(R.drawable.reading_24dp);
+                                itemHolder.mProcessImage.setImageResource(R.drawable.ic_bookmark_border_black_24dp);
                                 itemHolder.mProcessChange.setText(mContext.getString(R.string.x_started_to_read_this_book, interaction.getUser().getName()));
                                 break;
 
                             case READ_STOP:
-                                //                                itemHolder.mProcessImage.setImageResource(R.drawable.reading_24dp);
+                                itemHolder.mProcessImage.setImageResource(R.drawable.ic_bookmark_border_black_24dp);
                                 itemHolder.mProcessChange.setText(mContext.getString(R.string.x_finished_to_read_this_book, interaction.getUser().getName()));
                                 break;
 
                             case CLOSE_TO_SHARE:
-                                //                                itemHolder.mProcessImage.setImageResource(R.drawable.close_to_share_24dp);
+                                itemHolder.mProcessImage.setImageResource(R.drawable.ic_vpn_lock_black_24dp);
                                 itemHolder.mProcessChange.setText(mContext.getString(R.string.x_closed_sharing_for_this_book, interaction.getUser().getName()));
                                 break;
 
                             case OPEN_TO_SHARE:
-                                //                                itemHolder.mProcessImage.setImageResource(R.drawable.open_to_share_24dp);
+                                itemHolder.mProcessImage.setImageResource(R.drawable.ic_public_black_24dp);
                                 itemHolder.mProcessChange.setText(mContext.getString(R.string.x_opened_sharing_for_this_book, interaction.getUser().getName()));
                                 break;
 
@@ -547,18 +547,18 @@ public class BookTimelineAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
                         switch (transaction.getTransactionType()) {
 
                             case COME_TO_HAND:
-                                //                                itemHolder.mProcessImage.setImageResource(R.drawable.on_road_24dp);
+                                itemHolder.mProcessImage.setImageResource(R.drawable.ic_vertical_align_bottom_black_24dp);
                                 itemHolder.mProcessChange.setText(mContext.getString(R.string.x_took_the_book, transaction.getToUser().getName()));
                                 break;
 
                             case DISPACTH:
-                                //                                itemHolder.mProcessImage.setImageResource(R.drawable.on_road_24dp);
+                                itemHolder.mProcessImage.setImageResource(R.drawable.ic_time_to_leave_black_24dp);
                                 itemHolder.mProcessChange.setText(mContext.getString(R.string.x_sent_the_book_to_y, transaction.getFromUser().getName(), transaction.getToUser().getName()));
                                 break;
 
                             case LOST:
 
-                                //                                itemHolder.mProcessImage.setImageResource(R.drawable.lost_24dp);
+                                itemHolder.mProcessImage.setImageResource(R.drawable.lost_outline);
                                 itemHolder.mProcessChange.setText(mContext.getString(R.string.book_sent_from_x_to_y_and_its_lost, transaction.getFromUser().getName(), transaction.getToUser().getName()));
                                 break;
 
