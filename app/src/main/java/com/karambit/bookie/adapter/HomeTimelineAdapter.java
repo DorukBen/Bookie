@@ -241,10 +241,15 @@ public class HomeTimelineAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
 
                 Glide.with(mContext)
                         .load(bookRight.getImageURL())
-                        .crossFade()
-                        .centerCrop()
+                        .asBitmap()
                         .placeholder(R.drawable.placeholder_book)
-                        .into(dualBookViewHolder.mBookImageRight);
+                        .into(new SimpleTarget<Bitmap>() {
+                            @Override
+                            public void onResourceReady(Bitmap resource, GlideAnimation<? super Bitmap> glideAnimation) {
+                                Bitmap croppedBitmap = ImageScaler.cropImage(resource, 72 / 96f);
+                                dualBookViewHolder.mBookImageRight.setImageBitmap(croppedBitmap);
+                            }
+                        });
 
                 dualBookViewHolder.mBookNameRight.setText(bookRight.getName());
                 dualBookViewHolder.mAuthorRight.setText(bookRight.getAuthor());
