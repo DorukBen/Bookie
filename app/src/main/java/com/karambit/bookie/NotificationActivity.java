@@ -9,6 +9,7 @@ import android.support.v7.widget.RecyclerView;
 import android.text.Spannable;
 import android.text.SpannableString;
 import android.text.style.AbsoluteSizeSpan;
+import android.view.View;
 
 import com.karambit.bookie.adapter.NotificationAdapter;
 import com.karambit.bookie.helper.ElevationScrollListener;
@@ -101,7 +102,10 @@ public class NotificationActivity extends AppCompatActivity {
             }
         });
 
-        recyclerView.setDrawingCacheEnabled(false);
+        //For improving recyclerviews performance
+        recyclerView.setItemViewCacheSize(20);
+        recyclerView.setDrawingCacheEnabled(true);
+        recyclerView.setDrawingCacheQuality(View.DRAWING_CACHE_QUALITY_HIGH);
 
     }
 }

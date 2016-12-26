@@ -48,7 +48,10 @@ public class HomeFragment extends Fragment {
 
         recyclerView.setAdapter(adapter);
 
-        recyclerView.setDrawingCacheEnabled(false);
+        //For improving recyclerviews performance
+        recyclerView.setItemViewCacheSize(20);
+        recyclerView.setDrawingCacheEnabled(true);
+        recyclerView.setDrawingCacheQuality(View.DRAWING_CACHE_QUALITY_HIGH);
 
         return rootView;
     }

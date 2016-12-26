@@ -251,7 +251,7 @@ public class ProfileTimelineAdapter extends RecyclerView.Adapter<RecyclerView.Vi
                         .placeholder(R.drawable.placeholder_book)
                         .centerCrop()
                         .into(headerViewHolder.mProfilePicture);
-                
+
                 headerViewHolder.mUserName.setText(mUserDetails.getUser().getName());
                 headerViewHolder.mBio.setText(mUserDetails.getBio());
 

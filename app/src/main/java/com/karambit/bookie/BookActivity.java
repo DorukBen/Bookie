@@ -12,6 +12,7 @@ import android.text.style.AbsoluteSizeSpan;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
+import android.view.View;
 
 import com.karambit.bookie.adapter.BookTimelineAdapter;
 import com.karambit.bookie.helper.ElevationScrollListener;
@@ -74,7 +75,11 @@ public class BookActivity extends AppCompatActivity {
         });
 
         bookRecyclerView.setAdapter(adapter);
-        bookRecyclerView.setDrawingCacheEnabled(false);
+
+        //For improving recyclerviews performance
+        bookRecyclerView.setItemViewCacheSize(20);
+        bookRecyclerView.setDrawingCacheEnabled(true);
+        bookRecyclerView.setDrawingCacheQuality(View.DRAWING_CACHE_QUALITY_HIGH);
 
         bookRecyclerView.setOnScrollListener(new RecyclerView.OnScrollListener() {
 

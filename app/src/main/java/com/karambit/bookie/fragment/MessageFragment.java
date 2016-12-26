@@ -55,7 +55,12 @@ public class MessageFragment extends Fragment {
 
         recyclerView.setOnScrollListener(new ElevationScrollListener((MainActivity) getActivity(), MESSAGE_FRAGMENT_TAB_INEX));
 
-        recyclerView.setDrawingCacheEnabled(false);
+        //For improving recyclerviews performance
+        recyclerView.setItemViewCacheSize(20);
+        recyclerView.setDrawingCacheEnabled(true);
+        recyclerView.setDrawingCacheQuality(View.DRAWING_CACHE_QUALITY_HIGH);
+
+        recyclerView.setHasFixedSize(true);
 
         return rootView;
     }

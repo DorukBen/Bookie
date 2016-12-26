@@ -113,7 +113,10 @@ public class ProfileFragment extends Fragment {
             recyclerView.setOnScrollListener(new ElevationScrollListener((ProfileActivity) getActivity()));
         }
 
-        recyclerView.setDrawingCacheEnabled(false);
+        //For improving recyclerviews performance
+        recyclerView.setItemViewCacheSize(20);
+        recyclerView.setDrawingCacheEnabled(true);
+        recyclerView.setDrawingCacheQuality(View.DRAWING_CACHE_QUALITY_HIGH);
 
         return rootView;
     }

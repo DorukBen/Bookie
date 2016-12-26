@@ -47,7 +47,12 @@ public class SearchFragment extends Fragment {
         });
         recyclerView.setAdapter(searchAdapter);
 
-        recyclerView.setDrawingCacheEnabled(false);
+        //For improving recyclerviews performance
+        recyclerView.setItemViewCacheSize(20);
+        recyclerView.setDrawingCacheEnabled(true);
+        recyclerView.setDrawingCacheQuality(View.DRAWING_CACHE_QUALITY_HIGH);
+
+        recyclerView.setHasFixedSize(true);
 
         return rootView;
     }
