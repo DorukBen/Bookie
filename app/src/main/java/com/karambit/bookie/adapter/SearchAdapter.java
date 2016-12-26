@@ -1,6 +1,7 @@
 package com.karambit.bookie.adapter;
 
 import android.content.Context;
+import android.graphics.Bitmap;
 import android.support.v4.view.ViewCompat;
 import android.support.v7.widget.CardView;
 import android.support.v7.widget.RecyclerView;
@@ -12,7 +13,10 @@ import android.widget.ProgressBar;
 import android.widget.TextView;
 
 import com.bumptech.glide.Glide;
+import com.bumptech.glide.request.animation.GlideAnimation;
+import com.bumptech.glide.request.target.SimpleTarget;
 import com.karambit.bookie.R;
+import com.karambit.bookie.helper.ImageScaler;
 import com.karambit.bookie.helper.LayoutUtils;
 import com.karambit.bookie.model.Book;
 
@@ -123,7 +127,7 @@ public class SearchAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder>
 
             case TYPE_BOOK: {
 
-                BookViewHolder bookHolder = (BookViewHolder) holder;
+                final BookViewHolder bookHolder = (BookViewHolder) holder;
 
                 final Book book = mSearchResults.get(position);
 
@@ -142,10 +146,15 @@ public class SearchAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder>
 
                 Glide.with(mContext)
                         .load(book.getThumbnailURL())
+                        .asBitmap()
                         .placeholder(R.drawable.placeholder_book)
-                        .centerCrop()
-                        .crossFade()
-                        .into(bookHolder.mBookImage);
+                        .into(new SimpleTarget<Bitmap>() {
+                            @Override
+                            public void onResourceReady(Bitmap resource, GlideAnimation<? super Bitmap> glideAnimation) {
+                                Bitmap croppedBitmap = ImageScaler.cropImage(resource, 72 / 96f);
+                                bookHolder.mBookImage.setImageBitmap(croppedBitmap);
+                            }
+                        });
 
                 break;
             }

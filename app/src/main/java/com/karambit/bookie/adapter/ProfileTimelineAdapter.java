@@ -1,6 +1,7 @@
 package com.karambit.bookie.adapter;
 
 import android.content.Context;
+import android.graphics.Bitmap;
 import android.support.v4.view.ViewCompat;
 import android.support.v7.widget.CardView;
 import android.support.v7.widget.RecyclerView;
@@ -12,8 +13,11 @@ import android.widget.ProgressBar;
 import android.widget.TextView;
 
 import com.bumptech.glide.Glide;
+import com.bumptech.glide.request.animation.GlideAnimation;
+import com.bumptech.glide.request.target.SimpleTarget;
 import com.karambit.bookie.R;
 import com.karambit.bookie.helper.CircleImageView;
+import com.karambit.bookie.helper.ImageScaler;
 import com.karambit.bookie.helper.LayoutUtils;
 import com.karambit.bookie.helper.infinite_viewpager.HorizontalInfiniteCycleViewPager;
 import com.karambit.bookie.model.Book;
@@ -247,6 +251,7 @@ public class ProfileTimelineAdapter extends RecyclerView.Adapter<RecyclerView.Vi
                         .placeholder(R.drawable.placeholder_book)
                         .centerCrop()
                         .into(headerViewHolder.mProfilePicture);
+                
                 headerViewHolder.mUserName.setText(mUserDetails.getUser().getName());
                 headerViewHolder.mBio.setText(mUserDetails.getBio());
 
@@ -282,7 +287,7 @@ public class ProfileTimelineAdapter extends RecyclerView.Adapter<RecyclerView.Vi
 
             case TYPE_BOOKS_ON_HAND: {
 
-                BookViewHolder bookHolder = (BookViewHolder) holder;
+                final BookViewHolder bookHolder = (BookViewHolder) holder;
 
                 final Book book = mUserDetails.getBooksOnHand().get(position - 3); // - Header - Currently Reading - Subtitle
 
@@ -301,10 +306,15 @@ public class ProfileTimelineAdapter extends RecyclerView.Adapter<RecyclerView.Vi
 
                 Glide.with(mContext)
                         .load(book.getThumbnailURL())
+                        .asBitmap()
                         .placeholder(R.drawable.placeholder_book)
-                        .centerCrop()
-                        .crossFade()
-                        .into(bookHolder.mBookImage);
+                        .into(new SimpleTarget<Bitmap>() {
+                            @Override
+                            public void onResourceReady(Bitmap resource, GlideAnimation<? super Bitmap> glideAnimation) {
+                                Bitmap croppedBitmap = ImageScaler.cropImage(resource, 72 / 96f);
+                                bookHolder.mBookImage.setImageBitmap(croppedBitmap);
+                            }
+                        });
 
                 break;
             }
@@ -322,7 +332,7 @@ public class ProfileTimelineAdapter extends RecyclerView.Adapter<RecyclerView.Vi
 
             case TYPE_READ_BOOKS: {
 
-                BookViewHolder bookHolder = (BookViewHolder) holder;
+                final BookViewHolder bookHolder = (BookViewHolder) holder;
 
                 int arrayPosition = position - mUserDetails.getBooksOnHandCount() - 4; // - Header - Currently Reading - Subtitle - Subtitle
                 final Book book = mUserDetails.getReadedBooks().get(arrayPosition);
@@ -342,10 +352,15 @@ public class ProfileTimelineAdapter extends RecyclerView.Adapter<RecyclerView.Vi
 
                 Glide.with(mContext)
                         .load(book.getThumbnailURL())
+                        .asBitmap()
                         .placeholder(R.drawable.placeholder_book)
-                        .centerCrop()
-                        .crossFade()
-                        .into(bookHolder.mBookImage);
+                        .into(new SimpleTarget<Bitmap>() {
+                            @Override
+                            public void onResourceReady(Bitmap resource, GlideAnimation<? super Bitmap> glideAnimation) {
+                                Bitmap croppedBitmap = ImageScaler.cropImage(resource, 72 / 96f);
+                                bookHolder.mBookImage.setImageBitmap(croppedBitmap);
+                            }
+                        });
 
                 break;
             }
