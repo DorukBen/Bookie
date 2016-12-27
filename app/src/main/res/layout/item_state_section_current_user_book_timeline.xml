@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="72dp"
+    android:layout_marginTop="16dp"
+    android:orientation="horizontal">
+
+    <FrameLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_centerVertical="true"
+        android:layout_toLeftOf="@+id/requestCountButton">
+
+
+        <LinearLayout
+            android:id="@+id/stateClickArea"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginLeft="16dp"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:paddingBottom="8dp"
+            android:paddingLeft="8dp"
+            android:paddingRight="8dp"
+            android:paddingTop="8dp">
+
+            <ImageView
+                android:id="@+id/bookStateImageView"
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:scaleType="centerCrop"
+                android:src="@drawable/ic_bookmark_border_black_24dp"
+                android:tint="@color/primaryTextColor"/>
+
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginLeft="16dp"
+                android:orientation="vertical">
+
+                <TextView
+                    android:id="@+id/bookStateTextView"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:ellipsize="end"
+                    android:maxLines="1"
+                    android:text="Reading"
+                    android:textColor="@color/primaryTextColor"
+                    android:textSize="16sp"/>
+
+
+                <TextView
+                    android:id="@+id/stateDurationTextView"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:ellipsize="end"
+                    android:maxLines="1"
+                    android:text="for -- days"
+                    android:textColor="@color/secondaryTextColor"
+                    android:layout_marginTop="4dp"
+                    android:textSize="14sp"/>
+
+
+            </LinearLayout>
+
+        </LinearLayout>
+    </FrameLayout>
+
+    <Button
+        android:id="@+id/requestCountButton"
+        android:layout_width="32dp"
+        android:layout_height="32dp"
+        android:layout_alignParentRight="true"
+        android:layout_centerVertical="true"
+        android:layout_marginLeft="8dp"
+        android:layout_marginRight="16dp"
+        android:background="@drawable/request_count_button"
+        android:elevation="4dp"
+        android:text="5"
+        android:textColor="@color/colorPrimary"
+        android:textStyle="bold"/>
+
+
+</RelativeLayout>

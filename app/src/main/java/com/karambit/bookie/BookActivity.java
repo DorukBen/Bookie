@@ -49,10 +49,21 @@ public class BookActivity extends AppCompatActivity {
         BookTimelineAdapter adapter = new BookTimelineAdapter(this, bookDetails);
 
         adapter.setHeaderClickListeners(new BookTimelineAdapter.HeaderClickListeners() {
+
+            @Override
+            public void onBookPictureClick(Book.Details details) {
+                Intent intent = new Intent(BookActivity.this, PhotoViewerActivity.class);
+                Bundle bundle = new Bundle();
+                bundle.putString("image", details.getBook().getImageURL());
+                intent.putExtras(bundle);
+                startActivity(intent);
+            }
+        });
+
+        adapter.setOtherUserClickListeners(new BookTimelineAdapter.StateOtherUserClickListeners() {
             @Override
             public void onRequestButtonClick(Book.Details details) {
-
-                // TODO Request
+                // TODO Request button
             }
 
             @Override
@@ -63,14 +74,17 @@ public class BookActivity extends AppCompatActivity {
                 intent.putExtras(bundle);
                 startActivity(intent);
             }
+        });
+
+        adapter.setCurrentUserClickListeners(new BookTimelineAdapter.StateCurrentUserClickListeners() {
+            @Override
+            public void onStateClick(Book.Details bookDetails) {
+                // TODO State Click
+            }
 
             @Override
-            public void onBookPictureClick(Book.Details details) {
-                Intent intent = new Intent(BookActivity.this, PhotoViewerActivity.class);
-                Bundle bundle = new Bundle();
-                bundle.putString("image", details.getBook().getImageURL());
-                intent.putExtras(bundle);
-                startActivity(intent);
+            public void onRequestCountClick(Book.Details bookDetails) {
+                // TODO Request Count Click
             }
         });
 

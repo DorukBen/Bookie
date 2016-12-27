@@ -89,4 +89,11 @@
 
     <string name="loved_genres_title">Genres you love?</string>
     <string name="action_notification">Notification</string>
+
+    <string name="loading">Loading…</string>
+    <string name="empty_state">Nothing to see here…</string>
+    <string name="request_button">REQUEST</string>
+    <string name="requests_button">REQUESTS</string>
+    <string name="state_duration">for %d days</string>
+    <string name="state_today">within today</string>
 </resources>
