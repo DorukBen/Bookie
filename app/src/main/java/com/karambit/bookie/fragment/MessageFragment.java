@@ -51,9 +51,18 @@ public class MessageFragment extends Fragment {
             }
         });
 
+        messageAdapter.setHasStableIds(true);
+
         recyclerView.setAdapter(messageAdapter);
 
         recyclerView.setOnScrollListener(new ElevationScrollListener((MainActivity) getActivity(), MESSAGE_FRAGMENT_TAB_INEX));
+
+        //For improving recyclerviews performance
+        recyclerView.setItemViewCacheSize(20);
+        recyclerView.setDrawingCacheEnabled(true);
+        recyclerView.setDrawingCacheQuality(View.DRAWING_CACHE_QUALITY_HIGH);
+
+        recyclerView.setHasFixedSize(true);
 
         return rootView;
     }

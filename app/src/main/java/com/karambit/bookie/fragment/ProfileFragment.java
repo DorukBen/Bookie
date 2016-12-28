@@ -105,6 +105,8 @@ public class ProfileFragment extends Fragment {
             }
         });
 
+        adapter.setHasStableIds(true);
+
         recyclerView.setAdapter(adapter);
 
         if (mIsCurrentUser){
@@ -113,6 +115,10 @@ public class ProfileFragment extends Fragment {
             recyclerView.setOnScrollListener(new ElevationScrollListener((ProfileActivity) getActivity()));
         }
 
+        //For improving recyclerviews performance
+        recyclerView.setItemViewCacheSize(20);
+        recyclerView.setDrawingCacheEnabled(true);
+        recyclerView.setDrawingCacheQuality(View.DRAWING_CACHE_QUALITY_HIGH);
 
         return rootView;
     }

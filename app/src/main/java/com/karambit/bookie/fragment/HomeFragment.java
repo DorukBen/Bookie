@@ -46,7 +46,14 @@ public class HomeFragment extends Fragment {
                 Book.GENERATOR.generateBookList(20)
         );
 
+        adapter.setHasStableIds(true);
+
         recyclerView.setAdapter(adapter);
+
+        //For improving recyclerviews performance
+        recyclerView.setItemViewCacheSize(20);
+        recyclerView.setDrawingCacheEnabled(true);
+        recyclerView.setDrawingCacheQuality(View.DRAWING_CACHE_QUALITY_HIGH);
 
         return rootView;
     }

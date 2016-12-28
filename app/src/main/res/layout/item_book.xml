@@ -28,7 +28,7 @@
                 android:maxLines="1"
                 android:text="Book Name"
                 android:textColor="@color/primaryTextColor"
-                android:textSize="20sp"/>
+                android:textSize="18sp"/>
 
             <TextView
                 android:id="@+id/itemBookAuthorTextView"

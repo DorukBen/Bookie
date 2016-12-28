@@ -12,6 +12,7 @@ import android.text.style.AbsoluteSizeSpan;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
+import android.view.View;
 
 import com.karambit.bookie.adapter.BookTimelineAdapter;
 import com.karambit.bookie.helper.ElevationScrollListener;
@@ -48,20 +49,6 @@ public class BookActivity extends AppCompatActivity {
         BookTimelineAdapter adapter = new BookTimelineAdapter(this, bookDetails);
 
         adapter.setHeaderClickListeners(new BookTimelineAdapter.HeaderClickListeners() {
-            @Override
-            public void onRequestButtonClick(Book.Details details) {
-
-                // TODO Request
-            }
-
-            @Override
-            public void onOwnerClick(User owner) {
-                Intent intent = new Intent(BookActivity.this, ProfileActivity.class);
-                Bundle bundle = new Bundle();
-                bundle.putParcelable(ProfileActivity.USER, owner);
-                intent.putExtras(bundle);
-                startActivity(intent);
-            }
 
             @Override
             public void onBookPictureClick(Book.Details details) {
@@ -73,7 +60,53 @@ public class BookActivity extends AppCompatActivity {
             }
         });
 
+        adapter.setOtherUserClickListeners(new BookTimelineAdapter.StateOtherUserClickListeners() {
+            @Override
+            public void onRequestButtonClick(Book.Details details) {
+                // TODO Request button
+            }
+
+            @Override
+            public void onOwnerClick(User owner) {
+                Intent intent = new Intent(BookActivity.this, ProfileActivity.class);
+                Bundle bundle = new Bundle();
+                bundle.putParcelable(ProfileActivity.USER, owner);
+                intent.putExtras(bundle);
+                startActivity(intent);
+            }
+        });
+
+        adapter.setCurrentUserClickListeners(new BookTimelineAdapter.StateCurrentUserClickListeners() {
+            @Override
+            public void onStateClick(Book.Details bookDetails) {
+                // TODO State Click
+            }
+
+            @Override
+            public void onRequestCountClick(Book.Details bookDetails) {
+                // TODO Request Count Click
+            }
+        });
+
+        adapter.setHasStableIds(true);
+
+        adapter.setSpanTextClickListener(new BookTimelineAdapter.SpanTextClickListeners() {
+            @Override
+            public void onUserNameClick(User user) {
+                Intent intent = new Intent(BookActivity.this, ProfileActivity.class);
+                Bundle bundle = new Bundle();
+                bundle.putParcelable(ProfileActivity.USER, user);
+                intent.putExtras(bundle);
+                startActivity(intent);
+            }
+        });
+
         bookRecyclerView.setAdapter(adapter);
+
+        //For improving recyclerviews performance
+        bookRecyclerView.setItemViewCacheSize(20);
+        bookRecyclerView.setDrawingCacheEnabled(true);
+        bookRecyclerView.setDrawingCacheQuality(View.DRAWING_CACHE_QUALITY_HIGH);
 
         bookRecyclerView.setOnScrollListener(new RecyclerView.OnScrollListener() {
 

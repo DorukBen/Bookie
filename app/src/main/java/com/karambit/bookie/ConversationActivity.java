@@ -62,6 +62,11 @@ public class ConversationActivity extends AppCompatActivity {
 
         recyclerView.setAdapter(conversationAdapter);
 
+        //For improving recyclerviews performance
+        recyclerView.setItemViewCacheSize(20);
+        recyclerView.setDrawingCacheEnabled(true);
+        recyclerView.setDrawingCacheQuality(View.DRAWING_CACHE_QUALITY_HIGH);
+
         messageEditText.addTextChangedListener(new TextWatcher() {
             @Override
             public void beforeTextChanged(CharSequence s, int start, int count, int after) {
