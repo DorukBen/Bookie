@@ -350,28 +350,7 @@ public class BookTimelineAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
 
                 /////////////////////////////////////////////////////////////////////////////////////////////
 
-                Book.BookProcess lastProcess;
-                int i = 0;
-                do {
-                    lastProcess = mBookDetails.getBookProcesses().get(mBookDetails.getBookProcesses().size() - 1 - i++);
-                } while (lastProcess instanceof Book.Request || lastProcess == null);
-
-                Calendar createdAt = null;
-                if (lastProcess instanceof Book.Interaction) {
-                    createdAt = ((Book.Interaction) lastProcess).getCreatedAt();
-                } else if (lastProcess instanceof Book.Transaction) {
-                    createdAt = ((Book.Transaction) lastProcess).getCreatedAt();
-                }
-
-                long diff = Calendar.getInstance().getTimeInMillis() - createdAt.getTimeInMillis();
-
-                int days = (int) TimeUnit.MILLISECONDS.toDays(diff);
-
-                if (days == 0) {
-                    stateCurrentHolder.mStateDuration.setText(mContext.getString(R.string.state_today));
-                } else {
-                    stateCurrentHolder.mStateDuration.setText(mContext.getString(R.string.state_duration, days));
-                }
+                    stateCurrentHolder.mStateDuration.setText(getStateDurationText());
 
                 /////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -476,7 +455,9 @@ public class BookTimelineAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
 
                 Book.State state = mBookDetails.getBook().getState();
 
-                stateOtherHolder.mBookState.setText(bookStateToString(state));
+                String durationText = getStateDurationText();
+                String stateAndDuration = bookStateToString(state) + " " + durationText;
+                stateOtherHolder.mBookState.setText(stateAndDuration);
 
                 // Enable or disable book request button
                 if (state == Book.State.OPENED_TO_SHARE || state == Book.State.READING) {
@@ -734,6 +715,56 @@ public class BookTimelineAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
 
                 break;
             }
+        }
+    }
+
+    private String getStateDurationText() {
+        Book.BookProcess lastProcess;
+
+        int i = 0;
+        do {
+            lastProcess = mBookDetails.getBookProcesses().get(mBookDetails.getBookProcesses().size() - 1 - i++);
+        } while (lastProcess instanceof Book.Request || lastProcess == null);
+
+        Calendar createdAt = null;
+        if (lastProcess instanceof Book.Interaction) {
+            createdAt = ((Book.Interaction) lastProcess).getCreatedAt();
+        } else if (lastProcess instanceof Book.Transaction) {
+            createdAt = ((Book.Transaction) lastProcess).getCreatedAt();
+        }
+
+        long diff = Calendar.getInstance().getTimeInMillis() - createdAt.getTimeInMillis();
+
+        int days = (int) TimeUnit.MILLISECONDS.toDays(diff);
+
+        if (days > 0) {
+            return mContext.getString(R.string.state_duration, days);
+        } else {
+            return mContext.getString(R.string.state_today);
+        }
+    }
+
+    private String bookStateToStringWithDuration(Book.State state) {
+
+        switch (state) {
+
+            case READING:
+                return mContext.getString(R.string.reading);
+
+            case OPENED_TO_SHARE:
+                return mContext.getString(R.string.opened_to_share);
+
+            case CLOSED_TO_SHARE:
+                return mContext.getString(R.string.closed_to_share);
+
+            case ON_ROAD:
+                return mContext.getString(R.string.on_road);
+
+            case LOST:
+                return mContext.getString(R.string.lost);
+
+            default:
+                return null;
         }
     }
 
