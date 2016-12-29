@@ -5,6 +5,7 @@ import android.graphics.Bitmap;
 import android.support.v4.view.ViewCompat;
 import android.support.v7.widget.CardView;
 import android.support.v7.widget.RecyclerView;
+import android.text.TextUtils;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -383,10 +384,11 @@ public class ProfileTimelineAdapter extends RecyclerView.Adapter<RecyclerView.Vi
             case TYPE_HEADER: {
                 HeaderViewHolder headerViewHolder = (HeaderViewHolder) holder;
 
-                // TODO Empty states (Bio, Location)
-
                 // Listener setup
-                if (mHeaderClickListeners != null) {
+                if (mHeaderClickListeners != null &&
+                    !TextUtils.isEmpty(mUserDetails.getUser().getThumbnailUrl()) &&
+                    !TextUtils.isEmpty(mUserDetails.getUser().getImageUrl())) {
+
                     headerViewHolder.mLocation.setOnClickListener(new View.OnClickListener() {
                         @Override
                         public void onClick(View v) {
@@ -417,9 +419,21 @@ public class ProfileTimelineAdapter extends RecyclerView.Adapter<RecyclerView.Vi
                      .into(headerViewHolder.mProfilePicture);
 
                 headerViewHolder.mUserName.setText(mUserDetails.getUser().getName());
-                headerViewHolder.mBio.setText(mUserDetails.getBio());
 
-                headerViewHolder.mLocation.setText("Location"); //TODO Location
+                String bio = mUserDetails.getBio();
+                if (!TextUtils.isEmpty(bio)) {
+                    headerViewHolder.mBio.setVisibility(View.VISIBLE);
+                    headerViewHolder.mBio.setText(bio);
+                } else {
+                    headerViewHolder.mBio.setVisibility(View.GONE);
+                }
+
+                if (mUserDetails.getUser().getLatitude() != -1 && mUserDetails.getUser().getLongitude() != -1) {
+                    headerViewHolder.mLocation.setText("Location"); //TODO Location
+                    headerViewHolder.mLocation.setVisibility(View.VISIBLE);
+                } else {
+                    headerViewHolder.mLocation.setVisibility(View.GONE);
+                }
 
                 headerViewHolder.mReadBooks.setText(String.valueOf(mUserDetails.getReadedBooksCount()));
                 headerViewHolder.mPoint.setText(String.valueOf(mUserDetails.getPoint()));
