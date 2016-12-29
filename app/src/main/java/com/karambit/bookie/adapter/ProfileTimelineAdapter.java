@@ -8,6 +8,7 @@ import android.support.v7.widget.RecyclerView;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.ProgressBar;
 import android.widget.TextView;
@@ -19,6 +20,7 @@ import com.karambit.bookie.R;
 import com.karambit.bookie.helper.CircleImageView;
 import com.karambit.bookie.helper.ImageScaler;
 import com.karambit.bookie.helper.LayoutUtils;
+import com.karambit.bookie.helper.SessionManager;
 import com.karambit.bookie.helper.infinite_viewpager.HorizontalInfiniteCycleViewPager;
 import com.karambit.bookie.model.Book;
 import com.karambit.bookie.model.User;
@@ -38,12 +40,15 @@ public class ProfileTimelineAdapter extends RecyclerView.Adapter<RecyclerView.Vi
     private static final int TYPE_SUBTITLE_BOOKS_ON_HAND = 5;
     private static final int TYPE_SUBTITLE_READ_BOOKS = 6;
     private static final int TYPE_FOOTER = 7;
+    private static final int TYPE_START_READING = 8;
+    private static final int TYPE_EMPTY_STATE = 9;
 
     private Context mContext;
     private User.Details mUserDetails;
 
     private BookClickListener mBookClickListener;
     private HeaderClickListeners mHeaderClickListeners;
+    public StartReadingClickListener mStartReadingClickListener;
 
     private boolean mProgressBarActive;
 
@@ -52,6 +57,12 @@ public class ProfileTimelineAdapter extends RecyclerView.Adapter<RecyclerView.Vi
         mUserDetails = userDetails;
 
         mProgressBarActive = false;
+    }
+
+    public ProfileTimelineAdapter(Context context) {
+        mContext = context;
+
+        mProgressBarActive = true;
     }
 
     private static class HeaderViewHolder extends RecyclerView.ViewHolder {
@@ -87,6 +98,17 @@ public class ProfileTimelineAdapter extends RecyclerView.Adapter<RecyclerView.Vi
             super(currentlyReadingView);
 
             mCycleViewPager = (HorizontalInfiniteCycleViewPager) currentlyReadingView.findViewById(R.id.hicvp);
+        }
+    }
+
+    private static class StartReadingViewHolder extends RecyclerView.ViewHolder {
+
+        Button mStartReadingButton;
+
+        public StartReadingViewHolder(View itemView) {
+            super(itemView);
+
+            mStartReadingButton = (Button) itemView.findViewById(R.id.startReadingButton);
         }
     }
 
@@ -145,45 +167,174 @@ public class ProfileTimelineAdapter extends RecyclerView.Adapter<RecyclerView.Vi
 
     @Override
     public int getItemCount() {
-        return mUserDetails.getBooksOnHandCount() + mUserDetails.getReadedBooksCount() + 5; // + Header + Currently Reading + Subtitle + Subtitle + Footer)
+        if (mUserDetails != null) {
+
+            int increment = 0;
+
+            // Subtitle
+            if (mUserDetails.getBooksOnHandCount() > 0) {
+                increment++;
+            }
+
+            // Subtitle
+            if (mUserDetails.getReadedBooksCount() > 0) {
+                increment++;
+            }
+
+            // Currently reading
+            if (mUserDetails.getUser().getID() == SessionManager.getCurrentUser(mContext).getID() ||
+                mUserDetails.getCurrentlyReadingCount() != 0 ||
+                (mUserDetails.getBooksOnHandCount() > 0 && mUserDetails.getReadedBooksCount() > 0)) {
+
+                increment++;
+            }
+
+            return mUserDetails.getBooksOnHandCount() + mUserDetails.getReadedBooksCount() + increment + 2; // Header + Footer
+
+        } else {
+            return 1; // Footer
+        }
     }
 
-    /*
-        HEADER
-        CURRENTLY READING
-        SUBTITLE BOOKS ON HAND
-        BOOKS ON HAND
-        SUBTITLE READ BOOKS
-        READ BOOKS
-        FOOTER
-     */
     @Override
     public int getItemViewType(int position) {
 
-        if (position == 0) {
-            return TYPE_HEADER;
+        if (mUserDetails != null) {
 
-        } else if (position == 1) {
-            return TYPE_CURRENTLY_READING;
+            if (position == 0) {
+                return TYPE_HEADER;
 
-        } else if (position == 2) {
-            return TYPE_SUBTITLE_BOOKS_ON_HAND;
+            } else if (mUserDetails.getCurrentlyReadingCount() > 0) {
 
-        } else if (position < mUserDetails.getBooksOnHandCount() + 3) {
-            return TYPE_BOOKS_ON_HAND;
+                if (position == 1) {
+                    return TYPE_CURRENTLY_READING;
 
-        } else if (position == mUserDetails.getBooksOnHandCount() + 3) {
-            return TYPE_SUBTITLE_READ_BOOKS;
+                } else if (mUserDetails.getBooksOnHandCount() > 0 && mUserDetails.getReadedBooksCount() > 0) {
 
-        } else if (position < mUserDetails.getBooksOnHandCount() + mUserDetails.getReadedBooksCount() + 4) {
-            return TYPE_READ_BOOKS;
+                    if (position == 2) {
+                        return TYPE_SUBTITLE_BOOKS_ON_HAND;
 
-        } else if (position == getItemCount() - 1) {
-            return TYPE_FOOTER;
+                    } else if (position < mUserDetails.getBooksOnHandCount() + 3) {
+                        return TYPE_BOOKS_ON_HAND;
+
+                    } else if (position == mUserDetails.getBooksOnHandCount() + 3) {
+                        return TYPE_SUBTITLE_READ_BOOKS;
+
+                    } else if (position < mUserDetails.getBooksOnHandCount() + mUserDetails.getReadedBooksCount() + 4) {
+                        return TYPE_READ_BOOKS;
+                    }
+
+                } else if (mUserDetails.getBooksOnHandCount() > 0) {
+
+                    if (position == 2) {
+                        return TYPE_SUBTITLE_BOOKS_ON_HAND;
+
+                    } else if (position < mUserDetails.getBooksOnHandCount() + 3) {
+                        return TYPE_BOOKS_ON_HAND;
+                    }
+
+                } else if (mUserDetails.getReadedBooksCount() > 0) {
+
+                    if (position == 2) {
+                        return TYPE_SUBTITLE_READ_BOOKS;
+
+                    } else if (position < mUserDetails.getReadedBooksCount() + 3) {
+                        return TYPE_READ_BOOKS;
+                    }
+                }
+
+            } else if (mUserDetails.getUser().getID() == SessionManager.getCurrentUser(mContext).getID()) { // Currently reading section
+
+                if (position == 1) {
+                    return TYPE_START_READING;
+
+                } else if (mUserDetails.getBooksOnHandCount() > 0 && mUserDetails.getReadedBooksCount() > 0) {
+
+                    if (position == 2) {
+                        return TYPE_SUBTITLE_BOOKS_ON_HAND;
+
+                    } else if (position < mUserDetails.getBooksOnHandCount() + 3) {
+                        return TYPE_BOOKS_ON_HAND;
+
+                    } else if (position == mUserDetails.getBooksOnHandCount() + 3) {
+                        return TYPE_SUBTITLE_READ_BOOKS;
+
+                    } else if (position < mUserDetails.getBooksOnHandCount() + mUserDetails.getReadedBooksCount() + 4) {
+                        return TYPE_READ_BOOKS;
+                    }
+
+                } else if (mUserDetails.getBooksOnHandCount() > 0) {
+
+                    if (position == 2) {
+                        return TYPE_SUBTITLE_BOOKS_ON_HAND;
+
+                    } else if (position < mUserDetails.getBooksOnHandCount() + 3) {
+                        return TYPE_BOOKS_ON_HAND;
+                    }
+
+                } else if (mUserDetails.getReadedBooksCount() > 0) {
+
+
+                    if (position == 2) {
+                        return TYPE_SUBTITLE_READ_BOOKS;
+
+                    } else if (position < mUserDetails.getReadedBooksCount() + 3) {
+                        return TYPE_READ_BOOKS;
+                    }
+                }
+
+            } else {
+
+                if (mUserDetails.getBooksOnHandCount() > 0 && mUserDetails.getReadedBooksCount() > 0) {
+
+                    if (position == 1) {
+                        return TYPE_SUBTITLE_BOOKS_ON_HAND;
+
+                    } else if (position < mUserDetails.getBooksOnHandCount() + 2) {
+                        return TYPE_BOOKS_ON_HAND;
+
+                    } else if (position == mUserDetails.getBooksOnHandCount() + 2) {
+                        return TYPE_SUBTITLE_READ_BOOKS;
+
+                    } else if (position < mUserDetails.getBooksOnHandCount() + mUserDetails.getReadedBooksCount() + 3) {
+                        return TYPE_READ_BOOKS;
+                    }
+
+                } else if (mUserDetails.getBooksOnHandCount() > 0) {
+
+                    if (position == 1) {
+                        return TYPE_SUBTITLE_BOOKS_ON_HAND;
+
+                    } else if (position < mUserDetails.getBooksOnHandCount() + 2) {
+                        return TYPE_BOOKS_ON_HAND;
+                    }
+
+                } else if (mUserDetails.getReadedBooksCount() > 0) {
+
+                    if (position == 1) {
+                        return TYPE_SUBTITLE_READ_BOOKS;
+
+                    } else if (position < mUserDetails.getReadedBooksCount() + 2) {
+                        return TYPE_READ_BOOKS;
+                    }
+
+                } else {
+
+                    if (position == 1) {
+                        return TYPE_EMPTY_STATE;
+                    }
+                }
+            }
+
+            if (position == getItemCount() - 1) {
+                return TYPE_FOOTER;
+            }
 
         } else {
-            throw new IllegalArgumentException("Invalid view type at position " + position);
+            return TYPE_FOOTER;
         }
+
+        throw new IllegalArgumentException("Invalid type at position: " + position);
     }
 
     @Override
@@ -199,11 +350,19 @@ public class ProfileTimelineAdapter extends RecyclerView.Adapter<RecyclerView.Vi
                 View currentlyReadingView = LayoutInflater.from(parent.getContext()).inflate(R.layout.item_currently_reading_profile_timeline, parent, false);
                 return new CurrentlyReadingViewHolder(currentlyReadingView);
 
-            case TYPE_BOOKS_ON_HAND:case TYPE_READ_BOOKS:
+            case TYPE_START_READING:
+                View startReadingView = LayoutInflater.from(parent.getContext()).inflate(R.layout.item_start_reading_profile_timeline, parent, false);
+                return new StartReadingViewHolder(startReadingView);
+
+            case TYPE_EMPTY_STATE:
+                View emptyStateView = LayoutInflater.from(parent.getContext()).inflate(R.layout.item_empty_state, parent, false);
+                return new RecyclerView.ViewHolder(emptyStateView) {};
+
+            case TYPE_BOOKS_ON_HAND: case TYPE_READ_BOOKS:
                 View bookView = LayoutInflater.from(parent.getContext()).inflate(R.layout.item_book, parent, false);
                 return new BookViewHolder(bookView);
 
-            case TYPE_SUBTITLE_BOOKS_ON_HAND:case TYPE_SUBTITLE_READ_BOOKS:
+            case TYPE_SUBTITLE_BOOKS_ON_HAND: case TYPE_SUBTITLE_READ_BOOKS:
                 View subtitleView = LayoutInflater.from(parent.getContext()).inflate(R.layout.item_subtitle, parent, false);
                 return new SubtitleViewHolder(subtitleView);
 
@@ -244,18 +403,18 @@ public class ProfileTimelineAdapter extends RecyclerView.Adapter<RecyclerView.Vi
                 }
 
                 // Verification indication
-                if (! mUserDetails.isVerified()) {
+                if (!mUserDetails.isVerified()) {
                     headerViewHolder.mVerificationIndicator.setVisibility(View.VISIBLE);
                 } else {
                     headerViewHolder.mVerificationIndicator.setVisibility(View.GONE);
                 }
 
                 Glide.with(mContext)
-                        .load(mUserDetails.getUser().getThumbnailUrl())
-                        .asBitmap()
-                        .placeholder(R.drawable.placeholder_book)
-                        .centerCrop()
-                        .into(headerViewHolder.mProfilePicture);
+                     .load(mUserDetails.getUser().getThumbnailUrl())
+                     .asBitmap()
+                     .placeholder(R.drawable.placeholder_book)
+                     .centerCrop()
+                     .into(headerViewHolder.mProfilePicture);
 
                 headerViewHolder.mUserName.setText(mUserDetails.getUser().getName());
                 headerViewHolder.mBio.setText(mUserDetails.getBio());
@@ -279,9 +438,22 @@ public class ProfileTimelineAdapter extends RecyclerView.Adapter<RecyclerView.Vi
                 break;
             }
 
-            case TYPE_SUBTITLE_BOOKS_ON_HAND: {
+            case TYPE_START_READING: {
+                StartReadingViewHolder startReadingHolder = (StartReadingViewHolder) holder;
 
-                // TODO Empty state
+                startReadingHolder.mStartReadingButton.setOnClickListener(new View.OnClickListener() {
+                    @Override
+                    public void onClick(View v) {
+                        if (mStartReadingClickListener != null) {
+                            mStartReadingClickListener.onStartReadingClick(mUserDetails);
+                        }
+                    }
+                });
+
+                break;
+            }
+
+            case TYPE_SUBTITLE_BOOKS_ON_HAND: {
 
                 SubtitleViewHolder subtitleHolder = (SubtitleViewHolder) holder;
 
@@ -294,7 +466,7 @@ public class ProfileTimelineAdapter extends RecyclerView.Adapter<RecyclerView.Vi
 
                 final BookViewHolder bookHolder = (BookViewHolder) holder;
 
-                final Book book = mUserDetails.getBooksOnHand().get(position - 3); // - Header - Currently Reading - Subtitle
+                final Book book = mUserDetails.getBooksOnHand().get(position - calculateBooksOnHandOffset());
 
                 if (mBookClickListener != null) {
                     bookHolder.itemView.setOnClickListener(new View.OnClickListener() {
@@ -310,23 +482,21 @@ public class ProfileTimelineAdapter extends RecyclerView.Adapter<RecyclerView.Vi
                 bookHolder.mBookAuthor.setText(book.getAuthor());
 
                 Glide.with(mContext)
-                        .load(book.getThumbnailURL())
-                        .asBitmap()
-                        .placeholder(R.drawable.placeholder_book)
-                        .into(new SimpleTarget<Bitmap>() {
-                            @Override
-                            public void onResourceReady(Bitmap resource, GlideAnimation<? super Bitmap> glideAnimation) {
-                                Bitmap croppedBitmap = ImageScaler.cropImage(resource, 72 / 96f);
-                                bookHolder.mBookImage.setImageBitmap(croppedBitmap);
-                            }
-                        });
+                     .load(book.getThumbnailURL())
+                     .asBitmap()
+                     .placeholder(R.drawable.placeholder_book)
+                     .into(new SimpleTarget<Bitmap>() {
+                         @Override
+                         public void onResourceReady(Bitmap resource, GlideAnimation<? super Bitmap> glideAnimation) {
+                             Bitmap croppedBitmap = ImageScaler.cropImage(resource, 72 / 96f);
+                             bookHolder.mBookImage.setImageBitmap(croppedBitmap);
+                         }
+                     });
 
                 break;
             }
 
             case TYPE_SUBTITLE_READ_BOOKS: {
-
-                // TODO Empty state
 
                 SubtitleViewHolder subtitleHolder = (SubtitleViewHolder) holder;
 
@@ -339,8 +509,7 @@ public class ProfileTimelineAdapter extends RecyclerView.Adapter<RecyclerView.Vi
 
                 final BookViewHolder bookHolder = (BookViewHolder) holder;
 
-                int arrayPosition = position - mUserDetails.getBooksOnHandCount() - 4; // - Header - Currently Reading - Subtitle - Subtitle
-                final Book book = mUserDetails.getReadedBooks().get(arrayPosition);
+                final Book book = mUserDetails.getReadedBooks().get(position - calculateReadBooksOffset());
 
                 if (mBookClickListener != null) {
                     bookHolder.itemView.setOnClickListener(new View.OnClickListener() {
@@ -356,16 +525,16 @@ public class ProfileTimelineAdapter extends RecyclerView.Adapter<RecyclerView.Vi
                 bookHolder.mBookAuthor.setText(book.getAuthor());
 
                 Glide.with(mContext)
-                        .load(book.getThumbnailURL())
-                        .asBitmap()
-                        .placeholder(R.drawable.placeholder_book)
-                        .into(new SimpleTarget<Bitmap>() {
-                            @Override
-                            public void onResourceReady(Bitmap resource, GlideAnimation<? super Bitmap> glideAnimation) {
-                                Bitmap croppedBitmap = ImageScaler.cropImage(resource, 72 / 96f);
-                                bookHolder.mBookImage.setImageBitmap(croppedBitmap);
-                            }
-                        });
+                     .load(book.getThumbnailURL())
+                     .asBitmap()
+                     .placeholder(R.drawable.placeholder_book)
+                     .into(new SimpleTarget<Bitmap>() {
+                         @Override
+                         public void onResourceReady(Bitmap resource, GlideAnimation<? super Bitmap> glideAnimation) {
+                             Bitmap croppedBitmap = ImageScaler.cropImage(resource, 72 / 96f);
+                             bookHolder.mBookImage.setImageBitmap(croppedBitmap);
+                         }
+                     });
 
                 break;
             }
@@ -375,8 +544,10 @@ public class ProfileTimelineAdapter extends RecyclerView.Adapter<RecyclerView.Vi
                 FooterViewHolder footerHolder = (FooterViewHolder) holder;
 
                 if (mProgressBarActive) {
+                    footerHolder.mTextView.setVisibility(View.VISIBLE);
                     footerHolder.mProgressBar.setVisibility(View.VISIBLE);
                 } else {
+                    footerHolder.mTextView.setVisibility(View.GONE);
                     footerHolder.mProgressBar.setVisibility(View.GONE);
                 }
 
@@ -385,9 +556,72 @@ public class ProfileTimelineAdapter extends RecyclerView.Adapter<RecyclerView.Vi
         }
     }
 
+    private int calculateBooksOnHandOffset() {
+        int offset = 1; // Header
+
+        // Currently reading
+        if (mUserDetails.getUser().getID() == SessionManager.getCurrentUser(mContext).getID() ||
+            mUserDetails.getCurrentlyReadingCount() != 0 ||
+            (mUserDetails.getBooksOnHandCount() > 0 && mUserDetails.getReadedBooksCount() > 0)) {
+
+            offset++;
+        }
+
+        if (mUserDetails.getBooksOnHandCount() > 0) {
+            offset++;
+        }
+
+        return offset;
+    }
+
+    private int calculateReadBooksOffset() {
+        int offset = 1; // Header
+
+        // Currently reading
+        if (mUserDetails.getUser().getID() == SessionManager.getCurrentUser(mContext).getID() ||
+            mUserDetails.getCurrentlyReadingCount() != 0 ||
+            (mUserDetails.getBooksOnHandCount() > 0 && mUserDetails.getReadedBooksCount() > 0)) {
+
+            offset++;
+        }
+
+        if (mUserDetails.getBooksOnHandCount() > 0) {
+            offset++;
+        }
+
+        if (mUserDetails.getReadedBooksCount() > 0) {
+            offset++;
+        }
+
+        return offset + mUserDetails.getBooksOnHandCount();
+    }
+
+    public User.Details getUserDetails() {
+        return mUserDetails;
+    }
+
+    public void setUserDetails(User.Details userDetails) {
+        mUserDetails = userDetails;
+        notifyDataSetChanged();
+    }
+
     public void setProgressBar(boolean active) {
         mProgressBarActive = active;
-        notifyDataSetChanged();
+        notifyItemChanged(getItemCount() - 1);
+    }
+
+    public interface HeaderClickListeners {
+        void onProfilePictureClick(User.Details details);
+
+        void onLocationClick(User.Details details);
+    }
+
+    public interface BookClickListener {
+        void onBookClick(Book book);
+    }
+
+    public interface StartReadingClickListener {
+        void onStartReadingClick(User.Details userDetails);
     }
 
     public BookClickListener getBookClickListener() {
@@ -406,14 +640,11 @@ public class ProfileTimelineAdapter extends RecyclerView.Adapter<RecyclerView.Vi
         mHeaderClickListeners = headerClickListeners;
     }
 
-    public interface HeaderClickListeners {
-        void onProfilePictureClick(User.Details details);
-        void onLocationClick(User.Details details);
+    public StartReadingClickListener getStartReadingClickListener() {
+        return mStartReadingClickListener;
     }
 
-    public interface BookClickListener {
-        void onBookClick(Book book);
+    public void setStartReadingClickListener(StartReadingClickListener startReadingClickListener) {
+        mStartReadingClickListener = startReadingClickListener;
     }
-
-
 }

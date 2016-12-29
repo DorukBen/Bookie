@@ -41,7 +41,7 @@
     <string name="email">Email</string>
     <string name="password">Password</string>
     <string name="repassword">rePassword</string>
-    <string name="start_reading">Start Reading</string>
+    <string name="start_reading">Start Reading!</string>
     <string name="no_account_yet">No account yet?</string>
     <string name="create_new_account">Create a new account.</string>
     <string name="forgot_your_password">Forgot your Password?</string>

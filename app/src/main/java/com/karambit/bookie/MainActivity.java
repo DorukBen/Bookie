@@ -1,6 +1,5 @@
 package com.karambit.bookie;
 
-import android.app.Notification;
 import android.content.Intent;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
@@ -67,6 +66,7 @@ public class MainActivity extends AppCompatActivity implements TabHost.OnTabChan
         } else if (!SessionManager.isLovedGenresSelectedLocal(this)) {
             // TODO Server check for loved genres. If loved genres does not exists for user then start LovedGenresActivity
             startActivity(new Intent(this, LovedGenresActivity.class));
+            finish();
         }else{
             fragments = getFragments();
         }

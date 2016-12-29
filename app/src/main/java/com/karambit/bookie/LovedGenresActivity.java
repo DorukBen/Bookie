@@ -98,6 +98,7 @@ public class LovedGenresActivity extends AppCompatActivity {
                     }
 
                     finish();
+                    startActivity(new Intent(LovedGenresActivity.this, MainActivity.class));
                 }
             }
         }).start();
@@ -116,6 +117,7 @@ public class LovedGenresActivity extends AppCompatActivity {
             }
 
             finish();
+            startActivity(new Intent(LovedGenresActivity.this, MainActivity.class));
         }
     }
 }

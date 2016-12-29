@@ -25,6 +25,8 @@ import com.karambit.bookie.model.User;
  */
 public class ProfileFragment extends Fragment {
 
+    public static final String TAG = ProfileFragment.class.getSimpleName();
+
     // TODO: Rename parameter arguments, choose names that match
     // the fragment initialization parameters, e.g. ARG_ITEM_NUMBER
     private static final String IS_CURRENT_USER = "is_current_user";
@@ -79,13 +81,22 @@ public class ProfileFragment extends Fragment {
         RecyclerView recyclerView = (RecyclerView) rootView.findViewById(R.id.profileRecyclerView);
         recyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
 
-        ProfileTimelineAdapter adapter = new ProfileTimelineAdapter(getContext(), User.GENERATOR.generateUserDetails());
+        User.Details userDetails = User.GENERATOR.generateUserDetails(mUser);
+
+        ProfileTimelineAdapter adapter = new ProfileTimelineAdapter(getContext(), userDetails);
         adapter.setBookClickListener(new ProfileTimelineAdapter.BookClickListener() {
             @Override
             public void onBookClick(Book book) {
                 Intent intent = new Intent(getContext(), BookActivity.class);
                 intent.putExtra("book", book);
                 startActivity(intent);
+            }
+        });
+
+        adapter.setStartReadingClickListener(new ProfileTimelineAdapter.StartReadingClickListener() {
+            @Override
+            public void onStartReadingClick(User.Details userDetails) {
+                // TODO Start Reading Button
             }
         });
 

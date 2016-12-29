@@ -554,11 +554,29 @@ public class Book implements Parcelable {
             return new Book(random.nextInt(), bookName, bookImageUrl, bookThumbnailUrl, author, state, owner);
         }
 
+        public static Book generateBook(User user) {
+            Random random = new Random();
+
+            String author = NAMES[random.nextInt(NAMES.length)];
+            String bookName = BOOK_NAMES[random.nextInt(BOOK_NAMES.length)];
+            State state = State.values()[random.nextInt(State.values().length)];
+
+            int randomIndex = random.nextInt(BOOK_IMAGE_URLS.length);
+            String bookImageUrl = BOOK_IMAGE_URLS[randomIndex];
+            String bookThumbnailUrl = BOOK_IMAGE_URLS[randomIndex];
+
+            return new Book(random.nextInt(), bookName, bookImageUrl, bookThumbnailUrl, author, state, user);
+        }
+
         public static ArrayList<Book> generateBookList(int count) {
+            return generateBookList(count, User.GENERATOR.generateUser());
+        }
+
+        public static ArrayList<Book> generateBookList(int count, User user) {
             ArrayList<Book> books = new ArrayList<>(count);
 
             for (int i = 0; i < count; i++) {
-                books.add(generateBook());
+                books.add(generateBook(user));
             }
 
             return books;
