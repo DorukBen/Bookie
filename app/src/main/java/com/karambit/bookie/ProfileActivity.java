@@ -41,7 +41,7 @@ public class ProfileActivity extends AppCompatActivity {
         }
 
         Bundle bundle = getIntent().getExtras();
-        ProfileFragment profileFragment = ProfileFragment.newInstance(false,(User) bundle.getParcelable(USER));
+        ProfileFragment profileFragment = ProfileFragment.newInstance((User) bundle.getParcelable(USER));
         FragmentTransaction transaction = getSupportFragmentManager().beginTransaction();
         transaction.add(R.id.profileFragmentFrame, profileFragment );
         transaction.commit();

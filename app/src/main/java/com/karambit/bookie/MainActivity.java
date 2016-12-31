@@ -192,7 +192,7 @@ public class MainActivity extends AppCompatActivity implements TabHost.OnTabChan
 
         mHomeFragment = new HomeFragment();
         mSearchFragment = new SearchFragment();
-        mProfileFragment = ProfileFragment.newInstance(true, dbHandler.getCurrentUser());
+        mProfileFragment = ProfileFragment.newInstance(dbHandler.getCurrentUser());
         mMessageFragment = new MessageFragment();
         fList.add(mHomeFragment);
         fList.add(mSearchFragment);
