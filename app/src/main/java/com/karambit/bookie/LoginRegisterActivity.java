@@ -267,7 +267,7 @@ public class LoginRegisterActivity extends AppCompatActivity {
         progressDialog.setCancelable(false);
         progressDialog.show();
 
-        UserApi userApi = BookieClient.getClient().create(UserApi.class);
+        final UserApi userApi = BookieClient.getClient().create(UserApi.class);
         String email = mEmailEditText.getText().toString();
         String password = mPasswordEditText.getText().toString();
         Call<ResponseBody> login = userApi.login(email, password);

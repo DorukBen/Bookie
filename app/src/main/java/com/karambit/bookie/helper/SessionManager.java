@@ -11,6 +11,10 @@ import com.karambit.bookie.model.User;
 
 public class SessionManager {
 
+    private static User mUser;
+
+    private static User.Details mUserDetails;
+
     public static final String TAG = SessionManager.class.getSimpleName();
 
     public static final String NAME_SHARED_PREFERENCES = "bookie_sp";
@@ -33,19 +37,34 @@ public class SessionManager {
     public static void logout(Context context) {
         new DBHandler(context).deleteCurrentUser();
         changeLoginStatus(context, false);
+        mUserDetails = null;
+        mUser = null;
     }
 
     public static void login(Context context, User.Details userDetails) {
-        new DBHandler(context).insertCurrentUser(userDetails);
+        DBHandler dbHandler = new DBHandler(context);
+        dbHandler.insertCurrentUser(userDetails);
         changeLoginStatus(context, true);
+        mUserDetails = dbHandler.getCurrentUserDetails();
+        mUser = dbHandler.getCurrentUser();
     }
 
     public static User.Details getCurrentUserDetails(Context context) {
-        return new DBHandler(context).getCurrentUserDetails();
+        if (mUserDetails == null){
+            mUserDetails = new DBHandler(context).getCurrentUserDetails();
+            return mUserDetails;
+        }else {
+            return mUserDetails;
+        }
     }
 
     public static User getCurrentUser(Context context) {
-        return new DBHandler(context).getCurrentUser();
+        if (mUser == null){
+            mUser = new DBHandler(context).getCurrentUser();
+            return mUser;
+        }else {
+            return mUser;
+        }
     }
 
     public static boolean isLovedGenresSelectedLocal(Context context) {
