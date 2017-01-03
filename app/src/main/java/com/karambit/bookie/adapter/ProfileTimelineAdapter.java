@@ -49,7 +49,7 @@ public class ProfileTimelineAdapter extends RecyclerView.Adapter<RecyclerView.Vi
 
     private BookClickListener mBookClickListener;
     private HeaderClickListeners mHeaderClickListeners;
-    public StartReadingClickListener mStartReadingClickListener;
+    private StartReadingClickListener mStartReadingClickListener;
 
     private boolean mProgressBarActive;
 
@@ -185,7 +185,7 @@ public class ProfileTimelineAdapter extends RecyclerView.Adapter<RecyclerView.Vi
             // Currently reading
             if (mUserDetails.getUser().getID() == SessionManager.getCurrentUser(mContext).getID() ||
                 mUserDetails.getCurrentlyReadingCount() != 0 ||
-                (mUserDetails.getBooksOnHandCount() > 0 && mUserDetails.getReadedBooksCount() > 0)) {
+                (mUserDetails.getBooksOnHandCount() < 0 && mUserDetails.getReadedBooksCount() < 0)) {
 
                 increment++;
             }
@@ -576,7 +576,7 @@ public class ProfileTimelineAdapter extends RecyclerView.Adapter<RecyclerView.Vi
         // Currently reading
         if (mUserDetails.getUser().getID() == SessionManager.getCurrentUser(mContext).getID() ||
             mUserDetails.getCurrentlyReadingCount() != 0 ||
-            (mUserDetails.getBooksOnHandCount() > 0 && mUserDetails.getReadedBooksCount() > 0)) {
+            (mUserDetails.getBooksOnHandCount() < 0 && mUserDetails.getReadedBooksCount() < 0)) {
 
             offset++;
         }
@@ -594,7 +594,7 @@ public class ProfileTimelineAdapter extends RecyclerView.Adapter<RecyclerView.Vi
         // Currently reading
         if (mUserDetails.getUser().getID() == SessionManager.getCurrentUser(mContext).getID() ||
             mUserDetails.getCurrentlyReadingCount() != 0 ||
-            (mUserDetails.getBooksOnHandCount() > 0 && mUserDetails.getReadedBooksCount() > 0)) {
+            (mUserDetails.getBooksOnHandCount() < 0 && mUserDetails.getReadedBooksCount() < 0)) {
 
             offset++;
         }
