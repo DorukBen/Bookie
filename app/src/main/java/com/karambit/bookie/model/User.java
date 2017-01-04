@@ -350,7 +350,7 @@ public class User implements Parcelable {
             String imageThumbnailUrl = ImageLinkSource.IMAGE_THUMBNAIL_URLS[randomIndex];
 
             return new User(random.nextInt(), name, imageUrl, imageThumbnailUrl,
-                    random.nextDouble() + random.nextInt(180),
+                    random.nextDouble() + random.nextInt(180) - 90,
                     random.nextDouble() + random.nextInt(180));
         }
 

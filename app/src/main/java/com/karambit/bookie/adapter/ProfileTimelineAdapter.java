@@ -460,9 +460,29 @@ public class ProfileTimelineAdapter extends RecyclerView.Adapter<RecyclerView.Vi
                         // Admin area equals Istanbul
                         // Subadmin are equals Bahçelievler
 
-                        String locationString = addresses.get(0).getSubAdminArea() + " / " + addresses.get(0).getAdminArea();
-                        headerViewHolder.mLocation.setText(locationString);
-                        headerViewHolder.mLocation.setVisibility(View.VISIBLE);
+                        if (addresses.size() > 0) {
+                            String locationString = "";
+
+                            String subAdminArea = addresses.get(0).getSubAdminArea();
+                            if (subAdminArea != null && !subAdminArea.equals("null")) {
+                                locationString += subAdminArea + " / ";
+                            }
+
+                            String adminArea = addresses.get(0).getAdminArea();
+                            if (adminArea != null && !adminArea.equals("null")) {
+                                locationString += adminArea;
+                            }
+
+                            if (TextUtils.isEmpty(locationString)) {
+                                headerViewHolder.mLocation.setVisibility(View.GONE);
+                            } else {
+                                headerViewHolder.mLocation.setText(locationString);
+                                headerViewHolder.mLocation.setVisibility(View.VISIBLE);
+                            }
+
+                        } else {
+                            headerViewHolder.mLocation.setVisibility(View.GONE);
+                        }
 
                     } catch (IOException e) {
                         e.printStackTrace();
