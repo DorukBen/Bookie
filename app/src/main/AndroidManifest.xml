@@ -47,6 +47,12 @@
         </activity>
         <activity android:name=".NotificationActivity">
         </activity>
+        <activity android:name=".LocationActivity">
+        </activity>
+
+        <meta-data android:name="com.google.android.geo.API_KEY"
+            android:value="AIzaSyAYqy3e7cyu4lutdpH2dZeBAuSf1UKU6hA"/>
+
     </application>
 
 </manifest>

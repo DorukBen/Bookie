@@ -11,6 +11,7 @@ import android.view.View;
 import android.view.ViewGroup;
 
 import com.karambit.bookie.BookActivity;
+import com.karambit.bookie.LocationActivity;
 import com.karambit.bookie.MainActivity;
 import com.karambit.bookie.R;
 import com.karambit.bookie.adapter.SearchAdapter;
@@ -56,6 +57,13 @@ public class SearchFragment extends Fragment {
         recyclerView.setDrawingCacheQuality(View.DRAWING_CACHE_QUALITY_HIGH);
 
         recyclerView.setHasFixedSize(true);
+
+        rootView.findViewById(R.id.searchButton).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                startActivity(new Intent(getContext(), LocationActivity.class));
+            }
+        });
 
         return rootView;
     }
