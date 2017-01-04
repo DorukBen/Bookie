@@ -16,6 +16,7 @@
         android:theme="@style/AppTheme">
         <activity
             android:name=".MainActivity"
+            android:screenOrientation="portrait"
             android:windowSoftInputMode="adjustPan">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN"/>
@@ -23,29 +24,41 @@
                 <category android:name="android.intent.category.LAUNCHER"/>
             </intent-filter>
         </activity>
-        <activity android:name=".BookActivity">
+        <activity android:name=".BookActivity"
+                  android:screenOrientation="portrait">
         </activity>
-        <activity android:name=".ConversationActivity">
+        <activity android:name=".ConversationActivity"
+                  android:screenOrientation="portrait">
         </activity>
-        <activity android:name=".AddBookActivity">
+        <activity android:name=".AddBookActivity"
+                  android:screenOrientation="portrait">
         </activity>
-        <activity android:name=".LoginRegisterActivity">
+        <activity android:name=".LoginRegisterActivity"
+                  android:screenOrientation="portrait">
         </activity>
-        <activity android:name=".CurrentUserProfileSettingsActivity">
+        <activity android:name=".CurrentUserProfileSettingsActivity"
+                  android:screenOrientation="portrait">
         </activity>
-        <activity android:name=".introduction.IntroductionActivity">
+        <activity android:name=".introduction.IntroductionActivity"
+                  android:screenOrientation="portrait">
         </activity>
-        <activity android:name=".LovedGenresActivity">
+        <activity android:name=".LovedGenresActivity"
+                  android:screenOrientation="portrait">
         </activity>
-        <activity android:name=".ProfileActivity">
+        <activity android:name=".ProfileActivity"
+                  android:screenOrientation="portrait">
         </activity>
-        <activity android:name=".UserProfileSettingsActivity">
+        <activity android:name=".UserProfileSettingsActivity"
+                  android:screenOrientation="portrait">
         </activity>
-        <activity android:name=".BookSettingsActivity">
+        <activity android:name=".BookSettingsActivity"
+                  android:screenOrientation="portrait">
         </activity>
-        <activity android:name=".PhotoViewerActivity">
+        <activity android:name=".PhotoViewerActivity"
+                  android:screenOrientation="portrait">
         </activity>
-        <activity android:name=".NotificationActivity">
+        <activity android:name=".NotificationActivity"
+                  android:screenOrientation="portrait">
         </activity>
     </application>
 
