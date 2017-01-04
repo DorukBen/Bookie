@@ -38,7 +38,7 @@
             android:text="Select your location for getting better result from your book searchs. Other users can see your books location to get better results."
             android:textAlignment="center"
             android:textColor="@color/primaryTextColor"
-            android:textSize="20sp"/>
+            android:textSize="18sp"/>
 
         <LinearLayout
             android:id="@+id/googleSearchLinear"
@@ -66,6 +66,17 @@
                 android:alpha="0.32"
                 android:background="@color/primaryTextColor"/>
         </LinearLayout>
+
+        <Button
+            android:id="@+id/locationOKButton"
+            style="@style/Base.Widget.AppCompat.ActionButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="right"
+            android:layout_margin="8dp"
+            android:text="@string/ok"
+            android:textColor="@color/colorAccent"
+            android:textSize="18sp"/>
     </LinearLayout>
 
 
