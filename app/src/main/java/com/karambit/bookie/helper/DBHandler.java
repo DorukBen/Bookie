@@ -36,9 +36,11 @@ public class DBHandler extends SQLiteOpenHelper {
     private static final String LG_COLUMN_ID = "loved_genre_id";
     private static final String LG_COLUMN_USER_ID = "user_id";
     private static final String LG_COLUMN_GENRE_CODE = "genre_code";
+    private final Context mContent;
 
     public DBHandler(Context context) {
         super(context, DATABASE_NAME, null, 1);
+        mContent = context;
     }
 
     @Override
@@ -177,6 +179,19 @@ public class DBHandler extends SQLiteOpenHelper {
             db.close();
         }
         return details;
+    }
+
+    public void updateCurrentUserLocation(double latitude, double longitude){
+        SQLiteDatabase db = this.getWritableDatabase();
+        ContentValues cv = new ContentValues();
+        cv.put(USER_COLUMN_LATITUDE, latitude);
+        cv.put(USER_COLUMN_LONGITUDE, longitude);
+
+        db.update(USER_TABLE_NAME, cv, USER_COLUMN_ID + "=" + SessionManager.getCurrentUser(mContent).getID(), null);
+
+        if (db.isOpen()){
+            db.close();
+        }
     }
 
     public int deleteCurrentUser() {
