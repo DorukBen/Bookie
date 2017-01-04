@@ -34,7 +34,7 @@ public class HomeFragment extends Fragment {
         // Inflate the layout for this fragment
         View rootView = inflater.inflate(R.layout.fragment_home, container, false);
 
-        RecyclerView recyclerView = (RecyclerView) rootView.findViewById(R.id.homeRecyclerView);
+        final RecyclerView recyclerView = (RecyclerView) rootView.findViewById(R.id.homeRecyclerView);
 
         recyclerView.setOnScrollListener(new ElevationScrollListener((MainActivity) getActivity(), HOME_FRAGMENT_TAB_INEX));
 
@@ -55,6 +55,12 @@ public class HomeFragment extends Fragment {
         recyclerView.setDrawingCacheEnabled(true);
         recyclerView.setDrawingCacheQuality(View.DRAWING_CACHE_QUALITY_HIGH);
 
+        ((MainActivity)getActivity()).setDoubleTapHomeButtonListener(new MainActivity.DoubleTapHomeButtonListener() {
+            @Override
+            public void onDoubleTapHomeButton() {
+                recyclerView.smoothScrollToPosition(0);
+            }
+        });
         return rootView;
     }
 

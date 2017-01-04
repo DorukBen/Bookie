@@ -52,6 +52,7 @@ public class MainActivity extends AppCompatActivity implements TabHost.OnTabChan
     private View mIndicator;
     private MenuItem mProfilePageMenuItem;
     private MenuItem mNotificationMenuItem;
+    private DoubleTapHomeButtonListener mDoubleTapHomeButtonListener;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -166,6 +167,17 @@ public class MainActivity extends AppCompatActivity implements TabHost.OnTabChan
         ViewCompat.setElevation(mTabHost.getTabWidget().getChildTabViewAt(1),32);
         ViewCompat.setElevation(mTabHost.getTabWidget().getChildTabViewAt(3),32);
         ViewCompat.setElevation(mTabHost.getTabWidget().getChildTabViewAt(4),32);
+
+        mTabHost.getTabWidget().getChildTabViewAt(0).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                if (mTabHost.getCurrentTabView() == view){
+                    mDoubleTapHomeButtonListener.onDoubleTapHomeButton();
+                }else{
+                    mTabHost.setCurrentTab(0);
+                }
+            }
+        });
 
         mIndicator = mTabHost.getCurrentTabView().findViewById(R.id.tab_strip);
         mIndicator.setVisibility(View.VISIBLE);
@@ -302,5 +314,13 @@ public class MainActivity extends AppCompatActivity implements TabHost.OnTabChan
                 item.setIcon(ContextCompat.getDrawable(MainActivity.this ,R.drawable.main_notification_9plus));
                 break;
         }
+    }
+
+    public interface DoubleTapHomeButtonListener{
+        void onDoubleTapHomeButton();
+    }
+
+    public void setDoubleTapHomeButtonListener(DoubleTapHomeButtonListener doubleTapHomeButtonListener){
+        mDoubleTapHomeButtonListener = doubleTapHomeButtonListener;
     }
 }
