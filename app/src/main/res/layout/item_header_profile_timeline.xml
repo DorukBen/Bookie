@@ -15,7 +15,6 @@
         android:paddingLeft="36dp"
         android:paddingRight="36dp">
 
-        <!--TODO CircleImageView-->
         <com.karambit.bookie.helper.CircleImageView
             android:id="@+id/profilePictureHeaderCircleImageView"
             android:layout_width="136dp"
@@ -60,7 +59,7 @@
             android:layout_height="wrap_content"
             android:text="@string/unverified_user"
             android:textStyle="italic"
-            android:layout_marginTop="4dp"
+            android:layout_marginTop="8dp"
             android:textColor="@color/secondaryTextColor"
             android:textSize="14dp"/>
 

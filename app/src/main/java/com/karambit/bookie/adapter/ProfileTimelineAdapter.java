@@ -2,6 +2,8 @@ package com.karambit.bookie.adapter;
 
 import android.content.Context;
 import android.graphics.Bitmap;
+import android.location.Address;
+import android.location.Geocoder;
 import android.support.v4.view.ViewCompat;
 import android.support.v7.widget.CardView;
 import android.support.v7.widget.RecyclerView;
@@ -25,6 +27,10 @@ import com.karambit.bookie.helper.SessionManager;
 import com.karambit.bookie.helper.infinite_viewpager.HorizontalInfiniteCycleViewPager;
 import com.karambit.bookie.model.Book;
 import com.karambit.bookie.model.User;
+
+import java.io.IOException;
+import java.util.List;
+import java.util.Locale;
 
 /**
  * Created by orcan on 10/7/16.
@@ -384,7 +390,10 @@ public class ProfileTimelineAdapter extends RecyclerView.Adapter<RecyclerView.Vi
             case TYPE_HEADER: {
                 HeaderViewHolder headerViewHolder = (HeaderViewHolder) holder;
 
+                //
                 // Listener setup
+                //
+
                 if (mHeaderClickListeners != null &&
                     !TextUtils.isEmpty(mUserDetails.getUser().getThumbnailUrl()) &&
                     !TextUtils.isEmpty(mUserDetails.getUser().getImageUrl())) {
@@ -404,7 +413,10 @@ public class ProfileTimelineAdapter extends RecyclerView.Adapter<RecyclerView.Vi
                     });
                 }
 
+                //
                 // Verification indication
+                //
+
                 if (!mUserDetails.isVerified()) {
                     headerViewHolder.mVerificationIndicator.setVisibility(View.VISIBLE);
                 } else {
@@ -420,6 +432,10 @@ public class ProfileTimelineAdapter extends RecyclerView.Adapter<RecyclerView.Vi
 
                 headerViewHolder.mUserName.setText(mUserDetails.getUser().getName());
 
+                //
+                // Bio
+                //
+
                 String bio = mUserDetails.getBio();
                 if (!TextUtils.isEmpty(bio)) {
                     headerViewHolder.mBio.setVisibility(View.VISIBLE);
@@ -428,9 +444,31 @@ public class ProfileTimelineAdapter extends RecyclerView.Adapter<RecyclerView.Vi
                     headerViewHolder.mBio.setVisibility(View.GONE);
                 }
 
-                if (mUserDetails.getUser().getLatitude() != -1 && mUserDetails.getUser().getLongitude() != -1) {
-                    headerViewHolder.mLocation.setText("Location"); //TODO Location
-                    headerViewHolder.mLocation.setVisibility(View.VISIBLE);
+                //
+                // Location
+                //
+
+                double latitude = mUserDetails.getUser().getLatitude();
+                double longitude = mUserDetails.getUser().getLongitude();
+
+                if (latitude != -1 && longitude != -1) {
+
+                    try {
+                        Geocoder geocoder = new Geocoder(mContext, Locale.getDefault());
+                        List<Address> addresses = geocoder.getFromLocation(latitude, longitude, 1);
+
+                        // Admin area equals Istanbul
+                        // Subadmin are equals Bahçelievler
+
+                        String locationString = addresses.get(0).getSubAdminArea() + " / " + addresses.get(0).getAdminArea();
+                        headerViewHolder.mLocation.setText(locationString);
+                        headerViewHolder.mLocation.setVisibility(View.VISIBLE);
+
+                    } catch (IOException e) {
+                        e.printStackTrace();
+
+                        headerViewHolder.mLocation.setVisibility(View.GONE);
+                    }
                 } else {
                     headerViewHolder.mLocation.setVisibility(View.GONE);
                 }
