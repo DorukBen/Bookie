@@ -49,6 +49,12 @@ public class SessionManager {
         mUser = dbHandler.getCurrentUser();
     }
 
+    public static void updateCurrentUser(Context context){
+        DBHandler dbHandler = new DBHandler(context);
+        mUserDetails = dbHandler.getCurrentUserDetails();
+        mUser = dbHandler.getCurrentUser();
+    }
+
     public static User.Details getCurrentUserDetails(Context context) {
         if (mUserDetails == null){
             mUserDetails = new DBHandler(context).getCurrentUserDetails();

@@ -11,10 +11,14 @@ import com.google.android.gms.location.places.AutocompleteFilter;
 import com.google.android.gms.location.places.Place;
 import com.google.android.gms.location.places.ui.PlaceSelectionListener;
 import com.google.android.gms.location.places.ui.SupportPlaceAutocompleteFragment;
+import com.karambit.bookie.helper.DBHandler;
+import com.karambit.bookie.helper.SessionManager;
 
 public class LocationActivity extends AppCompatActivity {
 
     public static final String TAG = LocationActivity.class.getSimpleName();
+    private double mLatitude;
+    private double mLongitude;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -43,7 +47,8 @@ public class LocationActivity extends AppCompatActivity {
         autocompleteFragment.setOnPlaceSelectedListener(new PlaceSelectionListener() {
             @Override
             public void onPlaceSelected(Place place) {
-                //TODO: set user location here place.getLat()
+                mLatitude = place.getLatLng().latitude;
+                mLongitude = place.getLatLng().longitude;
                 okButton.setEnabled(true);
                 okButton.setTextColor(ContextCompat.getColor(LocationActivity.this, R.color.colorAccent));
                 okButton.setAlpha(1f);
@@ -72,6 +77,9 @@ public class LocationActivity extends AppCompatActivity {
         okButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
+                DBHandler dbHandler = new DBHandler(LocationActivity.this);
+                dbHandler.updateCurrentUserLocation(mLatitude, mLongitude);
+                SessionManager.updateCurrentUser(LocationActivity.this);
                 finish();
             }
         });

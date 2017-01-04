@@ -6,16 +6,20 @@ import android.os.Bundle;
 import android.support.v4.app.Fragment;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Toast;
 
 import com.karambit.bookie.BookActivity;
 import com.karambit.bookie.LocationActivity;
 import com.karambit.bookie.MainActivity;
 import com.karambit.bookie.R;
 import com.karambit.bookie.adapter.SearchAdapter;
+import com.karambit.bookie.helper.DBHandler;
 import com.karambit.bookie.helper.ElevationScrollListener;
+import com.karambit.bookie.helper.SessionManager;
 import com.karambit.bookie.model.Book;
 
 /**
@@ -23,6 +27,8 @@ import com.karambit.bookie.model.Book;
  */
 public class SearchFragment extends Fragment {
 
+
+    private static final String TAG = SearchFragment.class.getSimpleName();
 
     public SearchFragment() {
         // Required empty public constructor
@@ -61,7 +67,11 @@ public class SearchFragment extends Fragment {
         rootView.findViewById(R.id.searchButton).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                startActivity(new Intent(getContext(), LocationActivity.class));
+                if (SessionManager.getCurrentUser(getContext()).getLatitude() != 0.0d && SessionManager.getCurrentUser(getContext()).getLongitude() != 0.0d ){
+                    //TODO: Make internet connection for search here
+                }else{
+                    startActivity(new Intent(getContext(), LocationActivity.class));
+                }
             }
         });
 
