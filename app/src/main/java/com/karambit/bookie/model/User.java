@@ -164,12 +164,12 @@ public class User implements Parcelable {
         private int mBookCounter;
         private int mPoint;
         private ArrayList<Book> mCurrentlyReading;
-        private ArrayList<Book> mReadedBooks;
+        private ArrayList<Book> mReadBooks;
         private ArrayList<Book> mBooksOnHand;
         private ArrayList<Book> mSharedBooks;
 
         public Details(String password, String email, boolean verified, @Nullable String bio, int bookCounter,
-                       int point, ArrayList<Book> currentlyReading, @Nullable ArrayList<Book> readedBooks,
+                       int point, ArrayList<Book> currentlyReading, @Nullable ArrayList<Book> readBooks,
                        @Nullable ArrayList<Book> booksOnHand, @Nullable ArrayList<Book> sharedBooks) {
             mPassword = password;
             mEmail = email;
@@ -178,7 +178,7 @@ public class User implements Parcelable {
             mBookCounter = bookCounter;
             mPoint = point;
             mCurrentlyReading = currentlyReading;
-            mReadedBooks = readedBooks;
+            mReadBooks = readBooks;
             mBooksOnHand = booksOnHand;
             mSharedBooks = sharedBooks;
         }
@@ -252,16 +252,16 @@ public class User implements Parcelable {
             mCurrentlyReading = currentlyReading;
         }
 
-        public ArrayList<Book> getReadedBooks() {
-            return mReadedBooks;
+        public ArrayList<Book> getReadBooks() {
+            return mReadBooks;
         }
 
-        public int getReadedBooksCount() {
-            return mReadedBooks != null ? mReadedBooks.size() : 0;
+        public int getReadBooksCount() {
+            return mReadBooks != null ? mReadBooks.size() : 0;
         }
 
-        public void setReadedBooks(ArrayList<Book> readedBooks) {
-            mReadedBooks = readedBooks;
+        public void setReadBooks(ArrayList<Book> readBooks) {
+            mReadBooks = readBooks;
         }
 
         public ArrayList<Book> getBooksOnHand() {
@@ -302,7 +302,7 @@ public class User implements Parcelable {
                     ", mBookCounter=" + mBookCounter +
                     ", mPoint=" + mPoint +
                     ",\nmCurrentlyReading=" + mCurrentlyReading +
-                    ",\nmReadedBooks=" + mReadedBooks +
+                    ",\nmReadBooks=" + mReadBooks +
                     ",\nmBooksOnHand=" + mBooksOnHand +
                     ",\nmBooksOnHand=" + mSharedBooks + '}';
         }
@@ -376,12 +376,12 @@ public class User implements Parcelable {
             ArrayList<Book> currentlyReading = Book.GENERATOR.generateBookList(random.nextInt(4), user);
 
             ArrayList<Book> booksOnHand = Book.GENERATOR.generateBookList(random.nextInt(15), user);
-            ArrayList<Book> booksReaded = Book.GENERATOR.generateBookList(random.nextInt(15));
+            ArrayList<Book> booksRead = Book.GENERATOR.generateBookList(random.nextInt(15));
             ArrayList<Book> booksShared = Book.GENERATOR.generateBookList(random.nextInt(15));
 
 
             return user.new Details("********", name2Email(user.mName), true, BIO, random.nextInt(5),
-                    random.nextInt(300), currentlyReading, booksReaded, booksOnHand, booksShared);
+                    random.nextInt(300), currentlyReading, booksRead, booksOnHand, booksShared);
         }
 
         private static String name2Email(String name) {

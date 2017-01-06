@@ -184,19 +184,19 @@ public class ProfileTimelineAdapter extends RecyclerView.Adapter<RecyclerView.Vi
             }
 
             // Subtitle
-            if (mUserDetails.getReadedBooksCount() > 0) {
+            if (mUserDetails.getReadBooksCount() > 0) {
                 increment++;
             }
 
             // Currently reading
             if (mUserDetails.getUser().getID() == SessionManager.getCurrentUser(mContext).getID() ||
                 mUserDetails.getCurrentlyReadingCount() != 0 ||
-                (mUserDetails.getBooksOnHandCount() < 0 && mUserDetails.getReadedBooksCount() < 0)) {
+                (mUserDetails.getBooksOnHandCount() < 0 && mUserDetails.getReadBooksCount() < 0)) {
 
                 increment++;
             }
 
-            return mUserDetails.getBooksOnHandCount() + mUserDetails.getReadedBooksCount() + increment + 2; // Header + Footer
+            return mUserDetails.getBooksOnHandCount() + mUserDetails.getReadBooksCount() + increment + 2; // Header + Footer
 
         } else {
             return 1; // Footer
@@ -216,7 +216,7 @@ public class ProfileTimelineAdapter extends RecyclerView.Adapter<RecyclerView.Vi
                 if (position == 1) {
                     return TYPE_CURRENTLY_READING;
 
-                } else if (mUserDetails.getBooksOnHandCount() > 0 && mUserDetails.getReadedBooksCount() > 0) {
+                } else if (mUserDetails.getBooksOnHandCount() > 0 && mUserDetails.getReadBooksCount() > 0) {
 
                     if (position == 2) {
                         return TYPE_SUBTITLE_BOOKS_ON_HAND;
@@ -227,7 +227,7 @@ public class ProfileTimelineAdapter extends RecyclerView.Adapter<RecyclerView.Vi
                     } else if (position == mUserDetails.getBooksOnHandCount() + 3) {
                         return TYPE_SUBTITLE_READ_BOOKS;
 
-                    } else if (position < mUserDetails.getBooksOnHandCount() + mUserDetails.getReadedBooksCount() + 4) {
+                    } else if (position < mUserDetails.getBooksOnHandCount() + mUserDetails.getReadBooksCount() + 4) {
                         return TYPE_READ_BOOKS;
                     }
 
@@ -240,12 +240,12 @@ public class ProfileTimelineAdapter extends RecyclerView.Adapter<RecyclerView.Vi
                         return TYPE_BOOKS_ON_HAND;
                     }
 
-                } else if (mUserDetails.getReadedBooksCount() > 0) {
+                } else if (mUserDetails.getReadBooksCount() > 0) {
 
                     if (position == 2) {
                         return TYPE_SUBTITLE_READ_BOOKS;
 
-                    } else if (position < mUserDetails.getReadedBooksCount() + 3) {
+                    } else if (position < mUserDetails.getReadBooksCount() + 3) {
                         return TYPE_READ_BOOKS;
                     }
                 }
@@ -255,7 +255,7 @@ public class ProfileTimelineAdapter extends RecyclerView.Adapter<RecyclerView.Vi
                 if (position == 1) {
                     return TYPE_START_READING;
 
-                } else if (mUserDetails.getBooksOnHandCount() > 0 && mUserDetails.getReadedBooksCount() > 0) {
+                } else if (mUserDetails.getBooksOnHandCount() > 0 && mUserDetails.getReadBooksCount() > 0) {
 
                     if (position == 2) {
                         return TYPE_SUBTITLE_BOOKS_ON_HAND;
@@ -266,7 +266,7 @@ public class ProfileTimelineAdapter extends RecyclerView.Adapter<RecyclerView.Vi
                     } else if (position == mUserDetails.getBooksOnHandCount() + 3) {
                         return TYPE_SUBTITLE_READ_BOOKS;
 
-                    } else if (position < mUserDetails.getBooksOnHandCount() + mUserDetails.getReadedBooksCount() + 4) {
+                    } else if (position < mUserDetails.getBooksOnHandCount() + mUserDetails.getReadBooksCount() + 4) {
                         return TYPE_READ_BOOKS;
                     }
 
@@ -279,20 +279,20 @@ public class ProfileTimelineAdapter extends RecyclerView.Adapter<RecyclerView.Vi
                         return TYPE_BOOKS_ON_HAND;
                     }
 
-                } else if (mUserDetails.getReadedBooksCount() > 0) {
+                } else if (mUserDetails.getReadBooksCount() > 0) {
 
 
                     if (position == 2) {
                         return TYPE_SUBTITLE_READ_BOOKS;
 
-                    } else if (position < mUserDetails.getReadedBooksCount() + 3) {
+                    } else if (position < mUserDetails.getReadBooksCount() + 3) {
                         return TYPE_READ_BOOKS;
                     }
                 }
 
             } else {
 
-                if (mUserDetails.getBooksOnHandCount() > 0 && mUserDetails.getReadedBooksCount() > 0) {
+                if (mUserDetails.getBooksOnHandCount() > 0 && mUserDetails.getReadBooksCount() > 0) {
 
                     if (position == 1) {
                         return TYPE_SUBTITLE_BOOKS_ON_HAND;
@@ -303,7 +303,7 @@ public class ProfileTimelineAdapter extends RecyclerView.Adapter<RecyclerView.Vi
                     } else if (position == mUserDetails.getBooksOnHandCount() + 2) {
                         return TYPE_SUBTITLE_READ_BOOKS;
 
-                    } else if (position < mUserDetails.getBooksOnHandCount() + mUserDetails.getReadedBooksCount() + 3) {
+                    } else if (position < mUserDetails.getBooksOnHandCount() + mUserDetails.getReadBooksCount() + 3) {
                         return TYPE_READ_BOOKS;
                     }
 
@@ -316,12 +316,12 @@ public class ProfileTimelineAdapter extends RecyclerView.Adapter<RecyclerView.Vi
                         return TYPE_BOOKS_ON_HAND;
                     }
 
-                } else if (mUserDetails.getReadedBooksCount() > 0) {
+                } else if (mUserDetails.getReadBooksCount() > 0) {
 
                     if (position == 1) {
                         return TYPE_SUBTITLE_READ_BOOKS;
 
-                    } else if (position < mUserDetails.getReadedBooksCount() + 2) {
+                    } else if (position < mUserDetails.getReadBooksCount() + 2) {
                         return TYPE_READ_BOOKS;
                     }
 
@@ -493,7 +493,7 @@ public class ProfileTimelineAdapter extends RecyclerView.Adapter<RecyclerView.Vi
                     headerViewHolder.mLocation.setVisibility(View.GONE);
                 }
 
-                headerViewHolder.mReadBooks.setText(String.valueOf(mUserDetails.getReadedBooksCount()));
+                headerViewHolder.mReadBooks.setText(String.valueOf(mUserDetails.getReadBooksCount()));
                 headerViewHolder.mPoint.setText(String.valueOf(mUserDetails.getPoint()));
                 headerViewHolder.mSharedBooks.setText(String.valueOf(mUserDetails.getSharedBooksCount()));
 
@@ -581,7 +581,7 @@ public class ProfileTimelineAdapter extends RecyclerView.Adapter<RecyclerView.Vi
 
                 final BookViewHolder bookHolder = (BookViewHolder) holder;
 
-                final Book book = mUserDetails.getReadedBooks().get(position - calculateReadBooksOffset());
+                final Book book = mUserDetails.getReadBooks().get(position - calculateReadBooksOffset());
 
                 if (mBookClickListener != null) {
                     bookHolder.itemView.setOnClickListener(new View.OnClickListener() {
@@ -634,7 +634,7 @@ public class ProfileTimelineAdapter extends RecyclerView.Adapter<RecyclerView.Vi
         // Currently reading
         if (mUserDetails.getUser().getID() == SessionManager.getCurrentUser(mContext).getID() ||
             mUserDetails.getCurrentlyReadingCount() != 0 ||
-            (mUserDetails.getBooksOnHandCount() < 0 && mUserDetails.getReadedBooksCount() < 0)) {
+            (mUserDetails.getBooksOnHandCount() < 0 && mUserDetails.getReadBooksCount() < 0)) {
 
             offset++;
         }
@@ -652,7 +652,7 @@ public class ProfileTimelineAdapter extends RecyclerView.Adapter<RecyclerView.Vi
         // Currently reading
         if (mUserDetails.getUser().getID() == SessionManager.getCurrentUser(mContext).getID() ||
             mUserDetails.getCurrentlyReadingCount() != 0 ||
-            (mUserDetails.getBooksOnHandCount() < 0 && mUserDetails.getReadedBooksCount() < 0)) {
+            (mUserDetails.getBooksOnHandCount() < 0 && mUserDetails.getReadBooksCount() < 0)) {
 
             offset++;
         }
@@ -661,7 +661,7 @@ public class ProfileTimelineAdapter extends RecyclerView.Adapter<RecyclerView.Vi
             offset++;
         }
 
-        if (mUserDetails.getReadedBooksCount() > 0) {
+        if (mUserDetails.getReadBooksCount() > 0) {
             offset++;
         }
 
