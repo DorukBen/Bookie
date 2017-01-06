@@ -87,17 +87,6 @@ public class HomeTimelineAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
         }
     }
 
-    private static class SubtitleViewHolder extends RecyclerView.ViewHolder {
-
-        private TextView mSubtitle;
-
-        private SubtitleViewHolder(View subtitleView) {
-            super(subtitleView);
-
-            mSubtitle = (TextView) subtitleView.findViewById(R.id.subtitleTextView);
-        }
-    }
-
     private static class FooterViewHolder extends RecyclerView.ViewHolder {
 
         private ProgressBar mProgressBar;
@@ -123,7 +112,6 @@ public class HomeTimelineAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
 
     /*
         HEADER
-        SUBTITLE
         DUAL BOOKS
         FOOTER
      */
@@ -133,10 +121,7 @@ public class HomeTimelineAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
         if (position == 0) {
             return TYPE_HEADER;
 
-        } else if (position == 1) {
-            return TYPE_SUBTITLE;
-
-        } else if (position < getDualRowsCount() + 2) { // + Header + Subtitle
+        } else if (position < getDualRowsCount() + 1) { // + Header
             return TYPE_DUAL_BOOK;
 
         } else if (position == getItemCount() - 1) {
@@ -160,10 +145,6 @@ public class HomeTimelineAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
                 View dualBookView = LayoutInflater.from(parent.getContext()).inflate(R.layout.item_dual_book_home_timeline, parent, false);
                 return new DualBookViewHolder(dualBookView);
 
-            case TYPE_SUBTITLE:
-                View subtitleView = LayoutInflater.from(parent.getContext()).inflate(R.layout.item_subtitle, parent, false);
-                return new SubtitleViewHolder(subtitleView);
-
             case TYPE_FOOTER:
                 View footerView = LayoutInflater.from(parent.getContext()).inflate(R.layout.item_footer, parent, false);
                 return new FooterViewHolder(footerView);
@@ -184,16 +165,6 @@ public class HomeTimelineAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
 
                 HorizontalPagerAdapter adapter = new HorizontalPagerAdapter(mContext, mHeaderBooks);
                 headerViewHolder.mCycleViewPager.setAdapter(adapter);
-
-
-                break;
-            }
-
-            case TYPE_SUBTITLE: {
-
-                SubtitleViewHolder subtitleHolder = (SubtitleViewHolder) holder;
-
-                subtitleHolder.mSubtitle.setText("SUBTITLE");
 
                 break;
             }
@@ -217,16 +188,16 @@ public class HomeTimelineAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
                 });
 
                 Glide.with(mContext)
-                        .load(bookLeft.getImageURL())
-                        .asBitmap()
-                        .placeholder(R.drawable.placeholder_book)
-                        .into(new SimpleTarget<Bitmap>() {
-                            @Override
-                            public void onResourceReady(Bitmap resource, GlideAnimation<? super Bitmap> glideAnimation) {
-                                Bitmap croppedBitmap = ImageScaler.cropImage(resource, 72 / 96f);
-                                dualBookViewHolder.mBookImageLeft.setImageBitmap(croppedBitmap);
-                            }
-                        });
+                     .load(bookLeft.getImageURL())
+                     .asBitmap()
+                     .placeholder(R.drawable.placeholder_book)
+                     .into(new SimpleTarget<Bitmap>() {
+                         @Override
+                         public void onResourceReady(Bitmap resource, GlideAnimation<? super Bitmap> glideAnimation) {
+                             Bitmap croppedBitmap = ImageScaler.cropImage(resource, 72 / 96f);
+                             dualBookViewHolder.mBookImageLeft.setImageBitmap(croppedBitmap);
+                         }
+                     });
 
                 dualBookViewHolder.mBookNameLeft.setText(bookLeft.getName());
                 dualBookViewHolder.mAuthorLeft.setText(bookLeft.getAuthor());
@@ -245,16 +216,16 @@ public class HomeTimelineAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
 
 
                 Glide.with(mContext)
-                        .load(bookRight.getImageURL())
-                        .asBitmap()
-                        .placeholder(R.drawable.placeholder_book)
-                        .into(new SimpleTarget<Bitmap>() {
-                            @Override
-                            public void onResourceReady(Bitmap resource, GlideAnimation<? super Bitmap> glideAnimation) {
-                                Bitmap croppedBitmap = ImageScaler.cropImage(resource, 72 / 96f);
-                                dualBookViewHolder.mBookImageRight.setImageBitmap(croppedBitmap);
-                            }
-                        });
+                     .load(bookRight.getImageURL())
+                     .asBitmap()
+                     .placeholder(R.drawable.placeholder_book)
+                     .into(new SimpleTarget<Bitmap>() {
+                         @Override
+                         public void onResourceReady(Bitmap resource, GlideAnimation<? super Bitmap> glideAnimation) {
+                             Bitmap croppedBitmap = ImageScaler.cropImage(resource, 72 / 96f);
+                             dualBookViewHolder.mBookImageRight.setImageBitmap(croppedBitmap);
+                         }
+                     });
 
                 dualBookViewHolder.mBookNameRight.setText(bookRight.getName());
                 dualBookViewHolder.mAuthorRight.setText(bookRight.getAuthor());
@@ -295,9 +266,9 @@ public class HomeTimelineAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
     }
 
     private int getLeftBookIndexForPosition(int position) {
-        // a = position - header - subtitle
+        // a = position - header
         // b = a * 2 double books
 
-        return ((position - 2) * 2);
+        return ((position - 1) * 2);
     }
 }
