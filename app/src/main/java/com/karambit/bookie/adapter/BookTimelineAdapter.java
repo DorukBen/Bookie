@@ -25,13 +25,13 @@ import android.widget.TextView;
 import com.bumptech.glide.Glide;
 import com.karambit.bookie.R;
 import com.karambit.bookie.helper.CircleImageView;
+import com.karambit.bookie.helper.DurationTextUtils;
 import com.karambit.bookie.helper.SessionManager;
 import com.karambit.bookie.model.Book;
 import com.karambit.bookie.model.User;
 
 import java.util.Calendar;
 import java.util.Random;
-import java.util.concurrent.TimeUnit;
 
 /**
  * Created by orcan on 10/12/16.
@@ -130,6 +130,7 @@ public class BookTimelineAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
         private TextView mProcessChange;
         private View mTopLine;
         private View mBottomLine;
+        private TextView mCreatedAt;
 
         private BookProcessViewHolder(View itemView) {
             super(itemView);
@@ -137,6 +138,7 @@ public class BookTimelineAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
             mProcessChange = (TextView) itemView.findViewById(R.id.bookProcessChangeTextView);
             mTopLine = itemView.findViewById(R.id.topLineView);
             mBottomLine = itemView.findViewById(R.id.bottomLineView);
+            mCreatedAt = (TextView) itemView.findViewById(R.id.createdAtBookProcess);
         }
     }
 
@@ -477,22 +479,22 @@ public class BookTimelineAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
 
             case TYPE_BOOK_PROCESS: {
 
-                final BookProcessViewHolder itemHolder = (BookProcessViewHolder) holder;
+                final BookProcessViewHolder bookProcessHolder = (BookProcessViewHolder) holder;
 
                 // TopLine BottomLine setup
                 if (mBookDetails.getBookProcesses().size() == 1) {
-                    itemHolder.mTopLine.setVisibility(View.INVISIBLE);
-                    itemHolder.mBottomLine.setVisibility(View.INVISIBLE);
+                    bookProcessHolder.mTopLine.setVisibility(View.INVISIBLE);
+                    bookProcessHolder.mBottomLine.setVisibility(View.INVISIBLE);
                 } else {
                     if (position == 3) {
-                        itemHolder.mTopLine.setVisibility(View.INVISIBLE);
-                        itemHolder.mBottomLine.setVisibility(View.VISIBLE);
+                        bookProcessHolder.mTopLine.setVisibility(View.INVISIBLE);
+                        bookProcessHolder.mBottomLine.setVisibility(View.VISIBLE);
                     } else if (position == getItemCount() - 2) {
-                        itemHolder.mTopLine.setVisibility(View.VISIBLE);
-                        itemHolder.mBottomLine.setVisibility(View.INVISIBLE);
+                        bookProcessHolder.mTopLine.setVisibility(View.VISIBLE);
+                        bookProcessHolder.mBottomLine.setVisibility(View.INVISIBLE);
                     } else {
-                        itemHolder.mTopLine.setVisibility(View.VISIBLE);
-                        itemHolder.mBottomLine.setVisibility(View.VISIBLE);
+                        bookProcessHolder.mTopLine.setVisibility(View.VISIBLE);
+                        bookProcessHolder.mBottomLine.setVisibility(View.VISIBLE);
                     }
                 }
 
@@ -506,7 +508,9 @@ public class BookTimelineAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
                     @Override
                     public void visit(final Book.Interaction interaction) { // If BookProcess is a Book.Interaction object
 
-                        itemHolder.mProcessImage.setVisibility(View.VISIBLE);
+                        bookProcessHolder.mCreatedAt.setText(DurationTextUtils.getShortDurationString(mContext, interaction.getCreatedAt()));
+
+                        bookProcessHolder.mProcessImage.setVisibility(View.VISIBLE);
 
                         SpannableString spanUserName = new SpannableString(interaction.getUser().getName());
                         ClickableSpan clickableSpanUserName = new ClickableSpan() {
@@ -529,41 +533,43 @@ public class BookTimelineAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
                         switch (interaction.getInteractionType()) {
 
                             case ADD:
-                                itemHolder.mProcessImage.setImageResource(R.drawable.ic_book_timeline_add_book_outline_36dp);
-                                itemHolder.mProcessChange.setText(TextUtils.concat(spanUserName, " " + mContext.getString(R.string.x_added_this_book)));
+                                bookProcessHolder.mProcessImage.setImageResource(R.drawable.ic_book_timeline_add_book_outline_36dp);
+                                bookProcessHolder.mProcessChange.setText(TextUtils.concat(spanUserName, " " + mContext.getString(R.string.x_added_this_book)));
                                 break;
                             case READ_START:
-                                itemHolder.mProcessImage.setImageResource(R.drawable.ic_book_timeline_read_start_stop_36dp);
-                                itemHolder.mProcessChange.setText(TextUtils.concat(spanUserName, " " + mContext.getString(R.string.x_started_to_read_this_book)));
+                                bookProcessHolder.mProcessImage.setImageResource(R.drawable.ic_book_timeline_read_start_stop_36dp);
+                                bookProcessHolder.mProcessChange.setText(TextUtils.concat(spanUserName, " " + mContext.getString(R.string.x_started_to_read_this_book)));
                                 break;
 
                             case READ_STOP:
-                                itemHolder.mProcessImage.setImageResource(R.drawable.ic_book_timeline_read_start_stop_36dp);
-                                itemHolder.mProcessChange.setText(TextUtils.concat(spanUserName, " " + mContext.getString(R.string.x_finished_to_read_this_book)));
+                                bookProcessHolder.mProcessImage.setImageResource(R.drawable.ic_book_timeline_read_start_stop_36dp);
+                                bookProcessHolder.mProcessChange.setText(TextUtils.concat(spanUserName, " " + mContext.getString(R.string.x_finished_to_read_this_book)));
                                 break;
 
                             case CLOSE_TO_SHARE:
-                                itemHolder.mProcessImage.setImageResource(R.drawable.ic_book_timeline_closed_to_share_36dp);
-                                itemHolder.mProcessChange.setText(TextUtils.concat(spanUserName, " " + mContext.getString(R.string.x_closed_sharing_for_this_book)));
+                                bookProcessHolder.mProcessImage.setImageResource(R.drawable.ic_book_timeline_closed_to_share_36dp);
+                                bookProcessHolder.mProcessChange.setText(TextUtils.concat(spanUserName, " " + mContext.getString(R.string.x_closed_sharing_for_this_book)));
                                 break;
 
                             case OPEN_TO_SHARE:
-                                itemHolder.mProcessImage.setImageResource(R.drawable.ic_book_timeline_opened_to_share_36dp);
-                                itemHolder.mProcessChange.setText(TextUtils.concat(spanUserName, " " + mContext.getString(R.string.x_opened_sharing_for_this_book)));
+                                bookProcessHolder.mProcessImage.setImageResource(R.drawable.ic_book_timeline_opened_to_share_36dp);
+                                bookProcessHolder.mProcessChange.setText(TextUtils.concat(spanUserName, " " + mContext.getString(R.string.x_opened_sharing_for_this_book)));
                                 break;
 
                             default:
                                 throw new IllegalArgumentException("Invalid interaction type:" + interaction.getInteractionType().name());
                         }
 
-                        itemHolder.mProcessChange.setMovementMethod(LinkMovementMethod.getInstance());
-                        itemHolder.mProcessChange.setHighlightColor(Color.TRANSPARENT);
+                        bookProcessHolder.mProcessChange.setMovementMethod(LinkMovementMethod.getInstance());
+                        bookProcessHolder.mProcessChange.setHighlightColor(Color.TRANSPARENT);
                     }
 
                     @Override
                     public void visit(final Book.Transaction transaction) { // If BookProcess is a Book.Transaction object
 
-                        itemHolder.mProcessImage.setVisibility(View.VISIBLE);
+                        bookProcessHolder.mCreatedAt.setText(DurationTextUtils.getShortDurationString(mContext, transaction.getCreatedAt()));
+
+                        bookProcessHolder.mProcessImage.setVisibility(View.VISIBLE);
 
                         SpannableString spanFromUserName = new SpannableString(transaction.getFromUser().getName());
                         ClickableSpan clickableSpanFromUserName = new ClickableSpan() {
@@ -605,32 +611,34 @@ public class BookTimelineAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
                         switch (transaction.getTransactionType()) {
 
                             case COME_TO_HAND:
-                                itemHolder.mProcessImage.setImageResource(R.drawable.ic_book_timeline_come_to_hand_car_36dp);
-                                itemHolder.mProcessChange.setText(TextUtils.concat(spanToUserName, " " + mContext.getString(R.string.x_took_the_book)));
+                                bookProcessHolder.mProcessImage.setImageResource(R.drawable.ic_book_timeline_come_to_hand_car_36dp);
+                                bookProcessHolder.mProcessChange.setText(TextUtils.concat(spanToUserName, " " + mContext.getString(R.string.x_took_the_book)));
                                 break;
 
                             case DISPACTH:
-                                itemHolder.mProcessImage.setImageResource(R.drawable.ic_book_timeline_dispatch_36dp);
-                                itemHolder.mProcessChange.setText(TextUtils.concat(spanFromUserName, " " + mContext.getString(R.string.x_sent_the_book_to_y) + " ", spanToUserName));
+                                bookProcessHolder.mProcessImage.setImageResource(R.drawable.ic_book_timeline_dispatch_36dp);
+                                bookProcessHolder.mProcessChange.setText(TextUtils.concat(spanFromUserName, " " + mContext.getString(R.string.x_sent_the_book_to_y) + " ", spanToUserName));
                                 break;
 
                             case LOST:
-                                itemHolder.mProcessImage.setImageResource(R.drawable.ic_book_timeline_lost_outline_36dp);
-                                itemHolder.mProcessChange.setText(TextUtils.concat(mContext.getString(R.string.book_sent_from_x_to_y_and_its_lost_1) + " ", spanFromUserName, " " + mContext.getString(R.string.book_sent_from_x_to_y_and_its_lost_2) + " ", spanToUserName, " " + mContext.getString(R.string.book_sent_from_x_to_y_and_its_lost_3)));
+                                bookProcessHolder.mProcessImage.setImageResource(R.drawable.ic_book_timeline_lost_outline_36dp);
+                                bookProcessHolder.mProcessChange.setText(TextUtils.concat(mContext.getString(R.string.book_sent_from_x_to_y_and_its_lost_1) + " ", spanFromUserName, " " + mContext.getString(R.string.book_sent_from_x_to_y_and_its_lost_2) + " ", spanToUserName, " " + mContext.getString(R.string.book_sent_from_x_to_y_and_its_lost_3)));
                                 break;
 
                             default:
                                 throw new IllegalArgumentException("Invalid transaction type:" + transaction.getTransactionType().name());
                         }
 
-                        itemHolder.mProcessChange.setMovementMethod(LinkMovementMethod.getInstance());
-                        itemHolder.mProcessChange.setHighlightColor(Color.TRANSPARENT);
+                        bookProcessHolder.mProcessChange.setMovementMethod(LinkMovementMethod.getInstance());
+                        bookProcessHolder.mProcessChange.setHighlightColor(Color.TRANSPARENT);
                     }
 
                     @Override
                     public void visit(final Book.Request request) { // If BookProcess is a Book.Request object
 
-                        itemHolder.mProcessImage.setVisibility(View.GONE);
+                        bookProcessHolder.mCreatedAt.setText(DurationTextUtils.getShortDurationString(mContext, request.getCreatedAt()));
+
+                        bookProcessHolder.mProcessImage.setVisibility(View.GONE);
 
                         SpannableString spanFromUserName = new SpannableString(request.getFromUser().getName());
                         ClickableSpan clickableSpanFromUserName = new ClickableSpan() {
@@ -671,23 +679,23 @@ public class BookTimelineAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
                         switch (request.getRequestType()) {
 
                             case SEND:
-                                itemHolder.mProcessChange.setText(TextUtils.concat(spanFromUserName, " " + mContext.getString(R.string.x_sent_request_to_y) + " ", spanToUserName));
+                                bookProcessHolder.mProcessChange.setText(TextUtils.concat(spanFromUserName, " " + mContext.getString(R.string.x_sent_request_to_y) + " ", spanToUserName));
                                 break;
 
                             case ACCEPT:
-                                itemHolder.mProcessChange.setText(TextUtils.concat(spanFromUserName, " " + mContext.getString(R.string.x_accepted_ys_request_1) + " ", spanToUserName, "'" + mContext.getString(R.string.x_accepted_ys_request_2)));
+                                bookProcessHolder.mProcessChange.setText(TextUtils.concat(spanFromUserName, " " + mContext.getString(R.string.x_accepted_ys_request_1) + " ", spanToUserName, "'" + mContext.getString(R.string.x_accepted_ys_request_2)));
                                 break;
 
                             case REJECT:
-                                itemHolder.mProcessChange.setText(TextUtils.concat(spanFromUserName, " " + mContext.getString(R.string.x_rejected_ys_request_1) + " ", spanToUserName, "'" + mContext.getString(R.string.x_rejected_ys_request_2)));
+                                bookProcessHolder.mProcessChange.setText(TextUtils.concat(spanFromUserName, " " + mContext.getString(R.string.x_rejected_ys_request_1) + " ", spanToUserName, "'" + mContext.getString(R.string.x_rejected_ys_request_2)));
                                 break;
 
                             default:
                                 throw new IllegalArgumentException("Invalid request type:" + request.getRequestType().name());
                         }
 
-                        itemHolder.mProcessChange.setMovementMethod(LinkMovementMethod.getInstance());
-                        itemHolder.mProcessChange.setHighlightColor(Color.TRANSPARENT);
+                        bookProcessHolder.mProcessChange.setMovementMethod(LinkMovementMethod.getInstance());
+                        bookProcessHolder.mProcessChange.setHighlightColor(Color.TRANSPARENT);
                     }
                 });
 
@@ -747,38 +755,12 @@ public class BookTimelineAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
             createdAt = ((Book.Transaction) lastProcess).getCreatedAt();
         }
 
-        long diff = Calendar.getInstance().getTimeInMillis() - createdAt.getTimeInMillis();
+        int dayDiff = DurationTextUtils.calculateDayDiff(createdAt);
 
-        int days = (int) TimeUnit.MILLISECONDS.toDays(diff);
-
-        if (days > 0) {
-            return mContext.getString(R.string.state_duration, days);
+        if (dayDiff > 0) {
+            return mContext.getString(R.string.state_duration, dayDiff);
         } else {
             return mContext.getString(R.string.state_today);
-        }
-    }
-
-    private String bookStateToStringWithDuration(Book.State state) {
-
-        switch (state) {
-
-            case READING:
-                return mContext.getString(R.string.reading);
-
-            case OPENED_TO_SHARE:
-                return mContext.getString(R.string.opened_to_share);
-
-            case CLOSED_TO_SHARE:
-                return mContext.getString(R.string.closed_to_share);
-
-            case ON_ROAD:
-                return mContext.getString(R.string.on_road);
-
-            case LOST:
-                return mContext.getString(R.string.lost);
-
-            default:
-                return null;
         }
     }
 

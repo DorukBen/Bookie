@@ -38,14 +38,28 @@
 
     <TextView
         android:id="@+id/bookProcessChangeTextView"
-        android:layout_width="wrap_content"
+        android:layout_width="match_parent"
+        android:layout_weight="1"
         android:layout_height="wrap_content"
         android:layout_gravity="center_vertical"
         android:layout_marginLeft="16dp"
         android:ellipsize="end"
         android:maxLines="3"
+        android:layout_marginRight="16dp"
         android:text="Book process"
         android:textColor="@color/primaryTextColor"
         android:textSize="16sp"/>
+
+    <TextView
+        android:id="@+id/createdAtBookProcess"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_weight="0"
+        android:text="--"
+        android:layout_gravity="center_vertical"
+        android:textColor="@color/secondaryTextColor"
+        android:textSize="12sp"/>
+
+
 
 </LinearLayout>

@@ -100,4 +100,12 @@
     <string name="ok">OK</string>
     <string name="open_to_share">Open to share</string>
     <string name="close_to_share">Close to share</string>
+
+    <string name="hour_short">%dh</string>
+    <string name="day_short">%dd</string>
+    <string name="week_short">%dw</string>
+    <string name="minute_short">%dm</string>
+    <string name="month_short">%dmo</string>
+    <string name="year_short">%dy</string>
+    <string name="now">now</string>
 </resources>
