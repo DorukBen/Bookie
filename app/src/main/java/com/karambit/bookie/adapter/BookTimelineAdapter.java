@@ -359,8 +359,15 @@ public class BookTimelineAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
                 int requestCount = getRequestCount();
 
                 if (requestCount > 0) {
+
                     stateCurrentHolder.mRequestCountButton.setVisibility(View.VISIBLE);
-                    stateCurrentHolder.mRequestCountButton.setText(String.valueOf(requestCount));
+
+                    if (requestCount <= 9) {
+                        stateCurrentHolder.mRequestCountButton.setText(String.valueOf(requestCount));
+                    } else {
+                        stateCurrentHolder.mRequestCountButton.setText("9+");
+                    }
+
                     if (mCurrentUserClickListeners != null) {
                         stateCurrentHolder.mRequestCountButton.setOnClickListener(new View.OnClickListener() {
                             @Override
@@ -369,6 +376,7 @@ public class BookTimelineAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
                             }
                         });
                     }
+
                 } else {
                     stateCurrentHolder.mRequestCountButton.setVisibility(View.GONE);
                 }
