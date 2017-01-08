@@ -1,9 +1,10 @@
 package com.karambit.bookie;
 
+import android.app.Dialog;
 import android.content.Intent;
+import android.os.Bundle;
 import android.support.v7.app.ActionBar;
 import android.support.v7.app.AppCompatActivity;
-import android.os.Bundle;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.text.Spannable;
@@ -13,6 +14,9 @@ import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
+import android.widget.Button;
+import android.widget.ImageView;
+import android.widget.TextView;
 
 import com.karambit.bookie.adapter.BookTimelineAdapter;
 import com.karambit.bookie.helper.ElevationScrollListener;
@@ -21,6 +25,9 @@ import com.karambit.bookie.model.Book;
 import com.karambit.bookie.model.User;
 
 public class BookActivity extends AppCompatActivity {
+
+    private Book mBook;
+    private BookTimelineAdapter mBookTimelineAdapter;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -39,16 +46,16 @@ public class BookActivity extends AppCompatActivity {
             getSupportActionBar().setTitle(s);
         }
 
-        Book book = getIntent().getParcelableExtra("book");
+        mBook = getIntent().getParcelableExtra("book");
 
-        Book.Details bookDetails = Book.GENERATOR.generateBookDetails(book);
+        Book.Details bookDetails =  Book.GENERATOR.generateBookDetails(mBook);
 
         RecyclerView bookRecyclerView = (RecyclerView) findViewById(R.id.bookRecyclerView);
         bookRecyclerView.setLayoutManager(new LinearLayoutManager(this));
 
-        BookTimelineAdapter adapter = new BookTimelineAdapter(this, bookDetails);
+        mBookTimelineAdapter = new BookTimelineAdapter(this, bookDetails);
 
-        adapter.setHeaderClickListeners(new BookTimelineAdapter.HeaderClickListeners() {
+        mBookTimelineAdapter.setHeaderClickListeners(new BookTimelineAdapter.HeaderClickListeners() {
 
             @Override
             public void onBookPictureClick(Book.Details details) {
@@ -60,7 +67,7 @@ public class BookActivity extends AppCompatActivity {
             }
         });
 
-        adapter.setOtherUserClickListeners(new BookTimelineAdapter.StateOtherUserClickListeners() {
+        mBookTimelineAdapter.setOtherUserClickListeners(new BookTimelineAdapter.StateOtherUserClickListeners() {
             @Override
             public void onRequestButtonClick(Book.Details details) {
                 // TODO Request button
@@ -76,10 +83,10 @@ public class BookActivity extends AppCompatActivity {
             }
         });
 
-        adapter.setCurrentUserClickListeners(new BookTimelineAdapter.StateCurrentUserClickListeners() {
+        mBookTimelineAdapter.setCurrentUserClickListeners(new BookTimelineAdapter.StateCurrentUserClickListeners() {
             @Override
             public void onStateClick(Book.Details bookDetails) {
-                // TODO State Click
+                new StateSelectorDialog().show();
             }
 
             @Override
@@ -88,9 +95,9 @@ public class BookActivity extends AppCompatActivity {
             }
         });
 
-        adapter.setHasStableIds(true);
+        mBookTimelineAdapter.setHasStableIds(true);
 
-        adapter.setSpanTextClickListener(new BookTimelineAdapter.SpanTextClickListeners() {
+        mBookTimelineAdapter.setSpanTextClickListener(new BookTimelineAdapter.SpanTextClickListeners() {
             @Override
             public void onUserNameClick(User user) {
                 Intent intent = new Intent(BookActivity.this, ProfileActivity.class);
@@ -101,7 +108,7 @@ public class BookActivity extends AppCompatActivity {
             }
         });
 
-        bookRecyclerView.setAdapter(adapter);
+        bookRecyclerView.setAdapter(mBookTimelineAdapter);
 
         //For improving recyclerviews performance
         bookRecyclerView.setItemViewCacheSize(20);
@@ -144,7 +151,105 @@ public class BookActivity extends AppCompatActivity {
             default:
                 startActivity(new Intent(this,BookSettingsActivity.class));
                 return super.onOptionsItemSelected(item);
-
         }
+    }
+
+    private class StateSelectorDialog extends Dialog {
+
+        public StateSelectorDialog() {
+            super(BookActivity.this);
+        }
+
+        @Override
+        protected void onCreate(Bundle savedInstanceState) {
+            super.onCreate(savedInstanceState);
+
+            setContentView(R.layout.state_selector_dialog);
+
+            Button button = (Button) findViewById(R.id.cancelButton);
+
+            button.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    dismiss();
+                }
+            });
+
+            View stateChangeContainer_1 = findViewById(R.id.stateChangeContainer_1);
+            ImageView stateImage_1 = (ImageView) findViewById(R.id.stateChangeImage_1);
+            TextView stateText_1 = (TextView) findViewById(R.id.stateChangeText_1);
+
+            View stateChangeContainer_2 = findViewById(R.id.stateChangeContainer_2);
+            ImageView stateImage_2 = (ImageView) findViewById(R.id.stateChangeImage_2);
+            TextView stateText_2 = (TextView) findViewById(R.id.stateChangeText_2);
+
+            View.OnClickListener openToShareListener = new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    mBook.setState(Book.State.OPENED_TO_SHARE);
+                    mBookTimelineAdapter.notifyItemChanged(1);
+                    dismiss();
+                    stateChangeToServer(Book.State.OPENED_TO_SHARE);
+                }
+            };
+
+            View.OnClickListener closeToShareListener = new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    mBook.setState(Book.State.CLOSED_TO_SHARE);
+                    mBookTimelineAdapter.notifyItemChanged(1);
+                    dismiss();
+                    stateChangeToServer(Book.State.CLOSED_TO_SHARE);
+                }
+            };
+
+            View.OnClickListener startReadingListener = new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    mBook.setState(Book.State.READING);
+                    mBookTimelineAdapter.notifyItemChanged(1);
+                    dismiss();
+                    stateChangeToServer(Book.State.READING);
+                }
+            };
+
+            switch (mBook.getState()) {
+
+                case READING:
+                    stateImage_1.setImageResource(R.drawable.ic_book_timeline_opened_to_share_36dp);
+                    stateText_1.setText(R.string.open_to_share);
+                    stateChangeContainer_1.setOnClickListener(openToShareListener);
+
+                    stateImage_2.setImageResource(R.drawable.ic_book_timeline_closed_to_share_36dp);
+                    stateText_2.setText(R.string.close_to_share);
+                    stateChangeContainer_2.setOnClickListener(closeToShareListener);
+                    break;
+                case OPENED_TO_SHARE:
+                    stateImage_1.setImageResource(R.drawable.ic_book_timeline_read_start_stop_36dp);
+                    stateText_1.setText(R.string.start_reading);
+                    stateChangeContainer_1.setOnClickListener(startReadingListener);
+
+                    stateImage_2.setImageResource(R.drawable.ic_book_timeline_closed_to_share_36dp);
+                    stateText_2.setText(R.string.close_to_share);
+                    stateChangeContainer_2.setOnClickListener(closeToShareListener);
+
+                    break;
+
+                case CLOSED_TO_SHARE:
+                    stateImage_1.setImageResource(R.drawable.ic_book_timeline_read_start_stop_36dp);
+                    stateText_1.setText(R.string.start_reading);
+                    stateChangeContainer_1.setOnClickListener(startReadingListener);
+
+                    stateImage_2.setImageResource(R.drawable.ic_book_timeline_opened_to_share_36dp);
+                    stateText_2.setText(R.string.open_to_share);
+                    stateChangeContainer_2.setOnClickListener(openToShareListener);
+
+                    break;
+            }
+        }
+    }
+
+    private void stateChangeToServer(Book.State state) {
+        // TODO
     }
 }

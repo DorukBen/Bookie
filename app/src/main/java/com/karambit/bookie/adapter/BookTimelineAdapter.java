@@ -339,13 +339,15 @@ public class BookTimelineAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
 
                 StateSectionCurrentUserViewHolder stateCurrentHolder = (StateSectionCurrentUserViewHolder) holder;
 
-                if (mCurrentUserClickListeners != null) {
-                    stateCurrentHolder.mStateClickArea.setOnClickListener(new View.OnClickListener() {
-                        @Override
-                        public void onClick(View v) {
-                            mCurrentUserClickListeners.onStateClick(mBookDetails);
-                        }
-                    });
+                if (mBookDetails.getBook().getState() != Book.State.LOST) {
+                    if (mCurrentUserClickListeners != null) {
+                        stateCurrentHolder.mStateClickArea.setOnClickListener(new View.OnClickListener() {
+                            @Override
+                            public void onClick(View v) {
+                                mCurrentUserClickListeners.onStateClick(mBookDetails);
+                            }
+                        });
+                    }
                 }
 
                 /////////////////////////////////////////////////////////////////////////////////////////////

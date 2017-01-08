@@ -98,4 +98,6 @@
     <string name="state_today">within today</string>
     <string name="select_location">Select Location</string>
     <string name="ok">OK</string>
+    <string name="open_to_share">Open to share</string>
+    <string name="close_to_share">Close to share</string>
 </resources>
