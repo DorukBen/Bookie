@@ -394,23 +394,23 @@ public class BookTimelineAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
 
                     case READING:
                         stateCurrentHolder.mStateText.setText(R.string.reading);
-                        stateCurrentHolder.mStateIcon.setImageResource(R.drawable.ic_bookmark_border_black_24dp);
+                        stateCurrentHolder.mStateIcon.setImageResource(R.drawable.ic_book_timeline_read_start_stop_36dp);
                         break;
 
                     case OPENED_TO_SHARE:
                         stateCurrentHolder.mStateText.setText(R.string.opened_to_share);
-                        stateCurrentHolder.mStateIcon.setImageResource(R.drawable.ic_done_white_24dp);
+                        stateCurrentHolder.mStateIcon.setImageResource(R.drawable.ic_book_timeline_opened_to_share_36dp);
                         break;
 
                     case CLOSED_TO_SHARE:
                         stateCurrentHolder.mStateText.setText(R.string.closed_to_share);
-                        stateCurrentHolder.mStateIcon.setImageResource(R.drawable.ic_close_white_24dp);
+                        stateCurrentHolder.mStateIcon.setImageResource(R.drawable.ic_book_timeline_closed_to_share_36dp);
                         stateCurrentHolder.mRequestCountButton.setVisibility(View.GONE);
                         break;
 
                     case ON_ROAD:
                         stateCurrentHolder.mStateText.setText(R.string.on_road);
-                        stateCurrentHolder.mStateIcon.setImageResource(R.drawable.ic_close_white_24dp);
+                        stateCurrentHolder.mStateIcon.setImageResource(R.drawable.ic_book_timeline_dispatch_36dp);
                         stateCurrentHolder.mRequestCountButton.setVisibility(View.GONE);
                         break;
 
