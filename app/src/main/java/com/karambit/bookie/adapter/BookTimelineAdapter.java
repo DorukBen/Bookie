@@ -326,7 +326,7 @@ public class BookTimelineAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
 
                 String[] genres = mContext.getResources().getStringArray(R.array.genre_types);
 
-                if (mBookDetails.getGenreCode() > genres.length) { // TODO Remove this section
+                if (mBookDetails.getGenreCode() >= genres.length) { // TODO Remove this section
                     mBookDetails.setGenreCode(new Random().nextInt(genres.length));
                 }
 
@@ -339,7 +339,7 @@ public class BookTimelineAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
 
                 StateSectionCurrentUserViewHolder stateCurrentHolder = (StateSectionCurrentUserViewHolder) holder;
 
-                if (mBookDetails.getBook().getState() != Book.State.LOST) {
+                if (mBookDetails.getBook().getState() != Book.State.LOST && mBookDetails.getBook().getState() != Book.State.ON_ROAD) {
                     if (mCurrentUserClickListeners != null) {
                         stateCurrentHolder.mStateClickArea.setOnClickListener(new View.OnClickListener() {
                             @Override
@@ -356,24 +356,7 @@ public class BookTimelineAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
 
                 /////////////////////////////////////////////////////////////////////////////////////////////
 
-                final int[] requestCountFinal = {0};
-                for (Book.BookProcess process : mBookDetails.getBookProcesses()) {
-                    process.accept(new Book.TimelineDisplayableVisitor() {
-                        @Override
-                        public void visit(Book.Interaction interaction) {}
-
-                        @Override
-                        public void visit(Book.Transaction transaction) {}
-
-                        @Override
-                        public void visit(Book.Request request) {
-                            if (request.getRequestType() == Book.RequestType.SEND) {
-                                requestCountFinal[0]++;
-                            }
-                        }
-                    });
-                }
-                int requestCount = requestCountFinal[0];
+                int requestCount = getRequestCount();
 
                 if (requestCount > 0) {
                     stateCurrentHolder.mRequestCountButton.setVisibility(View.VISIBLE);
@@ -718,6 +701,27 @@ public class BookTimelineAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
                 break;
             }
         }
+    }
+
+    public int getRequestCount() {
+        final int[] requestCountFinal = {0};
+        for (Book.BookProcess process : mBookDetails.getBookProcesses()) {
+            process.accept(new Book.TimelineDisplayableVisitor() {
+                @Override
+                public void visit(Book.Interaction interaction) {}
+
+                @Override
+                public void visit(Book.Transaction transaction) {}
+
+                @Override
+                public void visit(Book.Request request) {
+                    if (request.getRequestType() == Book.RequestType.SEND) {
+                        requestCountFinal[0]++;
+                    }
+                }
+            });
+        }
+        return requestCountFinal[0];
     }
 
     private String getStateDurationText() {

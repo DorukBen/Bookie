@@ -1,9 +1,11 @@
 package com.karambit.bookie;
 
 import android.app.Dialog;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.os.Bundle;
 import android.support.v7.app.ActionBar;
+import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
@@ -86,7 +88,24 @@ public class BookActivity extends AppCompatActivity {
         mBookTimelineAdapter.setCurrentUserClickListeners(new BookTimelineAdapter.StateCurrentUserClickListeners() {
             @Override
             public void onStateClick(Book.Details bookDetails) {
-                new StateSelectorDialog().show();
+
+                if (mBook.getState() == Book.State.READING) {
+
+                    new AlertDialog.Builder(BookActivity.this)
+                        .setMessage("Has your reading finished?")
+                        .setIcon(R.drawable.ic_book_timeline_read_start_stop_36dp)
+                        .setPositiveButton(android.R.string.yes, new DialogInterface.OnClickListener() {
+                            @Override
+                            public void onClick(DialogInterface dialog, int which) {
+                                new StateSelectorDialog().show();
+                            }
+                        })
+                        .setNegativeButton(android.R.string.no, null)
+                        .create().show();
+
+                } else {
+                    new StateSelectorDialog().show();
+                }
             }
 
             @Override
@@ -196,10 +215,28 @@ public class BookActivity extends AppCompatActivity {
             View.OnClickListener closeToShareListener = new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
-                    mBook.setState(Book.State.CLOSED_TO_SHARE);
-                    mBookTimelineAdapter.notifyItemChanged(1);
+                    if (mBookTimelineAdapter.getRequestCount() > 0) {
+                        new AlertDialog.Builder(BookActivity.this)
+                            .setMessage("All requests for this book will be rejected!")
+                            .setIcon(R.drawable.ic_book_timeline_read_start_stop_36dp)
+                            .setPositiveButton(android.R.string.yes, new DialogInterface.OnClickListener() {
+                                @Override
+                                public void onClick(DialogInterface dialog, int which) {
+                                    mBook.setState(Book.State.CLOSED_TO_SHARE);
+                                    mBookTimelineAdapter.notifyItemChanged(1);
+                                    stateChangeToServer(Book.State.CLOSED_TO_SHARE);
+                                }
+                            })
+                            .setNegativeButton(android.R.string.no, null)
+                            .create().show();
+
+                    } else {
+                        mBook.setState(Book.State.CLOSED_TO_SHARE);
+                        mBookTimelineAdapter.notifyItemChanged(1);
+                        stateChangeToServer(Book.State.CLOSED_TO_SHARE);
+                    }
+
                     dismiss();
-                    stateChangeToServer(Book.State.CLOSED_TO_SHARE);
                 }
             };
 
