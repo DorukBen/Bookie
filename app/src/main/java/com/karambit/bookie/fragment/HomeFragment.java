@@ -9,6 +9,7 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 
+import com.baoyz.widget.PullRefreshLayout;
 import com.karambit.bookie.MainActivity;
 import com.karambit.bookie.R;
 import com.karambit.bookie.adapter.HomeTimelineAdapter;
@@ -49,6 +50,17 @@ public class HomeFragment extends Fragment {
         adapter.setHasStableIds(true);
 
         recyclerView.setAdapter(adapter);
+
+        PullRefreshLayout layout = (PullRefreshLayout) rootView.findViewById(R.id.swipeRefreshLayout);
+
+        // listen refresh event
+        layout.setOnRefreshListener(new PullRefreshLayout.OnRefreshListener() {
+            @Override
+            public void onRefresh() {
+                // start refresh
+                //TODO: On page refresh events here layout.serRefreshing() true for start on refresh method
+            }
+        });
 
         //For improving recyclerviews performance
         recyclerView.setItemViewCacheSize(20);

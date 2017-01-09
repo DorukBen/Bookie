@@ -4,14 +4,23 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     tools:context="com.karambit.bookie.NotificationActivity"
     android:background="@color/colorPrimary">
 
-    <android.support.v7.widget.RecyclerView
-        android:id="@+id/notificationRecyclerView"
+    <com.baoyz.widget.PullRefreshLayout
+        android:id="@+id/swipeRefreshLayout"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:overScrollMode="never"
-        android:scrollbars="none"/>
+        app:refreshType="smartisan"
+        app:refreshColor="@color/progressBarColor">
+
+        <android.support.v7.widget.RecyclerView
+            android:id="@+id/notificationRecyclerView"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:overScrollMode="never"
+            android:background="@color/colorPrimary"/>
+    </com.baoyz.widget.PullRefreshLayout>
 
 </RelativeLayout>

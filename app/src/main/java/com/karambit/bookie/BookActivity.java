@@ -14,6 +14,7 @@ import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
 
+import com.baoyz.widget.PullRefreshLayout;
 import com.karambit.bookie.adapter.BookTimelineAdapter;
 import com.karambit.bookie.helper.ElevationScrollListener;
 import com.karambit.bookie.helper.TypefaceSpan;
@@ -102,6 +103,17 @@ public class BookActivity extends AppCompatActivity {
         });
 
         bookRecyclerView.setAdapter(adapter);
+
+        PullRefreshLayout layout = (PullRefreshLayout) findViewById(R.id.swipeRefreshLayout);
+
+        // listen refresh event
+        layout.setOnRefreshListener(new PullRefreshLayout.OnRefreshListener() {
+            @Override
+            public void onRefresh() {
+                // start refresh
+                //TODO: On page refresh events here layout.serRefreshing() true for start on refresh method
+            }
+        });
 
         //For improving recyclerviews performance
         bookRecyclerView.setItemViewCacheSize(20);

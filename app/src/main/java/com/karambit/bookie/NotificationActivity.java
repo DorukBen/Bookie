@@ -11,6 +11,7 @@ import android.text.SpannableString;
 import android.text.style.AbsoluteSizeSpan;
 import android.view.View;
 
+import com.baoyz.widget.PullRefreshLayout;
 import com.karambit.bookie.adapter.NotificationAdapter;
 import com.karambit.bookie.helper.ElevationScrollListener;
 import com.karambit.bookie.helper.TypefaceSpan;
@@ -101,6 +102,17 @@ public class NotificationActivity extends AppCompatActivity {
                 totalScrolled = Math.abs(totalScrolled);
 
                 actionBar.setElevation(ElevationScrollListener.getActionbarElevation(totalScrolled));
+            }
+        });
+
+        PullRefreshLayout layout = (PullRefreshLayout) findViewById(R.id.swipeRefreshLayout);
+
+        // listen refresh event
+        layout.setOnRefreshListener(new PullRefreshLayout.OnRefreshListener() {
+            @Override
+            public void onRefresh() {
+                // start refresh
+                //TODO: On page refresh events here layout.serRefreshing() true for start on refresh method
             }
         });
 
