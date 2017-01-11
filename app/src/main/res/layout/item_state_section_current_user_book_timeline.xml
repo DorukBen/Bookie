@@ -10,14 +10,16 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_centerVertical="true"
-        android:layout_toLeftOf="@+id/requestCountButton">
+        android:layout_toLeftOf="@+id/requestsClickArea">
 
 
         <LinearLayout
             android:id="@+id/stateClickArea"
+            style="?android:button"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginLeft="16dp"
+            android:background="?android:selectableItemBackground"
             android:gravity="center_vertical"
             android:orientation="horizontal"
             android:paddingBottom="8dp"
@@ -54,9 +56,9 @@
                     android:id="@+id/stateDurationTextView"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
+                    android:layout_marginTop="4dp"
                     android:text="for -- days"
                     android:textColor="@color/secondaryTextColor"
-                    android:layout_marginTop="4dp"
                     android:textSize="14sp"/>
 
 
@@ -65,19 +67,43 @@
         </LinearLayout>
     </FrameLayout>
 
-    <Button
-        android:id="@+id/requestCountButton"
-        android:layout_width="32dp"
-        android:layout_height="32dp"
+    <LinearLayout
+        android:id="@+id/requestsClickArea"
+        style="@style/Widget.AppCompat.Button"
+        android:background="?android:selectableItemBackground"
+        android:layout_width="wrap_content"
+        android:layout_height="56dp"
         android:layout_alignParentRight="true"
         android:layout_centerVertical="true"
         android:layout_marginLeft="8dp"
         android:layout_marginRight="16dp"
-        android:background="@drawable/request_count_button"
-        android:elevation="4dp"
-        android:text="--"
-        android:textColor="@color/colorPrimary"
-        android:textStyle="bold"/>
+        android:gravity="center"
+        android:padding="8dp">
 
+
+        <TextView
+            android:id="@+id/requestCountTextView"
+            android:layout_width="18dp"
+            android:layout_height="18dp"
+            android:layout_centerVertical="true"
+            android:layout_marginRight="8dp"
+            android:layout_toLeftOf="@id/requestsClickArea"
+            android:background="@drawable/request_count_button"
+            android:elevation="4dp"
+            android:gravity="center"
+            android:text="5"
+            android:textColor="@color/colorPrimary"
+            android:textSize="13sp"
+            android:textStyle="bold"/>
+
+        <TextView
+            android:id="@+id/requestsTextView"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/requests"
+            android:textAllCaps="true"
+            android:textColor="@color/colorAccent"/>
+
+    </LinearLayout>
 
 </RelativeLayout>

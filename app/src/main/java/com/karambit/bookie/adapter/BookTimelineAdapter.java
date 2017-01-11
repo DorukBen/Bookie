@@ -111,7 +111,9 @@ public class BookTimelineAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
         private View mStateClickArea;
         private ImageView mStateIcon;
         private TextView mStateText;
-        private Button mRequestCountButton;
+        private View mRequestClickArea;
+        private TextView mRequestCount;
+        private TextView mRequestsText;
         private TextView mStateDuration;
 
         private StateSectionCurrentUserViewHolder(View stateSectionView) {
@@ -120,8 +122,10 @@ public class BookTimelineAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
             mStateClickArea = stateSectionView.findViewById(R.id.stateClickArea);
             mStateIcon = (ImageView) stateSectionView.findViewById(R.id.bookStateImageView);
             mStateText = (TextView) stateSectionView.findViewById(R.id.bookStateTextView);
-            mRequestCountButton = (Button) stateSectionView.findViewById(R.id.requestCountButton);
+            mRequestClickArea = stateSectionView.findViewById(R.id.requestsClickArea);
+            mRequestCount = (TextView) stateSectionView.findViewById(R.id.requestCountTextView);
             mStateDuration = (TextView) stateSectionView.findViewById(R.id.stateDurationTextView);
+            mRequestsText = (TextView) stateSectionView.findViewById(R.id.requestsTextView);
         }
     }
 
@@ -362,16 +366,16 @@ public class BookTimelineAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
 
                 if (requestCount > 0) {
 
-                    stateCurrentHolder.mRequestCountButton.setVisibility(View.VISIBLE);
+                    stateCurrentHolder.mRequestCount.setVisibility(View.VISIBLE);
 
                     if (requestCount <= 9) {
-                        stateCurrentHolder.mRequestCountButton.setText(String.valueOf(requestCount));
+                        stateCurrentHolder.mRequestCount.setText(String.valueOf(requestCount));
                     } else {
-                        stateCurrentHolder.mRequestCountButton.setText("9+");
+                        stateCurrentHolder.mRequestCount.setText("9+");
                     }
 
                     if (mCurrentUserClickListeners != null) {
-                        stateCurrentHolder.mRequestCountButton.setOnClickListener(new View.OnClickListener() {
+                        stateCurrentHolder.mRequestCount.setOnClickListener(new View.OnClickListener() {
                             @Override
                             public void onClick(View v) {
                                 mCurrentUserClickListeners.onRequestCountClick(mBookDetails);
@@ -380,7 +384,7 @@ public class BookTimelineAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
                     }
 
                 } else {
-                    stateCurrentHolder.mRequestCountButton.setVisibility(View.GONE);
+                    stateCurrentHolder.mRequestCount.setVisibility(View.GONE);
                 }
 
                 switch (mBookDetails.getBook().getState()) {
@@ -388,30 +392,32 @@ public class BookTimelineAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
                     case READING:
                         stateCurrentHolder.mStateText.setText(R.string.reading);
                         stateCurrentHolder.mStateIcon.setImageResource(R.drawable.ic_book_timeline_read_start_stop_36dp);
+                        stateCurrentHolder.mRequestCount.setVisibility(View.VISIBLE);
                         break;
 
                     case OPENED_TO_SHARE:
                         stateCurrentHolder.mStateText.setText(R.string.opened_to_share);
                         stateCurrentHolder.mStateIcon.setImageResource(R.drawable.ic_book_timeline_opened_to_share_36dp);
+                        stateCurrentHolder.mRequestCount.setVisibility(View.VISIBLE);
                         break;
 
                     case CLOSED_TO_SHARE:
                         stateCurrentHolder.mStateText.setText(R.string.closed_to_share);
                         stateCurrentHolder.mStateIcon.setImageResource(R.drawable.ic_book_timeline_closed_to_share_36dp);
-                        stateCurrentHolder.mRequestCountButton.setVisibility(View.GONE);
+                        stateCurrentHolder.mRequestCount.setVisibility(View.GONE);
                         break;
 
                     case ON_ROAD:
                         stateCurrentHolder.mStateText.setText(R.string.on_road);
                         stateCurrentHolder.mStateIcon.setImageResource(R.drawable.ic_book_timeline_dispatch_36dp);
-                        stateCurrentHolder.mRequestCountButton.setVisibility(View.GONE);
+                        stateCurrentHolder.mRequestCount.setVisibility(View.GONE);
                         break;
 
                     case LOST:
                         stateCurrentHolder.mStateText.setText(R.string.lost);
                         stateCurrentHolder.mStateIcon.setImageResource(R.drawable.ic_close_white_24dp);
                         stateCurrentHolder.mStateIcon.setColorFilter(Color.RED);
-                        stateCurrentHolder.mRequestCountButton.setVisibility(View.GONE);
+                        stateCurrentHolder.mRequestCount.setVisibility(View.GONE);
                         break;
                 }
 
