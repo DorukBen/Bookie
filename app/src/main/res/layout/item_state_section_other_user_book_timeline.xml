@@ -64,7 +64,6 @@
 
     </FrameLayout>
 
-
     <Button
         android:id="@+id/requestButton"
         style="@style/Widget.AppCompat.ActionButton"
@@ -74,8 +73,8 @@
         android:layout_centerVertical="true"
         android:layout_marginLeft="8dp"
         android:layout_marginRight="8dp"
+        android:textAllCaps="true"
         android:text="@string/request_button"
         android:textColor="@color/colorAccent"/>
-
 
 </RelativeLayout>

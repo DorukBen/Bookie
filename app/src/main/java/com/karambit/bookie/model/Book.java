@@ -599,55 +599,65 @@ public class Book implements Parcelable {
         public static ArrayList<BookProcess> generateBookProcesses(int count) {
             ArrayList<BookProcess> bookProcesses = new ArrayList<>();
 
+            Book book = generateBook();
+            User user1 = User.GENERATOR.generateUser();
+
+            Calendar createBookCalendar = Calendar.getInstance();
+            createBookCalendar.setTimeInMillis(createBookCalendar.getTimeInMillis() - 15000000000L);
+            createBookCalendar.setTimeInMillis(createBookCalendar.getTimeInMillis() - 100000);
+            bookProcesses.add(book.new Interaction(InteractionType.ADD, user1, createBookCalendar));
+
+            Calendar calendar = Calendar.getInstance();
+
             for (int i = 0; i < count; i++) {
 
-                Book book = Book.GENERATOR.generateBook();
-                User user1 = User.GENERATOR.generateUser();
+                book = GENERATOR.generateBook();
+                user1 = User.GENERATOR.generateUser();
                 User user2 = User.GENERATOR.generateUser();
 
                 Random random = new Random();
 
                 Book.BookProcess bookProcess;
 
-                switch (random.nextInt(11)) {
+                switch (random.nextInt(10)) {
                     case 0:
-                        bookProcess = book.new Interaction(Book.InteractionType.ADD, user1, Calendar.getInstance());
+                        bookProcess = book.new Interaction(Book.InteractionType.READ_START, user1, calendar);
                         break;
                     case 1:
-                        bookProcess = book.new Interaction(Book.InteractionType.READ_START, user1, Calendar.getInstance());
+                        bookProcess = book.new Interaction(Book.InteractionType.READ_STOP, user1, calendar);
                         break;
                     case 2:
-                        bookProcess = book.new Interaction(Book.InteractionType.READ_STOP, user1, Calendar.getInstance());
+                        bookProcess = book.new Interaction(Book.InteractionType.CLOSE_TO_SHARE, user1, calendar);
                         break;
                     case 3:
-                        bookProcess = book.new Interaction(Book.InteractionType.CLOSE_TO_SHARE, user1, Calendar.getInstance());
+                        bookProcess = book.new Interaction(Book.InteractionType.OPEN_TO_SHARE, user1, calendar);
                         break;
                     case 4:
-                        bookProcess = book.new Interaction(Book.InteractionType.OPEN_TO_SHARE, user1, Calendar.getInstance());
+                        bookProcess = book.new Transaction(user1, Book.TransactionType.COME_TO_HAND, user2, calendar);
                         break;
                     case 5:
-                        bookProcess = book.new Transaction(user1, Book.TransactionType.COME_TO_HAND, user2, Calendar.getInstance());
+                        bookProcess = book.new Transaction(user1, Book.TransactionType.DISPACTH, user2, calendar);
                         break;
                     case 6:
-                        bookProcess = book.new Transaction(user1, Book.TransactionType.DISPACTH, user2, Calendar.getInstance());
+                        bookProcess = book.new Transaction(user1, Book.TransactionType.LOST, user2, calendar);
                         break;
                     case 7:
-                        bookProcess = book.new Transaction(user1, Book.TransactionType.LOST, user2, Calendar.getInstance());
+                        bookProcess = book.new Request(Book.RequestType.SEND, user1, user2, calendar);
                         break;
                     case 8:
-                        bookProcess = book.new Request(Book.RequestType.SEND, user1, user2, Calendar.getInstance());
+                        bookProcess = book.new Request(Book.RequestType.ACCEPT, user1, user2, calendar);
                         break;
                     case 9:
-                        bookProcess = book.new Request(Book.RequestType.ACCEPT, user1, user2, Calendar.getInstance());
-                        break;
-                    case 10:
-                        bookProcess = book.new Request(Book.RequestType.REJECT, user1, user2, Calendar.getInstance());
+                        bookProcess = book.new Request(Book.RequestType.REJECT, user1, user2, calendar);
                         break;
 
                     default:
                         bookProcess = null;
                 }
                 bookProcesses.add(bookProcess);
+
+                calendar = (Calendar) calendar.clone();
+                calendar.setTimeInMillis(calendar.getTimeInMillis() - random.nextInt(1000000000));
             }
             return bookProcesses;
         }

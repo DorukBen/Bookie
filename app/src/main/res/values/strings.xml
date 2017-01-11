@@ -92,7 +92,7 @@
 
     <string name="loading">Loading…</string>
     <string name="empty_state">Nothing to see here…</string>
-    <string name="request_button">REQUEST</string>
+    <string name="request_button">request</string>
     <string name="requests_button">REQUESTS</string>
     <string name="state_duration">for %d days</string>
     <string name="state_today">within today</string>
@@ -108,4 +108,16 @@
     <string name="month_short">%dmo</string>
     <string name="year_short">%dy</string>
     <string name="now">now</string>
+    <string name="arrived">Arrived</string>
+    <string name="no">No</string>
+    <string name="yes">Yes</string>
+    <string name="finish_reading_prompt">Has your reading finished?</string>
+    <string name="start_reading_prompt">Do you want to start reading this book right now?</string>
+    <string name="owner_change_notification">Cogratulations! You are the new owner of this book now.</string>
+    <string name="requests_rejected_prompt">All requests for this book will be rejected!</string>
+    <string name="finished">Finished</string>
+    <string name="reject_all">Reject all!</string>
+    <string name="are_you_sure">Are you sure?</string>
+    <string name="arrived_prompt">Has the book come to your hand?</string>
+    <string name="i_get_the_book">I get the book</string>
 </resources>

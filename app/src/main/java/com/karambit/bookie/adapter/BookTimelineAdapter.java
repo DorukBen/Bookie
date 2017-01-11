@@ -30,6 +30,7 @@ import com.karambit.bookie.helper.SessionManager;
 import com.karambit.bookie.model.Book;
 import com.karambit.bookie.model.User;
 
+import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Random;
 
@@ -422,6 +423,8 @@ public class BookTimelineAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
 
                 StateSectionOtherUserViewHolder stateOtherHolder = (StateSectionOtherUserViewHolder) holder;
 
+                Book.State state = mBookDetails.getBook().getState();
+
                 if (mOtherUserClickListeners != null) {
 
                     stateOtherHolder.mOwnerClickArea.setOnClickListener(new View.OnClickListener() {
@@ -437,6 +440,47 @@ public class BookTimelineAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
                             mOtherUserClickListeners.onRequestButtonClick(mBookDetails);
                         }
                     });
+
+
+                    // If book is on road state and book has sent to me. The button changes to arrive button
+                    if (state == Book.State.ON_ROAD) {
+                        ArrayList<Book.BookProcess> bookProcesses = mBookDetails.getBookProcesses();
+                        Book.BookProcess lastProcess = bookProcesses.get(bookProcesses.size() - 1);
+
+                        if (lastProcess instanceof Book.Transaction) {
+                            Book.Transaction sentTransaction = (Book.Transaction) lastProcess;
+
+                            if (sentTransaction.getToUser() == SessionManager.getCurrentUser(mContext)) {
+                                stateOtherHolder.mRequest.setText(R.string.arrived);
+                                stateOtherHolder.mRequest.setEnabled(true);
+                                stateOtherHolder.mRequest.setTextColor(ContextCompat.getColor(mContext, R.color.colorAccent));
+                                stateOtherHolder.mRequest.setAlpha(1f);
+                                stateOtherHolder.mRequest.setOnClickListener(new View.OnClickListener() {
+                                    @Override
+                                    public void onClick(View v) {
+                                        mOtherUserClickListeners.onArrivedButtonClick(mBookDetails);
+                                    }
+                                });
+
+                            } else {
+                                stateOtherHolder.mRequest.setText(R.string.request_button);
+                                stateOtherHolder.mRequest.setEnabled(true);
+                                stateOtherHolder.mRequest.setTextColor(ContextCompat.getColor(mContext, R.color.colorAccent));
+                                stateOtherHolder.mRequest.setAlpha(1f);
+                            }
+                        }
+
+                    } else if (state == Book.State.OPENED_TO_SHARE || state == Book.State.READING) {
+                        stateOtherHolder.mRequest.setText(R.string.request_button);
+                        stateOtherHolder.mRequest.setEnabled(true);
+                        stateOtherHolder.mRequest.setTextColor(ContextCompat.getColor(mContext, R.color.colorAccent));
+                        stateOtherHolder.mRequest.setAlpha(1f);
+                    } else {
+                        stateOtherHolder.mRequest.setText(R.string.request_button);
+                        stateOtherHolder.mRequest.setEnabled(false);
+                        stateOtherHolder.mRequest.setTextColor(ContextCompat.getColor(mContext, R.color.secondaryTextColor));
+                        stateOtherHolder.mRequest.setAlpha(0.5f);
+                    }
                 }
 
                 Glide.with(mContext)
@@ -448,22 +492,13 @@ public class BookTimelineAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
 
                 stateOtherHolder.mOwnerName.setText(mBookDetails.getBook().getOwner().getName());
 
-                Book.State state = mBookDetails.getBook().getState();
 
                 String durationText = getStateDurationText();
                 String stateAndDuration = bookStateToString(state) + " " + durationText;
                 stateOtherHolder.mBookState.setText(stateAndDuration);
 
                 // Enable or disable book request button
-                if (state == Book.State.OPENED_TO_SHARE || state == Book.State.READING) {
-                    stateOtherHolder.mRequest.setEnabled(true);
-                    stateOtherHolder.mRequest.setTextColor(ContextCompat.getColor(mContext, R.color.colorAccent));
-                    stateOtherHolder.mRequest.setAlpha(1f);
-                } else {
-                    stateOtherHolder.mRequest.setEnabled(false);
-                    stateOtherHolder.mRequest.setTextColor(ContextCompat.getColor(mContext, R.color.secondaryTextColor));
-                    stateOtherHolder.mRequest.setAlpha(0.5f);
-                }
+
 
                 break;
             }
@@ -498,7 +533,8 @@ public class BookTimelineAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
                     }
                 }
 
-                final Book.BookProcess item = mBookDetails.getBookProcesses().get(position - 3); // - Header - State - Subtitle
+                ArrayList<Book.BookProcess> bookProcesses = mBookDetails.getBookProcesses();
+                final Book.BookProcess item = bookProcesses.get(bookProcesses.size() - position + 2); // - Header - State - Subtitle
 
                 /**
                  * Decide which Book process. Visitor pattern takes care this.
@@ -794,6 +830,8 @@ public class BookTimelineAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
 
     public interface StateOtherUserClickListeners {
         void onRequestButtonClick(Book.Details details);
+
+        void onArrivedButtonClick(Book.Details details);
 
         void onOwnerClick(User owner);
     }
