@@ -17,21 +17,17 @@
     <string name="on_road">On road</string>
     <string name="lost">Lost</string>
     <string name="pass_through">PASS THROUGH</string>
-    <string name="x_added_this_book"> added this book</string>
-    <string name="x_started_to_read_this_book"> started to read this book</string>
-    <string name="x_finished_to_read_this_book"> finished to read this book</string>
-    <string name="x_closed_sharing_for_this_book"> closed sharing for this book</string>
-    <string name="x_opened_sharing_for_this_book"> opened sharing for this book</string>
-    <string name="x_took_the_book"> took the book</string>
-    <string name="x_sent_the_book_to_y">" sent the book to "</string>
-    <string name="book_sent_from_x_to_y_and_its_lost_1">Book sent from </string>
-    <string name="book_sent_from_x_to_y_and_its_lost_2"> to </string>
-    <string name="book_sent_from_x_to_y_and_its_lost_3"> and its lost!</string>
-    <string name="x_sent_request_to_y"> sent request to </string>
-    <string name="x_accepted_ys_request_1"> accepted </string>
-    <string name="x_accepted_ys_request_2">s request</string>
-    <string name="x_rejected_ys_request_1"> rejected </string>
-    <string name="x_rejected_ys_request_2">s request</string>
+    <string name="x_added">%s added the book</string>
+    <string name="x_started_to_read_this_book">%s started to read the book</string>
+    <string name="x_finished_to_read">%s finished to read the book</string>
+    <string name="x_closed_sharing">%s closed sharing for the book</string>
+    <string name="x_opened_sharing_for_this_book">%s opened sharing for the book</string>
+    <string name="x_took">%s took the book</string>
+    <string name="x_sent_the_book_to_y">%1$s sent the book to %2$s</string>
+    <string name="book_sent_from_x_to_y_and_its_lost">Book sent from %1$s to %2$s and its lost!</string>
+    <string name="x_sent_request_to_y">%1$s sent request to %2$s</string>
+    <string name="x_accepted_ys_request">%1$s accepted %2$s\'s request</string>
+    <string name="x_rejected_ys_request">%1$s rejected %2$s\'s request</string>
     <string name="search_book_hint">Search for books</string>
     <string name="type_message">Type a message…</string>
     <string name="pick_image_intent_text">Pick Image</string>
@@ -120,4 +116,22 @@
     <string name="are_you_sure">Are you sure?</string>
     <string name="arrived_prompt">Has the book come to your hand?</string>
     <string name="i_get_the_book">I get the book</string>
+
+    <string name="you_added">You added the book</string>
+    <string name="you_started_to_read">You started to read the book</string>
+    <string name="you_finished_to_read">You finished to read the book</string>
+    <string name="you_closed_sharing">You closed sharing for the book</string>
+    <string name="you_opened_sharing">You opened sharing for the book</string>
+
+    <string name="you_took">You took the book</string>
+    <string name="you_sent_the_book_to_x">You sent the book to %s</string>
+    <string name="you_lost_the_book_while_sending_to_x">You lost the book while sending the book to %s</string>
+    <string name="x_sent_the_book_to_you">%s sent the book to you</string>
+    <string name="book_lost_while_x_sending_to_you">Book lost while %s sending the book to you</string>
+    <string name="you_sent_request">You sent request to %s</string>
+    <string name="you_accepted_request">You accepted %s\'s request</string>
+    <string name="you_rejected_request">You rejected %s\'s request</string>
+    <string name="x_sent_request_to_you">%s sent request to you</string>
+    <string name="x_accepted_your_request">%s accepted your request</string>
+    <string name="x_rejected_your_request">%s rejected your request</string>
 </resources>

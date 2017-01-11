@@ -9,7 +9,6 @@ import android.text.Spannable;
 import android.text.SpannableString;
 import android.text.Spanned;
 import android.text.TextPaint;
-import android.text.TextUtils;
 import android.text.method.LinkMovementMethod;
 import android.text.style.ClickableSpan;
 import android.text.style.ForegroundColorSpan;
@@ -548,56 +547,149 @@ public class BookTimelineAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
 
                         bookProcessHolder.mProcessImage.setVisibility(View.VISIBLE);
 
-                        SpannableString spanUserName = new SpannableString(interaction.getUser().getName());
-                        ClickableSpan clickableSpanUserName = new ClickableSpan() {
-                            @Override
-                            public void onClick(View textView) {
-                                mSpanTextClickListener.onUserNameClick(interaction.getUser());
+                        if (interaction.getUser().getID() != SessionManager.getCurrentUser(mContext).getID()) {
+
+                            String userName = interaction.getUser().getName();
+
+                            ClickableSpan clickableSpanUserName = new ClickableSpan() {
+                                @Override
+                                public void onClick(View textView) {
+                                    mSpanTextClickListener.onUserNameClick(interaction.getUser());
+                                }
+
+                                @Override
+                                public void updateDrawState(TextPaint ds) {
+                                    super.updateDrawState(ds);
+                                    ds.setUnderlineText(false);
+                                }
+                            };
+
+                            switch (interaction.getInteractionType()) {
+
+                                case ADD: {
+                                    String addBookString = mContext.getString(R.string.x_added, userName);
+                                    SpannableString spanAddBook = new SpannableString(addBookString);
+                                    int startIndex = addBookString.indexOf(userName);
+                                    int endIndex = startIndex + userName.length();
+
+                                    spanAddBook.setSpan(clickableSpanUserName, startIndex, endIndex, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+                                    spanAddBook.setSpan(new StyleSpan(Typeface.BOLD), startIndex, endIndex, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+                                    spanAddBook.setSpan(new ForegroundColorSpan(ContextCompat.getColor(mContext, R.color.primaryTextColor)),
+                                                        0, spanAddBook.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+
+                                    bookProcessHolder.mProcessChange.setText(spanAddBook);
+                                    bookProcessHolder.mProcessImage.setImageResource(R.drawable.ic_book_timeline_add_book_outline_36dp);
+
+                                    break;
+                                }
+
+                                case READ_START: {
+                                    String readStartString = mContext.getString(R.string.x_started_to_read_this_book, userName);
+                                    SpannableString spanReadStart = new SpannableString(readStartString);
+                                    int startIndex = readStartString.indexOf(userName);
+                                    int endIndex = startIndex + userName.length();
+
+                                    spanReadStart.setSpan(clickableSpanUserName, startIndex, endIndex, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+                                    spanReadStart.setSpan(new StyleSpan(Typeface.BOLD), startIndex, endIndex, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+                                    spanReadStart.setSpan(new ForegroundColorSpan(ContextCompat.getColor(mContext, R.color.primaryTextColor)),
+                                                          0, spanReadStart.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+
+                                    bookProcessHolder.mProcessChange.setText(spanReadStart);
+                                    bookProcessHolder.mProcessImage.setImageResource(R.drawable.ic_book_timeline_read_start_stop_36dp);
+
+                                    break;
+                                }
+                                
+                                case READ_STOP: {
+                                    String readStopString = mContext.getString(R.string.x_finished_to_read, userName);
+                                    SpannableString spanReadStop = new SpannableString(readStopString);
+                                    int startIndex = readStopString.indexOf(userName);
+                                    int endIndex = startIndex + userName.length();
+
+                                    spanReadStop.setSpan(clickableSpanUserName, startIndex, endIndex, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+                                    spanReadStop.setSpan(new StyleSpan(Typeface.BOLD), startIndex, endIndex, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+                                    spanReadStop.setSpan(new ForegroundColorSpan(ContextCompat.getColor(mContext, R.color.primaryTextColor)),
+                                                         0, spanReadStop.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+
+                                    bookProcessHolder.mProcessChange.setText(spanReadStop);
+                                    bookProcessHolder.mProcessImage.setImageResource(R.drawable.ic_book_timeline_read_start_stop_36dp);
+
+                                    break;
+                                }
+                                
+                                case CLOSE_TO_SHARE: {
+                                    String closeToShareString = mContext.getString(R.string.x_closed_sharing, userName);
+                                    SpannableString spanCloseToShare = new SpannableString(closeToShareString);
+                                    int startIndex = closeToShareString.indexOf(userName);
+                                    int endIndex = startIndex + userName.length();
+
+                                    spanCloseToShare.setSpan(clickableSpanUserName, startIndex, endIndex, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+                                    spanCloseToShare.setSpan(new StyleSpan(Typeface.BOLD), startIndex, endIndex, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+                                    spanCloseToShare.setSpan(new ForegroundColorSpan(ContextCompat.getColor(mContext, R.color.primaryTextColor)),
+                                                             0, spanCloseToShare.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+
+                                    bookProcessHolder.mProcessChange.setText(spanCloseToShare);
+                                    bookProcessHolder.mProcessImage.setImageResource(R.drawable.ic_book_timeline_closed_to_share_36dp);
+
+                                    break;
+                                }
+
+                                case OPEN_TO_SHARE: {
+                                    String openToShareString = mContext.getString(R.string.x_opened_sharing_for_this_book, userName);
+                                    SpannableString spanOpenToShare = new SpannableString(openToShareString);
+                                    int startIndex = openToShareString.indexOf(userName);
+                                    int endIndex = startIndex + userName.length();
+
+                                    spanOpenToShare.setSpan(clickableSpanUserName, startIndex, endIndex, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+                                    spanOpenToShare.setSpan(new StyleSpan(Typeface.BOLD), startIndex, endIndex, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+                                    spanOpenToShare.setSpan(new ForegroundColorSpan(ContextCompat.getColor(mContext, R.color.primaryTextColor)),
+                                                            0, spanOpenToShare.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+
+                                    bookProcessHolder.mProcessChange.setText(spanOpenToShare);
+                                    bookProcessHolder.mProcessImage.setImageResource(R.drawable.ic_book_timeline_opened_to_share_36dp);
+
+                                    break;
+                                }
+
+                                default:
+                                    throw new IllegalArgumentException("Invalid interaction type:" + interaction.getInteractionType().name());
                             }
 
-                            @Override
-                            public void updateDrawState(TextPaint ds) {
-                                super.updateDrawState(ds);
-                                ds.setUnderlineText(false);
+                            bookProcessHolder.mProcessChange.setMovementMethod(LinkMovementMethod.getInstance());
+                            bookProcessHolder.mProcessChange.setHighlightColor(Color.TRANSPARENT);
+
+                        } else {
+
+                            switch (interaction.getInteractionType()) {
+
+                                case ADD:
+                                    bookProcessHolder.mProcessImage.setImageResource(R.drawable.ic_book_timeline_add_book_outline_36dp);
+                                    bookProcessHolder.mProcessChange.setText(R.string.you_added);
+                                    break;
+                                case READ_START:
+                                    bookProcessHolder.mProcessImage.setImageResource(R.drawable.ic_book_timeline_read_start_stop_36dp);
+                                    bookProcessHolder.mProcessChange.setText(R.string.you_started_to_read);
+                                    break;
+
+                                case READ_STOP:
+                                    bookProcessHolder.mProcessImage.setImageResource(R.drawable.ic_book_timeline_read_start_stop_36dp);
+                                    bookProcessHolder.mProcessChange.setText(R.string.you_finished_to_read);
+                                    break;
+
+                                case CLOSE_TO_SHARE:
+                                    bookProcessHolder.mProcessImage.setImageResource(R.drawable.ic_book_timeline_closed_to_share_36dp);
+                                    bookProcessHolder.mProcessChange.setText(R.string.you_closed_sharing);
+                                    break;
+
+                                case OPEN_TO_SHARE:
+                                    bookProcessHolder.mProcessImage.setImageResource(R.drawable.ic_book_timeline_opened_to_share_36dp);
+                                    bookProcessHolder.mProcessChange.setText(R.string.you_opened_sharing);
+                                    break;
+
+                                default:
+                                    throw new IllegalArgumentException("Invalid interaction type:" + interaction.getInteractionType().name());
                             }
-                        };
-
-                        spanUserName.setSpan(clickableSpanUserName, 0, spanUserName.length(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
-                        spanUserName.setSpan(new ForegroundColorSpan(ContextCompat.getColor(mContext, R.color.primaryTextColor)), 0, spanUserName.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
-                        spanUserName.setSpan(new StyleSpan(Typeface.BOLD), 0, spanUserName.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
-
-                        switch (interaction.getInteractionType()) {
-
-                            case ADD:
-                                bookProcessHolder.mProcessImage.setImageResource(R.drawable.ic_book_timeline_add_book_outline_36dp);
-                                bookProcessHolder.mProcessChange.setText(TextUtils.concat(spanUserName, " " + mContext.getString(R.string.x_added_this_book)));
-                                break;
-                            case READ_START:
-                                bookProcessHolder.mProcessImage.setImageResource(R.drawable.ic_book_timeline_read_start_stop_36dp);
-                                bookProcessHolder.mProcessChange.setText(TextUtils.concat(spanUserName, " " + mContext.getString(R.string.x_started_to_read_this_book)));
-                                break;
-
-                            case READ_STOP:
-                                bookProcessHolder.mProcessImage.setImageResource(R.drawable.ic_book_timeline_read_start_stop_36dp);
-                                bookProcessHolder.mProcessChange.setText(TextUtils.concat(spanUserName, " " + mContext.getString(R.string.x_finished_to_read_this_book)));
-                                break;
-
-                            case CLOSE_TO_SHARE:
-                                bookProcessHolder.mProcessImage.setImageResource(R.drawable.ic_book_timeline_closed_to_share_36dp);
-                                bookProcessHolder.mProcessChange.setText(TextUtils.concat(spanUserName, " " + mContext.getString(R.string.x_closed_sharing_for_this_book)));
-                                break;
-
-                            case OPEN_TO_SHARE:
-                                bookProcessHolder.mProcessImage.setImageResource(R.drawable.ic_book_timeline_opened_to_share_36dp);
-                                bookProcessHolder.mProcessChange.setText(TextUtils.concat(spanUserName, " " + mContext.getString(R.string.x_opened_sharing_for_this_book)));
-                                break;
-
-                            default:
-                                throw new IllegalArgumentException("Invalid interaction type:" + interaction.getInteractionType().name());
                         }
-
-                        bookProcessHolder.mProcessChange.setMovementMethod(LinkMovementMethod.getInstance());
-                        bookProcessHolder.mProcessChange.setHighlightColor(Color.TRANSPARENT);
                     }
 
                     @Override
@@ -607,7 +699,9 @@ public class BookTimelineAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
 
                         bookProcessHolder.mProcessImage.setVisibility(View.VISIBLE);
 
-                        SpannableString spanFromUserName = new SpannableString(transaction.getFromUser().getName());
+                        String fromUserName = transaction.getFromUser().getName();
+                        String toUserName = transaction.getToUser().getName();
+
                         ClickableSpan clickableSpanFromUserName = new ClickableSpan() {
                             @Override
                             public void onClick(View textView) {
@@ -621,11 +715,6 @@ public class BookTimelineAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
                             }
                         };
 
-                        spanFromUserName.setSpan(clickableSpanFromUserName, 0, spanFromUserName.length(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
-                        spanFromUserName.setSpan(new ForegroundColorSpan(ContextCompat.getColor(mContext, R.color.primaryTextColor)), 0, spanFromUserName.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
-                        spanFromUserName.setSpan(new StyleSpan(Typeface.BOLD), 0, spanFromUserName.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
-
-                        SpannableString spanToUserName = new SpannableString(transaction.getToUser().getName());
                         ClickableSpan clickableSpanToUserName = new ClickableSpan() {
                             @Override
                             public void onClick(View textView) {
@@ -639,30 +728,188 @@ public class BookTimelineAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
                             }
                         };
 
-                        spanToUserName.setSpan(clickableSpanToUserName, 0, spanToUserName.length(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
-                        spanToUserName.setSpan(new ForegroundColorSpan(ContextCompat.getColor(mContext, R.color.primaryTextColor)), 0, spanToUserName.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
-                        spanToUserName.setSpan(new StyleSpan(Typeface.BOLD), 0, spanToUserName.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+                        if (transaction.getFromUser().getID() == SessionManager.getCurrentUser(mContext).getID()) {
 
+                            switch (transaction.getTransactionType()) {
 
-                        switch (transaction.getTransactionType()) {
+                                case COME_TO_HAND: {
+                                    String comeToHandString = mContext.getString(R.string.x_took, toUserName);
+                                    SpannableString spanComeToHand = new SpannableString(comeToHandString);
+                                    int startIndex = comeToHandString.indexOf(toUserName);
+                                    int endIndex = startIndex + toUserName.length();
 
-                            case COME_TO_HAND:
-                                bookProcessHolder.mProcessImage.setImageResource(R.drawable.ic_book_timeline_come_to_hand_car_36dp);
-                                bookProcessHolder.mProcessChange.setText(TextUtils.concat(spanToUserName, " " + mContext.getString(R.string.x_took_the_book)));
-                                break;
+                                    spanComeToHand.setSpan(clickableSpanToUserName, startIndex, endIndex, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+                                    spanComeToHand.setSpan(new StyleSpan(Typeface.BOLD), startIndex, endIndex, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+                                    spanComeToHand.setSpan(new ForegroundColorSpan(ContextCompat.getColor(mContext, R.color.primaryTextColor)),
+                                                           0, spanComeToHand.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
 
-                            case DISPACTH:
-                                bookProcessHolder.mProcessImage.setImageResource(R.drawable.ic_book_timeline_dispatch_36dp);
-                                bookProcessHolder.mProcessChange.setText(TextUtils.concat(spanFromUserName, " " + mContext.getString(R.string.x_sent_the_book_to_y) + " ", spanToUserName));
-                                break;
+                                    bookProcessHolder.mProcessChange.setText(spanComeToHand);
+                                    bookProcessHolder.mProcessImage.setImageResource(R.drawable.ic_book_timeline_come_to_hand_car_36dp);
 
-                            case LOST:
-                                bookProcessHolder.mProcessImage.setImageResource(R.drawable.ic_book_timeline_lost_outline_36dp);
-                                bookProcessHolder.mProcessChange.setText(TextUtils.concat(mContext.getString(R.string.book_sent_from_x_to_y_and_its_lost_1) + " ", spanFromUserName, " " + mContext.getString(R.string.book_sent_from_x_to_y_and_its_lost_2) + " ", spanToUserName, " " + mContext.getString(R.string.book_sent_from_x_to_y_and_its_lost_3)));
-                                break;
+                                    break;
+                                }
 
-                            default:
-                                throw new IllegalArgumentException("Invalid transaction type:" + transaction.getTransactionType().name());
+                                case DISPACTH: {
+                                    String sentBookString = mContext.getString(R.string.you_sent_the_book_to_x, toUserName);
+                                    SpannableString spanSentBook = new SpannableString(sentBookString);
+                                    int startIndex = sentBookString.indexOf(toUserName);
+                                    int endIndex = startIndex + toUserName.length();
+
+                                    spanSentBook.setSpan(clickableSpanToUserName, startIndex, endIndex, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+                                    spanSentBook.setSpan(new StyleSpan(Typeface.BOLD), startIndex, endIndex, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+                                    spanSentBook.setSpan(new ForegroundColorSpan(ContextCompat.getColor(mContext, R.color.primaryTextColor)),
+                                                         0, spanSentBook.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+
+                                    bookProcessHolder.mProcessChange.setText(spanSentBook);
+                                    bookProcessHolder.mProcessImage.setImageResource(R.drawable.ic_book_timeline_dispatch_36dp);
+
+                                    break;
+                                }
+
+                                case LOST: {
+                                    String lostBookString = mContext.getString(R.string.you_lost_the_book_while_sending_to_x, toUserName);
+                                    SpannableString spanLostBook = new SpannableString(lostBookString);
+                                    int startIndex = lostBookString.indexOf(toUserName);
+                                    int endIndex = startIndex + toUserName.length();
+
+                                    spanLostBook.setSpan(clickableSpanToUserName, startIndex, endIndex, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+                                    spanLostBook.setSpan(new StyleSpan(Typeface.BOLD), startIndex, endIndex, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+                                    spanLostBook.setSpan(new ForegroundColorSpan(ContextCompat.getColor(mContext, R.color.primaryTextColor)),
+                                                         0, spanLostBook.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+
+                                    bookProcessHolder.mProcessChange.setText(spanLostBook);
+                                    bookProcessHolder.mProcessImage.setImageResource(R.drawable.ic_book_timeline_lost_outline_36dp);
+
+                                    break;
+                                }
+
+                                default:
+                                    throw new IllegalArgumentException("Invalid transaction type:" + transaction.getTransactionType().name());
+                            }
+
+                        } else if (transaction.getToUser().getID() == SessionManager.getCurrentUser(mContext).getID()) {
+
+                            switch (transaction.getTransactionType()) {
+
+                                case COME_TO_HAND: {
+                                    bookProcessHolder.mProcessChange.setText(R.string.you_took);
+                                    bookProcessHolder.mProcessImage.setImageResource(R.drawable.ic_book_timeline_come_to_hand_car_36dp);
+
+                                    break;
+                                }
+
+                                case DISPACTH: {
+                                    String sentBookString = mContext.getString(R.string.x_sent_the_book_to_you, fromUserName);
+                                    SpannableString spanSentBook = new SpannableString(sentBookString);
+                                    int startIndex = sentBookString.indexOf(fromUserName);
+                                    int endIndex = startIndex + fromUserName.length();
+
+                                    spanSentBook.setSpan(clickableSpanFromUserName, startIndex, endIndex, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+                                    spanSentBook.setSpan(new StyleSpan(Typeface.BOLD), startIndex, endIndex, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+                                    spanSentBook.setSpan(new ForegroundColorSpan(ContextCompat.getColor(mContext, R.color.primaryTextColor)),
+                                                         0, spanSentBook.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+
+                                    bookProcessHolder.mProcessChange.setText(spanSentBook);
+                                    bookProcessHolder.mProcessImage.setImageResource(R.drawable.ic_book_timeline_dispatch_36dp);
+
+                                    break;
+                                }
+
+                                case LOST: {
+                                    String lostBookString = mContext.getString(R.string.book_lost_while_x_sending_to_you, fromUserName);
+                                    SpannableString spanLostBook = new SpannableString(lostBookString);
+                                    int startIndex = lostBookString.indexOf(fromUserName);
+                                    int endIndex = startIndex + fromUserName.length();
+
+                                    spanLostBook.setSpan(clickableSpanFromUserName, startIndex, endIndex, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+                                    spanLostBook.setSpan(new StyleSpan(Typeface.BOLD), startIndex, endIndex, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+                                    spanLostBook.setSpan(new ForegroundColorSpan(ContextCompat.getColor(mContext, R.color.primaryTextColor)),
+                                                         0, spanLostBook.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+
+                                    bookProcessHolder.mProcessChange.setText(spanLostBook);
+                                    bookProcessHolder.mProcessImage.setImageResource(R.drawable.ic_book_timeline_lost_outline_36dp);
+
+                                    break;
+                                }
+
+                                default:
+                                    throw new IllegalArgumentException("Invalid transaction type:" + transaction.getTransactionType().name());
+                            }
+
+                        } else {
+
+                            switch (transaction.getTransactionType()) {
+
+                                case COME_TO_HAND: {
+                                    String comeToHandString = mContext.getString(R.string.x_took, toUserName);
+                                    SpannableString spanComeToHand = new SpannableString(comeToHandString);
+                                    int startIndex = comeToHandString.indexOf(toUserName);
+                                    int endIndex = startIndex + toUserName.length();
+
+                                    spanComeToHand.setSpan(clickableSpanToUserName, startIndex, endIndex, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+                                    spanComeToHand.setSpan(new StyleSpan(Typeface.BOLD), startIndex, endIndex, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+                                    spanComeToHand.setSpan(new ForegroundColorSpan(ContextCompat.getColor(mContext, R.color.primaryTextColor)),
+                                                           0, spanComeToHand.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+
+                                    bookProcessHolder.mProcessChange.setText(spanComeToHand);
+                                    bookProcessHolder.mProcessImage.setImageResource(R.drawable.ic_book_timeline_come_to_hand_car_36dp);
+
+                                    break;
+                                }
+
+                                case DISPACTH: {
+                                    String sentBookString = mContext.getString(R.string.x_sent_the_book_to_y, fromUserName, toUserName);
+                                    SpannableString spanSentBook = new SpannableString(sentBookString);
+
+                                    int startIndexToUser = sentBookString.indexOf(toUserName);
+                                    int endIndexToUser = startIndexToUser + toUserName.length();
+
+                                    int startIndexFromUser = sentBookString.indexOf(fromUserName);
+                                    int endIndexFromUser = startIndexFromUser + fromUserName.length();
+
+                                    spanSentBook.setSpan(clickableSpanFromUserName, startIndexFromUser, endIndexFromUser, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+                                    spanSentBook.setSpan(new StyleSpan(Typeface.BOLD), startIndexFromUser, endIndexFromUser, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+
+                                    spanSentBook.setSpan(clickableSpanToUserName, startIndexToUser, endIndexToUser, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+                                    spanSentBook.setSpan(new StyleSpan(Typeface.BOLD), startIndexToUser, endIndexToUser, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+
+                                    spanSentBook.setSpan(new ForegroundColorSpan(ContextCompat.getColor(mContext, R.color.primaryTextColor)),
+                                                         0, spanSentBook.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+
+                                    bookProcessHolder.mProcessChange.setText(spanSentBook);
+                                    bookProcessHolder.mProcessImage.setImageResource(R.drawable.ic_book_timeline_dispatch_36dp);
+
+                                    break;
+                                }
+
+                                case LOST: {
+                                    String lostBookString = mContext.getString(R.string.book_sent_from_x_to_y_and_its_lost, fromUserName, toUserName);
+                                    SpannableString spanLostBook = new SpannableString(lostBookString);
+
+                                    int startIndexFromUser = lostBookString.indexOf(fromUserName);
+                                    int endIndexFromUser = startIndexFromUser + fromUserName.length();
+
+                                    int startIndexToUser = lostBookString.indexOf(toUserName);
+                                    int endIndexToUser = startIndexToUser + toUserName.length();
+
+                                    spanLostBook.setSpan(clickableSpanFromUserName, startIndexFromUser, endIndexFromUser, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+                                    spanLostBook.setSpan(new StyleSpan(Typeface.BOLD), startIndexFromUser, endIndexFromUser, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+
+                                    spanLostBook.setSpan(clickableSpanToUserName, startIndexToUser, endIndexToUser, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+                                    spanLostBook.setSpan(new StyleSpan(Typeface.BOLD), startIndexToUser, endIndexToUser, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+
+                                    spanLostBook.setSpan(new ForegroundColorSpan(ContextCompat.getColor(mContext, R.color.primaryTextColor)),
+                                                         0, spanLostBook.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+
+                                    bookProcessHolder.mProcessChange.setText(spanLostBook);
+                                    bookProcessHolder.mProcessImage.setImageResource(R.drawable.ic_book_timeline_lost_outline_36dp);
+
+                                    break;
+                                }
+
+                                default:
+                                    throw new IllegalArgumentException("Invalid transaction type:" + transaction.getTransactionType().name());
+                            }
                         }
 
                         bookProcessHolder.mProcessChange.setMovementMethod(LinkMovementMethod.getInstance());
@@ -676,7 +923,9 @@ public class BookTimelineAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
 
                         bookProcessHolder.mProcessImage.setVisibility(View.GONE);
 
-                        SpannableString spanFromUserName = new SpannableString(request.getFromUser().getName());
+                        String fromUserName = request.getFromUser().getName();
+                        String toUserName = request.getToUser().getName();
+
                         ClickableSpan clickableSpanFromUserName = new ClickableSpan() {
                             @Override
                             public void onClick(View textView) {
@@ -690,11 +939,6 @@ public class BookTimelineAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
                             }
                         };
 
-                        spanFromUserName.setSpan(clickableSpanFromUserName, 0, spanFromUserName.length(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
-                        spanFromUserName.setSpan(new ForegroundColorSpan(ContextCompat.getColor(mContext, R.color.primaryTextColor)), 0, spanFromUserName.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
-                        spanFromUserName.setSpan(new StyleSpan(Typeface.BOLD), 0, spanFromUserName.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
-
-                        SpannableString spanToUserName = new SpannableString(request.getToUser().getName());
                         ClickableSpan clickableSpanToUserName = new ClickableSpan() {
                             @Override
                             public void onClick(View textView) {
@@ -708,26 +952,200 @@ public class BookTimelineAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
                             }
                         };
 
-                        spanToUserName.setSpan(clickableSpanToUserName, 0, spanToUserName.length(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
-                        spanToUserName.setSpan(new ForegroundColorSpan(ContextCompat.getColor(mContext, R.color.primaryTextColor)), 0, spanToUserName.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
-                        spanToUserName.setSpan(new StyleSpan(Typeface.BOLD), 0, spanToUserName.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+                        if (request.getFromUser().getID() == SessionManager.getCurrentUser(mContext).getID()) {
 
-                        switch (request.getRequestType()) {
+                            switch (request.getRequestType()) {
 
-                            case SEND:
-                                bookProcessHolder.mProcessChange.setText(TextUtils.concat(spanFromUserName, " " + mContext.getString(R.string.x_sent_request_to_y) + " ", spanToUserName));
-                                break;
+                                case SEND: {
+                                    String sendRequestString = mContext.getString(R.string.you_sent_request, toUserName);
+                                    SpannableString spanSentRequest = new SpannableString(sendRequestString);
+                                    int startIndex = sendRequestString.indexOf(toUserName);
+                                    int endIndex = startIndex + toUserName.length();
 
-                            case ACCEPT:
-                                bookProcessHolder.mProcessChange.setText(TextUtils.concat(spanFromUserName, " " + mContext.getString(R.string.x_accepted_ys_request_1) + " ", spanToUserName, "'" + mContext.getString(R.string.x_accepted_ys_request_2)));
-                                break;
+                                    spanSentRequest.setSpan(clickableSpanToUserName, startIndex, endIndex, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+                                    spanSentRequest.setSpan(new StyleSpan(Typeface.BOLD), startIndex, endIndex, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+                                    spanSentRequest.setSpan(new ForegroundColorSpan(ContextCompat.getColor(mContext, R.color.primaryTextColor)),
+                                                         0, spanSentRequest.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
 
-                            case REJECT:
-                                bookProcessHolder.mProcessChange.setText(TextUtils.concat(spanFromUserName, " " + mContext.getString(R.string.x_rejected_ys_request_1) + " ", spanToUserName, "'" + mContext.getString(R.string.x_rejected_ys_request_2)));
-                                break;
+                                    bookProcessHolder.mProcessChange.setText(spanSentRequest);
 
-                            default:
-                                throw new IllegalArgumentException("Invalid request type:" + request.getRequestType().name());
+                                    break;
+                                }
+
+                                case ACCEPT: {
+                                    String acceptRequestString = mContext.getString(R.string.you_accepted_request, toUserName);
+                                    SpannableString spanAcceptRequest = new SpannableString(acceptRequestString);
+                                    int startIndex = acceptRequestString.indexOf(toUserName);
+                                    int endIndex = startIndex + toUserName.length();
+
+                                    spanAcceptRequest.setSpan(clickableSpanToUserName, startIndex, endIndex, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+                                    spanAcceptRequest.setSpan(new StyleSpan(Typeface.BOLD), startIndex, endIndex, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+                                    spanAcceptRequest.setSpan(new ForegroundColorSpan(ContextCompat.getColor(mContext, R.color.primaryTextColor)),
+                                                              0, spanAcceptRequest.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+
+                                    bookProcessHolder.mProcessChange.setText(spanAcceptRequest);
+
+                                    break;
+                                }
+
+                                case REJECT: {
+
+                                    String rejectRequestString = mContext.getString(R.string.you_rejected_request, toUserName);
+                                    SpannableString spanRejectRequest = new SpannableString(rejectRequestString);
+                                    int startIndex = rejectRequestString.indexOf(toUserName);
+                                    int endIndex = startIndex + toUserName.length();
+
+                                    spanRejectRequest.setSpan(clickableSpanToUserName, startIndex, endIndex, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+                                    spanRejectRequest.setSpan(new StyleSpan(Typeface.BOLD), startIndex, endIndex, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+                                    spanRejectRequest.setSpan(new ForegroundColorSpan(ContextCompat.getColor(mContext, R.color.primaryTextColor)),
+                                                              0, spanRejectRequest.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+
+                                    bookProcessHolder.mProcessChange.setText(spanRejectRequest);
+
+                                    break;
+                                }
+
+                                default:
+                                    throw new IllegalArgumentException("Invalid request type:" + request.getRequestType().name());
+                            }
+
+                        } else if (request.getToUser().getID() == SessionManager.getCurrentUser(mContext).getID()) {
+
+                            switch (request.getRequestType()) {
+
+                                case SEND: {
+                                    String sendRequestString = mContext.getString(R.string.x_sent_request_to_you, fromUserName);
+                                    SpannableString spanSentRequest = new SpannableString(sendRequestString);
+                                    int startIndex = sendRequestString.indexOf(fromUserName);
+                                    int endIndex = startIndex + fromUserName.length();
+
+                                    spanSentRequest.setSpan(clickableSpanFromUserName, startIndex, endIndex, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+                                    spanSentRequest.setSpan(new StyleSpan(Typeface.BOLD), startIndex, endIndex, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+                                    spanSentRequest.setSpan(new ForegroundColorSpan(ContextCompat.getColor(mContext, R.color.primaryTextColor)),
+                                                            0, spanSentRequest.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+
+                                    bookProcessHolder.mProcessChange.setText(spanSentRequest);
+
+                                    break;
+                                }
+
+                                case ACCEPT: {
+                                    String acceptRequestString = mContext.getString(R.string.x_accepted_your_request, fromUserName);
+                                    SpannableString spanAcceptRequest = new SpannableString(acceptRequestString);
+                                    int startIndex = acceptRequestString.indexOf(fromUserName);
+                                    int endIndex = startIndex + fromUserName.length();
+
+                                    spanAcceptRequest.setSpan(clickableSpanFromUserName, startIndex, endIndex, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+                                    spanAcceptRequest.setSpan(new StyleSpan(Typeface.BOLD), startIndex, endIndex, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+                                    spanAcceptRequest.setSpan(new ForegroundColorSpan(ContextCompat.getColor(mContext, R.color.primaryTextColor)),
+                                                              0, spanAcceptRequest.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+
+                                    bookProcessHolder.mProcessChange.setText(spanAcceptRequest);
+
+                                    break;
+                                }
+
+                                case REJECT: {
+
+                                    String rejectRequestString = mContext.getString(R.string.x_rejected_your_request, fromUserName);
+                                    SpannableString spanRejectRequest = new SpannableString(rejectRequestString);
+                                    int startIndex = rejectRequestString.indexOf(fromUserName);
+                                    int endIndex = startIndex + fromUserName.length();
+
+                                    spanRejectRequest.setSpan(clickableSpanFromUserName, startIndex, endIndex, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+                                    spanRejectRequest.setSpan(new StyleSpan(Typeface.BOLD), startIndex, endIndex, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+                                    spanRejectRequest.setSpan(new ForegroundColorSpan(ContextCompat.getColor(mContext, R.color.primaryTextColor)),
+                                                              0, spanRejectRequest.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+
+                                    bookProcessHolder.mProcessChange.setText(spanRejectRequest);
+
+                                    break;
+                                }
+
+                                default:
+                                    throw new IllegalArgumentException("Invalid request type:" + request.getRequestType().name());
+                            }
+
+                        } else {
+
+                            switch (request.getRequestType()) {
+
+                                case SEND: {
+                                    String sendRequestString = mContext.getString(R.string.x_sent_request_to_y, fromUserName, toUserName);
+                                    SpannableString spanSentRequest = new SpannableString(sendRequestString);
+
+                                    int startIndexFromUser = sendRequestString.indexOf(fromUserName);
+                                    int endIndexFromUser = startIndexFromUser + fromUserName.length();
+
+                                    int startIndexToUser = sendRequestString.indexOf(toUserName);
+                                    int endIndexToUser = startIndexToUser + toUserName.length();
+
+                                    spanSentRequest.setSpan(clickableSpanFromUserName, startIndexFromUser, endIndexFromUser, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+                                    spanSentRequest.setSpan(new StyleSpan(Typeface.BOLD), startIndexFromUser, endIndexFromUser, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+
+                                    spanSentRequest.setSpan(clickableSpanToUserName, startIndexToUser, endIndexToUser, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+                                    spanSentRequest.setSpan(new StyleSpan(Typeface.BOLD), startIndexToUser, endIndexToUser, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+
+                                    spanSentRequest.setSpan(new ForegroundColorSpan(ContextCompat.getColor(mContext, R.color.primaryTextColor)),
+                                                            0, spanSentRequest.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+
+                                    bookProcessHolder.mProcessChange.setText(spanSentRequest);
+
+                                    break;
+                                }
+
+                                case ACCEPT: {
+                                    String acceptRequestString = mContext.getString(R.string.x_accepted_ys_request, fromUserName, toUserName);
+                                    SpannableString spanAcceptRequest = new SpannableString(acceptRequestString);
+
+                                    int startIndexFromUser = acceptRequestString.indexOf(fromUserName);
+                                    int endIndexFromUser = startIndexFromUser + fromUserName.length();
+
+                                    int startIndexToUser = acceptRequestString.indexOf(toUserName);
+                                    int endIndexToUser = startIndexToUser + toUserName.length();
+
+                                    spanAcceptRequest.setSpan(clickableSpanFromUserName, startIndexFromUser, endIndexFromUser, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+                                    spanAcceptRequest.setSpan(new StyleSpan(Typeface.BOLD), startIndexFromUser, endIndexFromUser, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+
+                                    spanAcceptRequest.setSpan(clickableSpanToUserName, startIndexToUser, endIndexToUser, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+                                    spanAcceptRequest.setSpan(new StyleSpan(Typeface.BOLD), startIndexToUser, endIndexToUser, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+
+                                    spanAcceptRequest.setSpan(new ForegroundColorSpan(ContextCompat.getColor(mContext, R.color.primaryTextColor)),
+                                                              0, spanAcceptRequest.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+
+                                    bookProcessHolder.mProcessChange.setText(spanAcceptRequest);
+
+                                    break;
+                                }
+
+                                case REJECT: {
+
+                                    String rejectRequestString = mContext.getString(R.string.x_rejected_ys_request, fromUserName, toUserName);
+                                    SpannableString spanRejectRequest = new SpannableString(rejectRequestString);
+
+                                    int startIndexFromUser = rejectRequestString.indexOf(fromUserName);
+                                    int endIndexFromUser = startIndexFromUser + fromUserName.length();
+
+                                    int startIndexToUser = rejectRequestString.indexOf(toUserName);
+                                    int endIndexToUser = startIndexToUser + toUserName.length();
+
+                                    spanRejectRequest.setSpan(clickableSpanFromUserName, startIndexFromUser, endIndexFromUser, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+                                    spanRejectRequest.setSpan(new StyleSpan(Typeface.BOLD), startIndexFromUser, endIndexFromUser, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+
+                                    spanRejectRequest.setSpan(clickableSpanToUserName, startIndexToUser, endIndexToUser, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+                                    spanRejectRequest.setSpan(new StyleSpan(Typeface.BOLD), startIndexToUser, endIndexToUser, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+
+                                    spanRejectRequest.setSpan(new ForegroundColorSpan(ContextCompat.getColor(mContext, R.color.primaryTextColor)),
+                                                              0, spanRejectRequest.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+
+                                    bookProcessHolder.mProcessChange.setText(spanRejectRequest);
+
+                                    break;
+                                }
+
+                                default:
+                                    throw new IllegalArgumentException("Invalid request type:" + request.getRequestType().name());
+                            }
                         }
 
                         bookProcessHolder.mProcessChange.setMovementMethod(LinkMovementMethod.getInstance());
