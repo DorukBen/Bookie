@@ -96,15 +96,6 @@ public class MainActivity extends AppCompatActivity implements TabHost.OnTabChan
     }
 
     @Override
-    protected void onStart() {
-        super.onStart();
-        if (! SessionManager.isLoggedIn(this)) {
-            startActivity(new Intent(this, LoginRegisterActivity.class));
-            finish();
-        }
-    }
-
-    @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         switch (item.getItemId()) {
             case R.id.action_more:
