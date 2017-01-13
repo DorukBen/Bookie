@@ -16,7 +16,7 @@
             android:layout_height="wrap_content"
             android:layout_centerInParent="true"
             android:contextClickable="true"
-            ></NumberPicker>
+            android:layout_margin="16dp"/>
 
         <Button
             android:id="@+id/selectGenreButton"
