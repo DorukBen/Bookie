@@ -46,7 +46,7 @@ public class MainActivity extends AppCompatActivity implements TabHost.OnTabChan
     private ProfileFragment mProfileFragment;
     private MessageFragment mMessageFragment;
 
-    private ActionBar mAcitonBar;
+    private ActionBar mActionBar;
     private float[] mElevations;
 
     private View mIndicator;
@@ -81,8 +81,9 @@ public class MainActivity extends AppCompatActivity implements TabHost.OnTabChan
 
         // Update the action bar title with the TypefaceSpan instance
         if(getSupportActionBar() != null){
-            getSupportActionBar().setTitle(s);
-            getSupportActionBar().setElevation(0);
+            mActionBar = getSupportActionBar();
+            mActionBar.setTitle(s);
+            mActionBar.setElevation(0);
         }
 
         initializeTabHost();
@@ -91,8 +92,6 @@ public class MainActivity extends AppCompatActivity implements TabHost.OnTabChan
         mViewPager.setOffscreenPageLimit(4);
         ViewPagerAdapter adapter = new ViewPagerAdapter(getSupportFragmentManager() ,fragments);
         mViewPager.setAdapter(adapter);
-
-        mAcitonBar = getSupportActionBar();
     }
 
     @Override
@@ -229,10 +228,6 @@ public class MainActivity extends AppCompatActivity implements TabHost.OnTabChan
                 mViewPager.setCurrentItem(pos);
             }
 
-            if (getSupportActionBar() != null){
-                getSupportActionBar().setShowHideAnimationEnabled(false);
-            }
-
             if (pos == 0){
                 mNotificationMenuItem.setVisible(true);
             }else{
@@ -240,9 +235,11 @@ public class MainActivity extends AppCompatActivity implements TabHost.OnTabChan
             }
 
             if (pos == 1) {
-                getSupportActionBar().hide();
+                mActionBar.setShowHideAnimationEnabled(false);
+                mActionBar.hide();
             } else {
-                getSupportActionBar().show();
+                mActionBar.setShowHideAnimationEnabled(false);
+                mActionBar.show();
             }
 
             if (pos == 3){
@@ -251,18 +248,18 @@ public class MainActivity extends AppCompatActivity implements TabHost.OnTabChan
                 mProfilePageMenuItem.setVisible(false);
             }
 
+            mActionBar.setElevation(mElevations[pos]);
+
         }else {
             mIndicator.setSelected(false);
             mTabHost.setCurrentTab(mOldPos);
             startActivity(new Intent(this,AddBookActivity.class));
         }
-
-        mAcitonBar.setElevation(mElevations[pos]);
     }
 
     public void setActionBarElevation(float dp, int tabIndex) {
-        if (mAcitonBar != null && tabIndex == mTabHost.getCurrentTab()) {
-            mAcitonBar.setElevation(dp);
+        if (mActionBar != null && tabIndex == mTabHost.getCurrentTab()) {
+            mActionBar.setElevation(dp);
         }
         mElevations[tabIndex] = dp;
     }
