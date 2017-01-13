@@ -10,6 +10,7 @@ import android.widget.TextView;
 import com.bumptech.glide.Glide;
 import com.karambit.bookie.R;
 import com.karambit.bookie.helper.CircleImageView;
+import com.karambit.bookie.helper.SessionManager;
 import com.karambit.bookie.model.Message;
 
 import java.text.SimpleDateFormat;
@@ -81,7 +82,12 @@ public class MessageAdapter extends RecyclerView.Adapter<MessageAdapter.MessageV
                 .placeholder(R.drawable.placeholder_book)
                 .into(holder.mProfilePicture);
 
-        holder.mUserName.setText(message.getSender().getName());
+
+        if (SessionManager.getCurrentUser(mContext).getID() == message.getSender().getID()){
+            holder.mUserName.setText(message.getReceiver().getName());
+        }else{
+            holder.mUserName.setText(message.getSender().getName());
+        }
         holder.mLastMessageText.setText(message.getText());
         holder.mCreatedAt.setText(calendarToCreatedAt(message.getCreatedAt()));
 

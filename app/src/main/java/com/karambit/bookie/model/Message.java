@@ -17,16 +17,28 @@ import java.util.Random;
 
 public class Message implements Parcelable, Comparable<Message> {
 
-    public enum State {PENDING, SENT, DELIVERED, SEEN, ERROR}
+    public enum State {PENDING, SENT, DELIVERED, SEEN, ERROR, NONE}
 
+    private Integer mID;
     private String mText;
     private User mSender;
+    private User mReceiver;
     private Calendar mCreatedAt;
     private State mState;
 
-    public Message(String text, User sender, Calendar createdAt, State state) {
+    public Message(String text, User sender, User receiver, Calendar createdAt, State state) {
         mText = text;
         mSender = sender;
+        mReceiver = receiver;
+        mCreatedAt = createdAt;
+        mState = state;
+    }
+
+    public Message(Integer id, String text, User sender, User receiver, Calendar createdAt, State state) {
+        mID = id;
+        mText = text;
+        mSender = sender;
+        mReceiver = receiver;
         mCreatedAt = createdAt;
         mState = state;
     }
@@ -34,11 +46,24 @@ public class Message implements Parcelable, Comparable<Message> {
     protected Message(Parcel in) {
         mText = in.readString();
         mSender = in.readParcelable(User.class.getClassLoader());
+        mReceiver = in.readParcelable(User.class.getClassLoader());
 
         mCreatedAt = Calendar.getInstance();
         mCreatedAt.setTimeInMillis(in.readLong());
 
         mState = (State) in.readSerializable();
+    }
+
+    public int getID() {
+        if (mID != null){
+            return mID;
+        }else{
+            return 0;
+        }
+    }
+
+    public void setID(int ID) {
+        mID = ID;
     }
 
     public String getText() {
@@ -55,6 +80,14 @@ public class Message implements Parcelable, Comparable<Message> {
 
     public void setSender(User sender) {
         mSender = sender;
+    }
+
+    public User getReceiver() {
+        return mReceiver;
+    }
+
+    public void setReceiver(User receiver) {
+        mReceiver = receiver;
     }
 
     public Calendar getCreatedAt() {
@@ -87,11 +120,17 @@ public class Message implements Parcelable, Comparable<Message> {
             for (int i = 0; i < count; i++) {
 
                 User sender = RANDOM.nextBoolean() ? oppositeUser : phoneOwner;
+                User receiver;
+                if (sender != phoneOwner){
+                    receiver = phoneOwner;
+                }else{
+                    receiver = oppositeUser;
+                }
 
                 Calendar createdAt = Calendar.getInstance();
                 createdAt.setTimeInMillis(createdMillis);
 
-                messages.add(new Message(generateRandomText(), sender, createdAt, State.DELIVERED));
+                messages.add(new Message(generateRandomText(), sender, receiver, createdAt, State.DELIVERED));
 
                 createdMillis -= MIN_IN_MILLIS * RANDOM.nextInt(5);
             }
@@ -109,11 +148,17 @@ public class Message implements Parcelable, Comparable<Message> {
             for (int i = 0; i < count; i++) {
 
                 User sender = RANDOM.nextBoolean() ? User.GENERATOR.generateUser() : phoneOwner;
+                User receiver;
+                if (sender != phoneOwner){
+                    receiver = phoneOwner;
+                }else{
+                    receiver = User.GENERATOR.generateUser();
+                }
 
                 Calendar createdAt = Calendar.getInstance();
                 createdAt.setTimeInMillis(createdMillis);
 
-                messages.add(new Message(generateRandomText(), sender, createdAt, State.SEEN));
+                messages.add(new Message(generateRandomText(), sender, receiver, createdAt, State.SEEN));
 
                 createdMillis -= MIN_IN_MILLIS * RANDOM.nextInt(5);
             }
@@ -163,8 +208,12 @@ public class Message implements Parcelable, Comparable<Message> {
 
     @Override
     public void writeToParcel(Parcel dest, int flags) {
+        if (mID != null){
+            dest.writeInt(mID);
+        }
         dest.writeString(mText);
         dest.writeParcelable(mSender, flags);
+        dest.writeParcelable(mReceiver, flags);
         dest.writeLong(mCreatedAt.getTimeInMillis());
         dest.writeSerializable(mState);
     }
@@ -174,6 +223,7 @@ public class Message implements Parcelable, Comparable<Message> {
         return "Message{" +
                 "mText='" + mText + '\'' +
                 ", mSender=" + mSender +
+                ", mReceiver=" + mReceiver +
                 ", mState=" + mState +
                 ", mCreatedAt=" + mCreatedAt + '}';
     }

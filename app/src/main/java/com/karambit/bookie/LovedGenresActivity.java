@@ -46,7 +46,7 @@ public class LovedGenresActivity extends AppCompatActivity {
         RecyclerView genreRecyclerView = (RecyclerView) findViewById(R.id.genreRecyclerView);
         genreRecyclerView.setLayoutManager(new GridLayoutManager(this, 2, LinearLayoutManager.VERTICAL, false));
 
-        mLovedGenreAdapter = new LovedGenreAdapter(this, genres, mDBHandler.getLovedGenresAsInteger(mCurrentUser));
+        mLovedGenreAdapter = new LovedGenreAdapter(this, genres, mDBHandler.getLovedGenresAsInt(mCurrentUser));
 
         genreRecyclerView.setAdapter(mLovedGenreAdapter);
     }

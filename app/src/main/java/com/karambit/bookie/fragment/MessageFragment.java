@@ -41,7 +41,7 @@ public class MessageFragment extends Fragment {
 
         recyclerView.setLayoutManager(new LinearLayoutManager(getActivity()));
 
-        MessageAdapter messageAdapter = new MessageAdapter(getActivity(), Message.GENERATOR.generateMessageList(User.GENERATOR.generateUser(), 50));
+        MessageAdapter messageAdapter = new MessageAdapter(getActivity(), Message.GENERATOR.generateMessageList(User.GENERATOR.generateUser(), 20));
         messageAdapter.setMessageClickListener(new MessageAdapter.MessageClickListener() {
             @Override
             public void onMessageClick(Message lastMessage) {
