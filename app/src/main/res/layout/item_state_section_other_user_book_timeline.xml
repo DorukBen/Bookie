@@ -8,16 +8,20 @@
 
     <FrameLayout
         android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
+        android:layout_height="56dp"
         android:layout_alignParentLeft="true"
         android:layout_centerVertical="true"
-        android:layout_marginLeft="24dp"
+        android:layout_marginLeft="16dp"
         android:layout_toLeftOf="@+id/requestButton">
 
         <RelativeLayout
             android:id="@+id/ownerClickAreaRelativeLayout"
             android:layout_width="wrap_content"
-            android:layout_height="wrap_content">
+            android:layout_height="56dp"
+            android:layout_gravity="center_vertical"
+            android:paddingLeft="8dp"
+            android:paddingRight="8dp"
+            >
 
             <com.karambit.bookie.helper.CircleImageView
                 android:id="@+id/ownerPictureCircleImageView"
@@ -66,15 +70,16 @@
 
     <Button
         android:id="@+id/requestButton"
-        style="@style/Widget.AppCompat.ActionButton"
+        style="@style/Widget.AppCompat.Button"
         android:layout_width="wrap_content"
-        android:layout_height="48dp"
+        android:layout_height="56dp"
         android:layout_alignParentRight="true"
         android:layout_centerVertical="true"
         android:layout_marginLeft="8dp"
         android:layout_marginRight="8dp"
-        android:textAllCaps="true"
+        android:background="?android:selectableItemBackground"
         android:text="@string/request_button"
+        android:textAllCaps="true"
         android:textColor="@color/colorAccent"/>
 
 </RelativeLayout>
