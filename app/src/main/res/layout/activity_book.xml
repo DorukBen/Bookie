@@ -2,16 +2,26 @@
 <RelativeLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:id="@+id/activity_book"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@color/colorPrimary"
     tools:context="com.karambit.bookie.BookActivity">
 
-    <android.support.v7.widget.RecyclerView
-        android:id="@+id/bookRecyclerView"
+    <com.baoyz.widget.PullRefreshLayout
+        android:id="@+id/swipeRefreshLayout"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:overScrollMode="never"/>
+        android:layout_height="match_parent"
+        app:refreshType="smartisan"
+        app:refreshColor="@color/progressBarColor">
+
+        <android.support.v7.widget.RecyclerView
+            android:id="@+id/bookRecyclerView"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:overScrollMode="never"
+            android:background="@color/colorPrimary"/>
+    </com.baoyz.widget.PullRefreshLayout>
 
 </RelativeLayout>
