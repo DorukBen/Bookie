@@ -2,8 +2,8 @@ package com.karambit.bookie;
 
 import android.content.Context;
 import android.content.Intent;
-import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.text.Editable;
@@ -16,6 +16,8 @@ import android.widget.EditText;
 import android.widget.ImageButton;
 
 import com.karambit.bookie.adapter.ConversationAdapter;
+import com.karambit.bookie.helper.DBHandler;
+import com.karambit.bookie.helper.SessionManager;
 import com.karambit.bookie.helper.TypefaceSpan;
 import com.karambit.bookie.model.Message;
 import com.karambit.bookie.model.User;
@@ -30,7 +32,7 @@ public class ConversationActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_conversation);
 
-        User oppositeUser = getIntent().getExtras().getParcelable("user");
+        final User oppositeUser = getIntent().getExtras().getParcelable("user");
 
         //Changes action bar font style by getting font.ttf from assets/fonts action bars font style doesn't
         // change from styles.xml
@@ -54,11 +56,9 @@ public class ConversationActivity extends AppCompatActivity {
 
         recyclerView.setLayoutManager(layoutManager);
 
-        final User phoneOwner = User.GENERATOR.generateUser();
+        final ArrayList<Message> messages = new DBHandler(this).getConversationMessages(oppositeUser.getID());
 
-        final ArrayList<Message> messages = Message.GENERATOR.generateMessageList(phoneOwner, oppositeUser, 50);
-
-        final ConversationAdapter conversationAdapter = new ConversationAdapter(this, phoneOwner, oppositeUser, messages);
+        final ConversationAdapter conversationAdapter = new ConversationAdapter(this, SessionManager.getCurrentUser(this), oppositeUser, messages);
 
         recyclerView.setAdapter(conversationAdapter);
 
@@ -91,7 +91,8 @@ public class ConversationActivity extends AppCompatActivity {
             public void onClick(View v) {
                 String messageText = messageEditText.getText().toString();
 
-                Message message = new Message(messageText, phoneOwner, Calendar.getInstance(), Message.State.DELIVERED);
+                Message message = new Message(messageText, SessionManager.getCurrentUser(ConversationActivity.this),
+                                              oppositeUser, Calendar.getInstance(), Message.State.PENDING);
 
                 conversationAdapter.insertNewMessage(message);
 

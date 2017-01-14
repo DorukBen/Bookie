@@ -6,6 +6,7 @@ import android.os.Bundle;
 import android.support.v4.app.Fragment;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -14,9 +15,13 @@ import com.karambit.bookie.ConversationActivity;
 import com.karambit.bookie.MainActivity;
 import com.karambit.bookie.R;
 import com.karambit.bookie.adapter.MessageAdapter;
+import com.karambit.bookie.helper.DBHandler;
 import com.karambit.bookie.helper.ElevationScrollListener;
+import com.karambit.bookie.helper.SessionManager;
 import com.karambit.bookie.model.Message;
 import com.karambit.bookie.model.User;
+
+import java.util.ArrayList;
 
 /**
  * A simple {@link Fragment} subclass.
@@ -41,12 +46,39 @@ public class MessageFragment extends Fragment {
 
         recyclerView.setLayoutManager(new LinearLayoutManager(getActivity()));
 
-        MessageAdapter messageAdapter = new MessageAdapter(getActivity(), Message.GENERATOR.generateMessageList(User.GENERATOR.generateUser(), 20));
+        DBHandler dbHandler = new DBHandler(getContext());
+
+        /*for (int i = 0; i < 5; i++) {
+            User user = User.GENERATOR.generateUser();
+            User currentUser = SessionManager.getCurrentUser(getContext());
+            for (int j = 0; j < 60; j++) {
+                String text = Message.GENERATOR.generateRandomText();
+                dbHandler.insertMessage(new Message(i, text, user, currentUser, Calendar.getInstance(), Message.State.DELIVERED));
+            }
+
+            dbHandler.insertMessageUser(user);
+        }*/
+
+        Log.i("OSMAN", "?");
+
+        ArrayList<Message> lastMessages = new DBHandler(getContext()).getLastMessages();
+
+        Log.i("OSMAN", lastMessages.toString());
+
+        MessageAdapter messageAdapter = new MessageAdapter(getActivity(), lastMessages);
         messageAdapter.setMessageClickListener(new MessageAdapter.MessageClickListener() {
             @Override
             public void onMessageClick(Message lastMessage) {
                 Intent intent = new Intent(getActivity(), ConversationActivity.class);
-                intent.putExtra("user", lastMessage.getSender());
+
+                User currentUser = SessionManager.getCurrentUser(getContext());
+
+                if (currentUser.getID() != lastMessage.getSender().getID()) {
+                    intent.putExtra("user", lastMessage.getSender());
+                } else if (currentUser.getID() != lastMessage.getReceiver().getID()){
+                    intent.putExtra("user", lastMessage.getReceiver());
+                }
+
                 startActivity(intent);
             }
         });

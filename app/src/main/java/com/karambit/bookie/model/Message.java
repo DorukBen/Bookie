@@ -19,7 +19,7 @@ public class Message implements Parcelable, Comparable<Message> {
 
     public enum State {PENDING, SENT, DELIVERED, SEEN, ERROR, NONE}
 
-    private Integer mID;
+    private int mID;
     private String mText;
     private User mSender;
     private User mReceiver;
@@ -27,6 +27,7 @@ public class Message implements Parcelable, Comparable<Message> {
     private State mState;
 
     public Message(String text, User sender, User receiver, Calendar createdAt, State state) {
+        mID = -1;
         mText = text;
         mSender = sender;
         mReceiver = receiver;
@@ -44,6 +45,7 @@ public class Message implements Parcelable, Comparable<Message> {
     }
 
     protected Message(Parcel in) {
+        mID = in.readInt();
         mText = in.readString();
         mSender = in.readParcelable(User.class.getClassLoader());
         mReceiver = in.readParcelable(User.class.getClassLoader());
@@ -54,12 +56,35 @@ public class Message implements Parcelable, Comparable<Message> {
         mState = (State) in.readSerializable();
     }
 
-    public int getID() {
-        if (mID != null){
-            return mID;
-        }else{
-            return 0;
+    public static final Creator<Message> CREATOR = new Creator<Message>() {
+        @Override
+        public Message createFromParcel(Parcel in) {
+            return new Message(in);
         }
+
+        @Override
+        public Message[] newArray(int size) {
+            return new Message[size];
+        }
+    };
+
+    @Override
+    public int describeContents() {
+        return 0;
+    }
+
+    @Override
+    public void writeToParcel(Parcel dest, int flags) {
+        dest.writeInt(mID);
+        dest.writeString(mText);
+        dest.writeParcelable(mSender, flags);
+        dest.writeParcelable(mReceiver, flags);
+        dest.writeLong(mCreatedAt.getTimeInMillis());
+        dest.writeSerializable(mState);
+    }
+
+    public int getID() {
+        return mID;
     }
 
     public void setID(int ID) {
@@ -121,9 +146,9 @@ public class Message implements Parcelable, Comparable<Message> {
 
                 User sender = RANDOM.nextBoolean() ? oppositeUser : phoneOwner;
                 User receiver;
-                if (sender != phoneOwner){
+                if (sender != phoneOwner) {
                     receiver = phoneOwner;
-                }else{
+                } else {
                     receiver = oppositeUser;
                 }
 
@@ -149,9 +174,9 @@ public class Message implements Parcelable, Comparable<Message> {
 
                 User sender = RANDOM.nextBoolean() ? User.GENERATOR.generateUser() : phoneOwner;
                 User receiver;
-                if (sender != phoneOwner){
+                if (sender != phoneOwner) {
                     receiver = phoneOwner;
-                }else{
+                } else {
                     receiver = User.GENERATOR.generateUser();
                 }
 
@@ -189,42 +214,13 @@ public class Message implements Parcelable, Comparable<Message> {
         return (int) (otherMessage.getCreatedAt().getTimeInMillis() - this.mCreatedAt.getTimeInMillis());
     }
 
-    public static final Creator<Message> CREATOR = new Creator<Message>() {
-        @Override
-        public Message createFromParcel(Parcel in) {
-            return new Message(in);
-        }
-
-        @Override
-        public Message[] newArray(int size) {
-            return new Message[size];
-        }
-    };
-
-    @Override
-    public int describeContents() {
-        return 0;
-    }
-
-    @Override
-    public void writeToParcel(Parcel dest, int flags) {
-        if (mID != null){
-            dest.writeInt(mID);
-        }
-        dest.writeString(mText);
-        dest.writeParcelable(mSender, flags);
-        dest.writeParcelable(mReceiver, flags);
-        dest.writeLong(mCreatedAt.getTimeInMillis());
-        dest.writeSerializable(mState);
-    }
-
     @Override
     public String toString() {
         return "Message{" +
-                "mText='" + mText + '\'' +
-                ", mSender=" + mSender +
-                ", mReceiver=" + mReceiver +
-                ", mState=" + mState +
-                ", mCreatedAt=" + mCreatedAt + '}';
+            "mText='" + mText + '\'' +
+            ", mSender=" + mSender +
+            ", mReceiver=" + mReceiver +
+            ", mState=" + mState +
+            ", mCreatedAt=" + mCreatedAt + '}';
     }
 }

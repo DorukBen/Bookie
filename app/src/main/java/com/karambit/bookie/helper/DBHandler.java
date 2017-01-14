@@ -2,23 +2,16 @@ package com.karambit.bookie.helper;
 
 import android.content.ContentValues;
 import android.content.Context;
-import android.content.Intent;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
-import android.database.sqlite.SQLiteStatement;
 import android.util.Log;
 
-import com.karambit.bookie.adapter.MessageAdapter;
 import com.karambit.bookie.model.Message;
 import com.karambit.bookie.model.User;
 
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
-import java.util.GregorianCalendar;
-import java.util.Locale;
 
 /**
  * General class for all database process
@@ -77,11 +70,11 @@ public class DBHandler extends SQLiteOpenHelper {
     private static final String MESSAGE_USER_COLUMN_LONGITUDE = "longitude";
 
 
-    private final Context mContent;
+    private final Context mContext;
 
     public DBHandler(Context context) {
         super(context, DATABASE_NAME, null, 1);
-        mContent = context;
+        mContext = context;
     }
 
     @Override
@@ -111,18 +104,18 @@ public class DBHandler extends SQLiteOpenHelper {
 
         db.execSQL(
                 "CREATE TABLE " + MESSAGE_TABLE_NAME + " (" +
-                        MESSAGE_COLUMN_ID + " INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, " +
+                        MESSAGE_COLUMN_ID + " INTEGER PRIMARY KEY NOT NULL, " +
                         MESSAGE_COLUMN_TEXT + " TEXT NOT NULL, " +
                         MESSAGE_COLUMN_FROM_USER_ID + " INTEGER NOT NULL, " +
                         MESSAGE_COLUMN_TO_USER_ID + " INTEGER NOT NULL, " +
-                        MESSAGE_COLUMN_IS_DELETED + " INTEGER NOT DEFAULT 0, " +
+                        MESSAGE_COLUMN_IS_DELETED + " INTEGER NOT NULL DEFAULT 0, " +
                         MESSAGE_COLUMN_STATE + " INTEGER NOT NULL, " +
-                        MESSAGE_COLUMN_CREATED_AT + " TIMESTAMP DEFAULT CURRENT_TIMESTAMP)"
+                        MESSAGE_COLUMN_CREATED_AT + " INTEGER NOT NULL)"
         );
 
         db.execSQL(
                 "CREATE TABLE " + MESSAGE_USER_TABLE_NAME + " (" +
-                        MESSAGE_USER_COLUMN_ID + " INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, " +
+                        MESSAGE_USER_COLUMN_ID + " INTEGER PRIMARY KEY NOT NULL, " +
                         MESSAGE_USER_COLUMN_NAME + " TEXT NOT NULL, " +
                         MESSAGE_USER_COLUMN_IMAGE_URL + " TEXT, " +
                         MESSAGE_USER_COLUMN_THUMBNAIL_URL + " TEXT, " +
@@ -173,7 +166,7 @@ public class DBHandler extends SQLiteOpenHelper {
 
     public boolean insertCurrentUser(User.Details user) {
         SQLiteDatabase db = this.getWritableDatabase();
-        db.beginTransaction();
+//        db.beginTransaction();
         ContentValues contentValues = new ContentValues();
         contentValues.put(USER_COLUMN_ID, user.getUser().getID());
         contentValues.put(USER_COLUMN_NAME, user.getUser().getName());
@@ -190,8 +183,8 @@ public class DBHandler extends SQLiteOpenHelper {
 
         boolean result = db.insert(USER_TABLE_NAME, null, contentValues) > 0;
 
-        db.setTransactionSuccessful();
-        db.endTransaction();
+//        db.setTransactionSuccessful();
+//        db.endTransaction();
 
 
         if (db.isOpen()){
@@ -266,7 +259,8 @@ public class DBHandler extends SQLiteOpenHelper {
         cv.put(USER_COLUMN_LATITUDE, latitude);
         cv.put(USER_COLUMN_LONGITUDE, longitude);
 
-        db.update(USER_TABLE_NAME, cv, USER_COLUMN_ID + "=" + SessionManager.getCurrentUser(mContent).getID(), null);
+        // getCurrentUser in this class fetch user from database. getCurrentUser in SessionManager fetch user from static User field
+        db.update(USER_TABLE_NAME, cv, USER_COLUMN_ID + "=" + SessionManager.getCurrentUser(mContext).getID(), null);
 
         db.setTransactionSuccessful();
         db.endTransaction();
@@ -294,7 +288,7 @@ public class DBHandler extends SQLiteOpenHelper {
     public boolean insertLovedGenres(User user, Integer[] lovedGenreCodes) {
         SQLiteDatabase db = this.getWritableDatabase();
 
-        db.beginTransaction();
+//        db.beginTransaction();
         Cursor cursor = db.rawQuery("SELECT * FROM " + LG_TABLE_NAME +
                             " WHERE " + LG_COLUMN_USER_ID + " = " + user.getID(), null);
 
@@ -314,8 +308,8 @@ public class DBHandler extends SQLiteOpenHelper {
                 return false;
             }
         }
-        db.setTransactionSuccessful();
-        db.endTransaction();
+//        db.setTransactionSuccessful();
+//        db.endTransaction();
 
         if (db.isOpen()){
             db.close();
@@ -405,6 +399,7 @@ public class DBHandler extends SQLiteOpenHelper {
         contentValues.put(MESSAGE_COLUMN_FROM_USER_ID, message.getSender().getID());
         contentValues.put(MESSAGE_COLUMN_TO_USER_ID, message.getReceiver().getID());
         contentValues.put(MESSAGE_COLUMN_IS_DELETED, 0);
+        contentValues.put(MESSAGE_COLUMN_CREATED_AT, message.getCreatedAt().getTimeInMillis());
         contentValues.put(MESSAGE_COLUMN_STATE, message.getState().ordinal());
 
         boolean result = db.insert(MESSAGE_TABLE_NAME, null, contentValues) > 0;
@@ -437,14 +432,9 @@ public class DBHandler extends SQLiteOpenHelper {
             while (res.moveToNext()) {
                 Message message;
 
-                Calendar calendar = new GregorianCalendar();
-                try {
-                    SimpleDateFormat sdf = new SimpleDateFormat("MM/dd/YYYY", Locale.getDefault());
-                    java.util.Date dt = sdf.parse(res.getString(res.getColumnIndex(MESSAGE_COLUMN_CREATED_AT))); //replace 4 with the column index
-                    calendar.setTime(dt);
-                } catch (ParseException e) {
-                    e.printStackTrace();
-                }
+                Calendar calendar = Calendar.getInstance();
+                long time = res.getLong(res.getColumnIndex(MESSAGE_COLUMN_CREATED_AT));
+                calendar.setTimeInMillis(time);
 
                 if (res.getInt(res.getColumnIndex(MESSAGE_COLUMN_FROM_USER_ID)) == getCurrentUser().getID()){
                     message = new Message(res.getInt(res.getColumnIndex(MESSAGE_COLUMN_ID)),
@@ -559,16 +549,9 @@ public class DBHandler extends SQLiteOpenHelper {
                 " OR " + MESSAGE_COLUMN_TO_USER_ID + " = " + userID + ") AND " + MESSAGE_COLUMN_IS_DELETED + " <> " + notDeletedString + " LIMIT 1", null);
         res.moveToFirst();
 
-
-        Calendar calendar = new GregorianCalendar();
-        try {
-            SimpleDateFormat sdf = new SimpleDateFormat("MM/dd/YYYY", Locale.getDefault());
-            java.util.Date dt = sdf.parse(res.getString(res.getColumnIndex(MESSAGE_COLUMN_CREATED_AT))); //replace 4 with the column index
-            calendar.setTime(dt);
-        } catch (ParseException e) {
-            e.printStackTrace();
-        }
-
+        Calendar calendar = Calendar.getInstance();
+        long time = res.getLong(res.getColumnIndex(MESSAGE_COLUMN_CREATED_AT)); //replace 4 with the column index
+        calendar.setTimeInMillis(time);
 
         Message message;
         if (res.getInt(res.getColumnIndex(MESSAGE_COLUMN_FROM_USER_ID)) == getCurrentUser().getID()){
