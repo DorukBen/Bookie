@@ -200,11 +200,9 @@ public class MainActivity extends AppCompatActivity implements TabHost.OnTabChan
     private List<Fragment> getFragments(){
         List<Fragment> fList = new ArrayList<>();
 
-        DBHandler dbHandler = new DBHandler(MainActivity.this);
-
         mHomeFragment = new HomeFragment();
         mSearchFragment = new SearchFragment();
-        mProfileFragment = ProfileFragment.newInstance(dbHandler.getCurrentUser());
+        mProfileFragment = ProfileFragment.newInstance(SessionManager.getCurrentUser(getApplicationContext()));
         mMessageFragment = new MessageFragment();
         fList.add(mHomeFragment);
         fList.add(mSearchFragment);

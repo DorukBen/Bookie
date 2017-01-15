@@ -2,9 +2,11 @@ package com.karambit.bookie.helper;
 
 import android.content.ContentValues;
 import android.content.Context;
+import android.content.Intent;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
+import android.icu.text.LocaleDisplayNames;
 import android.util.Log;
 
 import com.karambit.bookie.model.Message;
@@ -110,7 +112,7 @@ public class DBHandler extends SQLiteOpenHelper {
                         MESSAGE_COLUMN_TO_USER_ID + " INTEGER NOT NULL, " +
                         MESSAGE_COLUMN_IS_DELETED + " INTEGER NOT NULL DEFAULT 0, " +
                         MESSAGE_COLUMN_STATE + " INTEGER NOT NULL, " +
-                        MESSAGE_COLUMN_CREATED_AT + " INTEGER NOT NULL)"
+                        MESSAGE_COLUMN_CREATED_AT + " LONG NOT NULL)"
         );
 
         db.execSQL(
@@ -166,7 +168,7 @@ public class DBHandler extends SQLiteOpenHelper {
 
     public boolean insertCurrentUser(User.Details user) {
         SQLiteDatabase db = this.getWritableDatabase();
-//        db.beginTransaction();
+        db.beginTransaction();
         ContentValues contentValues = new ContentValues();
         contentValues.put(USER_COLUMN_ID, user.getUser().getID());
         contentValues.put(USER_COLUMN_NAME, user.getUser().getName());
@@ -183,8 +185,8 @@ public class DBHandler extends SQLiteOpenHelper {
 
         boolean result = db.insert(USER_TABLE_NAME, null, contentValues) > 0;
 
-//        db.setTransactionSuccessful();
-//        db.endTransaction();
+        db.setTransactionSuccessful();
+        db.endTransaction();
 
 
         if (db.isOpen()){
@@ -201,7 +203,7 @@ public class DBHandler extends SQLiteOpenHelper {
     public User getCurrentUser() {
         SQLiteDatabase db = this.getReadableDatabase();
         db.beginTransaction();
-        Cursor res = db.rawQuery("SELECt * FROM " + USER_TABLE_NAME, null);
+        Cursor res = db.rawQuery("SELECT * FROM " + USER_TABLE_NAME, null);
         res.moveToFirst();
         User user = new User(res.getInt(res.getColumnIndex(USER_COLUMN_ID)),
                 res.getString(res.getColumnIndex(USER_COLUMN_NAME)),
@@ -224,7 +226,7 @@ public class DBHandler extends SQLiteOpenHelper {
     public User.Details getCurrentUserDetails() {
         SQLiteDatabase db = this.getReadableDatabase();
         db.beginTransaction();
-        Cursor res = db.rawQuery("SELECt * FROM " + USER_TABLE_NAME, null);
+        Cursor res = db.rawQuery("SELECT * FROM " + USER_TABLE_NAME, null);
         res.moveToFirst();
         User user = new User(res.getInt(res.getColumnIndex(USER_COLUMN_ID)),
                 res.getString(res.getColumnIndex(USER_COLUMN_NAME)),
@@ -260,7 +262,7 @@ public class DBHandler extends SQLiteOpenHelper {
         cv.put(USER_COLUMN_LONGITUDE, longitude);
 
         // getCurrentUser in this class fetch user from database. getCurrentUser in SessionManager fetch user from static User field
-        db.update(USER_TABLE_NAME, cv, USER_COLUMN_ID + "=" + SessionManager.getCurrentUser(mContext).getID(), null);
+        db.update(USER_TABLE_NAME, cv, USER_COLUMN_ID + "=" + SessionManager.getCurrentUser(mContext.getApplicationContext()).getID(), null);
 
         db.setTransactionSuccessful();
         db.endTransaction();
@@ -329,9 +331,9 @@ public class DBHandler extends SQLiteOpenHelper {
         int[] lovedGenres = new int[res.getCount()];
         int i = 0;
         try {
-            while (res.moveToNext()) {
+            do {
                 lovedGenres[i++] = res.getInt(res.getColumnIndex(LG_COLUMN_GENRE_CODE));
-            }
+            } while (res.moveToNext());
         } finally {
 
             res.close();
@@ -380,11 +382,9 @@ public class DBHandler extends SQLiteOpenHelper {
             return cursor.getCount() > 0;
 
         } finally {
-
             if (cursor != null) {
                 cursor.close();
             }
-
             if (db != null && db.isOpen()) {
                 db.close();
             }
@@ -392,75 +392,74 @@ public class DBHandler extends SQLiteOpenHelper {
     }
 
     public boolean insertMessage(Message message) {
-        SQLiteDatabase db = this.getWritableDatabase();
-        db.beginTransaction();
-        ContentValues contentValues = new ContentValues();
-        contentValues.put(MESSAGE_COLUMN_TEXT, message.getText());
-        contentValues.put(MESSAGE_COLUMN_FROM_USER_ID, message.getSender().getID());
-        contentValues.put(MESSAGE_COLUMN_TO_USER_ID, message.getReceiver().getID());
-        contentValues.put(MESSAGE_COLUMN_IS_DELETED, 0);
-        contentValues.put(MESSAGE_COLUMN_CREATED_AT, message.getCreatedAt().getTimeInMillis());
-        contentValues.put(MESSAGE_COLUMN_STATE, message.getState().ordinal());
+        SQLiteDatabase db = null;
+        boolean result = false;
+        try {
+            db = this.getWritableDatabase();
+            db.beginTransaction();
+            ContentValues contentValues = new ContentValues();
+            contentValues.put(MESSAGE_COLUMN_TEXT, message.getText());
+            contentValues.put(MESSAGE_COLUMN_FROM_USER_ID, message.getSender().getID());
+            contentValues.put(MESSAGE_COLUMN_TO_USER_ID, message.getReceiver().getID());
+            contentValues.put(MESSAGE_COLUMN_IS_DELETED, 0);
+            contentValues.put(MESSAGE_COLUMN_CREATED_AT, message.getCreatedAt().getTimeInMillis());
+            contentValues.put(MESSAGE_COLUMN_STATE, message.getState().ordinal());
 
-        boolean result = db.insert(MESSAGE_TABLE_NAME, null, contentValues) > 0;
-
-        db.setTransactionSuccessful();
-        db.endTransaction();
-        if (db.isOpen()){
-            db.close();
+            result = db.insert(MESSAGE_TABLE_NAME, null, contentValues) > 0;
+        }finally {
+            if (db != null && db.isOpen()){
+                db.setTransactionSuccessful();
+                db.endTransaction();
+                db.close();
+            }
         }
 
-        if (result) {
-            return true;
-        } else {
-            return false;
-        }
+        return result;
     }
 
-    public ArrayList<Message> getConversationMessages (Integer anotherUserID) {
-        SQLiteDatabase db = this.getReadableDatabase();
+    public ArrayList<Message> getConversationMessages (User anotherUser, User currentUser) {
+        SQLiteDatabase db = null;
+        Cursor res = null;
+        ArrayList<Message> messages = new ArrayList<>();
+        try {
+        db = this.getReadableDatabase();
         db.beginTransaction();
-        String notDeletedString = "0";
-        Cursor res = db.rawQuery("SELECT * FROM " + MESSAGE_TABLE_NAME +
-                " WHERE (" + MESSAGE_COLUMN_FROM_USER_ID + " = " + anotherUserID + " OR " + MESSAGE_COLUMN_TO_USER_ID +
-                " = " + anotherUserID + ") AND " + MESSAGE_COLUMN_IS_DELETED + " <> " + notDeletedString + " LIMIT 1", null);
+        String deletedString = "1";
+        res = db.rawQuery("SELECT * FROM " + MESSAGE_TABLE_NAME +
+                " WHERE (" + MESSAGE_COLUMN_FROM_USER_ID + " = " + anotherUser.getID() + " OR " + MESSAGE_COLUMN_TO_USER_ID +
+                " = " + anotherUser.getID() + ") AND " + MESSAGE_COLUMN_IS_DELETED + " <> " + deletedString + " ORDER BY " + MESSAGE_COLUMN_CREATED_AT + " DESC", null);
         res.moveToFirst();
 
-        ArrayList<Message> messages = new ArrayList<>();
-
-        try {
-            while (res.moveToNext()) {
-                Message message;
-
+            Message message;
+            do {
                 Calendar calendar = Calendar.getInstance();
-                long time = res.getLong(res.getColumnIndex(MESSAGE_COLUMN_CREATED_AT));
+                long time = res.getLong(res.getColumnIndex(MESSAGE_COLUMN_CREATED_AT)); //replace 4 with the column index
                 calendar.setTimeInMillis(time);
 
-                if (res.getInt(res.getColumnIndex(MESSAGE_COLUMN_FROM_USER_ID)) == getCurrentUser().getID()){
+                if (res.getInt(res.getColumnIndex(MESSAGE_COLUMN_FROM_USER_ID)) == SessionManager.getCurrentUser(mContext.getApplicationContext()).getID()){
                     message = new Message(res.getInt(res.getColumnIndex(MESSAGE_COLUMN_ID)),
                             res.getString(res.getColumnIndex(MESSAGE_COLUMN_TEXT)),
-                            getCurrentUser(),
-                            getMessageUser(res.getInt(res.getColumnIndex(MESSAGE_COLUMN_TO_USER_ID))),
+                            currentUser,
+                            anotherUser,
                             calendar,
                             Message.State.values()[res.getInt(res.getColumnIndex(MESSAGE_COLUMN_STATE))]);
                 }else{
                     message = new Message(res.getInt(res.getColumnIndex(MESSAGE_COLUMN_ID)),
                             res.getString(res.getColumnIndex(MESSAGE_COLUMN_TEXT)),
-                            getMessageUser(res.getInt(res.getColumnIndex(MESSAGE_COLUMN_FROM_USER_ID))),
-                            getCurrentUser(),
+                            anotherUser,
+                            currentUser,
                             calendar,
                             Message.State.values()[res.getInt(res.getColumnIndex(MESSAGE_COLUMN_STATE))]);
                 }
-
                 messages.add(message);
-            }
+            } while (res.moveToNext());
         } finally {
-
-            res.close();
-            db.setTransactionSuccessful();
-            db.endTransaction();
-
-            if (db.isOpen()){
+            if (res != null){
+                res.close();
+            }
+            if (db != null && db.isOpen()){
+                db.setTransactionSuccessful();
+                db.endTransaction();
                 db.close();
             }
         }
@@ -469,206 +468,158 @@ public class DBHandler extends SQLiteOpenHelper {
     }
 
     public void deleteMessage(Integer messageID) {
-        SQLiteDatabase db = this.getWritableDatabase();
-        db.beginTransaction();
-        String deletedString = "1";
-        ContentValues cv = new ContentValues();
-        cv.put(MESSAGE_COLUMN_IS_DELETED, deletedString);
+        SQLiteDatabase db = null;
+        try{
+            db = this.getWritableDatabase();
+            db.beginTransaction();
+            String deletedString = "1";
+            ContentValues cv = new ContentValues();
+            cv.put(MESSAGE_COLUMN_IS_DELETED, deletedString);
 
-        db.update(MESSAGE_TABLE_NAME, cv, MESSAGE_COLUMN_ID + "=" + messageID, null);
-
-        db.setTransactionSuccessful();
-        db.endTransaction();
-
-        if (db.isOpen()){
-            db.close();
-        }
-    }
-
-    public Integer[] getLastFromUserIds () {
-        SQLiteDatabase db = this.getReadableDatabase();
-        db.beginTransaction();
-        String notDeletedString = "0";
-        Cursor res = db.rawQuery("SELECT " + MESSAGE_COLUMN_FROM_USER_ID + " FROM " + MESSAGE_TABLE_NAME +
-                " WHERE " + MESSAGE_COLUMN_IS_DELETED + " <> " + notDeletedString + " GROUP BY " +
-                MESSAGE_COLUMN_FROM_USER_ID , null);
-        res.moveToFirst();
-
-        Integer[] lastFromUserIds = new Integer[res.getCount()];
-        int i = 0;
-        try {
-            while (res.moveToNext()) {
-                lastFromUserIds[i++] = res.getInt(res.getColumnIndex(MESSAGE_COLUMN_FROM_USER_ID));
-            }
-        } finally {
-
-            res.close();
-            db.setTransactionSuccessful();
-            db.endTransaction();
-            if (db.isOpen()){
+            db.update(MESSAGE_TABLE_NAME, cv, MESSAGE_COLUMN_ID + "=" + messageID, null);
+        }finally {
+            if (db != null && db.isOpen()){
+                db.setTransactionSuccessful();
+                db.endTransaction();
                 db.close();
             }
         }
-
-        return lastFromUserIds;
     }
 
-    public Integer[] getLastToUserIds () {
-        SQLiteDatabase db = this.getReadableDatabase();
-        db.beginTransaction();
-        String notDeletedString = "0";
-        Cursor res = db.rawQuery("SELECT " + MESSAGE_COLUMN_TO_USER_ID + " FROM " + MESSAGE_TABLE_NAME +
-                " WHERE " + MESSAGE_COLUMN_IS_DELETED + " <> " + notDeletedString + " GROUP BY " +
-                MESSAGE_COLUMN_TO_USER_ID , null);
-        res.moveToFirst();
-
-        Integer[] lastToUserIds = new Integer[res.getCount()];
-        int i = 0;
-        try {
-            while (res.moveToNext()) {
-                lastToUserIds[i++] = res.getInt(res.getColumnIndex(MESSAGE_COLUMN_TO_USER_ID));
-            }
-        } finally {
-
-            res.close();
-            db.setTransactionSuccessful();
-            db.endTransaction();
-            if (db.isOpen()){
-                db.close();
-            }
-        }
-
-        return lastToUserIds;
-    }
-
-    public Message getLastMessage (int userID) {
-        SQLiteDatabase db = this.getReadableDatabase();
-        db.beginTransaction();
-        String notDeletedString = "0";
-        Cursor res = db.rawQuery("SELECt * FROM " + MESSAGE_TABLE_NAME + " WHERE (" + MESSAGE_COLUMN_FROM_USER_ID + " = " + userID +
-                " OR " + MESSAGE_COLUMN_TO_USER_ID + " = " + userID + ") AND " + MESSAGE_COLUMN_IS_DELETED + " <> " + notDeletedString + " LIMIT 1", null);
-        res.moveToFirst();
-
-        Calendar calendar = Calendar.getInstance();
-        long time = res.getLong(res.getColumnIndex(MESSAGE_COLUMN_CREATED_AT)); //replace 4 with the column index
-        calendar.setTimeInMillis(time);
-
+    public Message getLastMessage (User anotherUser, User currentUser) {
+        SQLiteDatabase db = null;
+        Cursor res = null;
         Message message;
-        if (res.getInt(res.getColumnIndex(MESSAGE_COLUMN_FROM_USER_ID)) == getCurrentUser().getID()){
-            message = new Message(res.getInt(res.getColumnIndex(MESSAGE_COLUMN_ID)),
-                    res.getString(res.getColumnIndex(MESSAGE_COLUMN_TEXT)),
-                    getCurrentUser(),
-                    getMessageUser(res.getInt(res.getColumnIndex(MESSAGE_COLUMN_TO_USER_ID))),
-                    calendar,
-                    Message.State.values()[res.getInt(res.getColumnIndex(MESSAGE_COLUMN_STATE))]);
-        }else{
-            message = new Message(res.getInt(res.getColumnIndex(MESSAGE_COLUMN_ID)),
-                    res.getString(res.getColumnIndex(MESSAGE_COLUMN_TEXT)),
-                    getMessageUser(res.getInt(res.getColumnIndex(MESSAGE_COLUMN_FROM_USER_ID))),
-                    getCurrentUser(),
-                    calendar,
-                    Message.State.values()[res.getInt(res.getColumnIndex(MESSAGE_COLUMN_STATE))]);
-        }
+        try {
+            db = this.getReadableDatabase();
 
-        res.close();
+            db.beginTransaction();
+            String deletedString = "1";
+            res = db.rawQuery("SELECT * FROM " + MESSAGE_TABLE_NAME +
+                    " WHERE (" + MESSAGE_COLUMN_FROM_USER_ID + " = " + anotherUser.getID() + " OR " + MESSAGE_COLUMN_TO_USER_ID +
+                    " = " + anotherUser.getID() + ") AND " + MESSAGE_COLUMN_IS_DELETED + " <> " + deletedString + " ORDER BY " + MESSAGE_COLUMN_CREATED_AT + " DESC "
+                    + "LIMIT 1", null);
+            res.moveToFirst();
 
-        db.setTransactionSuccessful();
-        db.endTransaction();
+            Calendar calendar = Calendar.getInstance();
+            long time = res.getLong(res.getColumnIndex(MESSAGE_COLUMN_CREATED_AT)); //replace 4 with the column index
+            calendar.setTimeInMillis(time);
 
 
-        if (db.isOpen()){
-            db.close();
+            if (res.getInt(res.getColumnIndex(MESSAGE_COLUMN_FROM_USER_ID)) == SessionManager.getCurrentUser(mContext.getApplicationContext()).getID()){
+                message = new Message(res.getInt(res.getColumnIndex(MESSAGE_COLUMN_ID)),
+                        res.getString(res.getColumnIndex(MESSAGE_COLUMN_TEXT)),
+                        currentUser,
+                        anotherUser,
+                        calendar,
+                        Message.State.values()[res.getInt(res.getColumnIndex(MESSAGE_COLUMN_STATE))]);
+            }else{
+                message = new Message(res.getInt(res.getColumnIndex(MESSAGE_COLUMN_ID)),
+                        res.getString(res.getColumnIndex(MESSAGE_COLUMN_TEXT)),
+                        anotherUser,
+                        currentUser,
+                        calendar,
+                        Message.State.values()[res.getInt(res.getColumnIndex(MESSAGE_COLUMN_STATE))]);
+            }
+        }finally {
+            if (res != null) {
+                res.close();
+            }
+            if (db != null && db.isOpen()){
+                db.setTransactionSuccessful();
+                db.endTransaction();
+                db.close();
+            }
         }
         return message;
     }
 
-    public ArrayList<Message> getLastMessages () {
-
-        Integer[] lastFromIds = getLastFromUserIds();
-        Integer[] lastToIds = getLastToUserIds();
-
-        ArrayList<Integer> lastIdsArray = new ArrayList<>();
-
-        for (Integer x : lastFromIds){
-            if (!lastIdsArray.contains(x) && x != getCurrentUser().getID())
-                lastIdsArray.add(x);
-        }
-
-        for (Integer x : lastToIds){
-            if (!lastIdsArray.contains(x) && x != getCurrentUser().getID())
-                lastIdsArray.add(x);
-        }
+    public ArrayList<Message> getLastMessages (ArrayList<User> users, User currentUser) {
 
         ArrayList<Message> messages = new ArrayList<>();
-        for (Integer id : lastIdsArray){
-            messages.add(getLastMessage(id));
+        for (User user : users){
+            messages.add(getLastMessage(user,currentUser));
         }
 
         return messages;
     }
 
     public boolean insertMessageUser(User user) {
-        SQLiteDatabase db = this.getWritableDatabase();
-        db.beginTransaction();
-        ContentValues contentValues = new ContentValues();
-        contentValues.put(MESSAGE_USER_COLUMN_ID, user.getID());
-        contentValues.put(MESSAGE_USER_COLUMN_NAME, user.getName());
-        contentValues.put(MESSAGE_USER_COLUMN_IMAGE_URL, user.getImageUrl());
-        contentValues.put(MESSAGE_USER_COLUMN_THUMBNAIL_URL, user.getThumbnailUrl());
-        contentValues.put(MESSAGE_USER_COLUMN_LATITUDE, user.getLatitude());
-        contentValues.put(MESSAGE_USER_COLUMN_LONGITUDE, user.getLongitude());
+        SQLiteDatabase db = null;
+        boolean result = false;
+        try{
+            db = this.getWritableDatabase();
+            db.beginTransaction();
+            ContentValues contentValues = new ContentValues();
+            contentValues.put(MESSAGE_USER_COLUMN_ID, user.getID());
+            contentValues.put(MESSAGE_USER_COLUMN_NAME, user.getName());
+            contentValues.put(MESSAGE_USER_COLUMN_IMAGE_URL, user.getImageUrl());
+            contentValues.put(MESSAGE_USER_COLUMN_THUMBNAIL_URL, user.getThumbnailUrl());
+            contentValues.put(MESSAGE_USER_COLUMN_LATITUDE, user.getLatitude());
+            contentValues.put(MESSAGE_USER_COLUMN_LONGITUDE, user.getLongitude());
 
-        boolean result = db.insert(MESSAGE_USER_TABLE_NAME, null, contentValues) > 0;
-
-        db.setTransactionSuccessful();
-        db.endTransaction();
-
-        if (db.isOpen()){
-            db.close();
+            result = db.insert(MESSAGE_USER_TABLE_NAME, null, contentValues) > 0;
+        }finally {
+            if (db != null && db.isOpen()){
+                db.setTransactionSuccessful();
+                db.endTransaction();
+                db.close();
+            }
         }
-
-        if (result) {
-            return true;
-        } else {
-            return false;
-        }
+        return result;
     }
 
-    public User getMessageUser(int userID) {
-        SQLiteDatabase db = this.getReadableDatabase();
-        db.beginTransaction();
-        Cursor res = db.rawQuery("SELECt * FROM " + MESSAGE_USER_TABLE_NAME + " WHERE " + MESSAGE_USER_COLUMN_ID + " = " + userID, null);
-        res.moveToFirst();
-        User user = new User(res.getInt(res.getColumnIndex(MESSAGE_USER_COLUMN_ID)),
-                res.getString(res.getColumnIndex(MESSAGE_USER_COLUMN_NAME)),
-                res.getString(res.getColumnIndex(MESSAGE_USER_COLUMN_IMAGE_URL)),
-                res.getString(res.getColumnIndex(MESSAGE_USER_COLUMN_THUMBNAIL_URL)),
-                res.getDouble(res.getColumnIndex(MESSAGE_USER_COLUMN_LATITUDE)),
-                res.getDouble(res.getColumnIndex(MESSAGE_USER_COLUMN_LONGITUDE)));
-        res.close();
+    public ArrayList<User> getMessageUsers() {
+        SQLiteDatabase db = null;
+        Cursor res = null;
+        ArrayList<User> users = new ArrayList<>();
+        try {
+            db = this.getReadableDatabase();
+            db.beginTransaction();
+            res = db.rawQuery("SELECT * FROM " + MESSAGE_USER_TABLE_NAME, null);
+            res.moveToFirst();
 
-        db.setTransactionSuccessful();
-        db.endTransaction();
+            do {
+                User user = new User(res.getInt(res.getColumnIndex(MESSAGE_USER_COLUMN_ID)),
+                        res.getString(res.getColumnIndex(MESSAGE_USER_COLUMN_NAME)),
+                        res.getString(res.getColumnIndex(MESSAGE_USER_COLUMN_IMAGE_URL)),
+                        res.getString(res.getColumnIndex(MESSAGE_USER_COLUMN_THUMBNAIL_URL)),
+                        res.getDouble(res.getColumnIndex(MESSAGE_USER_COLUMN_LATITUDE)),
+                        res.getDouble(res.getColumnIndex(MESSAGE_USER_COLUMN_LONGITUDE)));
 
-
-        if (db.isOpen()){
-            db.close();
+                users.add(user);
+            } while (res.moveToNext());
+        }finally {
+            if (res != null) {
+                res.close();
+            }
+            if (db != null && db.isOpen()){
+                db.setTransactionSuccessful();
+                db.endTransaction();
+                db.close();
+            }
         }
-        return user;
+        return users;
     }
 
     public int deleteMessageUser(Integer userID) {
-        SQLiteDatabase db = this.getWritableDatabase();
-        db.beginTransaction();
+        SQLiteDatabase db = null;
+        int result;
+        try{
+            db = this.getWritableDatabase();
+            db.beginTransaction();
 
-        int result = db.delete(MESSAGE_USER_TABLE_NAME, MESSAGE_USER_COLUMN_ID + " = ?", new String[] { userID.toString() });
-
-        db.setTransactionSuccessful();
-        db.endTransaction();
-
-        if (db.isOpen()){
-            db.close();
+            result = db.delete(MESSAGE_USER_TABLE_NAME, MESSAGE_USER_COLUMN_ID + " = ?", new String[] { userID.toString() });
+        }finally {
+            if (db != null && db.isOpen()){
+                db.setTransactionSuccessful();
+                db.endTransaction();
+                db.close();
+            }
         }
+
+
+
         return result;
     }
 }

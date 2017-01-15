@@ -11,6 +11,7 @@ import android.text.Spannable;
 import android.text.SpannableString;
 import android.text.TextWatcher;
 import android.text.style.AbsoluteSizeSpan;
+import android.util.Log;
 import android.view.View;
 import android.widget.EditText;
 import android.widget.ImageButton;
@@ -56,9 +57,10 @@ public class ConversationActivity extends AppCompatActivity {
 
         recyclerView.setLayoutManager(layoutManager);
 
-        final ArrayList<Message> messages = new DBHandler(this).getConversationMessages(oppositeUser.getID());
+        final User currentUser = SessionManager.getCurrentUser(getApplicationContext());
+        final ArrayList<Message> messages = new DBHandler(getApplicationContext()).getConversationMessages(oppositeUser, currentUser);
 
-        final ConversationAdapter conversationAdapter = new ConversationAdapter(this, SessionManager.getCurrentUser(this), oppositeUser, messages);
+        final ConversationAdapter conversationAdapter = new ConversationAdapter(this, currentUser, oppositeUser, messages);
 
         recyclerView.setAdapter(conversationAdapter);
 
@@ -86,15 +88,16 @@ public class ConversationActivity extends AppCompatActivity {
             }
         });
 
+        final DBHandler dbHandler= new DBHandler(getApplicationContext());
         sendMessageButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 String messageText = messageEditText.getText().toString();
 
-                Message message = new Message(messageText, SessionManager.getCurrentUser(ConversationActivity.this),
+                Message message = new Message(messageText, currentUser,
                                               oppositeUser, Calendar.getInstance(), Message.State.PENDING);
-
                 conversationAdapter.insertNewMessage(message);
+                dbHandler.insertMessage(message);
 
                 messageEditText.setText("");
             }

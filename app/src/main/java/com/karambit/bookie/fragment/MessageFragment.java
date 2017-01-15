@@ -22,6 +22,7 @@ import com.karambit.bookie.model.Message;
 import com.karambit.bookie.model.User;
 
 import java.util.ArrayList;
+import java.util.Calendar;
 
 /**
  * A simple {@link Fragment} subclass.
@@ -46,24 +47,14 @@ public class MessageFragment extends Fragment {
 
         recyclerView.setLayoutManager(new LinearLayoutManager(getActivity()));
 
-        DBHandler dbHandler = new DBHandler(getContext());
+        DBHandler dbHandler = new DBHandler(getContext().getApplicationContext());
 
-        /*for (int i = 0; i < 5; i++) {
-            User user = User.GENERATOR.generateUser();
-            User currentUser = SessionManager.getCurrentUser(getContext());
-            for (int j = 0; j < 60; j++) {
-                String text = Message.GENERATOR.generateRandomText();
-                dbHandler.insertMessage(new Message(i, text, user, currentUser, Calendar.getInstance(), Message.State.DELIVERED));
-            }
-
-            dbHandler.insertMessageUser(user);
-        }*/
 
         Log.i("OSMAN", "?");
 
-        ArrayList<Message> lastMessages = new DBHandler(getContext()).getLastMessages();
-
-        Log.i("OSMAN", lastMessages.toString());
+        ArrayList<User> users = dbHandler.getMessageUsers();
+        User currentUser = SessionManager.getCurrentUser(getContext().getApplicationContext());
+        ArrayList<Message> lastMessages = dbHandler.getLastMessages(users, currentUser);
 
         MessageAdapter messageAdapter = new MessageAdapter(getActivity(), lastMessages);
         messageAdapter.setMessageClickListener(new MessageAdapter.MessageClickListener() {
@@ -71,7 +62,7 @@ public class MessageFragment extends Fragment {
             public void onMessageClick(Message lastMessage) {
                 Intent intent = new Intent(getActivity(), ConversationActivity.class);
 
-                User currentUser = SessionManager.getCurrentUser(getContext());
+                User currentUser = SessionManager.getCurrentUser(getContext().getApplicationContext());
 
                 if (currentUser.getID() != lastMessage.getSender().getID()) {
                     intent.putExtra("user", lastMessage.getSender());

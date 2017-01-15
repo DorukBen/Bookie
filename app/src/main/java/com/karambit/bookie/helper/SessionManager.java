@@ -35,14 +35,14 @@ public class SessionManager {
     }
 
     public static void logout(Context context) {
-        new DBHandler(context).deleteCurrentUser();
+        new DBHandler(context.getApplicationContext()).deleteCurrentUser();
         changeLoginStatus(context, false);
         mUserDetails = null;
         mUser = null;
     }
 
     public static void login(Context context, User.Details userDetails) {
-        DBHandler dbHandler = new DBHandler(context);
+        DBHandler dbHandler = new DBHandler(context.getApplicationContext());
         dbHandler.insertCurrentUser(userDetails);
         changeLoginStatus(context, true);
         mUserDetails = dbHandler.getCurrentUserDetails();
@@ -50,14 +50,14 @@ public class SessionManager {
     }
 
     public static void updateCurrentUser(Context context){
-        DBHandler dbHandler = new DBHandler(context);
+        DBHandler dbHandler = new DBHandler(context.getApplicationContext());
         mUserDetails = dbHandler.getCurrentUserDetails();
         mUser = dbHandler.getCurrentUser();
     }
 
     public static User.Details getCurrentUserDetails(Context context) {
         if (mUserDetails == null){
-            mUserDetails = new DBHandler(context).getCurrentUserDetails();
+            mUserDetails = new DBHandler(context.getApplicationContext()).getCurrentUserDetails();
             return mUserDetails;
         }else {
             return mUserDetails;
@@ -66,7 +66,7 @@ public class SessionManager {
 
     public static User getCurrentUser(Context context) {
         if (mUser == null){
-            mUser = new DBHandler(context).getCurrentUser();
+            mUser = new DBHandler(context.getApplicationContext()).getCurrentUser();
             return mUser;
         }else {
             return mUser;
@@ -74,7 +74,7 @@ public class SessionManager {
     }
 
     public static boolean isLovedGenresSelectedLocal(Context context) {
-        DBHandler dbHandler = new DBHandler(context);
+        DBHandler dbHandler = new DBHandler(context.getApplicationContext());
         return dbHandler.isLovedGenresSelected(dbHandler.getCurrentUser());
     }
 }

@@ -83,7 +83,7 @@ public class MessageAdapter extends RecyclerView.Adapter<MessageAdapter.MessageV
                 .into(holder.mProfilePicture);
 
 
-        if (SessionManager.getCurrentUser(mContext).getID() == message.getSender().getID()){
+        if (SessionManager.getCurrentUser(mContext.getApplicationContext()).getID() == message.getSender().getID()){
             holder.mUserName.setText(message.getReceiver().getName());
         }else{
             holder.mUserName.setText(message.getSender().getName());

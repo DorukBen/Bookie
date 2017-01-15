@@ -15,6 +15,7 @@ import android.view.MenuItem;
 
 import com.karambit.bookie.adapter.LovedGenreAdapter;
 import com.karambit.bookie.helper.DBHandler;
+import com.karambit.bookie.helper.SessionManager;
 import com.karambit.bookie.helper.TypefaceSpan;
 import com.karambit.bookie.model.User;
 
@@ -38,8 +39,8 @@ public class LovedGenresActivity extends AppCompatActivity {
                   Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
         setTitle(s);
 
-        mDBHandler = new DBHandler(this);
-        mCurrentUser = mDBHandler.getCurrentUser();
+        mDBHandler = new DBHandler(getApplicationContext());
+        mCurrentUser = SessionManager.getCurrentUser(getApplicationContext());
 
         String[] genres = getResources().getStringArray(R.array.genre_types);
 
