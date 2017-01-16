@@ -490,6 +490,10 @@ public class DBHandler extends SQLiteOpenHelper {
         }
     }
 
+    public void deleteMessage(Message message) {
+        deleteMessage(message.getID());
+    }
+
     public Message getLastMessage (User anotherUser, User currentUser) {
         SQLiteDatabase db = null;
         Cursor res = null;
@@ -627,6 +631,10 @@ public class DBHandler extends SQLiteOpenHelper {
         return result;
     }
 
+    public int deleteMessageUser(User user) {
+        return deleteMessageUser(user.getID());
+    }
+
     public void deleteAllMessages() {
         SQLiteDatabase db = null;
         try{
@@ -643,5 +651,33 @@ public class DBHandler extends SQLiteOpenHelper {
                 db.close();
             }
         }
+    }
+
+    public boolean isMessageUserExists(int userID) {
+        SQLiteDatabase db = null;
+        Cursor res = null;
+
+        try {
+            db = this.getReadableDatabase();
+            db.beginTransaction();
+            res = db.rawQuery("SELECT * FROM " + MESSAGE_USER_TABLE_NAME + " WHERE " + USER_COLUMN_ID  + " = " + userID, null);
+            res.moveToFirst();
+
+            return res.getCount() > 0;
+
+        }finally {
+            if (res != null) {
+                res.close();
+            }
+            if (db != null && db.isOpen()){
+                db.setTransactionSuccessful();
+                db.endTransaction();
+                db.close();
+            }
+        }
+    }
+
+    public boolean isMessageUserExists(User user) {
+        return isMessageUserExists(user.getID());
     }
 }
