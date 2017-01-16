@@ -215,6 +215,26 @@ public class Message implements Parcelable, Comparable<Message> {
     }
 
     @Override
+    public boolean equals(Object obj) {
+        if (! (obj instanceof Message)) {
+            return false;
+        } else {
+
+            Message otherMessage = (Message) obj;
+
+            if (otherMessage.mID < 0 || this.mID < 0) {
+                return
+                    otherMessage.mSender.getID() == this.mSender.getID() &&
+                    otherMessage.mReceiver.getID() == this.mReceiver.getID() &&
+                    otherMessage.mText == this.mText &&
+                    otherMessage.mCreatedAt.getTimeInMillis() == this.mCreatedAt.getTimeInMillis();
+            } else {
+                return otherMessage.mID == this.mID;
+            }
+        }
+    }
+
+    @Override
     public String toString() {
         return "Message{" +
             "mText='" + mText + '\'' +

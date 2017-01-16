@@ -101,7 +101,7 @@ public class MessageFragment extends Fragment {
 
     private void createMessages() {
 
-//        dbHandler.deleteAllMessages();
+        mDbHandler.deleteAllMessages();
 
         if (mDbHandler.getMessageUsers().size() == 0) {
 
@@ -131,14 +131,56 @@ public class MessageFragment extends Fragment {
     public void onActivityResult(int requestCode, int resultCode, Intent data) {
         if (requestCode == LAST_MESSAGE_REQUEST_CODE) {
             if (resultCode == ConversationActivity.LAST_MESSAGE_CHANGED) {
-                mLastMessages.remove(mLastClickedMessageIndex);
 
                 Message lastMessage = data.getParcelableExtra("last_message");
 
-                mLastMessages.add(0, lastMessage);
-
-                mMessageAdapter.notifyDataSetChanged();
+                insertLastMessage(lastMessage);
             }
         }
+    }
+
+    public void insertLastMessage(Message newMessage) {
+
+        int messageUserIndex = -1; // If it does not exists it remains as -1
+        int i = 0;
+
+        while (messageUserIndex == -1 && i < mLastMessages.size()) {
+            Message message = mLastMessages.get(i);
+            User currentUser = SessionManager.getCurrentUser(getContext().getApplicationContext());
+
+            if ((currentUser.getID() != newMessage.getSender().getID() &&
+                    (newMessage.getSender().getID() == message.getSender().getID() ||
+                        newMessage.getSender().getID() == message.getReceiver().getID())) ||
+                (currentUser.getID() != newMessage.getReceiver().getID() &&
+                    (newMessage.getReceiver().getID() == message.getSender().getID() ||
+                        newMessage.getReceiver().getID() == message.getReceiver().getID()))) {
+
+                    messageUserIndex = i;
+                }
+
+            i++;
+        }
+
+        if (messageUserIndex == -1) {
+            mLastMessages.add(0, newMessage);
+
+        } else if (messageUserIndex == 0) {
+            mLastMessages.set(0, newMessage);
+
+        } else {
+            mLastMessages.remove(messageUserIndex);
+            mLastMessages.add(0, newMessage);
+        }
+
+        mMessageAdapter.notifyDataSetChanged();
+    }
+
+    private boolean messageExists(Message newMessage) {
+        for (Message message : mLastMessages) {
+            if (message.equals(newMessage)) {
+                return true;
+            }
+        }
+        return false;
     }
 }
