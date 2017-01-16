@@ -67,7 +67,7 @@ public class SearchFragment extends Fragment {
         rootView.findViewById(R.id.searchButton).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                if (SessionManager.getCurrentUser(getContext()).getLatitude() != 0.0d && SessionManager.getCurrentUser(getContext()).getLongitude() != 0.0d ){
+                if (SessionManager.getCurrentUser(getContext().getApplicationContext()).getLatitude() != 0.0d && SessionManager.getCurrentUser(getContext().getApplicationContext()).getLongitude() != 0.0d ){
                     //TODO: Make internet connection for search here
                 }else{
                     startActivity(new Intent(getContext(), LocationActivity.class));

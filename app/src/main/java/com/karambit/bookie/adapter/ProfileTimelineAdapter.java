@@ -189,7 +189,7 @@ public class ProfileTimelineAdapter extends RecyclerView.Adapter<RecyclerView.Vi
             }
 
             // Currently reading
-            if (mUserDetails.getUser().getID() == SessionManager.getCurrentUser(mContext).getID() ||
+            if (mUserDetails.getUser().getID() == SessionManager.getCurrentUser(mContext.getApplicationContext()).getID() ||
                 mUserDetails.getCurrentlyReadingCount() != 0 ||
                 (mUserDetails.getBooksOnHandCount() < 0 && mUserDetails.getReadBooksCount() < 0)) {
 
@@ -250,7 +250,7 @@ public class ProfileTimelineAdapter extends RecyclerView.Adapter<RecyclerView.Vi
                     }
                 }
 
-            } else if (mUserDetails.getUser().getID() == SessionManager.getCurrentUser(mContext).getID()) { // Currently reading section
+            } else if (mUserDetails.getUser().getID() == SessionManager.getCurrentUser(mContext.getApplicationContext()).getID()) { // Currently reading section
 
                 if (position == 1) {
                     return TYPE_START_READING;
@@ -632,7 +632,7 @@ public class ProfileTimelineAdapter extends RecyclerView.Adapter<RecyclerView.Vi
         int offset = 1; // Header
 
         // Currently reading
-        if (mUserDetails.getUser().getID() == SessionManager.getCurrentUser(mContext).getID() ||
+        if (mUserDetails.getUser().getID() == SessionManager.getCurrentUser(mContext.getApplicationContext()).getID() ||
             mUserDetails.getCurrentlyReadingCount() != 0 ||
             (mUserDetails.getBooksOnHandCount() < 0 && mUserDetails.getReadBooksCount() < 0)) {
 
@@ -650,7 +650,7 @@ public class ProfileTimelineAdapter extends RecyclerView.Adapter<RecyclerView.Vi
         int offset = 1; // Header
 
         // Currently reading
-        if (mUserDetails.getUser().getID() == SessionManager.getCurrentUser(mContext).getID() ||
+        if (mUserDetails.getUser().getID() == SessionManager.getCurrentUser(mContext.getApplicationContext()).getID() ||
             mUserDetails.getCurrentlyReadingCount() != 0 ||
             (mUserDetails.getBooksOnHandCount() < 0 && mUserDetails.getReadBooksCount() < 0)) {
 

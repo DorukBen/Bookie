@@ -111,7 +111,7 @@ public class ProfileFragment extends Fragment {
 
         recyclerView.setAdapter(adapter);
 
-        if (mUser.getID() == SessionManager.getCurrentUser(getContext()).getID()){
+        if (mUser.getID() == SessionManager.getCurrentUser(getContext().getApplicationContext()).getID()){
             recyclerView.setOnScrollListener(new ElevationScrollListener((MainActivity) getActivity(), PROFILE_FRAGMENT_TAB_INEX));
         }else{
             recyclerView.setOnScrollListener(new ElevationScrollListener((ProfileActivity) getActivity()));
