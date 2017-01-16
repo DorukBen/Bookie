@@ -22,6 +22,7 @@ import com.karambit.bookie.model.User;
 
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.Collections;
 import java.util.Random;
 
 /**
@@ -60,6 +61,7 @@ public class MessageFragment extends Fragment {
 
         ArrayList<User> users = mDbHandler.getMessageUsers();
         mLastMessages = mDbHandler.getLastMessages(users, currentUser);
+        Collections.sort(mLastMessages);
 
         mMessageAdapter = new MessageAdapter(getActivity(), mLastMessages);
         mMessageAdapter.setMessageClickListener(new MessageAdapter.MessageClickListener() {
