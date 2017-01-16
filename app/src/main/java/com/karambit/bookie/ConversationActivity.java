@@ -11,7 +11,6 @@ import android.text.Spannable;
 import android.text.SpannableString;
 import android.text.TextWatcher;
 import android.text.style.AbsoluteSizeSpan;
-import android.util.Log;
 import android.view.View;
 import android.widget.EditText;
 import android.widget.ImageButton;
@@ -27,6 +26,8 @@ import java.util.ArrayList;
 import java.util.Calendar;
 
 public class ConversationActivity extends AppCompatActivity {
+
+    public static final int LAST_MESSAGE_CHANGED = 1;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -96,12 +97,18 @@ public class ConversationActivity extends AppCompatActivity {
 
                 Message message = new Message(messageText, currentUser,
                                               oppositeUser, Calendar.getInstance(), Message.State.PENDING);
-                conversationAdapter.insertNewMessage(message);
-                dbHandler.insertMessage(message);
+                insertMessageProcesses(message, conversationAdapter, dbHandler, messageEditText);
 
                 messageEditText.setText("");
             }
         });
+    }
+
+    private void insertMessageProcesses(Message message, ConversationAdapter conversationAdapter, DBHandler dbHandler, EditText messageEditText) {
+        conversationAdapter.insertNewMessage(message);
+        dbHandler.insertMessage(message);
+
+        setResult(LAST_MESSAGE_CHANGED, getIntent().putExtra("last_message", message));
     }
 
     public static void start(Context context) {

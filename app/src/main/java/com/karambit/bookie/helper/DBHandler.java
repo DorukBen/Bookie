@@ -2,11 +2,9 @@ package com.karambit.bookie.helper;
 
 import android.content.ContentValues;
 import android.content.Context;
-import android.content.Intent;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
-import android.icu.text.LocaleDisplayNames;
 import android.util.Log;
 
 import com.karambit.bookie.model.Message;
@@ -331,9 +329,11 @@ public class DBHandler extends SQLiteOpenHelper {
         int[] lovedGenres = new int[res.getCount()];
         int i = 0;
         try {
-            do {
-                lovedGenres[i++] = res.getInt(res.getColumnIndex(LG_COLUMN_GENRE_CODE));
-            } while (res.moveToNext());
+            if (res.getCount() > 0) {
+                do {
+                    lovedGenres[i++] = res.getInt(res.getColumnIndex(LG_COLUMN_GENRE_CODE));
+                } while (res.moveToNext());
+            }
         } finally {
 
             res.close();
@@ -421,38 +421,42 @@ public class DBHandler extends SQLiteOpenHelper {
         SQLiteDatabase db = null;
         Cursor res = null;
         ArrayList<Message> messages = new ArrayList<>();
+
         try {
-        db = this.getReadableDatabase();
-        db.beginTransaction();
-        String deletedString = "1";
-        res = db.rawQuery("SELECT * FROM " + MESSAGE_TABLE_NAME +
-                " WHERE (" + MESSAGE_COLUMN_FROM_USER_ID + " = " + anotherUser.getID() + " OR " + MESSAGE_COLUMN_TO_USER_ID +
-                " = " + anotherUser.getID() + ") AND " + MESSAGE_COLUMN_IS_DELETED + " <> " + deletedString + " ORDER BY " + MESSAGE_COLUMN_CREATED_AT + " DESC", null);
-        res.moveToFirst();
+            db = this.getReadableDatabase();
+            db.beginTransaction();
+            String deletedString = "1";
+            res = db.rawQuery("SELECT * FROM " + MESSAGE_TABLE_NAME +
+                    " WHERE (" + MESSAGE_COLUMN_FROM_USER_ID + " = " + anotherUser.getID() + " OR " + MESSAGE_COLUMN_TO_USER_ID +
+                    " = " + anotherUser.getID() + ") AND " + MESSAGE_COLUMN_IS_DELETED + " <> " + deletedString + " ORDER BY " + MESSAGE_COLUMN_CREATED_AT + " DESC", null);
+            res.moveToFirst();
 
-            Message message;
-            do {
-                Calendar calendar = Calendar.getInstance();
-                long time = res.getLong(res.getColumnIndex(MESSAGE_COLUMN_CREATED_AT)); //replace 4 with the column index
-                calendar.setTimeInMillis(time);
+            if (res.getCount() > 0) {
+                do {
+                    Calendar calendar = Calendar.getInstance();
+                    long time = res.getLong(res.getColumnIndex(MESSAGE_COLUMN_CREATED_AT)); //replace 4 with the column index
+                    calendar.setTimeInMillis(time);
 
-                if (res.getInt(res.getColumnIndex(MESSAGE_COLUMN_FROM_USER_ID)) == SessionManager.getCurrentUser(mContext.getApplicationContext()).getID()){
-                    message = new Message(res.getInt(res.getColumnIndex(MESSAGE_COLUMN_ID)),
-                            res.getString(res.getColumnIndex(MESSAGE_COLUMN_TEXT)),
-                            currentUser,
-                            anotherUser,
-                            calendar,
-                            Message.State.values()[res.getInt(res.getColumnIndex(MESSAGE_COLUMN_STATE))]);
-                }else{
-                    message = new Message(res.getInt(res.getColumnIndex(MESSAGE_COLUMN_ID)),
-                            res.getString(res.getColumnIndex(MESSAGE_COLUMN_TEXT)),
-                            anotherUser,
-                            currentUser,
-                            calendar,
-                            Message.State.values()[res.getInt(res.getColumnIndex(MESSAGE_COLUMN_STATE))]);
-                }
-                messages.add(message);
-            } while (res.moveToNext());
+                    Message message;
+                    if (res.getInt(res.getColumnIndex(MESSAGE_COLUMN_FROM_USER_ID)) == SessionManager.getCurrentUser(mContext.getApplicationContext()).getID()) {
+                        message = new Message(res.getInt(res.getColumnIndex(MESSAGE_COLUMN_ID)),
+                                              res.getString(res.getColumnIndex(MESSAGE_COLUMN_TEXT)),
+                                              currentUser,
+                                              anotherUser,
+                                              calendar,
+                                              Message.State.values()[res.getInt(res.getColumnIndex(MESSAGE_COLUMN_STATE))]);
+                    } else {
+                        message = new Message(res.getInt(res.getColumnIndex(MESSAGE_COLUMN_ID)),
+                                              res.getString(res.getColumnIndex(MESSAGE_COLUMN_TEXT)),
+                                              anotherUser,
+                                              currentUser,
+                                              calendar,
+                                              Message.State.values()[res.getInt(res.getColumnIndex(MESSAGE_COLUMN_STATE))]);
+                    }
+                    messages.add(message);
+
+                } while (res.moveToNext());
+            }
         } finally {
             if (res != null){
                 res.close();
@@ -579,16 +583,18 @@ public class DBHandler extends SQLiteOpenHelper {
             res = db.rawQuery("SELECT * FROM " + MESSAGE_USER_TABLE_NAME, null);
             res.moveToFirst();
 
-            do {
-                User user = new User(res.getInt(res.getColumnIndex(MESSAGE_USER_COLUMN_ID)),
-                        res.getString(res.getColumnIndex(MESSAGE_USER_COLUMN_NAME)),
-                        res.getString(res.getColumnIndex(MESSAGE_USER_COLUMN_IMAGE_URL)),
-                        res.getString(res.getColumnIndex(MESSAGE_USER_COLUMN_THUMBNAIL_URL)),
-                        res.getDouble(res.getColumnIndex(MESSAGE_USER_COLUMN_LATITUDE)),
-                        res.getDouble(res.getColumnIndex(MESSAGE_USER_COLUMN_LONGITUDE)));
+            if (res.getCount() > 0) {
+                do {
+                    User user = new User(res.getInt(res.getColumnIndex(MESSAGE_USER_COLUMN_ID)),
+                                         res.getString(res.getColumnIndex(MESSAGE_USER_COLUMN_NAME)),
+                                         res.getString(res.getColumnIndex(MESSAGE_USER_COLUMN_IMAGE_URL)),
+                                         res.getString(res.getColumnIndex(MESSAGE_USER_COLUMN_THUMBNAIL_URL)),
+                                         res.getDouble(res.getColumnIndex(MESSAGE_USER_COLUMN_LATITUDE)),
+                                         res.getDouble(res.getColumnIndex(MESSAGE_USER_COLUMN_LONGITUDE)));
 
-                users.add(user);
-            } while (res.moveToNext());
+                    users.add(user);
+                } while (res.moveToNext());
+            }
         }finally {
             if (res != null) {
                 res.close();
@@ -618,8 +624,24 @@ public class DBHandler extends SQLiteOpenHelper {
             }
         }
 
-
-
         return result;
+    }
+
+    public void deleteAllMessages() {
+        SQLiteDatabase db = null;
+        try{
+            db = this.getWritableDatabase();
+            db.beginTransaction();
+
+            db.delete(MESSAGE_USER_TABLE_NAME, null, null);
+            db.delete(MESSAGE_TABLE_NAME, null, null);
+
+        } finally {
+            if (db != null && db.isOpen()){
+                db.setTransactionSuccessful();
+                db.endTransaction();
+                db.close();
+            }
+        }
     }
 }
