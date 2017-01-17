@@ -2,16 +2,15 @@ package com.karambit.bookie.adapter;
 
 import android.content.Context;
 import android.support.v7.widget.RecyclerView;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import com.bumptech.glide.Glide;
 import com.karambit.bookie.R;
 import com.karambit.bookie.helper.CircleImageView;
+import com.karambit.bookie.helper.SessionManager;
 import com.karambit.bookie.model.Message;
 import com.karambit.bookie.model.User;
 
@@ -33,14 +32,10 @@ public class ConversationAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
     private RecyclerView mRecyclerView;
 
     private Context mContext;
-    private User mPhoneOwner;
-    private User mOppositeUser;
     private ArrayList<Message> mMessages;
 
-    public ConversationAdapter(Context context, User phoneOwner, User oppositeUser, ArrayList<Message> messages) {
+    public ConversationAdapter(Context context, ArrayList<Message> messages) {
         mContext = context;
-        mPhoneOwner = phoneOwner;
-        mOppositeUser = oppositeUser;
         mMessages = messages;
     }
 
@@ -89,15 +84,14 @@ public class ConversationAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
     @Override
     public int getItemViewType(int position) {
 
-        User sender = mMessages.get(position).getSender();
+        Message message = mMessages.get(position);
+        User currentUser = SessionManager.getCurrentUser(mContext);
 
-        if (sender.getID() == mPhoneOwner.getID()) {
+        if (message.getSender().getID() == currentUser.getID()) {
             return TYPE_PHONE_OWNER;
-        } else if (sender.getID() == mOppositeUser.getID()) {
+        } else {
             return TYPE_OPPOSITE_USER;
         }
-
-        throw new IllegalArgumentException("Invalid view type at position: " + position);
     }
 
     @Override
@@ -106,8 +100,8 @@ public class ConversationAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
         switch (viewType) {
 
             case TYPE_PHONE_OWNER:
-                View phonOwnerMessageView = LayoutInflater.from(parent.getContext()).inflate(R.layout.item_conversation_phone_owner_message, parent, false);
-                return new PhoneOwnerMessageViewHolder(phonOwnerMessageView);
+                View phoneOwnerMessageView = LayoutInflater.from(parent.getContext()).inflate(R.layout.item_conversation_phone_owner_message, parent, false);
+                return new PhoneOwnerMessageViewHolder(phoneOwnerMessageView);
 
             case TYPE_OPPOSITE_USER:
                 View oppositeUserMessageView = LayoutInflater.from(parent.getContext()).inflate(R.layout.item_conversation_opposite_user_message, parent, false);
@@ -121,21 +115,22 @@ public class ConversationAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
     @Override
     public void onBindViewHolder(RecyclerView.ViewHolder holder, final int position) {
 
+        Message message = mMessages.get(position);
+        User currentUser = SessionManager.getCurrentUser(mContext);
+        User oppositeUser = message.getOppositeUser(currentUser);
 
         switch (getItemViewType(position)) {
 
             case TYPE_PHONE_OWNER: {
 
-                Message phoneOwnerMessage = mMessages.get(position);
-
                 PhoneOwnerMessageViewHolder phoneOwnerHolder = (PhoneOwnerMessageViewHolder) holder;
 
-                phoneOwnerHolder.mText.setText(phoneOwnerMessage.getText());
+                phoneOwnerHolder.mText.setText(message.getText());
 
-                phoneOwnerHolder.mCreatedAt.setText(calendarToCreatedAt(phoneOwnerMessage.getCreatedAt()));
+                phoneOwnerHolder.mCreatedAt.setText(calendarToCreatedAt(message.getCreatedAt()));
 
                 Glide.with(mContext)
-                        .load(mPhoneOwner.getThumbnailUrl())
+                        .load(currentUser.getThumbnailUrl())
                         .asBitmap()
                         .centerCrop()
                         .placeholder(R.drawable.placeholder_book)
@@ -144,7 +139,7 @@ public class ConversationAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
                 if (position == getItemCount() - 1) {
                     phoneOwnerHolder.mProfilePicture.setVisibility(View.VISIBLE);
 
-                } else if (mMessages.get(position + 1).getSender().getID() != mPhoneOwner.getID()) {
+                } else if (mMessages.get(position + 1).getSender().getID() != currentUser.getID()) {
                     phoneOwnerHolder.mProfilePicture.setVisibility(View.VISIBLE);
 
                 } else {
@@ -156,25 +151,23 @@ public class ConversationAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
 
             case TYPE_OPPOSITE_USER: {
 
-                final Message oppositeUserMessage = mMessages.get(position);
-
                 final OppositeUserMessageViewHolder oppositeUserHolder = (OppositeUserMessageViewHolder) holder;
 
-                oppositeUserHolder.mText.setText(oppositeUserMessage.getText());
+                oppositeUserHolder.mText.setText(message.getText());
 
-                oppositeUserHolder.mCreatedAt.setText(calendarToCreatedAt(oppositeUserMessage.getCreatedAt()));
+                oppositeUserHolder.mCreatedAt.setText(calendarToCreatedAt(message.getCreatedAt()));
 
                 Glide.with(mContext)
-                        .load(mOppositeUser.getThumbnailUrl())
+                        .load(oppositeUser.getThumbnailUrl())
                         .asBitmap()
                         .centerCrop()
                         .placeholder(R.drawable.placeholder_book)
                         .into(oppositeUserHolder.mProfilePicture);
 
-                  if (position == 0) {
+                if (position == getItemCount() - 1) {
                     oppositeUserHolder.mProfilePicture.setVisibility(View.VISIBLE);
 
-                } else if (mMessages.get(position - 1).getSender().getID() != mOppositeUser.getID()) {
+                } else if (mMessages.get(position + 1).getSender().getID() != oppositeUser.getID()) {
                     oppositeUserHolder.mProfilePicture.setVisibility(View.VISIBLE);
 
                 } else {
@@ -224,22 +217,6 @@ public class ConversationAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
         super.onAttachedToRecyclerView(recyclerView);
 
         mRecyclerView = recyclerView;
-    }
-
-    public User getPhoneOwner() {
-        return mPhoneOwner;
-    }
-
-    public void setPhoneOwner(User phoneOwner) {
-        mPhoneOwner = phoneOwner;
-    }
-
-    public User getOppositeUser() {
-        return mOppositeUser;
-    }
-
-    public void setOppositeUser(User oppositeUser) {
-        mOppositeUser = oppositeUser;
     }
 
     public ArrayList<Message> getMessages() {

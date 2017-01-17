@@ -64,7 +64,7 @@ public class ConversationActivity extends AppCompatActivity {
         final User currentUser = SessionManager.getCurrentUser(this);
         final ArrayList<Message> messages = new DBHandler(getApplicationContext()).getConversationMessages(oppositeUser, currentUser);
 
-        mConversationAdapter = new ConversationAdapter(this, currentUser, oppositeUser, messages);
+        mConversationAdapter = new ConversationAdapter(this, messages);
 
         recyclerView.setAdapter(mConversationAdapter);
 
