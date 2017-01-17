@@ -12,6 +12,7 @@ import com.karambit.bookie.R;
 import com.karambit.bookie.helper.CircleImageView;
 import com.karambit.bookie.helper.SessionManager;
 import com.karambit.bookie.model.Message;
+import com.karambit.bookie.model.User;
 
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -75,23 +76,22 @@ public class LastMessageAdapter extends RecyclerView.Adapter<LastMessageAdapter.
 
         final Message message = mLastMessages.get(position);
 
+        User currentUser = SessionManager.getCurrentUser(mContext.getApplicationContext());
+        User oppositeUser = message.getOppositeUser(currentUser);
+
         Glide.with(mContext)
-                .load(message.getSender().getThumbnailUrl())
-                .asBitmap()
-                .centerCrop()
-                .placeholder(R.drawable.placeholder_book)
-                .into(holder.mProfilePicture);
+             .load(oppositeUser.getThumbnailUrl())
+             .asBitmap()
+             .centerCrop()
+             .placeholder(R.drawable.placeholder_book)
+             .into(holder.mProfilePicture);
 
+        holder.mUserName.setText(oppositeUser.getName());
 
-        if (SessionManager.getCurrentUser(mContext.getApplicationContext()).getID() == message.getSender().getID()){
-            holder.mUserName.setText(message.getReceiver().getName());
-        }else{
-            holder.mUserName.setText(message.getSender().getName());
-        }
         holder.mLastMessageText.setText(message.getText());
         holder.mCreatedAt.setText(calendarToCreatedAt(message.getCreatedAt()));
 
-        if (message.getState() == Message.State.DELIVERED) {
+        if (message.getState() == Message.State.DELIVERED && message.getSender().getID() != currentUser.getID()) {
             holder.mIndicator.setVisibility(View.VISIBLE);
 
         } else {

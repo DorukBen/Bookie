@@ -74,11 +74,7 @@ public class MessageFragment extends Fragment {
 
                 User currentUser = SessionManager.getCurrentUser(getContext().getApplicationContext());
 
-                if (currentUser.getID() != lastMessage.getSender().getID()) {
-                    intent.putExtra("user", lastMessage.getSender());
-                } else if (currentUser.getID() != lastMessage.getReceiver().getID()){
-                    intent.putExtra("user", lastMessage.getReceiver());
-                }
+                intent.putExtra("user", lastMessage.getOppositeUser(currentUser));
 
                 startActivityForResult(intent, LAST_MESSAGE_REQUEST_CODE);
             }
@@ -160,13 +156,7 @@ public class MessageFragment extends Fragment {
             Message message = mLastMessages.get(i);
             User currentUser = SessionManager.getCurrentUser(getContext().getApplicationContext());
 
-            if ((currentUser.getID() != newMessage.getSender().getID() &&
-                    (newMessage.getSender().getID() == message.getSender().getID() ||
-                        newMessage.getSender().getID() == message.getReceiver().getID())) ||
-                (currentUser.getID() != newMessage.getReceiver().getID() &&
-                    (newMessage.getReceiver().getID() == message.getSender().getID() ||
-                        newMessage.getReceiver().getID() == message.getReceiver().getID()))) {
-
+            if (message.getOppositeUser(currentUser).getID() == newMessage.getOppositeUser(currentUser).getID()) {
                     messageUserIndex = i;
                 }
 

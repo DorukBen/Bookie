@@ -83,6 +83,15 @@ public class Message implements Parcelable, Comparable<Message> {
         dest.writeSerializable(mState);
     }
 
+    public User getOppositeUser(User currentUser) {
+
+        if (currentUser.getID() != mSender.getID()) {
+            return mSender;
+        } else {
+            return mReceiver;
+        }
+    }
+
     public int getID() {
         return mID;
     }
