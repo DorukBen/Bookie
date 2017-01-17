@@ -29,6 +29,9 @@ public class ConversationActivity extends AppCompatActivity {
 
     public static final int LAST_MESSAGE_CHANGED = 1;
 
+    private DBHandler mDbHandler;
+    private ConversationAdapter mConversationAdapter;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -58,12 +61,12 @@ public class ConversationActivity extends AppCompatActivity {
 
         recyclerView.setLayoutManager(layoutManager);
 
-        final User currentUser = SessionManager.getCurrentUser(getApplicationContext());
+        final User currentUser = SessionManager.getCurrentUser(this);
         final ArrayList<Message> messages = new DBHandler(getApplicationContext()).getConversationMessages(oppositeUser, currentUser);
 
-        final ConversationAdapter conversationAdapter = new ConversationAdapter(this, currentUser, oppositeUser, messages);
+        mConversationAdapter = new ConversationAdapter(this, currentUser, oppositeUser, messages);
 
-        recyclerView.setAdapter(conversationAdapter);
+        recyclerView.setAdapter(mConversationAdapter);
 
         //For improving recyclerviews performance
         recyclerView.setItemViewCacheSize(20);
@@ -89,7 +92,7 @@ public class ConversationActivity extends AppCompatActivity {
             }
         });
 
-        final DBHandler dbHandler= new DBHandler(getApplicationContext());
+        mDbHandler = new DBHandler(getApplicationContext());
         sendMessageButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -97,16 +100,17 @@ public class ConversationActivity extends AppCompatActivity {
 
                 Message message = new Message(messageText, currentUser,
                                               oppositeUser, Calendar.getInstance(), Message.State.PENDING);
-                insertMessageProcesses(message, conversationAdapter, dbHandler, messageEditText);
+
+                insertMessageProcesses(message);
 
                 messageEditText.setText("");
             }
         });
     }
 
-    private void insertMessageProcesses(Message message, ConversationAdapter conversationAdapter, DBHandler dbHandler, EditText messageEditText) {
-        conversationAdapter.insertNewMessage(message);
-        dbHandler.insertMessage(message);
+    private void insertMessageProcesses(Message message) {
+        mConversationAdapter.insertNewMessage(message);
+        mDbHandler.insertMessage(message);
 
         setResult(LAST_MESSAGE_CHANGED, getIntent().putExtra("last_message", message));
     }

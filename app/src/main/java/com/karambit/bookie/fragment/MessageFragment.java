@@ -56,7 +56,7 @@ public class MessageFragment extends Fragment {
 
         mDbHandler = new DBHandler(getContext().getApplicationContext());
 
-        User currentUser = SessionManager.getCurrentUser(getContext().getApplicationContext());
+        User currentUser = SessionManager.getCurrentUser(getContext());
 
         createMessages();
 
@@ -72,7 +72,7 @@ public class MessageFragment extends Fragment {
 
                 Intent intent = new Intent(getActivity(), ConversationActivity.class);
 
-                User currentUser = SessionManager.getCurrentUser(getContext().getApplicationContext());
+                User currentUser = SessionManager.getCurrentUser(getContext());
 
                 intent.putExtra("user", lastMessage.getOppositeUser(currentUser));
 
@@ -113,7 +113,7 @@ public class MessageFragment extends Fragment {
 
         if (mDbHandler.getMessageUsers().size() == 0) {
 
-            User currentUser = SessionManager.getCurrentUser(getContext().getApplicationContext());
+            User currentUser = SessionManager.getCurrentUser(getContext());
 
             Random r = new Random();
 
@@ -154,7 +154,7 @@ public class MessageFragment extends Fragment {
 
         while (messageUserIndex == -1 && i < mLastMessages.size()) {
             Message message = mLastMessages.get(i);
-            User currentUser = SessionManager.getCurrentUser(getContext().getApplicationContext());
+            User currentUser = SessionManager.getCurrentUser(getContext());
 
             if (message.getOppositeUser(currentUser).getID() == newMessage.getOppositeUser(currentUser).getID()) {
                     messageUserIndex = i;

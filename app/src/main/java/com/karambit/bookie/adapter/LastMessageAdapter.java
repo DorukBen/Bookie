@@ -76,7 +76,7 @@ public class LastMessageAdapter extends RecyclerView.Adapter<LastMessageAdapter.
 
         final Message message = mLastMessages.get(position);
 
-        User currentUser = SessionManager.getCurrentUser(mContext.getApplicationContext());
+        User currentUser = SessionManager.getCurrentUser(mContext);
         User oppositeUser = message.getOppositeUser(currentUser);
 
         Glide.with(mContext)

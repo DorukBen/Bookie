@@ -23,7 +23,6 @@ import com.karambit.bookie.fragment.HomeFragment;
 import com.karambit.bookie.fragment.MessageFragment;
 import com.karambit.bookie.fragment.ProfileFragment;
 import com.karambit.bookie.fragment.SearchFragment;
-import com.karambit.bookie.helper.DBHandler;
 import com.karambit.bookie.helper.SessionManager;
 import com.karambit.bookie.helper.TabFactory;
 import com.karambit.bookie.helper.TypefaceSpan;
@@ -202,7 +201,7 @@ public class MainActivity extends AppCompatActivity implements TabHost.OnTabChan
 
         mHomeFragment = new HomeFragment();
         mSearchFragment = new SearchFragment();
-        mProfileFragment = ProfileFragment.newInstance(SessionManager.getCurrentUser(getApplicationContext()));
+        mProfileFragment = ProfileFragment.newInstance(SessionManager.getCurrentUser(this));
         mMessageFragment = new MessageFragment();
         fList.add(mHomeFragment);
         fList.add(mSearchFragment);
