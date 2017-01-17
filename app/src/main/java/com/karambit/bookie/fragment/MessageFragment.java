@@ -39,6 +39,7 @@ public class MessageFragment extends Fragment {
     private ArrayList<Message> mLastMessages;
     private int mLastClickedMessageIndex;
     private LastMessageAdapter mLastMessageAdapter;
+    private PullRefreshLayout mPullRefreshLayout;
 
     public MessageFragment() {
         // Required empty public constructor
@@ -47,7 +48,7 @@ public class MessageFragment extends Fragment {
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
-        // Inflate the layout for this fragment
+        // Inflate the pullRefreshLayout for this fragment
         View rootView = inflater.inflate(R.layout.fragment_message, container, false);
 
         RecyclerView recyclerView = (RecyclerView) rootView.findViewById(R.id.messagingRecyclerView);
@@ -56,7 +57,7 @@ public class MessageFragment extends Fragment {
 
         mDbHandler = new DBHandler(getContext().getApplicationContext());
 
-        User currentUser = SessionManager.getCurrentUser(getContext());
+        final User currentUser = SessionManager.getCurrentUser(getContext());
 
         createMessages();
 
@@ -86,14 +87,15 @@ public class MessageFragment extends Fragment {
 
         recyclerView.setOnScrollListener(new ElevationScrollListener((MainActivity) getActivity(), MESSAGE_FRAGMENT_TAB_INEX));
 
-        PullRefreshLayout layout = (PullRefreshLayout) rootView.findViewById(R.id.swipeRefreshLayout);
+        mPullRefreshLayout = (PullRefreshLayout) rootView.findViewById(R.id.swipeRefreshLayout);
 
         // listen refresh event
-        layout.setOnRefreshListener(new PullRefreshLayout.OnRefreshListener() {
+        mPullRefreshLayout.setOnRefreshListener(new PullRefreshLayout.OnRefreshListener() {
             @Override
             public void onRefresh() {
-                // start refresh
-                //TODO: On page refresh events here layout.serRefreshing() true for start on refresh method
+                fetchMessages();
+
+
             }
         });
 
@@ -105,6 +107,34 @@ public class MessageFragment extends Fragment {
         recyclerView.setHasFixedSize(true);
 
         return rootView;
+    }
+
+    /**
+     *  TODO Firstly fetch from internet. This is just a demo method...
+     */
+    private void fetchMessages() {
+
+        final User currentUser = SessionManager.getCurrentUser(getContext());
+
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+
+                createMessages(); // TODO REMOVE
+
+                ArrayList<User> users = mDbHandler.getMessageUsers();
+                mLastMessages = new ArrayList<>();
+                mLastMessages = mDbHandler.getLastMessages(users, currentUser);
+                getActivity().runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        mLastMessageAdapter.setLastMessages(mLastMessages);
+
+                        mPullRefreshLayout.setRefreshing(false);
+                    }
+                });
+            }
+        }).start();
     }
 
     private void createMessages() {
