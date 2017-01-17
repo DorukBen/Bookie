@@ -22,7 +22,7 @@ import java.util.Locale;
  * Created by orcan on 10/27/16.
  */
 
-public class MessageAdapter extends RecyclerView.Adapter<MessageAdapter.MessageViewHolder> {
+public class LastMessageAdapter extends RecyclerView.Adapter<LastMessageAdapter.MessageViewHolder> {
 
     private Context mContext;
 
@@ -30,7 +30,7 @@ public class MessageAdapter extends RecyclerView.Adapter<MessageAdapter.MessageV
 
     private MessageClickListener mMessageClickListener;
 
-    public MessageAdapter(Context context, ArrayList<Message> lastMessages) {
+    public LastMessageAdapter(Context context, ArrayList<Message> lastMessages) {
         mContext = context;
         mLastMessages = lastMessages;
     }
@@ -66,7 +66,7 @@ public class MessageAdapter extends RecyclerView.Adapter<MessageAdapter.MessageV
 
     @Override
     public MessageViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
-        View messageView = LayoutInflater.from(parent.getContext()).inflate(R.layout.item_message, parent, false);
+        View messageView = LayoutInflater.from(parent.getContext()).inflate(R.layout.item_last_message, parent, false);
         return new MessageViewHolder(messageView);
     }
 

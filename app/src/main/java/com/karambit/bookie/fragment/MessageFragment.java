@@ -14,7 +14,7 @@ import com.baoyz.widget.PullRefreshLayout;
 import com.karambit.bookie.ConversationActivity;
 import com.karambit.bookie.MainActivity;
 import com.karambit.bookie.R;
-import com.karambit.bookie.adapter.MessageAdapter;
+import com.karambit.bookie.adapter.LastMessageAdapter;
 import com.karambit.bookie.helper.DBHandler;
 import com.karambit.bookie.helper.ElevationScrollListener;
 import com.karambit.bookie.helper.SessionManager;
@@ -38,7 +38,7 @@ public class MessageFragment extends Fragment {
     private DBHandler mDbHandler;
     private ArrayList<Message> mLastMessages;
     private int mLastClickedMessageIndex;
-    private MessageAdapter mMessageAdapter;
+    private LastMessageAdapter mLastMessageAdapter;
 
     public MessageFragment() {
         // Required empty public constructor
@@ -64,8 +64,8 @@ public class MessageFragment extends Fragment {
         mLastMessages = mDbHandler.getLastMessages(users, currentUser);
         Collections.sort(mLastMessages);
 
-        mMessageAdapter = new MessageAdapter(getActivity(), mLastMessages);
-        mMessageAdapter.setMessageClickListener(new MessageAdapter.MessageClickListener() {
+        mLastMessageAdapter = new LastMessageAdapter(getActivity(), mLastMessages);
+        mLastMessageAdapter.setMessageClickListener(new LastMessageAdapter.MessageClickListener() {
             @Override
             public void onMessageClick(Message lastMessage) {
                 mLastClickedMessageIndex = mLastMessages.indexOf(lastMessage);
@@ -84,9 +84,9 @@ public class MessageFragment extends Fragment {
             }
         });
 
-        mMessageAdapter.setHasStableIds(true);
+        mLastMessageAdapter.setHasStableIds(true);
 
-        recyclerView.setAdapter(mMessageAdapter);
+        recyclerView.setAdapter(mLastMessageAdapter);
 
         recyclerView.setOnScrollListener(new ElevationScrollListener((MainActivity) getActivity(), MESSAGE_FRAGMENT_TAB_INEX));
 
@@ -184,7 +184,7 @@ public class MessageFragment extends Fragment {
             mLastMessages.add(0, newMessage);
         }
 
-        mMessageAdapter.notifyDataSetChanged();
+        mLastMessageAdapter.notifyDataSetChanged();
     }
 
     private boolean messageExists(Message newMessage) {
