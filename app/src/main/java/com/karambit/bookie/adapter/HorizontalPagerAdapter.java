@@ -5,6 +5,7 @@ import android.content.Intent;
 import android.database.DataSetObserver;
 import android.os.Bundle;
 import android.support.v4.view.PagerAdapter;
+import android.support.v7.widget.CardView;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -49,6 +50,7 @@ public class HorizontalPagerAdapter extends PagerAdapter {
         View view = mLayoutInflater.inflate(R.layout.item_infinite_cycle_view_pager, container, false);
 
         ImageView bookImage = (ImageView) view.findViewById(R.id.bookImageInfiniteCycle);
+        CardView cardView = (CardView) view.findViewById(R.id.horizontalPagerCardView);
 
         Glide.with(mContext)
                 .load(mBooks.get(position).getThumbnailURL())
@@ -61,7 +63,7 @@ public class HorizontalPagerAdapter extends PagerAdapter {
         ((TextView)view.findViewById(R.id.bookNameInfiniteCycleTextView)).setText(mBooks.get(position).getName());
         ((TextView)view.findViewById(R.id.authorInfiniteCycleTextView)).setText(mBooks.get(position).getAuthor());
 
-        view.setOnClickListener(new View.OnClickListener() {
+        cardView.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
                 Intent intent = new Intent(mContext, BookActivity.class);
