@@ -1,5 +1,6 @@
 package com.karambit.bookie;
 
+import android.app.Activity;
 import android.app.ProgressDialog;
 import android.content.Intent;
 import android.os.Bundle;
@@ -57,6 +58,7 @@ public class LoginRegisterActivity extends AppCompatActivity {
 
         if (new IntroductionPrefManager(this).isFirstTimeLaunch()) {
             startActivity(new Intent(this, IntroductionActivity.class));
+            setResult(RESULT_OK);
             finish();
         }
 
@@ -226,7 +228,7 @@ public class LoginRegisterActivity extends AppCompatActivity {
 
                         Log.i(TAG, "Registered!");
 
-                        startActivity(new Intent(LoginRegisterActivity.this, MainActivity.class));
+                        setResult(Activity.RESULT_OK);
                         finish();
 
                     } else {
@@ -290,7 +292,7 @@ public class LoginRegisterActivity extends AppCompatActivity {
 
                         Log.i(TAG, "Logged in!");
 
-                        startActivity(new Intent(LoginRegisterActivity.this, MainActivity.class));
+                        setResult(Activity.RESULT_OK);
                         finish();
 
                     } else {

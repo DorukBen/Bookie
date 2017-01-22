@@ -1,5 +1,6 @@
 package com.karambit.bookie;
 
+import android.app.Activity;
 import android.content.Intent;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
@@ -11,6 +12,7 @@ import android.support.v7.app.AppCompatActivity;
 import android.text.Spannable;
 import android.text.SpannableString;
 import android.text.style.AbsoluteSizeSpan;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuInflater;
@@ -36,6 +38,8 @@ import java.util.List;
 public class MainActivity extends AppCompatActivity implements TabHost.OnTabChangeListener {
 
     private static final String TAG = MainActivity.class.getSimpleName();
+    private static final int REQUEST_CODE_LOGIN_REGISTER_ACTIVITY = 1;
+    private static final int REQUEST_CODE_CURRENT_USER_PROFILE_SETTINGS_ACTIVITY = 2;
     private TabHost mTabHost;
     private ViewPager mViewPager;
     private int mOldPos = 0; //Specifys old position for tab view
@@ -59,17 +63,16 @@ public class MainActivity extends AppCompatActivity implements TabHost.OnTabChan
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        List<Fragment> fragments = new ArrayList<>();
+        mViewPager = (ViewPager) findViewById(R.id.viewpager);
+        mTabHost = (TabHost) findViewById(R.id.tabhost);
 
         if (! SessionManager.isLoggedIn(this)) {
-            startActivity(new Intent(this, LoginRegisterActivity.class));
-            finish();
+            startActivityForResult(new Intent(this, LoginRegisterActivity.class), REQUEST_CODE_LOGIN_REGISTER_ACTIVITY);
         } else if (!SessionManager.isLovedGenresSelectedLocal(this)) {
-            // TODO Server check for loved genres. If loved genres does not exists for user then start LovedGenresActivity
+            //No need for start activity for result. LovedGenreActivity don't returns any result.
             startActivity(new Intent(this, LovedGenresActivity.class));
-            finish();
         }else{
-            fragments = getFragments();
+            initializeViewPager(getFragments(), mViewPager);
         }
 
             //Changes action bar font style by getting font.ttf from assets/fonts action bars font style doesn't
@@ -86,19 +89,14 @@ public class MainActivity extends AppCompatActivity implements TabHost.OnTabChan
             mActionBar.setElevation(0);
         }
 
-        initializeTabHost();
-
-        mViewPager = (ViewPager) findViewById(R.id.viewpager);
-        mViewPager.setOffscreenPageLimit(4);
-        ViewPagerAdapter adapter = new ViewPagerAdapter(getSupportFragmentManager() ,fragments);
-        mViewPager.setAdapter(adapter);
+        initializeTabHost(mTabHost);
     }
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         switch (item.getItemId()) {
             case R.id.action_more:
-                startActivity(new Intent(this,CurrentUserProfileSettingsActivity.class));
+                startActivityForResult(new Intent(this,CurrentUserProfileSettingsActivity.class), REQUEST_CODE_CURRENT_USER_PROFILE_SETTINGS_ACTIVITY);
                 return true;
 
             case R.id.action_notification:
@@ -141,36 +139,41 @@ public class MainActivity extends AppCompatActivity implements TabHost.OnTabChan
      * initialize a new tab host with fragments in viewpager
      * set's a new onTabChanged listener implement this method
      */
-    private void initializeTabHost() {
-        mTabHost = (TabHost) findViewById(R.id.tabhost);
-        mTabHost.setup();
+    private void initializeTabHost(final TabHost tabHost) {
+        tabHost.setup();
 
-        addTab(this, mTabHost, mTabHost.newTabSpec("tab_home").setIndicator("Tab"),R.drawable.tab_home_indicator_selector);
-        addTab(this, mTabHost, mTabHost.newTabSpec("tab_search").setIndicator("Tab2"),R.drawable.tab_search_indicator_selector);
-        addTab(this, mTabHost, mTabHost.newTabSpec("tab_add_book").setIndicator("Tab3"),R.drawable.tab_add_book_indicator_selector);
-        addTab(this, mTabHost, mTabHost.newTabSpec("tab_profile").setIndicator("Tab4"),R.drawable.tab_profile_indicator_selector);
-        addTab(this, mTabHost, mTabHost.newTabSpec("tab_notification").setIndicator("Tab5"),R.drawable.tab_notification_indicator_selector);
+        addTab(this, tabHost, tabHost.newTabSpec("tab_home").setIndicator("Tab"),R.drawable.tab_home_indicator_selector);
+        addTab(this, tabHost, tabHost.newTabSpec("tab_search").setIndicator("Tab2"),R.drawable.tab_search_indicator_selector);
+        addTab(this, tabHost, tabHost.newTabSpec("tab_add_book").setIndicator("Tab3"),R.drawable.tab_add_book_indicator_selector);
+        addTab(this, tabHost, tabHost.newTabSpec("tab_profile").setIndicator("Tab4"),R.drawable.tab_profile_indicator_selector);
+        addTab(this, tabHost, tabHost.newTabSpec("tab_notification").setIndicator("Tab5"),R.drawable.tab_notification_indicator_selector);
 
-        mTabHost.setOnTabChangedListener(this);
+        tabHost.setOnTabChangedListener(this);
 
-        ViewCompat.setElevation(mTabHost.getTabWidget().getChildTabViewAt(0),32);
-        ViewCompat.setElevation(mTabHost.getTabWidget().getChildTabViewAt(1),32);
-        ViewCompat.setElevation(mTabHost.getTabWidget().getChildTabViewAt(3),32);
-        ViewCompat.setElevation(mTabHost.getTabWidget().getChildTabViewAt(4),32);
+        ViewCompat.setElevation(tabHost.getTabWidget().getChildTabViewAt(0),32);
+        ViewCompat.setElevation(tabHost.getTabWidget().getChildTabViewAt(1),32);
+        ViewCompat.setElevation(tabHost.getTabWidget().getChildTabViewAt(3),32);
+        ViewCompat.setElevation(tabHost.getTabWidget().getChildTabViewAt(4),32);
 
-        mTabHost.getTabWidget().getChildTabViewAt(0).setOnClickListener(new View.OnClickListener() {
+        tabHost.getTabWidget().getChildTabViewAt(0).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                if (mTabHost.getCurrentTabView() == view){
+                if (tabHost.getCurrentTabView() == view){
                     mDoubleTapHomeButtonListener.onDoubleTapHomeButton();
                 }else{
-                    mTabHost.setCurrentTab(0);
+                    tabHost.setCurrentTab(0);
                 }
             }
         });
 
-        mIndicator = mTabHost.getCurrentTabView().findViewById(R.id.tab_strip);
+        mIndicator = tabHost.getCurrentTabView().findViewById(R.id.tab_strip);
         mIndicator.setVisibility(View.VISIBLE);
+    }
+
+    private void initializeViewPager(List<Fragment> fragments, ViewPager viewPager) {
+        viewPager.setOffscreenPageLimit(4);
+        ViewPagerAdapter adapter = new ViewPagerAdapter(getSupportFragmentManager() ,fragments);
+        viewPager.setAdapter(adapter);
     }
 
     private void addTab(MainActivity activity, TabHost tabHost, TabHost.TabSpec tabSpec,int drawableId) {
@@ -254,6 +257,41 @@ public class MainActivity extends AppCompatActivity implements TabHost.OnTabChan
             mIndicator.setSelected(false);
             mTabHost.setCurrentTab(mOldPos);
             startActivity(new Intent(this,AddBookActivity.class));
+        }
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        switch (requestCode){
+            //Controlling result from LoginRegisterActivity
+            case REQUEST_CODE_LOGIN_REGISTER_ACTIVITY:
+                if (resultCode == Activity.RESULT_OK){
+
+                    if (!SessionManager.isLovedGenresSelectedLocal(this)) {
+                        startActivity(new Intent(this, LovedGenresActivity.class));
+                    }
+
+                    //Reinitialize view pager on each login session completed
+                    initializeViewPager(getFragments(), mViewPager);
+                    mTabHost.setCurrentTab(HomeFragment.HOME_FRAGMENT_TAB_INEX);
+                    mViewPager.setCurrentItem(HomeFragment.HOME_FRAGMENT_TAB_INEX);
+
+                    Log.d(TAG,"Result ok while returning to MainActivity from LoginRegisterActivity");
+                }else if(resultCode == Activity.RESULT_CANCELED){
+                    Log.d(TAG,"Result canceled while returning to MainActivity from LoginRegisterActivity");
+                    finish();
+                }else{
+                    Log.e(TAG, "An error occurred while returning to MainActivity from LoginRegisterActivity");
+                }
+                break;
+            case REQUEST_CODE_CURRENT_USER_PROFILE_SETTINGS_ACTIVITY:
+                if (resultCode == CurrentUserProfileSettingsActivity.RESULT_USER_LOGOUT){
+                    //Using SessionManager here to use startActivityForResult() on MainActivity
+                    SessionManager.logout(getApplicationContext());
+                    startActivityForResult(new Intent(this, LoginRegisterActivity.class), REQUEST_CODE_LOGIN_REGISTER_ACTIVITY);
+                }
+                break;
         }
     }
 
