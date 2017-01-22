@@ -1,7 +1,6 @@
 package com.karambit.bookie.adapter;
 
 import android.content.Context;
-import android.content.Intent;
 import android.graphics.Color;
 import android.graphics.Typeface;
 import android.support.v4.content.ContextCompat;
@@ -14,7 +13,6 @@ import android.text.TextUtils;
 import android.text.method.LinkMovementMethod;
 import android.text.style.ClickableSpan;
 import android.text.style.ForegroundColorSpan;
-import android.text.style.RelativeSizeSpan;
 import android.text.style.StyleSpan;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -135,7 +133,6 @@ public class NotificationAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
 
         final Notification notification = mNotifications.get(position);
 
-        SpannableString spanUserName = new SpannableString(notification.getOppositeUser().getName());
         ClickableSpan clickableSpanUserName = new ClickableSpan() {
             @Override
             public void onClick(View textView) {
@@ -147,8 +144,6 @@ public class NotificationAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
                 ds.setUnderlineText(false);
             }
         };
-
-        SpannableString spanBookName = new SpannableString(notification.getBook().getName());
 
         ClickableSpan clickableSpanBookName = new ClickableSpan() {
             @Override
@@ -162,15 +157,10 @@ public class NotificationAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
             }
         };
 
-
-        spanUserName.setSpan(clickableSpanUserName, 0, spanUserName.length(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
-        spanUserName.setSpan(new ForegroundColorSpan(ContextCompat.getColor(mContext, R.color.primaryTextColor)), 0, spanUserName.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
-        spanUserName.setSpan(new StyleSpan(Typeface.BOLD), 0, spanUserName.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
-
-
-        spanBookName.setSpan(clickableSpanBookName, 0, spanBookName.length(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
-        spanBookName.setSpan(new ForegroundColorSpan(ContextCompat.getColor(mContext, R.color.primaryTextColor)), 0, spanBookName.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
-        spanBookName.setSpan(new StyleSpan(Typeface.BOLD), 0, spanBookName.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+        int startIndexUserName;
+        int endIndexUserName;
+        int startIndexBookName;
+        int endIndexBookName;
 
         switch (getItemViewType(position)) {
             case ITEM_TYPE_USER_PHOTO:
@@ -203,13 +193,61 @@ public class NotificationAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
                 switch (notification.getType()) {
 
                     case REQUESTED:
-                        userHolder.mMessage.setText(TextUtils.concat(spanUserName," requested for " ,spanBookName));
+                        String requestedString = mContext.getString(R.string.x_requested_for_y, notification.getOppositeUser().getName(), notification.getBook().getName());
+                        SpannableString spanRequestedString = new SpannableString(requestedString);
+
+                        startIndexUserName = requestedString.indexOf(notification.getOppositeUser().getName());
+                        endIndexUserName = startIndexUserName + notification.getOppositeUser().getName().length();
+
+                        startIndexBookName = requestedString.indexOf(notification.getBook().getName());
+                        endIndexBookName = startIndexBookName + notification.getBook().getName().length();
+
+                        spanRequestedString.setSpan(clickableSpanUserName, startIndexUserName, endIndexUserName, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+                        spanRequestedString.setSpan(new StyleSpan(Typeface.BOLD), startIndexUserName, endIndexUserName, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+
+                        spanRequestedString.setSpan(clickableSpanBookName, startIndexBookName, endIndexBookName, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+                        spanRequestedString.setSpan(new StyleSpan(Typeface.BOLD), startIndexBookName, endIndexBookName, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+                        spanRequestedString.setSpan(new ForegroundColorSpan(ContextCompat.getColor(mContext, R.color.primaryTextColor)),
+                                0, spanRequestedString.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+                        userHolder.mMessage.setText(spanRequestedString);
                         break;
                     case BOOK_OWNER_CHANGED:
-                        userHolder.mMessage.setText(TextUtils.concat(spanBookName," now owned by " ,spanUserName));
+                        String bookOwnerChangedString = mContext.getString(R.string.x_now_owned_by_y, notification.getBook().getName(), notification.getOppositeUser().getName());
+                        SpannableString spanBookOwnerChangedString = new SpannableString(bookOwnerChangedString);
+
+                        startIndexUserName = bookOwnerChangedString.indexOf(notification.getOppositeUser().getName());
+                        endIndexUserName = startIndexUserName + notification.getOppositeUser().getName().length();
+
+                        startIndexBookName = bookOwnerChangedString.indexOf(notification.getBook().getName());
+                        endIndexBookName = startIndexBookName + notification.getBook().getName().length();
+
+                        spanBookOwnerChangedString.setSpan(clickableSpanUserName, startIndexUserName, endIndexUserName, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+                        spanBookOwnerChangedString.setSpan(new StyleSpan(Typeface.BOLD), startIndexUserName, endIndexUserName, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+
+                        spanBookOwnerChangedString.setSpan(clickableSpanBookName, startIndexBookName, endIndexBookName, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+                        spanBookOwnerChangedString.setSpan(new StyleSpan(Typeface.BOLD), startIndexBookName, endIndexBookName, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+                        spanBookOwnerChangedString.setSpan(new ForegroundColorSpan(ContextCompat.getColor(mContext, R.color.primaryTextColor)),
+                                0, spanBookOwnerChangedString.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+                        userHolder.mMessage.setText(spanBookOwnerChangedString);
                         break;
                     case BOOK_LOST:
-                        userHolder.mMessage.setText(TextUtils.concat(spanUserName," lost " ,spanBookName));
+                        String bookLostString = mContext.getString(R.string.x_lost_y, notification.getOppositeUser().getName(), notification.getBook().getName());
+                        SpannableString spanBookLostString = new SpannableString(bookLostString);
+
+                        startIndexUserName = bookLostString.indexOf(notification.getOppositeUser().getName());
+                        endIndexUserName = startIndexUserName + notification.getOppositeUser().getName().length();
+
+                        startIndexBookName = bookLostString.indexOf(notification.getBook().getName());
+                        endIndexBookName = startIndexBookName + notification.getBook().getName().length();
+
+                        spanBookLostString.setSpan(clickableSpanUserName, startIndexUserName, endIndexUserName, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+                        spanBookLostString.setSpan(new StyleSpan(Typeface.BOLD), startIndexUserName, endIndexUserName, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+
+                        spanBookLostString.setSpan(clickableSpanBookName, startIndexBookName, endIndexBookName, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+                        spanBookLostString.setSpan(new StyleSpan(Typeface.BOLD), startIndexBookName, endIndexBookName, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+                        spanBookLostString.setSpan(new ForegroundColorSpan(ContextCompat.getColor(mContext, R.color.primaryTextColor)),
+                                0, spanBookLostString.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+                        userHolder.mMessage.setText(spanBookLostString);
                         break;
                     default:
                         throw new IllegalArgumentException("Invalid notification type");
@@ -247,13 +285,47 @@ public class NotificationAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
 
                 bookHolder.mCreatedAt.setText(calendarToCreatedAt(notification.getCreatedAt()));
 
+
+
                 switch (notification.getType()) {
                     case REQUEST_ACCEPTED:
-                        bookHolder.mMessage.setText(TextUtils.concat(spanUserName," accepted your request for " ,spanBookName));
+                        String requestAcceptedString = mContext.getString(R.string.x_accepted_your_request_for_y, notification.getOppositeUser().getName(), notification.getBook().getName());
+                        SpannableString spanRequestAcceptedString = new SpannableString(requestAcceptedString);
+
+                        startIndexUserName = requestAcceptedString.indexOf(notification.getOppositeUser().getName());
+                        endIndexUserName = startIndexUserName + notification.getOppositeUser().getName().length();
+
+                        startIndexBookName = requestAcceptedString.indexOf(notification.getBook().getName());
+                        endIndexBookName = startIndexBookName + notification.getBook().getName().length();
+
+                        spanRequestAcceptedString.setSpan(clickableSpanUserName, startIndexUserName, endIndexUserName, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+                        spanRequestAcceptedString.setSpan(new StyleSpan(Typeface.BOLD), startIndexUserName, endIndexUserName, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+
+                        spanRequestAcceptedString.setSpan(clickableSpanBookName, startIndexBookName, endIndexBookName, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+                        spanRequestAcceptedString.setSpan(new StyleSpan(Typeface.BOLD), startIndexBookName, endIndexBookName, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+                        spanRequestAcceptedString.setSpan(new ForegroundColorSpan(ContextCompat.getColor(mContext, R.color.primaryTextColor)),
+                                0, spanRequestAcceptedString.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+                        bookHolder.mMessage.setText(spanRequestAcceptedString);
                         break;
 
                     case REQUEST_REJECTED:
-                        bookHolder.mMessage.setText(TextUtils.concat(spanUserName," rejected your request for " ,spanBookName));
+                        String requestRejectedString = mContext.getString(R.string.x_rejected_your_request_for_y, notification.getOppositeUser().getName(), notification.getBook().getName());
+                        SpannableString spanRequestRejectedString = new SpannableString(requestRejectedString);
+
+                        startIndexUserName = requestRejectedString.indexOf(notification.getOppositeUser().getName());
+                        endIndexUserName = startIndexUserName + notification.getOppositeUser().getName().length();
+
+                        startIndexBookName = requestRejectedString.indexOf(notification.getBook().getName());
+                        endIndexBookName = startIndexBookName + notification.getBook().getName().length();
+
+                        spanRequestRejectedString.setSpan(clickableSpanUserName, startIndexUserName, endIndexUserName, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+                        spanRequestRejectedString.setSpan(new StyleSpan(Typeface.BOLD), startIndexUserName, endIndexUserName, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+
+                        spanRequestRejectedString.setSpan(clickableSpanBookName, startIndexBookName, endIndexBookName, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+                        spanRequestRejectedString.setSpan(new StyleSpan(Typeface.BOLD), startIndexBookName, endIndexBookName, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+                        spanRequestRejectedString.setSpan(new ForegroundColorSpan(ContextCompat.getColor(mContext, R.color.primaryTextColor)),
+                                0, spanRequestRejectedString.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+                        bookHolder.mMessage.setText(spanRequestRejectedString);
                         break;
 
                     default:
