@@ -426,7 +426,8 @@ public class ProfileTimelineAdapter extends RecyclerView.Adapter<RecyclerView.Vi
                 Glide.with(mContext)
                      .load(mUserDetails.getUser().getThumbnailUrl())
                      .asBitmap()
-                     .placeholder(R.drawable.placeholder_book)
+                     .placeholder(R.drawable.placeholder_192dp)
+                     .error(R.drawable.error_192dp)
                      .centerCrop()
                      .into(headerViewHolder.mProfilePicture);
 
@@ -556,7 +557,8 @@ public class ProfileTimelineAdapter extends RecyclerView.Adapter<RecyclerView.Vi
                 Glide.with(mContext)
                      .load(book.getThumbnailURL())
                      .asBitmap()
-                     .placeholder(R.drawable.placeholder_book)
+                     .placeholder(R.drawable.placeholder_88dp)
+                     .error(R.drawable.error_88dp)
                      .into(new SimpleTarget<Bitmap>() {
                          @Override
                          public void onResourceReady(Bitmap resource, GlideAnimation<? super Bitmap> glideAnimation) {
@@ -599,7 +601,8 @@ public class ProfileTimelineAdapter extends RecyclerView.Adapter<RecyclerView.Vi
                 Glide.with(mContext)
                      .load(book.getThumbnailURL())
                      .asBitmap()
-                     .placeholder(R.drawable.placeholder_book)
+                     .placeholder(R.drawable.placeholder_88dp)
+                     .error(R.drawable.error_88dp)
                      .into(new SimpleTarget<Bitmap>() {
                          @Override
                          public void onResourceReady(Bitmap resource, GlideAnimation<? super Bitmap> glideAnimation) {

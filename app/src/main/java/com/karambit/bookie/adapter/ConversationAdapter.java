@@ -137,7 +137,8 @@ public class ConversationAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
                         .load(mPhoneOwner.getThumbnailUrl())
                         .asBitmap()
                         .centerCrop()
-                        .placeholder(R.drawable.placeholder_book)
+                        .placeholder(R.drawable.placeholder_36dp)
+                        .error(R.drawable.error_36dp)
                         .into(phoneOwnerHolder.mProfilePicture);
 
                 if (position == getItemCount() - 1) {
@@ -167,7 +168,8 @@ public class ConversationAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
                         .load(mOppositeUser.getThumbnailUrl())
                         .asBitmap()
                         .centerCrop()
-                        .placeholder(R.drawable.placeholder_book)
+                        .placeholder(R.drawable.placeholder_36dp)
+                        .error(R.drawable.error_36dp)
                         .into(oppositeUserHolder.mProfilePicture);
 
                   if (position == 0) {

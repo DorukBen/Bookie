@@ -27,7 +27,7 @@
             android:layout_weight="1"
             android:gravity="center_horizontal"
             android:scaleType="centerCrop"
-            android:src="@drawable/placeholder_book"/>
+            android:src="@drawable/placeholder_192dp"/>
 
        <LinearLayout
            android:layout_width="wrap_content"

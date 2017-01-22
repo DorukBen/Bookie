@@ -317,8 +317,9 @@ public class BookTimelineAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
                 Glide.with(mContext)
                      .load(mBookDetails.getBook().getThumbnailURL())
                      .asBitmap()
-                     .placeholder(R.drawable.placeholder_book)
+                     .placeholder(R.drawable.placeholder_192dp)
                      .centerCrop()
+                     .error(R.drawable.error_56dp)
                      .into(headerViewHolder.mBookPicture);
 
                 headerViewHolder.mBookName.setText(mBookDetails.getBook().getName());
@@ -447,8 +448,9 @@ public class BookTimelineAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
                 Glide.with(mContext)
                      .load(mBookDetails.getBook().getOwner().getThumbnailUrl())
                      .asBitmap()
-                     .placeholder(R.drawable.placeholder_book)
+                     .placeholder(R.drawable.placeholder_56dp)
                      .centerCrop()
+                     .error(R.drawable.error_56dp)
                      .into(stateOtherHolder.mOwnerPicture);
 
                 stateOtherHolder.mOwnerName.setText(mBookDetails.getBook().getOwner().getName());

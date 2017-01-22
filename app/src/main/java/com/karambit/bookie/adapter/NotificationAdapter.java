@@ -187,7 +187,8 @@ public class NotificationAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
                         .load(notification.getOppositeUser().getThumbnailUrl())
                         .asBitmap()
                         .centerCrop()
-                        .placeholder(R.drawable.placeholder_book)
+                        .placeholder(R.drawable.placeholder_56dp)
+                        .error(R.drawable.error_56dp)
                         .into(userHolder.mUserImageView);
 
                 userHolder.mUserImageView.setOnClickListener(new View.OnClickListener() {
@@ -233,7 +234,8 @@ public class NotificationAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
                         .load(notification.getBook().getThumbnailURL())
                         .centerCrop()
                         .crossFade()
-                        .placeholder(R.drawable.placeholder_book)
+                        .placeholder(R.drawable.placeholder_56dp)
+                        .error(R.drawable.error_56dp)
                         .into(bookHolder.mBookImageView);
 
                 bookHolder.mBookImageView.setOnClickListener(new View.OnClickListener() {

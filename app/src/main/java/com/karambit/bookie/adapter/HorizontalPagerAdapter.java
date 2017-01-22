@@ -54,7 +54,8 @@ public class HorizontalPagerAdapter extends PagerAdapter {
                 .load(mBooks.get(position).getThumbnailURL())
                 .asBitmap()
                 .centerCrop()
-                .placeholder(R.drawable.placeholder_book)
+                .placeholder(R.drawable.placeholder_192dp)
+                .error(R.drawable.error_192dp)
                 .into(bookImage);
 
         ((TextView)view.findViewById(R.id.bookNameInfiniteCycleTextView)).setText(mBooks.get(position).getName());
