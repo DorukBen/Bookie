@@ -872,9 +872,8 @@ public class DBHandler extends SQLiteOpenHelper {
         try {
             db = this.getReadableDatabase();
             db.beginTransaction();
-            String deletedString = "1";
             res = db.rawQuery("SELECT " + MESSAGE_COLUMN_ID + " FROM " + MESSAGE_TABLE_NAME +
-                    " WHERE " + MESSAGE_COLUMN_IS_DELETED + " <> " + deletedString + " ORDER BY " + MESSAGE_COLUMN_ID + " ASC " +
+                    " ORDER BY " + MESSAGE_COLUMN_ID + " ASC " +
                     " LIMIT 1", null);
             res.moveToFirst();
 
