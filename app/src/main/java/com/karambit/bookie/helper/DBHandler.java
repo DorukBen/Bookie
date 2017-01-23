@@ -7,7 +7,9 @@ import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
 import android.util.Log;
 
+import com.karambit.bookie.model.Book;
 import com.karambit.bookie.model.Message;
+import com.karambit.bookie.model.Notification;
 import com.karambit.bookie.model.User;
 
 import java.util.ArrayList;
@@ -69,6 +71,38 @@ public class DBHandler extends SQLiteOpenHelper {
     private static final String MESSAGE_USER_COLUMN_LATITUDE = "latitude";
     private static final String MESSAGE_USER_COLUMN_LONGITUDE = "longitude";
 
+    private static final String NOTIFICATION_TABLE_NAME = "notification";
+    private static final String NOTIFICATION_COLUMN_ID = "notification_id";
+    private static final String NOTIFICATION_COLUMN_BOOK_ID = "book_id";
+    private static final String NOTIFICATION_COLUMN_USER_ID = "user_id";
+    private static final String NOTIFICATION_COLUMN_TYPE = "type";
+    private static final String NOTIFICATION_COLUMN_SEEN = "seen";
+    private static final String NOTIFICATION_COLUMN_CREATED_AT = "created_at";
+
+    private static final String NOTIFICATION_USER_TABLE_NAME = "notification_user";
+    private static final String NOTIFICATION_USER_COLUMN_ID = "user_id";
+    private static final String NOTIFICATION_USER_COLUMN_NAME = "name";
+    private static final String NOTIFICATION_USER_COLUMN_IMAGE_URL = "image_url";
+    private static final String NOTIFICATION_USER_COLUMN_THUMBNAIL_URL = "thumbnail_url";
+    private static final String NOTIFICATION_USER_COLUMN_LATITUDE = "latitude";
+    private static final String NOTIFICATION_USER_COLUMN_LONGITUDE = "longitude";
+
+    private static final String NOTIFICATION_BOOK_TABLE_NAME = "notification_book";
+    private static final String NOTIFICATION_BOOK_COLUMN_ID = "book_id";
+    private static final String NOTIFICATION_BOOK_COLUMN_NAME = "name";
+    private static final String NOTIFICATION_BOOK_COLUMN_IMAGE_URL = "image_url";
+    private static final String NOTIFICATION_BOOK_COLUMN_THUMBNAIL_URL = "thumbnail_url";
+    private static final String NOTIFICATION_BOOK_COLUMN_AUTHOR = "author";
+    private static final String NOTIFICATION_BOOK_COLUMN_STATE = "state";
+    private static final String NOTIFICATION_BOOK_COLUMN_OWNER_ID = "owner_id";
+
+    private static final String BOOK_USER_TABLE_NAME = "book_user";
+    private static final String BOOK_USER_COLUMN_ID = "user_id";
+    private static final String BOOK_USER_COLUMN_NAME = "name";
+    private static final String BOOK_USER_COLUMN_IMAGE_URL = "image_url";
+    private static final String BOOK_USER_COLUMN_THUMBNAIL_URL = "thumbnail_url";
+    private static final String BOOK_USER_COLUMN_LATITUDE = "latitude";
+    private static final String BOOK_USER_COLUMN_LONGITUDE = "longitude";
 
     private final Context mContext;
 
@@ -122,6 +156,47 @@ public class DBHandler extends SQLiteOpenHelper {
                         MESSAGE_USER_COLUMN_LATITUDE + " DOUBLE, " +
                         MESSAGE_USER_COLUMN_LONGITUDE + " DOUBLE)"
         );
+
+        db.execSQL(
+                "CREATE TABLE " + NOTIFICATION_TABLE_NAME + " (" +
+                        NOTIFICATION_COLUMN_ID + " INTEGER PRIMARY KEY NOT NULL, " +
+                        NOTIFICATION_COLUMN_BOOK_ID + " INTEGER NOT NULL, " +
+                        NOTIFICATION_COLUMN_USER_ID + " INTEGER NOT NULL, " +
+                        NOTIFICATION_COLUMN_TYPE + " INTEGER NOT NULL, " +
+                        NOTIFICATION_COLUMN_SEEN + " INTEGER NOT NULL, " +
+                        NOTIFICATION_COLUMN_CREATED_AT + " LONG NOT NULL)"
+        );
+
+        db.execSQL(
+                "CREATE TABLE " + NOTIFICATION_USER_TABLE_NAME + " (" +
+                        NOTIFICATION_USER_COLUMN_ID + " INTEGER PRIMARY KEY NOT NULL, " +
+                        NOTIFICATION_USER_COLUMN_NAME + " TEXT NOT NULL, " +
+                        NOTIFICATION_USER_COLUMN_IMAGE_URL + " TEXT NOT NULL, " +
+                        NOTIFICATION_USER_COLUMN_THUMBNAIL_URL + " TEXT NOT NULL, " +
+                        NOTIFICATION_USER_COLUMN_LATITUDE + " DOUBLE, " +
+                        NOTIFICATION_USER_COLUMN_LONGITUDE + " DOUBLE)"
+        );
+
+        db.execSQL(
+                "CREATE TABLE " + NOTIFICATION_BOOK_TABLE_NAME + " (" +
+                        NOTIFICATION_BOOK_COLUMN_ID + " INTEGER PRIMARY KEY NOT NULL, " +
+                        NOTIFICATION_BOOK_COLUMN_NAME + " TEXT NOT NULL, " +
+                        NOTIFICATION_BOOK_COLUMN_IMAGE_URL + " TEXT NOT NULL, " +
+                        NOTIFICATION_BOOK_COLUMN_THUMBNAIL_URL + " TEXT NOT NULL, " +
+                        NOTIFICATION_BOOK_COLUMN_AUTHOR + " TEXT NOT NULL, " +
+                        NOTIFICATION_BOOK_COLUMN_STATE + " INTEGER NOT NULL, " +
+                        NOTIFICATION_BOOK_COLUMN_OWNER_ID + " INTEGER NOT NULL)"
+        );
+
+        db.execSQL(
+                "CREATE TABLE " + BOOK_USER_TABLE_NAME + " (" +
+                        BOOK_USER_COLUMN_ID + " INTEGER PRIMARY KEY NOT NULL, " +
+                        BOOK_USER_COLUMN_NAME + " TEXT NOT NULL, " +
+                        BOOK_USER_COLUMN_IMAGE_URL + " TEXT NOT NULL, " +
+                        BOOK_USER_COLUMN_THUMBNAIL_URL + " TEXT NOT NULL, " +
+                        BOOK_USER_COLUMN_LATITUDE + " DOUBLE, " +
+                        BOOK_USER_COLUMN_LONGITUDE + " DOUBLE)"
+        );
     }
 
     @Override
@@ -130,6 +205,10 @@ public class DBHandler extends SQLiteOpenHelper {
         db.execSQL("DROP TABLE IF EXISTS " + LG_TABLE_NAME);
         db.execSQL("DROP TABLE IF EXISTS " + MESSAGE_TABLE_NAME);
         db.execSQL("DROP TABLE IF EXISTS " + MESSAGE_USER_TABLE_NAME);
+        db.execSQL("DROP TABLE IF EXISTS " + NOTIFICATION_TABLE_NAME);
+        db.execSQL("DROP TABLE IF EXISTS " + NOTIFICATION_USER_TABLE_NAME);
+        db.execSQL("DROP TABLE IF EXISTS " + NOTIFICATION_BOOK_TABLE_NAME);
+        db.execSQL("DROP TABLE IF EXISTS " + BOOK_USER_TABLE_NAME);
         onCreate(db);
     }
 
@@ -1010,7 +1089,7 @@ public class DBHandler extends SQLiteOpenHelper {
      *
      * @return {@link ArrayList Arraylist}<{@link User User}> all message users
      */
-    public ArrayList<User> getMessageUsers() {
+    public ArrayList<User> getAllMessageUsers() {
         SQLiteDatabase db = null;
         Cursor res = null;
         ArrayList<User> users = new ArrayList<>();
@@ -1241,5 +1320,468 @@ public class DBHandler extends SQLiteOpenHelper {
         Log.i(TAG, "All Message Users and Messages deleted from database");
     }
 
+    public void saveNotificationToDatabase(Notification notification){
+        if (!isBookUserExists(notification.getBook().getOwner())){
+            insertBookUser(notification.getBook().getOwner());
+        }
+        if (!isNotificationBookExists(notification.getBook())){
+            insertNotificationBook(notification.getBook());
+        }
+        if (!isNotificationUserExists(notification.getOppositeUser())){
+            insertNotificationUser(notification.getOppositeUser());
+        }
 
+        insertNotification(notification);
+    }
+
+    /**
+     * Insert notification to database.<br>
+     *
+     * Using SQLiteOpenHelper. Can't access database simultaneously.<br>
+     *
+     * @param notification {@link Notification} which will be inserted
+     * @return Returns int boolean value if insertion successful returns true else returns false
+     */
+    public boolean insertNotification(Notification notification) {
+        SQLiteDatabase db = null;
+        boolean result = false;
+        int messageSeen = 1;
+        int messageUnseen = 0;
+        try{
+            db = this.getWritableDatabase();
+            db.beginTransaction();
+            ContentValues contentValues = new ContentValues();
+            contentValues.put(NOTIFICATION_COLUMN_BOOK_ID, notification.getBook().getID());
+            contentValues.put(NOTIFICATION_COLUMN_USER_ID, notification.getOppositeUser().getID());
+            contentValues.put(NOTIFICATION_COLUMN_TYPE, notification.getType().getTypeCode());
+            if (notification.isSeen()){
+                contentValues.put(NOTIFICATION_COLUMN_SEEN, messageSeen);
+            }else{
+                contentValues.put(NOTIFICATION_COLUMN_SEEN, messageUnseen);
+            }
+            contentValues.put(NOTIFICATION_COLUMN_CREATED_AT, notification.getCreatedAt().getTimeInMillis());
+
+            result = db.insert(NOTIFICATION_TABLE_NAME, null, contentValues) > 0;
+        }finally {
+            if (db != null && db.isOpen()){
+                db.setTransactionSuccessful();
+                db.endTransaction();
+                db.close();
+            }
+            Log.i(TAG, "New Notification insertion successful");
+        }
+        return result;
+    }
+
+    /**
+     * get all {@link Notification notification's} from database.<br>
+     *
+     * Using SQLiteOpenHelper. Can't access database simultaneously.<br>
+     *
+     * @param allNotificationUsers All notification users. Use {@link DBHandler#getAllNotificationUsers()}
+     * @param allNotificationBooks All notification books. Use {@link DBHandler#getAllNotificationBooks(ArrayList)}
+     * @return Returns all notifications from database
+     */
+    public ArrayList<Notification> getAllNotifications(ArrayList<User> allNotificationUsers, ArrayList<Book> allNotificationBooks) {
+        SQLiteDatabase db = null;
+        Cursor res = null;
+        int seenString = 1;
+        ArrayList<Notification> notifications = new ArrayList<>();
+        try {
+            db = this.getReadableDatabase();
+            db.beginTransaction();
+            res = db.rawQuery("SELECT * FROM " + NOTIFICATION_TABLE_NAME, null);
+            res.moveToFirst();
+
+            if (res.getCount() > 0) {
+                do {
+                    User oppositeUser = null;
+                    for (User user: allNotificationUsers){
+                        if (user.getID() == res.getInt(res.getColumnIndex(NOTIFICATION_COLUMN_USER_ID))){
+                            oppositeUser = user;
+                        }
+                    }
+
+                    Book notificationBook = null;
+                    for (Book book: allNotificationBooks){
+                        if (book.getID() == res.getInt(res.getColumnIndex(NOTIFICATION_COLUMN_BOOK_ID))){
+                            notificationBook = book;
+                        }
+                    }
+
+                    Calendar calendar = Calendar.getInstance();
+                    long time = res.getLong(res.getColumnIndex(NOTIFICATION_COLUMN_CREATED_AT)); //replace 4 with the column index
+                    calendar.setTimeInMillis(time);
+
+                    Notification notification;
+                    if (res.getInt(res.getColumnIndex(NOTIFICATION_COLUMN_SEEN)) == seenString){
+                        notification = new Notification(Notification.Type.valueOf(res.getInt(res.getColumnIndex(NOTIFICATION_COLUMN_TYPE))),
+                                calendar,
+                                notificationBook,
+                                oppositeUser,
+                                true);
+                    }else {
+                        notification = new Notification(Notification.Type.valueOf(res.getInt(res.getColumnIndex(NOTIFICATION_COLUMN_TYPE))),
+                                calendar,
+                                notificationBook,
+                                oppositeUser,
+                                false);
+                    }
+
+
+                    notifications.add(notification);
+                } while (res.moveToNext());
+            }
+        }finally {
+            if (res != null) {
+                res.close();
+            }
+            if (db != null && db.isOpen()){
+                db.setTransactionSuccessful();
+                db.endTransaction();
+                db.close();
+            }
+        }
+        return notifications;
+    }
+
+    /**
+     * Insert notification {@link Book book} to database.<br>
+     *
+     *     Before any {@link Book book} insertion use {@link DBHandler#isNotificationBookExists(Book)}.<br>
+     *
+     * Using SQLiteOpenHelper. Can't access database simultaneously.<br>
+     *
+     * @param book {@link Book} which will be inserted
+     * @return Returns boolean value if insertion successful returns true else returns false
+     */
+    public boolean insertNotificationBook(Book book) {
+        SQLiteDatabase db = null;
+        boolean result = false;
+        try{
+            db = this.getWritableDatabase();
+            db.beginTransaction();
+            ContentValues contentValues = new ContentValues();
+            contentValues.put(NOTIFICATION_BOOK_COLUMN_ID, book.getID());
+            contentValues.put(NOTIFICATION_BOOK_COLUMN_NAME, book.getName());
+            contentValues.put(NOTIFICATION_BOOK_COLUMN_IMAGE_URL, book.getImageURL());
+            contentValues.put(NOTIFICATION_BOOK_COLUMN_THUMBNAIL_URL, book.getThumbnailURL());
+            contentValues.put(NOTIFICATION_BOOK_COLUMN_AUTHOR, book.getAuthor());
+            contentValues.put(NOTIFICATION_BOOK_COLUMN_STATE, book.getState().getStateCode());
+            contentValues.put(NOTIFICATION_BOOK_COLUMN_OWNER_ID, book.getOwner().getID());
+
+            result = db.insert(NOTIFICATION_BOOK_TABLE_NAME, null, contentValues) > 0;
+        }finally {
+            if (db != null && db.isOpen()){
+                db.setTransactionSuccessful();
+                db.endTransaction();
+                db.close();
+            }
+            Log.i(TAG, "New Notification Book insertion successful");
+        }
+        return result;
+    }
+
+    /**
+     * Checks database for given book's existence. Use before all notification book insertions.<br>
+     *
+     * Using SQLiteOpenHelper. Can't access database simultaneously.<br>
+     *
+     * @param book Message {@link Book book}
+     *
+     * @return  boolean value. If message {@link Book book} exist returns true else returns false.
+     */
+    public boolean isNotificationBookExists(Book book) {
+        SQLiteDatabase db = null;
+        Cursor res = null;
+
+        try {
+            db = this.getReadableDatabase();
+            db.beginTransaction();
+            res = db.rawQuery("SELECT * FROM " + NOTIFICATION_BOOK_TABLE_NAME + " WHERE " + NOTIFICATION_BOOK_COLUMN_ID  + " = " + book.getID(), null);
+            res.moveToFirst();
+
+            return res.getCount() > 0;
+
+        }finally {
+            if (res != null) {
+                res.close();
+            }
+            if (db != null && db.isOpen()){
+                db.setTransactionSuccessful();
+                db.endTransaction();
+                db.close();
+            }
+        }
+    }
+
+    /**
+     * Get all notification {@link Book book's} from database.<br>
+     *
+     * Using SQLiteOpenHelper. Can't access database simultaneously.<br>
+     *
+     * @param bookUsers All book {@link User user's}. Use {@link DBHandler#getAllBookUsers()}
+     * @return All notification {@link Book books's}
+     */
+    public ArrayList<Book> getAllNotificationBooks(ArrayList<User> bookUsers) {
+        SQLiteDatabase db = null;
+        Cursor res = null;
+        ArrayList<Book> books = new ArrayList<>();
+        try {
+            db = this.getReadableDatabase();
+            db.beginTransaction();
+            res = db.rawQuery("SELECT * FROM " + NOTIFICATION_BOOK_TABLE_NAME, null);
+            res.moveToFirst();
+
+            if (res.getCount() > 0) {
+                do {
+                    for (User user: bookUsers){
+                        if (user.getID() == res.getInt(res.getColumnIndex(NOTIFICATION_BOOK_COLUMN_OWNER_ID))){
+                            Book book = new Book(res.getInt(res.getColumnIndex(NOTIFICATION_BOOK_COLUMN_ID)),
+                                    res.getString(res.getColumnIndex(NOTIFICATION_BOOK_COLUMN_NAME)),
+                                    res.getString(res.getColumnIndex(NOTIFICATION_BOOK_COLUMN_IMAGE_URL)),
+                                    res.getString(res.getColumnIndex(NOTIFICATION_BOOK_COLUMN_THUMBNAIL_URL)),
+                                    res.getString(res.getColumnIndex(NOTIFICATION_BOOK_COLUMN_AUTHOR)),
+                                    Book.State.valueOf(res.getInt(res.getColumnIndex(NOTIFICATION_BOOK_COLUMN_STATE))),
+                                    user);
+
+                            books.add(book);
+                        }
+                    }
+                } while (res.moveToNext());
+            }
+        }finally {
+            if (res != null) {
+                res.close();
+            }
+            if (db != null && db.isOpen()){
+                db.setTransactionSuccessful();
+                db.endTransaction();
+                db.close();
+            }
+        }
+        return books;
+    }
+
+    /**
+     * Insert notification user to database.<br>
+     *
+     *     Before any {@link User user} insertion use {@link DBHandler#isNotificationUserExists(User)}.<br>
+     *
+     * Using SQLiteOpenHelper. Can't access database simultaneously.<br>
+     *
+     * @param user {@link User} which will be inserted
+     * @return Returns boolean value if insertion successful returns true else returns false
+     */
+    public boolean insertNotificationUser(User user) {
+        SQLiteDatabase db = null;
+        boolean result = false;
+        try{
+            db = this.getWritableDatabase();
+            db.beginTransaction();
+            ContentValues contentValues = new ContentValues();
+            contentValues.put(NOTIFICATION_USER_COLUMN_ID, user.getID());
+            contentValues.put(NOTIFICATION_USER_COLUMN_NAME, user.getName());
+            contentValues.put(NOTIFICATION_USER_COLUMN_IMAGE_URL, user.getImageUrl());
+            contentValues.put(NOTIFICATION_USER_COLUMN_THUMBNAIL_URL, user.getThumbnailUrl());
+            contentValues.put(NOTIFICATION_USER_COLUMN_LATITUDE, user.getLatitude());
+            contentValues.put(NOTIFICATION_USER_COLUMN_LONGITUDE, user.getLongitude());
+
+            result = db.insert(NOTIFICATION_USER_TABLE_NAME, null, contentValues) > 0;
+        }finally {
+            if (db != null && db.isOpen()){
+                db.setTransactionSuccessful();
+                db.endTransaction();
+                db.close();
+            }
+            Log.i(TAG, "New Notification User insertion successful");
+        }
+        return result;
+    }
+
+    /**
+     * Checks database for given user's existence. Use before all notification user insertions.<br>
+     *
+     * Using SQLiteOpenHelper. Can't access database simultaneously.<br>
+     *
+     * @param user Notification {@link User user}
+     *
+     * @return  boolean value. If message {@link User user} exist returns true else returns false.
+     */
+    public boolean isNotificationUserExists(User user) {
+        SQLiteDatabase db = null;
+        Cursor res = null;
+
+        try {
+            db = this.getReadableDatabase();
+            db.beginTransaction();
+            res = db.rawQuery("SELECT * FROM " + NOTIFICATION_USER_TABLE_NAME + " WHERE " + NOTIFICATION_USER_COLUMN_ID  + " = " + user.getID(), null);
+            res.moveToFirst();
+
+            return res.getCount() > 0;
+
+        }finally {
+            if (res != null) {
+                res.close();
+            }
+            if (db != null && db.isOpen()){
+                db.setTransactionSuccessful();
+                db.endTransaction();
+                db.close();
+            }
+        }
+    }
+
+    /**
+     * Get all notification {@link User user's} from database.<br>
+     *
+     * Using SQLiteOpenHelper. Can't access database simultaneously.<br>
+     *
+     * @return All notification {@link User user's}
+     */
+    public ArrayList<User> getAllNotificationUsers() {
+        SQLiteDatabase db = null;
+        Cursor res = null;
+        ArrayList<User> users = new ArrayList<>();
+        try {
+            db = this.getReadableDatabase();
+            db.beginTransaction();
+            res = db.rawQuery("SELECT * FROM " + NOTIFICATION_USER_TABLE_NAME, null);
+            res.moveToFirst();
+
+            if (res.getCount() > 0) {
+                do {
+                    User user = new User(res.getInt(res.getColumnIndex(NOTIFICATION_USER_COLUMN_ID)),
+                            res.getString(res.getColumnIndex(NOTIFICATION_USER_COLUMN_NAME)),
+                            res.getString(res.getColumnIndex(NOTIFICATION_USER_COLUMN_IMAGE_URL)),
+                            res.getString(res.getColumnIndex(NOTIFICATION_USER_COLUMN_THUMBNAIL_URL)),
+                            res.getDouble(res.getColumnIndex(NOTIFICATION_USER_COLUMN_LATITUDE)),
+                            res.getDouble(res.getColumnIndex(NOTIFICATION_USER_COLUMN_LONGITUDE)));
+
+                    users.add(user);
+                } while (res.moveToNext());
+            }
+        }finally {
+            if (res != null) {
+                res.close();
+            }
+            if (db != null && db.isOpen()){
+                db.setTransactionSuccessful();
+                db.endTransaction();
+                db.close();
+            }
+        }
+        return users;
+    }
+
+    /**
+     * Insert book user to database.<br>
+     *
+     *     Before any {@link User user} insertion use {@link DBHandler#isBookUserExists(User)}.<br>
+     *
+     * Using SQLiteOpenHelper. Can't access database simultaneously.<br>
+     *
+     * @param user {@link User} which will be inserted
+     * @return Returns boolean value if insertion successful returns true else returns false
+     */
+    public boolean insertBookUser(User user) {
+        SQLiteDatabase db = null;
+        boolean result = false;
+        try{
+            db = this.getWritableDatabase();
+            db.beginTransaction();
+            ContentValues contentValues = new ContentValues();
+            contentValues.put(BOOK_USER_COLUMN_ID, user.getID());
+            contentValues.put(BOOK_USER_COLUMN_NAME, user.getName());
+            contentValues.put(BOOK_USER_COLUMN_IMAGE_URL, user.getImageUrl());
+            contentValues.put(BOOK_USER_COLUMN_THUMBNAIL_URL, user.getThumbnailUrl());
+            contentValues.put(BOOK_USER_COLUMN_LATITUDE, user.getLatitude());
+            contentValues.put(BOOK_USER_COLUMN_LONGITUDE, user.getLongitude());
+
+            result = db.insert(BOOK_USER_TABLE_NAME, null, contentValues) > 0;
+        }finally {
+            if (db != null && db.isOpen()){
+                db.setTransactionSuccessful();
+                db.endTransaction();
+                db.close();
+            }
+            Log.i(TAG, "New Book User insertion successful");
+        }
+        return result;
+    }
+
+    /**
+     * Checks database for given user's existence. Use before all book user insertions.<br>
+     *
+     * Using SQLiteOpenHelper. Can't access database simultaneously.<br>
+     *
+     * @param user Book {@link User user}
+     *
+     * @return  boolean value. If message {@link User user} exist returns true else returns false.
+     */
+    public boolean isBookUserExists(User user) {
+        SQLiteDatabase db = null;
+        Cursor res = null;
+
+        try {
+            db = this.getReadableDatabase();
+            db.beginTransaction();
+            res = db.rawQuery("SELECT * FROM " + BOOK_USER_TABLE_NAME + " WHERE " + BOOK_USER_COLUMN_ID  + " = " + user.getID(), null);
+            res.moveToFirst();
+
+            return res.getCount() > 0;
+
+        }finally {
+            if (res != null) {
+                res.close();
+            }
+            if (db != null && db.isOpen()){
+                db.setTransactionSuccessful();
+                db.endTransaction();
+                db.close();
+            }
+        }
+    }
+
+    /**
+     * Get all book {@link User user's} from database.<br>
+     *
+     * Using SQLiteOpenHelper. Can't access database simultaneously.<br>
+     *
+     * @return All notification {@link User user's}
+     */
+    public ArrayList<User> getAllBookUsers() {
+        SQLiteDatabase db = null;
+        Cursor res = null;
+        ArrayList<User> users = new ArrayList<>();
+        try {
+            db = this.getReadableDatabase();
+            db.beginTransaction();
+            res = db.rawQuery("SELECT * FROM " + BOOK_USER_TABLE_NAME, null);
+            res.moveToFirst();
+
+            if (res.getCount() > 0) {
+                do {
+                    User user = new User(res.getInt(res.getColumnIndex(BOOK_USER_COLUMN_ID)),
+                            res.getString(res.getColumnIndex(BOOK_USER_COLUMN_NAME)),
+                            res.getString(res.getColumnIndex(BOOK_USER_COLUMN_IMAGE_URL)),
+                            res.getString(res.getColumnIndex(BOOK_USER_COLUMN_THUMBNAIL_URL)),
+                            res.getDouble(res.getColumnIndex(BOOK_USER_COLUMN_LATITUDE)),
+                            res.getDouble(res.getColumnIndex(BOOK_USER_COLUMN_LONGITUDE)));
+
+                    users.add(user);
+                } while (res.moveToNext());
+            }
+        }finally {
+            if (res != null) {
+                res.close();
+            }
+            if (db != null && db.isOpen()){
+                db.setTransactionSuccessful();
+                db.endTransaction();
+                db.close();
+            }
+        }
+        return users;
+    }
 }

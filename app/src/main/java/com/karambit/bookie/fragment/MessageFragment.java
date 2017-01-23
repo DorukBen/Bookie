@@ -60,7 +60,7 @@ public class MessageFragment extends Fragment {
 
         createMessages();
 
-        ArrayList<User> users = mDbHandler.getMessageUsers();
+        ArrayList<User> users = mDbHandler.getAllMessageUsers();
         mLastMessages = mDbHandler.getLastMessages(users, currentUser);
         Collections.sort(mLastMessages);
 
@@ -115,7 +115,7 @@ public class MessageFragment extends Fragment {
 
         mDbHandler.deleteAllMessages();
 
-        if (mDbHandler.getMessageUsers().size() == 0) {
+        if (mDbHandler.getAllMessageUsers().size() == 0) {
 
             User currentUser = SessionManager.getCurrentUser(getContext().getApplicationContext());
 
