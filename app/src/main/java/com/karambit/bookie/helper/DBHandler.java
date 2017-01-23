@@ -894,6 +894,81 @@ public class DBHandler extends SQLiteOpenHelper {
     }
 
     /**
+     * Counts unseen messages for given {@link User user}.<br>
+     *
+     * Using SQLiteOpenHelper. Can't access database simultaneously.<br>
+     *
+     * @param oppositeUser {@link User} which have conversation with phone user
+     * @return Total unseen message count for given user
+     */
+    public int getUnseenMessageCount(User oppositeUser){
+        SQLiteDatabase db = null;
+        Cursor res = null;
+        String queryVariableString = "totalCount";
+        int unseenMessageCount = 0;
+
+        try {
+            db = this.getReadableDatabase();
+            db.beginTransaction();
+            res = db.rawQuery("SELECT COUNT(*) AS " + queryVariableString + " FROM " + MESSAGE_TABLE_NAME +
+                    " WHERE " + MESSAGE_COLUMN_FROM_USER_ID + " = " + oppositeUser.getID() +
+                    " AND " + MESSAGE_COLUMN_STATE + " = " + Message.State.DELIVERED.ordinal(), null);
+            res.moveToFirst();
+
+            unseenMessageCount = res.getInt(res.getColumnIndex(queryVariableString));
+
+        } finally {
+            if (res != null){
+                res.close();
+            }
+            if (db != null && db.isOpen()){
+                db.setTransactionSuccessful();
+                db.endTransaction();
+                db.close();
+            }
+        }
+
+        return unseenMessageCount;
+    }
+
+    /**
+     * Counts all unseen messages.<br>
+     *
+     * Using SQLiteOpenHelper. Can't access database simultaneously.<br>
+     *
+     * @return Total unseen message count
+     */
+    public int getTotalUnseenMessageCount(){
+        SQLiteDatabase db = null;
+        Cursor res = null;
+        String queryVariableString = "totalCount";
+        int totalUnseenMessageCount = 0;
+
+        try {
+            db = this.getReadableDatabase();
+            db.beginTransaction();
+            res = db.rawQuery("SELECT COUNT(*) AS " + queryVariableString + " FROM " + MESSAGE_TABLE_NAME +
+                    " WHERE " + MESSAGE_COLUMN_FROM_USER_ID + " <> " + SessionManager.getCurrentUser(mContext.getApplicationContext()) +
+                    " AND " + MESSAGE_COLUMN_STATE + " = " + Message.State.DELIVERED.ordinal(), null);
+            res.moveToFirst();
+
+            totalUnseenMessageCount = res.getInt(res.getColumnIndex(queryVariableString));
+
+        } finally {
+            if (res != null){
+                res.close();
+            }
+            if (db != null && db.isOpen()){
+                db.setTransactionSuccessful();
+                db.endTransaction();
+                db.close();
+            }
+        }
+
+        return totalUnseenMessageCount;
+    }
+
+    /**
      * Inserts message user to database.<br>
      *
      * Using SQLiteOpenHelper. Can't access database simultaneously.<br>
