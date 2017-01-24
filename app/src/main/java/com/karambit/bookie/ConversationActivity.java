@@ -26,12 +26,16 @@ import java.util.Calendar;
 
 public class ConversationActivity extends AppCompatActivity {
 
-    public static final int LAST_MESSAGE_CHANGED = 1;
+    private static final String TAG = ConversationActivity.class.getSimpleName();
+
+    public static final int MESSAGE_INSERTED = 1;
 
     private DBHandler mDbHandler;
     private ConversationAdapter mConversationAdapter;
     private ImageButton mSendMessageButton;
     private EditText mMessageEditText;
+    private ArrayList<Message> mMessages;
+    private RecyclerView mRecyclerView;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -52,27 +56,40 @@ public class ConversationActivity extends AppCompatActivity {
             getSupportActionBar().setTitle(s);
         }
 
+        final User currentUser = SessionManager.getCurrentUser(this);
+        mDbHandler = new DBHandler(getApplicationContext());
+        mMessages = mDbHandler.getConversationMessages(oppositeUser, currentUser);
+
         mMessageEditText = (EditText) findViewById(R.id.messageEditText);
         mSendMessageButton = (ImageButton) findViewById(R.id.messageSendButton);
 
-        final RecyclerView recyclerView = (RecyclerView) findViewById(R.id.conversationRecyclerView);
+        mRecyclerView = (RecyclerView) findViewById(R.id.conversationRecyclerView);
 
         LinearLayoutManager layoutManager = new LinearLayoutManager(this);
         layoutManager.setReverseLayout(true);
 
-        recyclerView.setLayoutManager(layoutManager);
+        mRecyclerView.setLayoutManager(layoutManager);
 
-        final User currentUser = SessionManager.getCurrentUser(this);
-        final ArrayList<Message> messages = new DBHandler(getApplicationContext()).getConversationMessages(oppositeUser, currentUser);
+        mConversationAdapter = new ConversationAdapter(this, mMessages);
 
-        mConversationAdapter = new ConversationAdapter(this, messages);
-
-        recyclerView.setAdapter(mConversationAdapter);
+        mRecyclerView.setAdapter(mConversationAdapter);
 
         //For improving recyclerviews performance
-        recyclerView.setItemViewCacheSize(20);
-        recyclerView.setDrawingCacheEnabled(true);
-        recyclerView.setDrawingCacheQuality(View.DRAWING_CACHE_QUALITY_HIGH);
+        mRecyclerView.setItemViewCacheSize(20);
+        mRecyclerView.setDrawingCacheEnabled(true);
+        mRecyclerView.setDrawingCacheQuality(View.DRAWING_CACHE_QUALITY_HIGH);
+
+        // Seen for opposite user messages
+        for (Message message : mMessages) {
+            if (message.getSender().getID() != currentUser.getID()) {
+                if (message.getState() != Message.State.SEEN) {
+                    message.setState(Message.State.SEEN);
+                    mConversationAdapter.notifyItemChanged(mMessages.indexOf(message));
+
+                    mDbHandler.updateMessageState(message.getID(), Message.State.SEEN);
+                }
+            }
+        }
 
         mMessageEditText.addTextChangedListener(new TextWatcher() {
             @Override
@@ -95,7 +112,6 @@ public class ConversationActivity extends AppCompatActivity {
             }
         });
 
-        mDbHandler = new DBHandler(getApplicationContext());
         mSendMessageButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -106,24 +122,77 @@ public class ConversationActivity extends AppCompatActivity {
 
                     messageText = trimInnerNewLines(messageText);
 
-                    Message message = new Message(messageText, currentUser,
-                                                  oppositeUser, Calendar.getInstance(), Message.State.PENDING);
-
-                    insertMessageProcesses(message);
+                    int id = createTemporaryMessageID();
+                    Message message = new Message(id, messageText, currentUser,
+                                                        oppositeUser, Calendar.getInstance(), Message.State.PENDING);
+                    insertMessage(message);
 
                     mMessageEditText.setText("");
 
                     toggleSendButton(false);
+
+                    mDbHandler.insertMessage(message);
                 }
             }
         });
     }
 
-    private void insertMessageProcesses(Message message) {
-        mConversationAdapter.insertNewMessage(message);
-        mDbHandler.insertMessage(message);
+    public int createTemporaryMessageID() {
+        int minimum = mDbHandler.getMinimumMessageId();
 
-        setResult(LAST_MESSAGE_CHANGED, getIntent().putExtra("last_message", message));
+        if (minimum >= 0) {
+            return -1;
+        } else {
+            return minimum - 1;
+        }
+    }
+
+    public void insertMessage(Message newMessage) {
+        mMessages.add(0, newMessage);
+        mConversationAdapter.notifyItemInserted(0);
+
+        User currentUser = SessionManager.getCurrentUser(this);
+        if (newMessage.getSender().getID() == currentUser.getID()) {
+            mRecyclerView.smoothScrollToPosition(0);
+        } else {
+            LinearLayoutManager layoutManager = (LinearLayoutManager) mRecyclerView.getLayoutManager();
+            int firstVisibleItemPosition = layoutManager.findFirstVisibleItemPosition();
+            if (firstVisibleItemPosition <= 1) {
+                mRecyclerView.smoothScrollToPosition(0);
+            }
+        }
+
+        if (newMessage.getSender().getID() != currentUser.getID()) {
+            for (Message message : mMessages) {
+                if (message.getState() != Message.State.SEEN) {
+                    message.setState(Message.State.SEEN);
+                    mConversationAdapter.notifyItemChanged(mMessages.indexOf(message));
+                }
+            }
+        }
+
+        setResult(MESSAGE_INSERTED, getIntent().putExtra("last_message", mMessages.get(0)));
+    }
+
+    public boolean changeMessageState(int messageID, Message.State state) {
+        for (Message message : mMessages) {
+            if (message.getID() == messageID) {
+                message.setState(state);
+                mConversationAdapter.notifyItemChanged(mMessages.indexOf(message));
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public boolean changeMessageID(int oldMessageID, int newMessageID) {
+        for (Message message : mMessages) {
+            if (message.getID() == oldMessageID) {
+                message.setID(newMessageID);
+                return true;
+            }
+        }
+        return false;
     }
 
     private void toggleSendButton(boolean active) {

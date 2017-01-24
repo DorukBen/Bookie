@@ -6,6 +6,7 @@ import android.os.Bundle;
 import android.support.v4.app.Fragment;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -22,7 +23,6 @@ import com.karambit.bookie.model.Message;
 import com.karambit.bookie.model.User;
 
 import java.util.ArrayList;
-import java.util.Calendar;
 import java.util.Collections;
 import java.util.Random;
 
@@ -33,11 +33,12 @@ public class MessageFragment extends Fragment {
 
     public static final int MESSAGE_FRAGMENT_TAB_INEX = 4;
 
+    private static final String TAG = MessageFragment.class.getSimpleName();
+
     public static final int LAST_MESSAGE_REQUEST_CODE = 1;
 
     private DBHandler mDbHandler;
     private ArrayList<Message> mLastMessages;
-    private int mLastClickedMessageIndex;
     private LastMessageAdapter mLastMessageAdapter;
     private PullRefreshLayout mPullRefreshLayout;
 
@@ -57,7 +58,7 @@ public class MessageFragment extends Fragment {
 
         mDbHandler = new DBHandler(getContext().getApplicationContext());
 
-        final User currentUser = SessionManager.getCurrentUser(getContext());
+        User currentUser = SessionManager.getCurrentUser(getContext());
 
         createMessages();
 
@@ -69,7 +70,6 @@ public class MessageFragment extends Fragment {
         mLastMessageAdapter.setMessageClickListener(new LastMessageAdapter.MessageClickListener() {
             @Override
             public void onMessageClick(Message lastMessage) {
-                mLastClickedMessageIndex = mLastMessages.indexOf(lastMessage);
 
                 Intent intent = new Intent(getActivity(), ConversationActivity.class);
 
@@ -94,8 +94,6 @@ public class MessageFragment extends Fragment {
             @Override
             public void onRefresh() {
                 fetchMessages();
-
-
             }
         });
 
@@ -120,7 +118,7 @@ public class MessageFragment extends Fragment {
             @Override
             public void run() {
 
-                createMessages(); // TODO REMOVE
+                // createMessages(); // TODO REMOVE
 
                 ArrayList<User> users = mDbHandler.getMessageUsers();
                 mLastMessages = new ArrayList<>();
@@ -141,7 +139,7 @@ public class MessageFragment extends Fragment {
 
         mDbHandler.deleteAllMessages();
 
-        if (mDbHandler.getMessageUsers().size() == 0) {
+        if (mDbHandler.getMessageUsers().isEmpty()) {
 
             User currentUser = SessionManager.getCurrentUser(getContext());
 
@@ -151,27 +149,25 @@ public class MessageFragment extends Fragment {
                 User messageUser = User.GENERATOR.generateUser();
                 mDbHandler.insertMessageUser(messageUser);
 
-                for (int j = 0; j < 20; j++) {
-                    String text = Message.GENERATOR.generateRandomText();
-                    Message messageCurrentUser = new Message(0, text, messageUser, currentUser,
-                                                             Calendar.getInstance(), Message.State.DELIVERED);
-
-                    Message messageOppositeUser = new Message(1, text, currentUser, messageUser,
-                                                              Calendar.getInstance(), Message.State.DELIVERED);
-
-                    mDbHandler.insertMessage(r.nextBoolean() ? messageCurrentUser : messageOppositeUser);
+                for (Message message : Message.GENERATOR.generateMessageList(currentUser, messageUser, 20)) {
+                    mDbHandler.insertMessage(message);
                 }
             }
         }
     }
 
     @Override
+    public void onResume() {
+        super.onResume();
+
+        Log.d(TAG, mLastMessages.toString());
+    }
+
+    @Override
     public void onActivityResult(int requestCode, int resultCode, Intent data) {
         if (requestCode == LAST_MESSAGE_REQUEST_CODE) {
-            if (resultCode == ConversationActivity.LAST_MESSAGE_CHANGED) {
-
+            if (resultCode == ConversationActivity.MESSAGE_INSERTED) {
                 Message lastMessage = data.getParcelableExtra("last_message");
-
                 insertLastMessage(lastMessage);
             }
         }
@@ -179,19 +175,7 @@ public class MessageFragment extends Fragment {
 
     public void insertLastMessage(Message newMessage) {
 
-        int messageUserIndex = -1; // If it does not exists it remains as -1
-        int i = 0;
-
-        while (messageUserIndex == -1 && i < mLastMessages.size()) {
-            Message message = mLastMessages.get(i);
-            User currentUser = SessionManager.getCurrentUser(getContext());
-
-            if (message.getOppositeUser(currentUser).getID() == newMessage.getOppositeUser(currentUser).getID()) {
-                    messageUserIndex = i;
-                }
-
-            i++;
-        }
+        int messageUserIndex = mLastMessages.indexOf(newMessage);
 
         if (messageUserIndex == -1) {
             mLastMessages.add(0, newMessage);
@@ -204,12 +188,26 @@ public class MessageFragment extends Fragment {
             mLastMessages.add(0, newMessage);
         }
 
+        Collections.sort(mLastMessages);
+
         mLastMessageAdapter.notifyDataSetChanged();
     }
 
-    private boolean messageExists(Message newMessage) {
+    public boolean changeMessageState(int messageID, Message.State state) {
         for (Message message : mLastMessages) {
-            if (message.equals(newMessage)) {
+            if (message.getID() == messageID) {
+                message.setState(state);
+                mLastMessageAdapter.notifyItemChanged(mLastMessages.indexOf(message));
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public boolean changeMessageID(int oldMessageID, int newMessageID) {
+        for (Message message : mLastMessages) {
+            if (message.getID() == oldMessageID) {
+                message.setID(newMessageID);
                 return true;
             }
         }

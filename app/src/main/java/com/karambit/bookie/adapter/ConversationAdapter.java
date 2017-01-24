@@ -1,10 +1,14 @@
 package com.karambit.bookie.adapter;
 
 import android.content.Context;
+import android.support.v4.content.ContextCompat;
 import android.support.v7.widget.RecyclerView;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ImageButton;
+import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.TextView;
 
 import com.bumptech.glide.Glide;
@@ -17,7 +21,6 @@ import com.karambit.bookie.model.User;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
-import java.util.Collections;
 import java.util.Locale;
 
 /**
@@ -26,32 +29,41 @@ import java.util.Locale;
 
 public class ConversationAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
 
-    private static final int TYPE_PHONE_OWNER = 0;
+    private static final int TYPE_CURRENT_USER = 0;
     private static final int TYPE_OPPOSITE_USER = 1;
-
-    private RecyclerView mRecyclerView;
 
     private Context mContext;
     private ArrayList<Message> mMessages;
+    private User mCurrentUser;
+    private User mOppositeUser;
 
     public ConversationAdapter(Context context, ArrayList<Message> messages) {
         mContext = context;
         mMessages = messages;
+
+        mCurrentUser = SessionManager.getCurrentUser(mContext);
+        mOppositeUser = messages.get(0).getOppositeUser(mCurrentUser);
     }
 
-    private static class PhoneOwnerMessageViewHolder extends RecyclerView.ViewHolder {
+    private static class CurrentUserMessageViewHolder extends RecyclerView.ViewHolder {
         private View mRootView;
         private TextView mText;
         private CircleImageView mProfilePicture;
         private TextView mCreatedAt;
+        private ImageView mState;
+        private ImageButton mError;
+        private LinearLayout mTextAndMeta;
 
-        public PhoneOwnerMessageViewHolder(View phoneOwnerMessageView) {
-            super(phoneOwnerMessageView);
+        public CurrentUserMessageViewHolder(View currentUserMessageView) {
+            super(currentUserMessageView);
 
-            mRootView = phoneOwnerMessageView.findViewById(R.id.phoneOwnerMessageRoot);
-            mText = (TextView) phoneOwnerMessageView.findViewById(R.id.phoneOwnerMessageText);
-            mProfilePicture = (CircleImageView) phoneOwnerMessageView.findViewById(R.id.phoneOwnerMessageProfilePicture);
-            mCreatedAt = (TextView) phoneOwnerMessageView.findViewById(R.id.phoneOwnerCreatedAt);
+            mRootView = currentUserMessageView.findViewById(R.id.currentUserMessageRoot);
+            mText = (TextView) currentUserMessageView.findViewById(R.id.currentUserMessageText);
+            mProfilePicture = (CircleImageView) currentUserMessageView.findViewById(R.id.currentUserMessageProfilePicture);
+            mCreatedAt = (TextView) currentUserMessageView.findViewById(R.id.currentUserCreatedAt);
+            mState = (ImageView) currentUserMessageView.findViewById(R.id.messageState);
+            mError = (ImageButton) currentUserMessageView.findViewById(R.id.messageErrorImageView);
+            mTextAndMeta = (LinearLayout) currentUserMessageView.findViewById(R.id.textAndMetaLinearLayout);
         }
     }
 
@@ -88,7 +100,7 @@ public class ConversationAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
         User currentUser = SessionManager.getCurrentUser(mContext);
 
         if (message.getSender().getID() == currentUser.getID()) {
-            return TYPE_PHONE_OWNER;
+            return TYPE_CURRENT_USER;
         } else {
             return TYPE_OPPOSITE_USER;
         }
@@ -99,9 +111,9 @@ public class ConversationAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
 
         switch (viewType) {
 
-            case TYPE_PHONE_OWNER:
-                View phoneOwnerMessageView = LayoutInflater.from(parent.getContext()).inflate(R.layout.item_conversation_phone_owner_message, parent, false);
-                return new PhoneOwnerMessageViewHolder(phoneOwnerMessageView);
+            case TYPE_CURRENT_USER:
+                View phoneOwnerMessageView = LayoutInflater.from(parent.getContext()).inflate(R.layout.item_conversation_current_user_message, parent, false);
+                return new CurrentUserMessageViewHolder(phoneOwnerMessageView);
 
             case TYPE_OPPOSITE_USER:
                 View oppositeUserMessageView = LayoutInflater.from(parent.getContext()).inflate(R.layout.item_conversation_opposite_user_message, parent, false);
@@ -116,34 +128,82 @@ public class ConversationAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
     public void onBindViewHolder(RecyclerView.ViewHolder holder, final int position) {
 
         Message message = mMessages.get(position);
-        User currentUser = SessionManager.getCurrentUser(mContext);
-        User oppositeUser = message.getOppositeUser(currentUser);
 
         switch (getItemViewType(position)) {
 
-            case TYPE_PHONE_OWNER: {
+            case TYPE_CURRENT_USER: {
 
-                PhoneOwnerMessageViewHolder phoneOwnerHolder = (PhoneOwnerMessageViewHolder) holder;
+                final CurrentUserMessageViewHolder currentUserHolder = (CurrentUserMessageViewHolder) holder;
 
-                phoneOwnerHolder.mText.setText(message.getText());
+                switch (message.getState()) {
 
-                phoneOwnerHolder.mCreatedAt.setText(calendarToCreatedAt(message.getCreatedAt()));
+                    case PENDING:
+                        currentUserHolder.mState.setImageResource(R.drawable.ic_messaging_pending_18dp);
+                        currentUserHolder.mState.setColorFilter(ContextCompat.getColor(mContext, R.color.secondaryTextColor));
+                        currentUserHolder.mError.setVisibility(View.GONE);
+                        break;
 
-                Glide.with(mContext)
-                        .load(currentUser.getThumbnailUrl())
-                        .asBitmap()
-                        .centerCrop()
-                        .placeholder(R.drawable.placeholder_book)
-                        .into(phoneOwnerHolder.mProfilePicture);
+                    case SENT:
+                        currentUserHolder.mState.setImageResource(R.drawable.ic_messaging_sent_18dp);
+                        currentUserHolder.mState.setColorFilter(ContextCompat.getColor(mContext, R.color.secondaryTextColor));
+                        currentUserHolder.mError.setVisibility(View.GONE);
+                        break;
+
+                    case DELIVERED:
+                        currentUserHolder.mState.setImageResource(R.drawable.ic_messaging_delivered_seen_18dp);
+                        currentUserHolder.mState.setColorFilter(ContextCompat.getColor(mContext, R.color.secondaryTextColor));
+                        currentUserHolder.mError.setVisibility(View.GONE);
+                        break;
+
+                    case SEEN:
+                        currentUserHolder.mState.setImageResource(R.drawable.ic_messaging_delivered_seen_18dp);
+                        currentUserHolder.mState.setColorFilter(ContextCompat.getColor(mContext, R.color.colorAccent));
+                        currentUserHolder.mError.setVisibility(View.GONE);
+                        break;
+
+                    case ERROR:
+                        currentUserHolder.mState.setImageResource(R.drawable.ic_messaging_pending_18dp);
+                        currentUserHolder.mState.setColorFilter(ContextCompat.getColor(mContext, R.color.secondaryTextColor));
+                        currentUserHolder.mError.setVisibility(View.VISIBLE);
+                        break;
+                }
+
+                currentUserHolder.mText.setText(message.getText());
+
+                currentUserHolder.mTextAndMeta.post(new Runnable() {
+                    @Override
+                    public void run() {
+
+                        if (currentUserHolder.mText.getLineCount() > 2) {
+                            currentUserHolder.mTextAndMeta.setOrientation(LinearLayout.VERTICAL);
+                        } else {
+                            currentUserHolder.mTextAndMeta.setOrientation(LinearLayout.HORIZONTAL);
+                        }
+                    }
+                });
+
+                currentUserHolder.mCreatedAt.setText(calendarToCreatedAt(message.getCreatedAt()));
+
+                if (mCurrentUser.getThumbnailUrl() != null && mCurrentUser.getThumbnailUrl() != "") {
+                    Glide.with(mContext)
+                         .load(mCurrentUser.getThumbnailUrl())
+                         .asBitmap()
+                         .centerCrop()
+                         .error(R.drawable.error_36dp)
+                         .placeholder(R.drawable.placeholder_36dp)
+                         .into(currentUserHolder.mProfilePicture);
+                } else {
+                    currentUserHolder.mProfilePicture.setImageResource(R.drawable.placeholder_36dp);
+                }
 
                 if (position == getItemCount() - 1) {
-                    phoneOwnerHolder.mProfilePicture.setVisibility(View.VISIBLE);
+                    currentUserHolder.mProfilePicture.setVisibility(View.VISIBLE);
 
-                } else if (mMessages.get(position + 1).getSender().getID() != currentUser.getID()) {
-                    phoneOwnerHolder.mProfilePicture.setVisibility(View.VISIBLE);
+                } else if (mMessages.get(position + 1).getSender().getID() != mCurrentUser.getID()) {
+                    currentUserHolder.mProfilePicture.setVisibility(View.VISIBLE);
 
                 } else {
-                    phoneOwnerHolder.mProfilePicture.setVisibility(View.INVISIBLE);
+                    currentUserHolder.mProfilePicture.setVisibility(View.INVISIBLE);
                 }
 
                 break;
@@ -157,17 +217,22 @@ public class ConversationAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
 
                 oppositeUserHolder.mCreatedAt.setText(calendarToCreatedAt(message.getCreatedAt()));
 
-                Glide.with(mContext)
-                        .load(oppositeUser.getThumbnailUrl())
-                        .asBitmap()
-                        .centerCrop()
-                        .placeholder(R.drawable.placeholder_book)
-                        .into(oppositeUserHolder.mProfilePicture);
+                if (mOppositeUser.getThumbnailUrl() != null && mOppositeUser.getThumbnailUrl() != "") {
+                    Glide.with(mContext)
+                         .load(mOppositeUser.getThumbnailUrl())
+                         .asBitmap()
+                         .centerCrop()
+                         .error(R.drawable.error_36dp)
+                         .placeholder(R.drawable.placeholder_36dp)
+                         .into(oppositeUserHolder.mProfilePicture);
+                } else {
+                    oppositeUserHolder.mProfilePicture.setImageResource(R.drawable.placeholder_36dp);
+                }
 
                 if (position == getItemCount() - 1) {
                     oppositeUserHolder.mProfilePicture.setVisibility(View.VISIBLE);
 
-                } else if (mMessages.get(position + 1).getSender().getID() != oppositeUser.getID()) {
+                } else if (mMessages.get(position + 1).getSender().getID() != mOppositeUser.getID()) {
                     oppositeUserHolder.mProfilePicture.setVisibility(View.VISIBLE);
 
                 } else {
@@ -191,34 +256,6 @@ public class ConversationAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
         return df.format(calendar.getTime());
     }
 
-    public void insertNewMessage(Message message) {
-        mMessages.add(0, message);
-        notifyItemInserted(0);
-
-        if (mRecyclerView != null) {
-            mRecyclerView.smoothScrollToPosition(0);
-        }
-    }
-
-    public void insertNewMessageList(ArrayList<Message> messages) {
-        if (messages.size() > 0) {
-            mMessages.addAll(messages);
-            Collections.sort(mMessages);
-            notifyItemRangeInserted(0, messages.size() - 1);
-
-            if (mRecyclerView != null) {
-                mRecyclerView.smoothScrollToPosition(0);
-            }
-        }
-    }
-
-    @Override
-    public void onAttachedToRecyclerView(RecyclerView recyclerView) {
-        super.onAttachedToRecyclerView(recyclerView);
-
-        mRecyclerView = recyclerView;
-    }
-
     public ArrayList<Message> getMessages() {
         return mMessages;
     }
@@ -226,9 +263,5 @@ public class ConversationAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
     public void setMessages(ArrayList<Message> messages) {
         mMessages = messages;
         notifyDataSetChanged();
-
-        if (mRecyclerView != null) {
-            mRecyclerView.smoothScrollToPosition(0);
-        }
     }
 }

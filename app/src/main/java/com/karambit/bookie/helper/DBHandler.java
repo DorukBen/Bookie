@@ -555,8 +555,7 @@ public class DBHandler extends SQLiteOpenHelper {
             db = this.getWritableDatabase();
             db.beginTransaction();
             ContentValues contentValues = new ContentValues();
-            //TODO: After tests all message must add with id
-            //contentValues.put(MESSAGE_COLUMN_ID, message.getID());
+            contentValues.put(MESSAGE_COLUMN_ID, message.getID());
             contentValues.put(MESSAGE_COLUMN_TEXT, message.getText());
             contentValues.put(MESSAGE_COLUMN_FROM_USER_ID, message.getSender().getID());
             contentValues.put(MESSAGE_COLUMN_TO_USER_ID, message.getReceiver().getID());

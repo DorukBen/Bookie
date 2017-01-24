@@ -17,7 +17,7 @@ import java.util.Random;
 
 public class Message implements Parcelable, Comparable<Message> {
 
-    public enum State {PENDING, SENT, DELIVERED, SEEN, ERROR, NONE}
+    public enum State {PENDING, SENT, DELIVERED, SEEN, ERROR}
 
     private int mID;
     private String mText;
@@ -25,15 +25,6 @@ public class Message implements Parcelable, Comparable<Message> {
     private User mReceiver;
     private Calendar mCreatedAt;
     private State mState;
-
-    public Message(String text, User sender, User receiver, Calendar createdAt, State state) {
-        mID = -1;
-        mText = text;
-        mSender = sender;
-        mReceiver = receiver;
-        mCreatedAt = createdAt;
-        mState = state;
-    }
 
     public Message(Integer id, String text, User sender, User receiver, Calendar createdAt, State state) {
         mID = id;
@@ -164,7 +155,7 @@ public class Message implements Parcelable, Comparable<Message> {
                 Calendar createdAt = Calendar.getInstance();
                 createdAt.setTimeInMillis(createdMillis);
 
-                messages.add(new Message(generateRandomText(), sender, receiver, createdAt, State.DELIVERED));
+                messages.add(new Message(RANDOM.nextInt(100000), generateRandomText(), sender, receiver, createdAt, State.SEEN));
 
                 createdMillis -= MIN_IN_MILLIS * RANDOM.nextInt(5);
             }
@@ -175,31 +166,7 @@ public class Message implements Parcelable, Comparable<Message> {
         }
 
         public static ArrayList<Message> generateMessageList(User phoneOwner, int count) {
-            ArrayList<Message> messages = new ArrayList<>(count);
-
-            long createdMillis = System.currentTimeMillis();
-
-            for (int i = 0; i < count; i++) {
-
-                User sender = RANDOM.nextBoolean() ? User.GENERATOR.generateUser() : phoneOwner;
-                User receiver;
-                if (sender != phoneOwner) {
-                    receiver = phoneOwner;
-                } else {
-                    receiver = User.GENERATOR.generateUser();
-                }
-
-                Calendar createdAt = Calendar.getInstance();
-                createdAt.setTimeInMillis(createdMillis);
-
-                messages.add(new Message(generateRandomText(), sender, receiver, createdAt, State.SEEN));
-
-                createdMillis -= MIN_IN_MILLIS * RANDOM.nextInt(5);
-            }
-
-            Collections.sort(messages);
-
-            return messages;
+            return generateMessageList(phoneOwner, User.GENERATOR.generateUser(), count);
         }
 
         public static String generateRandomText(int length) {
