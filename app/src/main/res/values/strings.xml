@@ -134,4 +134,9 @@
     <string name="x_sent_request_to_you">%s sent request to you</string>
     <string name="x_accepted_your_request">%s accepted your request</string>
     <string name="x_rejected_your_request">%s rejected your request</string>
+    <string name="x_requested_for_y">%1$s requested for %2$s</string>
+    <string name="x_now_owned_by_y">%1$s now owned by %2$s</string>
+    <string name="x_lost_y">%1$s lost %2$s</string>
+    <string name="x_accepted_your_request_for_y">%1$s accepted your request for %2$s</string>
+    <string name="x_rejected_your_request_for_y">%1$s rejected your request for %2$s</string>
 </resources>

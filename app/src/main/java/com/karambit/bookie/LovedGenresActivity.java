@@ -1,5 +1,6 @@
 package com.karambit.bookie;
 
+import android.app.Activity;
 import android.app.ProgressDialog;
 import android.content.Intent;
 import android.os.Bundle;
@@ -12,6 +13,7 @@ import android.text.SpannableString;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.widget.Toast;
 
 import com.karambit.bookie.adapter.LovedGenreAdapter;
 import com.karambit.bookie.helper.DBHandler;
@@ -34,6 +36,7 @@ public class LovedGenresActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_loved_genres);
+
         SpannableString s = new SpannableString(getResources().getString(R.string.loved_genres_title));
         s.setSpan(new TypefaceSpan(this, "montserrat_regular.ttf"), 0, s.length(),
                   Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
@@ -71,18 +74,21 @@ public class LovedGenresActivity extends AppCompatActivity {
     }
 
     private void commitSelectedGenres() {
-        mProgressDialog = new ProgressDialog(this);
-        mProgressDialog.setMessage(getString(R.string.please_wait));
-        mProgressDialog.setIndeterminate(true);
-        mProgressDialog.setCanceledOnTouchOutside(false);
-        mProgressDialog.setCancelable(false);
-        mProgressDialog.show();
-
         Integer[] selectedGenreCodes = mLovedGenreAdapter.getSelectedGenreCodes();
+        if (selectedGenreCodes.length < 1){
+            Toast.makeText(this, "Please select at least one genre", Toast.LENGTH_SHORT).show();
+        }else{
+            mProgressDialog = new ProgressDialog(this);
+            mProgressDialog.setMessage(getString(R.string.please_wait));
+            mProgressDialog.setIndeterminate(true);
+            mProgressDialog.setCanceledOnTouchOutside(false);
+            mProgressDialog.setCancelable(false);
+            mProgressDialog.show();
 
-        writeToLocalDatabase(selectedGenreCodes);
+            writeToLocalDatabase(selectedGenreCodes);
 
-        postToServer(selectedGenreCodes);
+            postToServer(selectedGenreCodes);
+        }
     }
 
     private void writeToLocalDatabase(final Integer[] selectedGenreCodes) {
@@ -97,9 +103,7 @@ public class LovedGenresActivity extends AppCompatActivity {
                     if (mProgressDialog.isShowing()) {
                         mProgressDialog.dismiss();
                     }
-
                     finish();
-                    startActivity(new Intent(LovedGenresActivity.this, MainActivity.class));
                 }
             }
         }).start();
@@ -116,9 +120,7 @@ public class LovedGenresActivity extends AppCompatActivity {
             if (mProgressDialog.isShowing()) {
                 mProgressDialog.dismiss();
             }
-
             finish();
-            startActivity(new Intent(LovedGenresActivity.this, MainActivity.class));
         }
     }
 }

@@ -152,7 +152,8 @@ public class SearchAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder>
                 Glide.with(mContext)
                         .load(book.getThumbnailURL())
                         .asBitmap()
-                        .placeholder(R.drawable.placeholder_book)
+                        .placeholder(R.drawable.placeholder_88dp)
+                        .error(R.drawable.error_88dp)
                         .into(new SimpleTarget<Bitmap>() {
                             @Override
                             public void onResourceReady(Bitmap resource, GlideAnimation<? super Bitmap> glideAnimation) {

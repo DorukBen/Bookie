@@ -79,7 +79,8 @@ public class MessageAdapter extends RecyclerView.Adapter<MessageAdapter.MessageV
                 .load(message.getSender().getThumbnailUrl())
                 .asBitmap()
                 .centerCrop()
-                .placeholder(R.drawable.placeholder_book)
+                .placeholder(R.drawable.placeholder_56dp)
+                .error(R.drawable.error_56dp)
                 .into(holder.mProfilePicture);
 
 

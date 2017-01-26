@@ -190,7 +190,8 @@ public class HomeTimelineAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
                 Glide.with(mContext)
                      .load(bookLeft.getImageURL())
                      .asBitmap()
-                     .placeholder(R.drawable.placeholder_book)
+                     .placeholder(R.drawable.placeholder_192dp)
+                     .error(R.drawable.error_192dp)
                      .into(new SimpleTarget<Bitmap>() {
                          @Override
                          public void onResourceReady(Bitmap resource, GlideAnimation<? super Bitmap> glideAnimation) {
@@ -218,7 +219,8 @@ public class HomeTimelineAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
                 Glide.with(mContext)
                      .load(bookRight.getImageURL())
                      .asBitmap()
-                     .placeholder(R.drawable.placeholder_book)
+                     .placeholder(R.drawable.placeholder_192dp)
+                     .error(R.drawable.error_192dp)
                      .into(new SimpleTarget<Bitmap>() {
                          @Override
                          public void onResourceReady(Bitmap resource, GlideAnimation<? super Bitmap> glideAnimation) {

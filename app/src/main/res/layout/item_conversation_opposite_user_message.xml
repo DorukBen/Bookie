@@ -54,7 +54,7 @@
         android:layout_alignParentLeft="true"
         android:layout_marginTop="4dp"
         android:scaleType="centerCrop"
-        android:src="@drawable/placeholder_book"/>
+        android:src="@drawable/placeholder_36dp"/>
 
 
 </RelativeLayout>
