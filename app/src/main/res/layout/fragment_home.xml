@@ -6,7 +6,7 @@
              android:background="@color/colorPrimary"
              tools:context="com.karambit.bookie.fragment.HomeFragment">
 
-    <com.baoyz.widget.PullRefreshLayout
+    <com.karambit.bookie.helper.pull_refresh_layout.PullRefreshLayout
         android:id="@+id/swipeRefreshLayout"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
@@ -19,6 +19,6 @@
             android:layout_height="wrap_content"
             android:overScrollMode="never"
             android:background="@color/colorPrimary"/>
-    </com.baoyz.widget.PullRefreshLayout>
+    </com.karambit.bookie.helper.pull_refresh_layout.PullRefreshLayout>
 
 </FrameLayout>

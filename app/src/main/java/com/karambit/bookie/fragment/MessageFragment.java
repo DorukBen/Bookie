@@ -10,7 +10,6 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 
-import com.baoyz.widget.PullRefreshLayout;
 import com.karambit.bookie.ConversationActivity;
 import com.karambit.bookie.MainActivity;
 import com.karambit.bookie.R;
@@ -18,6 +17,7 @@ import com.karambit.bookie.adapter.MessageAdapter;
 import com.karambit.bookie.helper.DBHandler;
 import com.karambit.bookie.helper.ElevationScrollListener;
 import com.karambit.bookie.helper.SessionManager;
+import com.karambit.bookie.helper.pull_refresh_layout.PullRefreshLayout;
 import com.karambit.bookie.model.Message;
 import com.karambit.bookie.model.User;
 
