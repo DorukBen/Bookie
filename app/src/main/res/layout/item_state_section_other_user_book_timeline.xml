@@ -21,6 +21,8 @@
             android:layout_gravity="center_vertical"
             android:paddingLeft="8dp"
             android:paddingRight="8dp"
+            android:clickable="true"
+            android:background="?android:selectableItemBackground"
             >
 
             <com.karambit.bookie.helper.CircleImageView
