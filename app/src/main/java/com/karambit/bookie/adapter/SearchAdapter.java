@@ -18,6 +18,7 @@ import com.bumptech.glide.request.target.SimpleTarget;
 import com.karambit.bookie.R;
 import com.karambit.bookie.helper.ImageScaler;
 import com.karambit.bookie.helper.LayoutUtils;
+import com.karambit.bookie.helper.pull_refresh_layout.SmartisanProgressBarDrawable;
 import com.karambit.bookie.model.Book;
 
 import java.util.ArrayList;
@@ -72,13 +73,11 @@ public class SearchAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder>
     private static class FooterViewHolder extends RecyclerView.ViewHolder {
 
         private ProgressBar mProgressBar;
-        private TextView mTextView;
 
         private FooterViewHolder(View footerView) {
             super(footerView);
 
             mProgressBar = (ProgressBar) footerView.findViewById(R.id.footerProgressBar);
-            mTextView = (TextView) footerView.findViewById(R.id.footerTextView);
         }
     }
 
@@ -169,6 +168,7 @@ public class SearchAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder>
             case TYPE_FOOTER: {
 
                 FooterViewHolder footerHolder = (FooterViewHolder) holder;
+                footerHolder.mProgressBar.setIndeterminateDrawable(new SmartisanProgressBarDrawable(mContext));
 
                 if (mProgressBarActive) {
                     footerHolder.mProgressBar.setVisibility(View.VISIBLE);

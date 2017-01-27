@@ -18,6 +18,7 @@ import com.karambit.bookie.BookActivity;
 import com.karambit.bookie.R;
 import com.karambit.bookie.helper.ImageScaler;
 import com.karambit.bookie.helper.infinite_viewpager.HorizontalInfiniteCycleViewPager;
+import com.karambit.bookie.helper.pull_refresh_layout.SmartisanProgressBarDrawable;
 import com.karambit.bookie.model.Book;
 
 import java.util.ArrayList;
@@ -46,7 +47,7 @@ public class HomeTimelineAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
         mHeaderBooks = headerBooks;
         mFeedBooks = feedBooks;
 
-        mProgressBarActive = false;
+        mProgressBarActive = true;
     }
 
     private static class HeaderViewHolder extends RecyclerView.ViewHolder {
@@ -90,13 +91,11 @@ public class HomeTimelineAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
     private static class FooterViewHolder extends RecyclerView.ViewHolder {
 
         private ProgressBar mProgressBar;
-        private TextView mTextView;
 
         private FooterViewHolder(View footerView) {
             super(footerView);
 
             mProgressBar = (ProgressBar) footerView.findViewById(R.id.footerProgressBar);
-            mTextView = (TextView) footerView.findViewById(R.id.footerTextView);
         }
     }
 
@@ -239,11 +238,12 @@ public class HomeTimelineAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
             case TYPE_FOOTER: {
 
                 FooterViewHolder footerHolder = (FooterViewHolder) holder;
+                footerHolder.mProgressBar.setIndeterminateDrawable(new SmartisanProgressBarDrawable(mContext));
 
                 if (mProgressBarActive) {
                     footerHolder.mProgressBar.setVisibility(View.VISIBLE);
                 } else {
-                    footerHolder.mProgressBar.setVisibility(View.GONE);
+                    footerHolder.mProgressBar.setVisibility(View.INVISIBLE);
                 }
 
                 break;

@@ -11,10 +11,10 @@ import android.text.SpannableString;
 import android.text.style.AbsoluteSizeSpan;
 import android.view.View;
 
-import com.baoyz.widget.PullRefreshLayout;
 import com.karambit.bookie.adapter.NotificationAdapter;
 import com.karambit.bookie.helper.ElevationScrollListener;
 import com.karambit.bookie.helper.TypefaceSpan;
+import com.karambit.bookie.helper.pull_refresh_layout.PullRefreshLayout;
 import com.karambit.bookie.model.Book;
 import com.karambit.bookie.model.Notification;
 import com.karambit.bookie.model.User;

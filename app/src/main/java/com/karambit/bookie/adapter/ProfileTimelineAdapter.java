@@ -25,6 +25,7 @@ import com.karambit.bookie.helper.ImageScaler;
 import com.karambit.bookie.helper.LayoutUtils;
 import com.karambit.bookie.helper.SessionManager;
 import com.karambit.bookie.helper.infinite_viewpager.HorizontalInfiniteCycleViewPager;
+import com.karambit.bookie.helper.pull_refresh_layout.SmartisanProgressBarDrawable;
 import com.karambit.bookie.model.Book;
 import com.karambit.bookie.model.User;
 
@@ -157,13 +158,11 @@ public class ProfileTimelineAdapter extends RecyclerView.Adapter<RecyclerView.Vi
     private static class FooterViewHolder extends RecyclerView.ViewHolder {
 
         private ProgressBar mProgressBar;
-        private TextView mTextView;
 
         private FooterViewHolder(View footerView) {
             super(footerView);
 
             mProgressBar = (ProgressBar) footerView.findViewById(R.id.footerProgressBar);
-            mTextView = (TextView) footerView.findViewById(R.id.footerTextView);
         }
     }
 
@@ -617,12 +616,11 @@ public class ProfileTimelineAdapter extends RecyclerView.Adapter<RecyclerView.Vi
             case TYPE_FOOTER: {
 
                 FooterViewHolder footerHolder = (FooterViewHolder) holder;
+                footerHolder.mProgressBar.setIndeterminateDrawable(new SmartisanProgressBarDrawable(mContext));
 
                 if (mProgressBarActive) {
-                    footerHolder.mTextView.setVisibility(View.VISIBLE);
                     footerHolder.mProgressBar.setVisibility(View.VISIBLE);
                 } else {
-                    footerHolder.mTextView.setVisibility(View.GONE);
                     footerHolder.mProgressBar.setVisibility(View.GONE);
                 }
 
