@@ -16,6 +16,7 @@ import com.bumptech.glide.request.animation.GlideAnimation;
 import com.bumptech.glide.request.target.SimpleTarget;
 import com.karambit.bookie.BookActivity;
 import com.karambit.bookie.R;
+import com.karambit.bookie.helper.CurvyDrawable;
 import com.karambit.bookie.helper.ImageScaler;
 import com.karambit.bookie.helper.infinite_viewpager.HorizontalInfiniteCycleViewPager;
 import com.karambit.bookie.helper.pull_refresh_layout.SmartisanProgressBarDrawable;
@@ -238,7 +239,15 @@ public class HomeTimelineAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
             case TYPE_FOOTER: {
 
                 FooterViewHolder footerHolder = (FooterViewHolder) holder;
-                footerHolder.mProgressBar.setIndeterminateDrawable(new SmartisanProgressBarDrawable(mContext));
+                final CurvyDrawable curvyDrawable = new CurvyDrawable(mContext);
+                footerHolder.mProgressBar.setIndeterminateDrawable(curvyDrawable);
+
+                footerHolder.mProgressBar.setOnClickListener(new View.OnClickListener() {
+                    @Override
+                    public void onClick(View v) {
+                        curvyDrawable.setIsErrorOccurred(!curvyDrawable.getIsErrorOccured());
+                    }
+                });
 
                 if (mProgressBarActive) {
                     footerHolder.mProgressBar.setVisibility(View.VISIBLE);
