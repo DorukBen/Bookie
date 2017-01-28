@@ -134,4 +134,5 @@
     <string name="x_sent_request_to_you">%s sent request to you</string>
     <string name="x_accepted_your_request">%s accepted your request</string>
     <string name="x_rejected_your_request">%s rejected your request</string>
+    <string name="delete_prompt_message_user">All the conversation will deleted.</string>
 </resources>

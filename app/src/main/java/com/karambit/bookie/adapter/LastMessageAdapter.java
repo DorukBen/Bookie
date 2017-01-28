@@ -26,13 +26,19 @@ import java.util.Locale;
  * Created by orcan on 10/27/16.
  */
 
-public class LastMessageAdapter extends RecyclerView.Adapter<LastMessageAdapter.MessageViewHolder> {
+public class LastMessageAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
+
+    public static final int VIEW_TYPE_UNSELECTED = 0;
+    public static final int VIEW_TYPE_SELECTED = 1;
 
     private Context mContext;
 
     private ArrayList<Message> mLastMessages;
 
+    private int mSelectedPosition = -1;
+
     private MessageClickListener mMessageClickListener;
+    private SelectedClickListener mSelectedClickListener;
 
     public LastMessageAdapter(Context context, ArrayList<Message> lastMessages) {
         mContext = context;
@@ -60,9 +66,29 @@ public class LastMessageAdapter extends RecyclerView.Adapter<LastMessageAdapter.
         }
     }
 
+    public static class SelectedViewHolder extends RecyclerView.ViewHolder {
+
+        View mDelete;
+
+        public SelectedViewHolder(View selectedView) {
+            super(selectedView);
+
+            mDelete = selectedView.findViewById(R.id.deleteImageButton);
+        }
+    }
+
     @Override
     public long getItemId(int position) {
         return position;
+    }
+
+    @Override
+    public int getItemViewType(int position) {
+        if (position == mSelectedPosition) {
+            return VIEW_TYPE_SELECTED;
+        } else {
+            return VIEW_TYPE_UNSELECTED;
+        }
     }
 
     @Override
@@ -71,87 +97,149 @@ public class LastMessageAdapter extends RecyclerView.Adapter<LastMessageAdapter.
     }
 
     @Override
-    public MessageViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
-        View messageView = LayoutInflater.from(parent.getContext()).inflate(R.layout.item_last_message, parent, false);
-        return new MessageViewHolder(messageView);
+    public RecyclerView.ViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
+        switch (viewType) {
+            case VIEW_TYPE_UNSELECTED:
+                View messageView = LayoutInflater.from(parent.getContext()).inflate(R.layout.item_last_message, parent, false);
+                return new MessageViewHolder(messageView);
+
+            case VIEW_TYPE_SELECTED:
+                View selectedView = LayoutInflater.from(parent.getContext()).inflate(R.layout.item_selected_last_message, parent, false);
+                return new SelectedViewHolder(selectedView);
+
+            default:
+                throw new IllegalArgumentException("Invalid view type: " + viewType);
+        }
     }
 
     @Override
-    public void onBindViewHolder(MessageViewHolder holder, int position) {
+    public void onBindViewHolder(RecyclerView.ViewHolder holder, int position) {
+
+        final int finalPosition = position;
 
         final Message message = mLastMessages.get(position);
 
-        User currentUser = SessionManager.getCurrentUser(mContext);
-        User oppositeUser = message.getOppositeUser(currentUser);
+        switch (getItemViewType(position)) {
 
-        if (! TextUtils.isEmpty(oppositeUser.getThumbnailUrl())) {
-            Glide.with(mContext)
-                 .load(oppositeUser.getThumbnailUrl())
-                 .asBitmap()
-                 .centerCrop()
-                 .error(R.drawable.error_56dp)
-                 .placeholder(R.drawable.placeholder_56dp)
-                 .into(holder.mProfilePicture);
-        } else {
-            holder.mProfilePicture.setImageResource(R.drawable.placeholder_56dp);
-        }
+            case VIEW_TYPE_UNSELECTED: {
 
-        holder.mUserName.setText(oppositeUser.getName());
+                MessageViewHolder messageHolder = (MessageViewHolder) holder;
 
-        if (message.getSender().getID() == currentUser.getID()) {
-            holder.mState.setVisibility(View.VISIBLE);
+                User currentUser = SessionManager.getCurrentUser(mContext);
+                User oppositeUser = message.getOppositeUser(currentUser);
 
-            switch (message.getState()) {
-                case PENDING:
-                    holder.mState.setImageResource(R.drawable.ic_messaging_pending_18dp);
-                    holder.mState.setColorFilter(ContextCompat.getColor(mContext, R.color.secondaryTextColor));
-                    break;
+                if (! TextUtils.isEmpty(oppositeUser.getThumbnailUrl())) {
+                    Glide.with(mContext)
+                         .load(oppositeUser.getThumbnailUrl())
+                         .asBitmap()
+                         .centerCrop()
+                         .error(R.drawable.error_56dp)
+                         .placeholder(R.drawable.placeholder_56dp)
+                         .into(messageHolder.mProfilePicture);
+                } else {
+                    messageHolder.mProfilePicture.setImageResource(R.drawable.placeholder_56dp);
+                }
 
-                case SENT:
-                    holder.mState.setImageResource(R.drawable.ic_messaging_sent_18dp);
-                    holder.mState.setColorFilter(ContextCompat.getColor(mContext, R.color.secondaryTextColor));
-                    break;
+                messageHolder.mUserName.setText(oppositeUser.getName());
 
-                case DELIVERED:
-                    holder.mState.setImageResource(R.drawable.ic_messaging_delivered_seen_18dp);
-                    holder.mState.setColorFilter(ContextCompat.getColor(mContext, R.color.secondaryTextColor));
-                    break;
+                if (message.getSender().getID() == currentUser.getID()) {
+                    messageHolder.mState.setVisibility(View.VISIBLE);
 
-                case SEEN:
-                    holder.mState.setImageResource(R.drawable.ic_messaging_delivered_seen_18dp);
-                    holder.mState.setColorFilter(ContextCompat.getColor(mContext, R.color.colorAccent));
-                    break;
+                    switch (message.getState()) {
+                        case PENDING:
+                            messageHolder.mState.setImageResource(R.drawable.ic_messaging_pending_18dp);
+                            messageHolder.mState.setColorFilter(ContextCompat.getColor(mContext, R.color.secondaryTextColor));
+                            break;
 
-                case ERROR:
-                    holder.mState.setImageResource(R.drawable.ic_messaging_error_24dp);
-                    holder.mState.setColorFilter(ContextCompat.getColor(mContext, R.color.error_red));
-                    break;
+                        case SENT:
+                            messageHolder.mState.setImageResource(R.drawable.ic_messaging_sent_18dp);
+                            messageHolder.mState.setColorFilter(ContextCompat.getColor(mContext, R.color.secondaryTextColor));
+                            break;
 
-                default:
-                    throw new IllegalArgumentException("Invalid message state");
+                        case DELIVERED:
+                            messageHolder.mState.setImageResource(R.drawable.ic_messaging_delivered_seen_18dp);
+                            messageHolder.mState.setColorFilter(ContextCompat.getColor(mContext, R.color.secondaryTextColor));
+                            break;
+
+                        case SEEN:
+                            messageHolder.mState.setImageResource(R.drawable.ic_messaging_delivered_seen_18dp);
+                            messageHolder.mState.setColorFilter(ContextCompat.getColor(mContext, R.color.colorAccent));
+                            break;
+
+                        case ERROR:
+                            messageHolder.mState.setImageResource(R.drawable.ic_messaging_error_24dp);
+                            messageHolder.mState.setColorFilter(ContextCompat.getColor(mContext, R.color.error_red));
+                            break;
+
+                        default:
+                            throw new IllegalArgumentException("Invalid message state");
+                    }
+
+                } else {
+                    messageHolder.mState.setVisibility(View.GONE);
+                }
+
+                messageHolder.mLastMessageText.setText(message.getText());
+                messageHolder.mCreatedAt.setText(calendarToCreatedAt(message.getCreatedAt()));
+
+                if (message.getState() == Message.State.DELIVERED && message.getSender().getID() != currentUser.getID()) {
+                    messageHolder.mIndicator.setVisibility(View.VISIBLE);
+
+                } else {
+                    messageHolder.mIndicator.setVisibility(View.INVISIBLE);
+                }
+
+                if (mMessageClickListener != null) {
+                    messageHolder.itemView.setOnClickListener(new View.OnClickListener() {
+                        @Override
+                        public void onClick(View v) {
+                            mMessageClickListener.onMessageClick(message, finalPosition);
+                        }
+                    });
+
+                    messageHolder.itemView.setOnLongClickListener(new View.OnLongClickListener() {
+                        @Override
+                        public boolean onLongClick(View v) {
+                            return mMessageClickListener.onMessageLongClick(message, finalPosition);
+                        }
+                    });
+                }
+
+                break;
             }
 
-        } else {
-            holder.mState.setVisibility(View.GONE);
-        }
+            case VIEW_TYPE_SELECTED: {
 
-        holder.mLastMessageText.setText(message.getText());
-        holder.mCreatedAt.setText(calendarToCreatedAt(message.getCreatedAt()));
+                SelectedViewHolder selectedHolder = (SelectedViewHolder) holder;
 
-        if (message.getState() == Message.State.DELIVERED && message.getSender().getID() != currentUser.getID()) {
-            holder.mIndicator.setVisibility(View.VISIBLE);
+                if (mSelectedClickListener != null) {
+                    selectedHolder.mDelete.setOnClickListener(new View.OnClickListener() {
+                        @Override
+                        public void onClick(View v) {
+                            mSelectedClickListener.onDeleteClick(message, finalPosition);
+                        }
+                    });
 
-        } else {
-            holder.mIndicator.setVisibility(View.INVISIBLE);
-        }
+                    selectedHolder.itemView.setOnClickListener(new View.OnClickListener() {
+                        @Override
+                        public void onClick(View v) {
+                            mSelectedClickListener.onSelectedEmptyClick(message, finalPosition);
+                        }
+                    });
 
-        if (mMessageClickListener != null) {
-            holder.itemView.setOnClickListener(new View.OnClickListener() {
-                @Override
-                public void onClick(View v) {
-                    mMessageClickListener.onMessageClick(message);
+                    selectedHolder.itemView.setOnLongClickListener(new View.OnLongClickListener() {
+                        @Override
+                        public boolean onLongClick(View v) {
+                            return mSelectedClickListener.onSelectedEmptyClick(message, finalPosition);
+                        }
+                    });
                 }
-            });
+
+                break;
+            }
+
+            default:
+                throw new IllegalArgumentException("Invalid view type at position: " + position);
         }
     }
 
@@ -167,6 +255,13 @@ public class LastMessageAdapter extends RecyclerView.Adapter<LastMessageAdapter.
         return df.format(calendar.getTime());
     }
 
+    public void setSelectedMessage(int selectedPosition) {
+        if (mSelectedPosition != -1) {
+            notifyItemChanged(mSelectedPosition);
+        }
+        mSelectedPosition = selectedPosition;
+    }
+
     public ArrayList<Message> getLastMessages() {
         return mLastMessages;
     }
@@ -177,7 +272,29 @@ public class LastMessageAdapter extends RecyclerView.Adapter<LastMessageAdapter.
     }
 
     public interface MessageClickListener {
-        void onMessageClick(Message lastMessage);
+        void onMessageClick(Message lastMessage, int position);
+        boolean onMessageLongClick(Message lastMessage, int position);
+    }
+
+    public interface SelectedClickListener {
+        boolean onSelectedEmptyClick(Message message, int position);
+        void onDeleteClick(Message message, int position);
+    }
+
+    public int getSelectedPosition() {
+        return mSelectedPosition;
+    }
+
+    public void setSelectedPosition(int selectedPosition) {
+        mSelectedPosition = selectedPosition;
+    }
+
+    public SelectedClickListener getSelectedClickListener() {
+        return mSelectedClickListener;
+    }
+
+    public void setSelectedClickListener(SelectedClickListener selectedClickListener) {
+        mSelectedClickListener = selectedClickListener;
     }
 
     public MessageClickListener getMessageClickListener() {

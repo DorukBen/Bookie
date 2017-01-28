@@ -1,13 +1,15 @@
 package com.karambit.bookie.fragment;
 
 
+import android.app.AlertDialog;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
-import android.util.Log;
 import android.view.LayoutInflater;
+import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
 
@@ -24,7 +26,6 @@ import com.karambit.bookie.model.User;
 
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Random;
 
 /**
  * A simple {@link Fragment} subclass.
@@ -52,15 +53,17 @@ public class MessageFragment extends Fragment {
         // Inflate the pullRefreshLayout for this fragment
         View rootView = inflater.inflate(R.layout.fragment_message, container, false);
 
-        RecyclerView recyclerView = (RecyclerView) rootView.findViewById(R.id.messagingRecyclerView);
+        final RecyclerView recyclerView = (RecyclerView) rootView.findViewById(R.id.messagingRecyclerView);
 
         recyclerView.setLayoutManager(new LinearLayoutManager(getActivity()));
 
         mDbHandler = new DBHandler(getContext().getApplicationContext());
 
-        User currentUser = SessionManager.getCurrentUser(getContext());
+        final User currentUser = SessionManager.getCurrentUser(getContext());
 
-        createMessages();
+        //createMessages(); // TODO Remove
+
+        // TODO Setup Broadcast Listener for messages
 
         ArrayList<User> users = mDbHandler.getMessageUsers();
         mLastMessages = mDbHandler.getLastMessages(users, currentUser);
@@ -69,7 +72,7 @@ public class MessageFragment extends Fragment {
         mLastMessageAdapter = new LastMessageAdapter(getActivity(), mLastMessages);
         mLastMessageAdapter.setMessageClickListener(new LastMessageAdapter.MessageClickListener() {
             @Override
-            public void onMessageClick(Message lastMessage) {
+            public void onMessageClick(Message lastMessage, int position) {
 
                 Intent intent = new Intent(getActivity(), ConversationActivity.class);
 
@@ -78,6 +81,121 @@ public class MessageFragment extends Fragment {
                 intent.putExtra("user", lastMessage.getOppositeUser(currentUser));
 
                 startActivityForResult(intent, LAST_MESSAGE_REQUEST_CODE);
+            }
+
+            @Override
+            public boolean onMessageLongClick(Message message, final int position) {
+
+                final MainActivity mainActivity = (MainActivity) getActivity();
+
+                MainActivity.TouchEventListener touchEventListener = new MainActivity.TouchEventListener() {
+
+                    private boolean mFirstTouchUp = false;
+                    private boolean mSecondTouchDown = false;
+                    //private boolean mSecondTouchUp = false;
+
+                    @Override
+                    public void onTouchEvent(MotionEvent event) {
+
+                        if (event.getAction() == MotionEvent.ACTION_UP) {
+                            mFirstTouchUp = true;
+                        }
+
+                        if (mFirstTouchUp) {
+
+                            if (event.getAction() == MotionEvent.ACTION_DOWN) {
+                                mSecondTouchDown = true;
+                            }
+
+                            /*
+                               if (event.getAction() == MotionEvent.ACTION_UP && mSecondTouchDown) {
+                                   mSecondTouchUp = true;
+                               }
+                               */
+
+                            if (mSecondTouchDown) {
+
+                                final View view = recyclerView.getChildAt(position);
+
+                                int[] location = new int[2];
+                                view.getLocationInWindow(location);
+
+                                int left = location[0];
+                                int right = left + view.getWidth();
+                                int top = location[1];
+                                int bottom = top + view.getHeight();
+
+                                if (!(left < event.getX() && right > event.getX() && top < event.getY() && bottom > event.getY())) {
+
+                                    unSelectMessages();
+
+                                    mainActivity.removeTouchEventListener(this);
+                                }
+                            }
+                        }
+                    }
+                };
+
+                mainActivity.removeTouchEventListener(touchEventListener);
+
+                mainActivity.addTouchEventListener(touchEventListener);
+
+                int previousSelected = mLastMessageAdapter.getSelectedPosition();
+
+                if (previousSelected == position) {
+                    mLastMessageAdapter.setSelectedPosition(-1);
+                } else {
+                    mLastMessageAdapter.setSelectedPosition(position);
+                }
+
+                mLastMessageAdapter.notifyItemChanged(position);
+
+                if (previousSelected != -1) {
+                    mLastMessageAdapter.notifyItemChanged(previousSelected);
+                }
+
+                return true;
+            }
+        });
+
+        mLastMessageAdapter.setSelectedClickListener(new LastMessageAdapter.SelectedClickListener() {
+            @Override
+            public void onDeleteClick(final Message message, final int position) {
+                new AlertDialog.Builder(getContext())
+                    .setTitle(R.string.are_you_sure)
+                    .setMessage(R.string.delete_prompt_message_user)
+                    .setPositiveButton(android.R.string.ok, new DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(DialogInterface dialog, int which) {
+                            unSelectMessages();
+                            mLastMessages.remove(message);
+                            mLastMessageAdapter.notifyItemRemoved(position);
+
+                            mDbHandler.deleteMessageUsersConversation(message.getOppositeUser(currentUser));
+                            mDbHandler.deleteMessageUser(message.getOppositeUser(currentUser));
+
+                            // TODO Server delete notify
+                        }
+                    })
+                    .setNegativeButton(android.R.string.cancel, new DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(DialogInterface dialog, int which) {
+                            unSelectMessages();
+                        }
+                    })
+                    .setOnCancelListener(new DialogInterface.OnCancelListener() {
+                        @Override
+                        public void onCancel(DialogInterface dialog) {
+                            unSelectMessages();
+                        }
+                    })
+                    .create().show();
+            }
+
+            @Override
+            public boolean onSelectedEmptyClick(Message message, int position) {
+                unSelectMessages();
+                return true;
             }
         });
 
@@ -107,8 +225,14 @@ public class MessageFragment extends Fragment {
         return rootView;
     }
 
+    private void unSelectMessages() {
+        int tempIndex = mLastMessageAdapter.getSelectedPosition();
+        mLastMessageAdapter.setSelectedPosition(-1);
+        mLastMessageAdapter.notifyItemChanged(tempIndex);
+    }
+
     /**
-     *  TODO Firstly fetch from internet. This is just a demo method...
+     * TODO Firstly fetch from internet. This is just a demo method...
      */
     private void fetchMessages() {
 
@@ -143,8 +267,6 @@ public class MessageFragment extends Fragment {
 
             User currentUser = SessionManager.getCurrentUser(getContext());
 
-            Random r = new Random();
-
             for (int i = 0; i < 6; i++) {
                 User messageUser = User.GENERATOR.generateUser();
                 mDbHandler.insertMessageUser(messageUser);
@@ -154,13 +276,6 @@ public class MessageFragment extends Fragment {
                 }
             }
         }
-    }
-
-    @Override
-    public void onResume() {
-        super.onResume();
-
-        Log.d(TAG, mLastMessages.toString());
     }
 
     @Override

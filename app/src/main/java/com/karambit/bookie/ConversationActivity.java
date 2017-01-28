@@ -60,6 +60,8 @@ public class ConversationActivity extends AppCompatActivity {
         mDbHandler = new DBHandler(getApplicationContext());
         mMessages = mDbHandler.getConversationMessages(oppositeUser, currentUser);
 
+        // TODO Broadcast Manager for messages
+
         mMessageEditText = (EditText) findViewById(R.id.messageEditText);
         mSendMessageButton = (ImageButton) findViewById(R.id.messageSendButton);
 
