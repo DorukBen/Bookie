@@ -4,6 +4,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.support.v7.widget.RecyclerView;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -22,6 +23,7 @@ import com.karambit.bookie.helper.pull_refresh_layout.SmartisanProgressBarDrawab
 import com.karambit.bookie.model.Book;
 
 import java.util.ArrayList;
+import java.util.Date;
 
 /**
  * Created by orcan on 10/16/16.
@@ -37,17 +39,14 @@ public class HomeTimelineAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
     private static final int TYPE_FOOTER = 3;
 
     private Context mContext;
-    private ArrayList<Book> mHeaderBooks;
-    private ArrayList<Book> mFeedBooks;
+    private ArrayList<Book> mHeaderBooks = new ArrayList<>();
+    private ArrayList<Book> mFeedBooks = new ArrayList<>();
 
     private boolean mProgressBarActive;
 
-    public HomeTimelineAdapter(Context context, ArrayList<Book> headerBooks, ArrayList<Book> feedBooks) {
+    public HomeTimelineAdapter(Context context) {
         mContext = context;
-        mHeaderBooks = headerBooks;
-        mFeedBooks = feedBooks;
-
-        mProgressBarActive = true;
+        mProgressBarActive = false;
     }
 
     private static class HeaderViewHolder extends RecyclerView.ViewHolder {
@@ -162,9 +161,14 @@ public class HomeTimelineAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
 
                 HeaderViewHolder headerViewHolder = (HeaderViewHolder) holder;
 
-                HorizontalPagerAdapter adapter = new HorizontalPagerAdapter(mContext, mHeaderBooks);
-                headerViewHolder.mCycleViewPager.setAdapter(adapter);
-
+                HorizontalPagerAdapter adapter = (HorizontalPagerAdapter) headerViewHolder.mCycleViewPager.getAdapter();
+                if (adapter != null){
+                    adapter.setBooks(mHeaderBooks);
+                    headerViewHolder.mCycleViewPager.notifyDataSetChanged();
+                    headerViewHolder.mCycleViewPager.invalidateTransformer();
+                }else{
+                    headerViewHolder.mCycleViewPager.setAdapter(new HorizontalPagerAdapter(mContext, mHeaderBooks));
+                }
                 break;
             }
 
@@ -251,9 +255,25 @@ public class HomeTimelineAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
         }
     }
 
-    public void setProgressBarActive(boolean progressBarActive) {
+    public void setHeaderAndFeedBooks(ArrayList<Book> headerBooks, ArrayList<Book> feedBooks){
+        mHeaderBooks = headerBooks;
+        mFeedBooks = feedBooks;
+        setProgressBarActive(true);
+        notifyDataSetChanged();
+    }
+
+    public void addFeedBooks(ArrayList<Book> feedBooks){
+        mFeedBooks.addAll(feedBooks);
+        notifyDataSetChanged();
+    }
+
+    private void setProgressBarActive(boolean progressBarActive) {
         mProgressBarActive = progressBarActive;
         notifyItemChanged(getItemCount() - 1);
+    }
+
+    public boolean isAdapterHasFeedBooks(){
+        return getFeedBooksSize() != 0;
     }
 
     private int getFeedBooksSize() {

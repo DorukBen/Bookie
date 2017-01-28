@@ -3,6 +3,10 @@ package com.karambit.bookie.model;
 import android.os.Parcel;
 import android.os.Parcelable;
 
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
+
 import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -217,6 +221,50 @@ public class Book implements Parcelable {
 
     public void setOwner(User owner) {
         mOwner = owner;
+    }
+
+    public static Book jsonObjectToBook(JSONObject bookObject) {
+        try {
+            return new Book(bookObject.getInt("book_id"),
+                    bookObject.getString("book_name"),
+                    bookObject.getString("book_picture_url"),
+                    bookObject.getString("book_picture_thumbnail_url"),
+                    bookObject.getString("author"),
+                    State.valueOf(bookObject.getInt("book_state")),
+                    User.jsonObjectToUser(bookObject.getJSONObject("owner")));
+        } catch (JSONException e) {
+            e.printStackTrace();
+            return null;
+        }
+    }
+
+    public static Book.Details jsonObjectToBookDetails(JSONObject bookDetailsObject) {
+        try {
+            Book book = jsonObjectToBook(bookDetailsObject);
+            User added_by = User.jsonObjectToUser(bookDetailsObject.getJSONObject("added_by"));
+
+            return book.new Details(bookDetailsObject.getInt("genre_code"),
+                    added_by,
+                    null); // TODO book process api
+        } catch (JSONException e) {
+            e.printStackTrace();
+            return null;
+        }
+    }
+
+    public static ArrayList<Book> jsonArrayToBookList(JSONArray bookJsonArray) {
+        ArrayList<Book> books = new ArrayList<>(bookJsonArray.length());
+        for (int i = 0; i < bookJsonArray.length(); i++) {
+            try {
+                JSONObject bookObject = bookJsonArray.getJSONObject(i);
+                books.add(jsonObjectToBook(bookObject));
+            } catch (JSONException e) {
+                e.printStackTrace();
+            }
+        }
+        return books;
+
+
     }
 
     @Override

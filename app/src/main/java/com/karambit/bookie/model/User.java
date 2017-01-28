@@ -71,6 +71,22 @@ public class User implements Parcelable {
         }
     };
 
+    public static User jsonObjectToUser(JSONObject userJsonObject) {
+        try {
+            return new User(
+                    userJsonObject.getInt("user_id"),
+                    userJsonObject.getString("name_surname"),
+                    userJsonObject.getString("profile_picture_url"),
+                    userJsonObject.getString("profile_picture_thumbnail_url"),
+                    userJsonObject.isNull("latitude") ? -1 : userJsonObject.getDouble("latitude"),
+                    userJsonObject.isNull("longitude") ? -1 : userJsonObject.getDouble("longitude")
+            );
+        } catch (JSONException e) {
+            e.printStackTrace();
+            return null;
+        }
+    }
+
     public static User.Details jsonObjectToUserDetails(JSONObject userJsonObject) {
         try {
             return new User(

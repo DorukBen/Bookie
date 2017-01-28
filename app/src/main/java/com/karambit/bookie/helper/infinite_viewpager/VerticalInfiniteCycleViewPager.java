@@ -5,8 +5,6 @@ import android.support.v4.view.PagerAdapter;
 import android.support.v4.view.ViewPager;
 import android.util.AttributeSet;
 import android.view.MotionEvent;
-import android.view.View;
-import android.view.ViewGroup;
 import android.view.animation.Interpolator;
 
 /**
@@ -153,21 +151,15 @@ public class VerticalInfiniteCycleViewPager extends VerticalViewPager implements
     }
 
     @Override
-    protected boolean addViewInLayout(final View child, final int index, final ViewGroup.LayoutParams params) {
-        return super.addViewInLayout(child, 0, params);
-    }
-
-    @Override
-    public void addView(final View child, final int index, final ViewGroup.LayoutParams params) {
-        super.addView(child, 0, params);
-    }
-
-    @Override
     public void setAdapter(final PagerAdapter adapter) {
         if (mInfiniteCycleManager == null) super.setAdapter(adapter);
         else {
-            super.setAdapter(mInfiniteCycleManager.setAdapter(adapter));
-            mInfiniteCycleManager.resetPager();
+            if (adapter instanceof InfiniteCyclePagerAdapter) {
+                super.setAdapter(mInfiniteCycleManager.setAdapter((InfiniteCyclePagerAdapter) adapter));
+                mInfiniteCycleManager.resetPager();
+            } else {
+                throw new IllegalArgumentException("adapter should be InfiniteCyclePagerAdapter");
+            }
         }
     }
 
@@ -189,7 +181,7 @@ public class VerticalInfiniteCycleViewPager extends VerticalViewPager implements
     }
 
     @Override
-    public boolean onInterceptTouchEvent(final MotionEvent ev) {
+    public boolean onInterceptTouchEvent(MotionEvent ev) {
         try {
             return mInfiniteCycleManager == null ? super.onInterceptTouchEvent(ev) :
                     mInfiniteCycleManager.onInterceptTouchEvent(ev) && super.onInterceptTouchEvent(ev);
@@ -203,12 +195,6 @@ public class VerticalInfiniteCycleViewPager extends VerticalViewPager implements
         if (mInfiniteCycleManager != null)
             mInfiniteCycleManager.onWindowFocusChanged(hasWindowFocus);
         super.onWindowFocusChanged(hasWindowFocus);
-    }
-
-    @Override
-    protected void onDetachedFromWindow() {
-        if (mInfiniteCycleManager != null) mInfiniteCycleManager.stopAutoScroll();
-        super.onDetachedFromWindow();
     }
 
     @Override
@@ -227,11 +213,6 @@ public class VerticalInfiniteCycleViewPager extends VerticalViewPager implements
                 getCurrentItem() : mInfiniteCycleManager.getRealItem();
     }
 
-    public int getState() {
-        return mInfiniteCycleManager == null ?
-                ViewPager.SCROLL_STATE_IDLE : mInfiniteCycleManager.getState();
-    }
-
     public void notifyDataSetChanged() {
         if (mInfiniteCycleManager != null) mInfiniteCycleManager.notifyDataSetChanged();
     }
@@ -242,13 +223,5 @@ public class VerticalInfiniteCycleViewPager extends VerticalViewPager implements
 
     public void postInvalidateTransformer() {
         if (mInfiniteCycleManager != null) mInfiniteCycleManager.postInvalidateTransformer();
-    }
-
-    public void startAutoScroll(final boolean isAutoScrollPositive) {
-        if (mInfiniteCycleManager != null) mInfiniteCycleManager.startAutoScroll(isAutoScrollPositive);
-    }
-
-    public void stopAutoScroll() {
-        if (mInfiniteCycleManager != null) mInfiniteCycleManager.stopAutoScroll();
     }
 }
