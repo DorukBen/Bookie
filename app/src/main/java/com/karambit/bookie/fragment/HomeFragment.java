@@ -12,6 +12,7 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.LinearLayout;
 import android.widget.Toast;
 
 import com.karambit.bookie.LoginRegisterActivity;
@@ -55,6 +56,7 @@ public class HomeFragment extends Fragment {
     private RecyclerView mRecyclerView;
     private HomeTimelineAdapter mHomeTimelineAdapter;
     private PullRefreshLayout mPullRefreshLayout;
+    private boolean mIsBooksFetching = false;
 
 
     public HomeFragment() {
@@ -72,7 +74,19 @@ public class HomeFragment extends Fragment {
 
         mRecyclerView.setOnScrollListener(new ElevationScrollListener((MainActivity) getActivity(), HOME_FRAGMENT_TAB_INEX));
 
-        mRecyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
+        final LinearLayoutManager linearLayoutManager = new LinearLayoutManager(getContext());
+        mRecyclerView.setLayoutManager(linearLayoutManager);
+
+        mRecyclerView.addOnScrollListener(new RecyclerView.OnScrollListener() {
+            @Override
+            public void onScrolled(RecyclerView recyclerView, int dx, int dy) {
+                super.onScrolled(recyclerView, dx, dy);
+
+                if (isLastItemVisible() && !mIsBooksFetching){
+                    fetchHomePageBooks();
+                }
+            }
+        });
 
         mHomeTimelineAdapter = new HomeTimelineAdapter(
                 getContext()
@@ -89,8 +103,10 @@ public class HomeFragment extends Fragment {
             @Override
             public void onRefresh() {
                 // start refresh
-                mListBooks = new ArrayList<Book>();
-                fetchHomePageBooks();
+                if (!mIsBooksFetching){
+                    mListBooks = new ArrayList<>();
+                    fetchHomePageBooks();
+                }
             }
         });
 
@@ -111,7 +127,16 @@ public class HomeFragment extends Fragment {
         return rootView;
     }
 
+    boolean isLastItemVisible() {
+        LinearLayoutManager layoutManager = ((LinearLayoutManager)mRecyclerView.getLayoutManager());
+        int pos = layoutManager.findLastCompletelyVisibleItemPosition();
+        int numItems = mRecyclerView.getAdapter().getItemCount() - 1;
+
+        return (pos >= numItems);
+    }
+
     private void fetchHomePageBooks() {
+        mIsBooksFetching = true;
         BookApi bookApi = BookieClient.getClient().create(BookApi.class);
         int[] fetchedBookIds = new int[mListBooks.size()];
         int i = 0;
@@ -167,6 +192,7 @@ public class HomeFragment extends Fragment {
                 }
 
                 mPullRefreshLayout.setRefreshing(false);
+                mIsBooksFetching = false;
             }
 
             @Override
@@ -176,6 +202,7 @@ public class HomeFragment extends Fragment {
                 Toast.makeText(getContext(), R.string.unknown_error, Toast.LENGTH_SHORT).show();
 
                 mPullRefreshLayout.setRefreshing(false);
+                mIsBooksFetching = false;
             }
         });
     }
