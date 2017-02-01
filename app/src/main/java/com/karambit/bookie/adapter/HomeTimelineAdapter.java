@@ -3,6 +3,7 @@ package com.karambit.bookie.adapter;
 import android.content.Context;
 import android.content.Intent;
 import android.graphics.Bitmap;
+import android.support.v4.content.ContextCompat;
 import android.support.v7.widget.RecyclerView;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -18,6 +19,7 @@ import com.bumptech.glide.request.target.SimpleTarget;
 import com.karambit.bookie.BookActivity;
 import com.karambit.bookie.R;
 import com.karambit.bookie.helper.ImageScaler;
+import com.karambit.bookie.helper.NetworkChecker;
 import com.karambit.bookie.helper.infinite_viewpager.HorizontalInfiniteCycleViewPager;
 import com.karambit.bookie.helper.pull_refresh_layout.SmartisanProgressBarDrawable;
 import com.karambit.bookie.model.Book;
@@ -35,8 +37,15 @@ public class HomeTimelineAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
 
     private static final int TYPE_HEADER = 0;
     private static final int TYPE_DUAL_BOOK = 1;
-    private static final int TYPE_SUBTITLE = 2;
-    private static final int TYPE_FOOTER = 3;
+    private static final int TYPE_FOOTER = 2;
+
+    private static final int TYPE_NO_CONNECTION = 3;
+    private static final int TYPE_UNKNOWN_ERROR = 4;
+
+    public static final int ERROR_TYPE_NONE = 0;
+    public static final int ERROR_TYPE_NO_CONNECTION = 1;
+    public static final int ERROR_TYPE_UNKNOWN_ERROR = 2;
+    private int mErrorType = ERROR_TYPE_NONE;
 
     private Context mContext;
     private ArrayList<Book> mHeaderBooks = new ArrayList<>();
@@ -98,6 +107,32 @@ public class HomeTimelineAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
         }
     }
 
+    private static class NoConnectionViewHolder extends RecyclerView.ViewHolder {
+
+        private ImageView mNoConnectionImageView;
+        private TextView mNoConnectionTextView;
+
+        private NoConnectionViewHolder(View noConnectionView) {
+            super(noConnectionView);
+
+            mNoConnectionImageView = (ImageView) noConnectionView.findViewById(R.id.emptyStateImageView);
+            mNoConnectionTextView = (TextView) noConnectionView.findViewById(R.id.emptyStateTextView);
+        }
+    }
+
+    private static class UnknownErrorViewHolder extends RecyclerView.ViewHolder {
+
+        private ImageView mUnknownErrorImageView;
+        private TextView mUnknownErrorTextView;
+
+        private UnknownErrorViewHolder(View unknownErrorView) {
+            super(unknownErrorView);
+
+            mUnknownErrorImageView = (ImageView) unknownErrorView.findViewById(R.id.emptyStateImageView);
+            mUnknownErrorTextView = (TextView) unknownErrorView.findViewById(R.id.emptyStateTextView);
+        }
+    }
+
     @Override
     public long getItemId(int position) {
         return position;
@@ -117,8 +152,15 @@ public class HomeTimelineAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
     public int getItemViewType(int position) {
 
         if (position == 0) {
-            return TYPE_HEADER;
-
+            if (mErrorType != ERROR_TYPE_NONE){
+                if (mErrorType == ERROR_TYPE_NO_CONNECTION){
+                    return TYPE_NO_CONNECTION;
+                }else {
+                    return TYPE_UNKNOWN_ERROR;
+                }
+            }else {
+                return TYPE_HEADER;
+            }
         } else if (position < getDualRowsCount() + 1) { // + Header
             return TYPE_DUAL_BOOK;
 
@@ -146,6 +188,14 @@ public class HomeTimelineAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
             case TYPE_FOOTER:
                 View footerView = LayoutInflater.from(parent.getContext()).inflate(R.layout.item_footer, parent, false);
                 return new FooterViewHolder(footerView);
+
+            case TYPE_NO_CONNECTION:
+                View noConnectionView = LayoutInflater.from(parent.getContext()).inflate(R.layout.item_empty_state, parent, false);
+                return new NoConnectionViewHolder(noConnectionView);
+
+            case TYPE_UNKNOWN_ERROR:
+                View unknownErrorView = LayoutInflater.from(parent.getContext()).inflate(R.layout.item_empty_state, parent, false);
+                return new UnknownErrorViewHolder(unknownErrorView);
 
             default:
                 throw new IllegalArgumentException("Invalid view type variable: viewType=" + viewType);
@@ -252,6 +302,22 @@ public class HomeTimelineAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
 
                 break;
             }
+
+            case TYPE_NO_CONNECTION: {
+
+                NoConnectionViewHolder noConnectionViewHolder = (NoConnectionViewHolder) holder;
+                noConnectionViewHolder.mNoConnectionTextView.setText(mContext.getString(R.string.no_internet_connection));
+
+                break;
+            }
+
+            case TYPE_UNKNOWN_ERROR: {
+
+                UnknownErrorViewHolder unknownErrorViewHolder = (UnknownErrorViewHolder) holder;
+                unknownErrorViewHolder.mUnknownErrorTextView.setText(mContext.getString(R.string.unknown_error));
+
+                break;
+            }
         }
     }
 
@@ -292,5 +358,14 @@ public class HomeTimelineAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
         // b = a * 2 double books
 
         return ((position - 1) * 2);
+    }
+
+    public void setError(int errorType){
+        mErrorType = errorType;
+        if (errorType != ERROR_TYPE_NONE){
+            mFeedBooks.clear();
+            setProgressBarActive(false);
+            notifyDataSetChanged();
+        }
     }
 }

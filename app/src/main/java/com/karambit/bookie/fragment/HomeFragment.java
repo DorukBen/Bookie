@@ -20,6 +20,7 @@ import com.karambit.bookie.MainActivity;
 import com.karambit.bookie.R;
 import com.karambit.bookie.adapter.HomeTimelineAdapter;
 import com.karambit.bookie.helper.ElevationScrollListener;
+import com.karambit.bookie.helper.NetworkChecker;
 import com.karambit.bookie.helper.SessionManager;
 import com.karambit.bookie.helper.pull_refresh_layout.PullRefreshLayout;
 import com.karambit.bookie.model.Book;
@@ -83,14 +84,12 @@ public class HomeFragment extends Fragment {
                 super.onScrolled(recyclerView, dx, dy);
 
                 if (isLastItemVisible() && !mIsBooksFetching){
-                    fetchHomePageBooks();
+                    fetchHomePageBooks(false);
                 }
             }
         });
 
-        mHomeTimelineAdapter = new HomeTimelineAdapter(
-                getContext()
-        );
+        mHomeTimelineAdapter = new HomeTimelineAdapter(getContext());
 
         mHomeTimelineAdapter.setHasStableIds(true);
 
@@ -105,7 +104,7 @@ public class HomeFragment extends Fragment {
                 // start refresh
                 if (!mIsBooksFetching){
                     mListBooks = new ArrayList<>();
-                    fetchHomePageBooks();
+                    fetchHomePageBooks(true);
                 }
             }
         });
@@ -123,7 +122,7 @@ public class HomeFragment extends Fragment {
         });
 
         mPullRefreshLayout.setRefreshing(true);
-        fetchHomePageBooks();
+        fetchHomePageBooks(true);
         return rootView;
     }
 
@@ -135,7 +134,7 @@ public class HomeFragment extends Fragment {
         return (pos >= numItems);
     }
 
-    private void fetchHomePageBooks() {
+    private void fetchHomePageBooks(final boolean isFromTop) {
         mIsBooksFetching = true;
         BookApi bookApi = BookieClient.getClient().create(BookApi.class);
         int[] fetchedBookIds = new int[mListBooks.size()];
@@ -163,6 +162,7 @@ public class HomeFragment extends Fragment {
                             JSONArray listBooksArray = responseObject.getJSONArray("list_books");
                             mListBooks.addAll(Book.jsonArrayToBookList(listBooksArray));
 
+                            mHomeTimelineAdapter.setError(HomeTimelineAdapter.ERROR_TYPE_NONE);
                             mHomeTimelineAdapter.addFeedBooks(mListBooks);
                         }else {
                             JSONArray headerBooksArray = responseObject.getJSONArray("header_books");
@@ -171,6 +171,7 @@ public class HomeFragment extends Fragment {
                             JSONArray listBooksArray = responseObject.getJSONArray("list_books");
                             mListBooks.addAll(Book.jsonArrayToBookList(listBooksArray));
 
+                            mHomeTimelineAdapter.setError(HomeTimelineAdapter.ERROR_TYPE_NONE);
                             mHomeTimelineAdapter.setHeaderAndFeedBooks(mHeaderBooks, mListBooks);
                         }
 
@@ -178,17 +179,37 @@ public class HomeFragment extends Fragment {
 
                     } else {
 
-                        int errorCode = responseObject.getInt("error_code");
-
-                        if (errorCode == ErrorCodes.EMAIL_TAKEN) {
-                            //TODO: Error controls
+                        if (NetworkChecker.isNetworkAvailable(getContext())){
+                            if(!isFromTop){
+                                Toast.makeText(getContext(), getString(R.string.unknown_error), Toast.LENGTH_SHORT).show();
+                            }else{
+                                mHomeTimelineAdapter.setError(HomeTimelineAdapter.ERROR_TYPE_UNKNOWN_ERROR);
+                            }
+                        }else {
+                            if(!isFromTop){
+                                Toast.makeText(getContext(), getString(R.string.no_internet_connection), Toast.LENGTH_SHORT).show();
+                            }else {
+                                mHomeTimelineAdapter.setError(HomeTimelineAdapter.ERROR_TYPE_NO_CONNECTION);
+                            }
                         }
                     }
 
                 } catch (IOException | JSONException e) {
                     e.printStackTrace();
 
-                    Toast.makeText(getContext(), R.string.unknown_error, Toast.LENGTH_SHORT).show();
+                    if (NetworkChecker.isNetworkAvailable(getContext())){
+                        if(!isFromTop){
+                            Toast.makeText(getContext(), getString(R.string.unknown_error), Toast.LENGTH_SHORT).show();
+                        }else {
+                            mHomeTimelineAdapter.setError(HomeTimelineAdapter.ERROR_TYPE_UNKNOWN_ERROR);
+                        }
+                    }else {
+                        if(!isFromTop){
+                            Toast.makeText(getContext(), getString(R.string.no_internet_connection), Toast.LENGTH_SHORT).show();
+                        }else {
+                            mHomeTimelineAdapter.setError(HomeTimelineAdapter.ERROR_TYPE_NO_CONNECTION);
+                        }
+                    }
                 }
 
                 mPullRefreshLayout.setRefreshing(false);
@@ -199,7 +220,19 @@ public class HomeFragment extends Fragment {
             public void onFailure(Call<ResponseBody> call, Throwable t) {
                 Log.e(TAG, "Home Page book fetch onFailure: " + t.getMessage());
 
-                Toast.makeText(getContext(), R.string.unknown_error, Toast.LENGTH_SHORT).show();
+                if (NetworkChecker.isNetworkAvailable(getContext())){
+                    if(!isFromTop){
+                        Toast.makeText(getContext(), getString(R.string.unknown_error), Toast.LENGTH_SHORT).show();
+                    }else {
+                        mHomeTimelineAdapter.setError(HomeTimelineAdapter.ERROR_TYPE_UNKNOWN_ERROR);
+                    }
+                }else {
+                    if(!isFromTop){
+                        Toast.makeText(getContext(), getString(R.string.no_internet_connection), Toast.LENGTH_SHORT).show();
+                    }else {
+                        mHomeTimelineAdapter.setError(HomeTimelineAdapter.ERROR_TYPE_NO_CONNECTION);
+                    }
+                }
 
                 mPullRefreshLayout.setRefreshing(false);
                 mIsBooksFetching = false;
