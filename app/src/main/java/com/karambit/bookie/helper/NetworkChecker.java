@@ -4,6 +4,8 @@ import android.content.Context;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 
+import java.net.InetAddress;
+
 /**
  * Created by orcan on 11/12/16.
  */
@@ -16,7 +18,20 @@ public class NetworkChecker {
         ConnectivityManager connectivityManager
                 = (ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);
         NetworkInfo activeNetworkInfo = connectivityManager.getActiveNetworkInfo();
-        return activeNetworkInfo != null && activeNetworkInfo.isConnectedOrConnecting();
+        boolean isInternetAvaible = activeNetworkInfo != null && activeNetworkInfo.isConnectedOrConnecting();
+
+        if (isInternetAvaible){
+            try {
+                InetAddress ipAddr = InetAddress.getByName("google.com"); //You can replace it with your name
+                return !ipAddr.equals("");
+
+            } catch (Exception e) {
+                return false;
+            }
+        }else {
+            return false;
+        }
+
     }
 
 }
