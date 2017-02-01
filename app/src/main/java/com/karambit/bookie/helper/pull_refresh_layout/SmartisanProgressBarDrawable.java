@@ -5,12 +5,15 @@ import android.graphics.Canvas;
 import android.graphics.ColorFilter;
 import android.graphics.Paint;
 import android.graphics.PixelFormat;
+import android.graphics.Point;
 import android.graphics.Rect;
 import android.graphics.RectF;
 import android.graphics.drawable.Drawable;
 import android.support.annotation.NonNull;
 import android.support.v4.content.ContextCompat;
 import android.util.TypedValue;
+import android.view.Display;
+import android.view.WindowManager;
 
 import com.karambit.bookie.R;
 
@@ -20,6 +23,7 @@ import com.karambit.bookie.R;
 
 public class SmartisanProgressBarDrawable extends Drawable {
 
+    private final Context mContext;
     private RectF mBounds;
     private float mWidth;
     private float mHeight;
@@ -33,6 +37,8 @@ public class SmartisanProgressBarDrawable extends Drawable {
     private float mDegrees;
 
     public SmartisanProgressBarDrawable(Context context) {
+
+        mContext = context;
 
         mPaint.setAntiAlias(true);
         mPaint.setStrokeJoin(Paint.Join.ROUND);
@@ -64,8 +70,19 @@ public class SmartisanProgressBarDrawable extends Drawable {
     @Override
     public void draw(@NonNull Canvas canvas) {
 
+        if (mBounds == null){
+            float width = dp2px(56, mContext);
+            float height = dp2px(24, mContext);
+
+            mBounds = new RectF(width / 2 - mWidth / 2, height - mHeight / 2, width / 2 + mWidth / 2, height + mHeight / 2);
+            mCenterX = mBounds.centerX();
+            mCenterY = mBounds.centerY();
+        }
+
         canvas.save();
         canvas.clipRect(mBounds);
+
+
 
         canvas.rotate(mDegrees, mCenterX, mCenterY);
         mDegrees = mDegrees < 360 ? mDegrees + 10 : 0;

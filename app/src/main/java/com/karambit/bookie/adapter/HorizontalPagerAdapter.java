@@ -4,8 +4,6 @@ import android.content.Context;
 import android.content.Intent;
 import android.database.DataSetObserver;
 import android.os.Bundle;
-import android.support.v4.view.PagerAdapter;
-import android.support.v7.widget.CardView;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -15,28 +13,30 @@ import android.widget.TextView;
 import com.bumptech.glide.Glide;
 import com.karambit.bookie.BookActivity;
 import com.karambit.bookie.R;
+import com.karambit.bookie.helper.infinite_viewpager.HorizontalInfiniteCycleViewPager;
+import com.karambit.bookie.helper.infinite_viewpager.InfiniteCyclePagerAdapter;
 import com.karambit.bookie.model.Book;
 
 import java.util.ArrayList;
 
-/**
- * Created by doruk on 16.11.2016.
- */
-public class HorizontalPagerAdapter extends PagerAdapter {
 
+/**
+ * Created by GIGAMOLE on 7/27/16.
+ */
+public class HorizontalPagerAdapter extends InfiniteCyclePagerAdapter {
+
+    private ArrayList<Book> mBooks = new ArrayList<>();
     private Context mContext;
     private LayoutInflater mLayoutInflater;
 
-    private ArrayList<Book> mBooks;
-
     public HorizontalPagerAdapter(final Context context, ArrayList<Book> books) {
         mContext = context;
-        mLayoutInflater = LayoutInflater.from(context);
         mBooks = books;
+        mLayoutInflater = LayoutInflater.from(context);
     }
 
     @Override
-    public int getCount() {
+    public int getItemCount() {
         return mBooks.size();
     }
 
@@ -46,11 +46,10 @@ public class HorizontalPagerAdapter extends PagerAdapter {
     }
 
     @Override
-    public Object instantiateItem(final ViewGroup container, final int position) {
+    public Object instantiateItemView(final ViewGroup container, final int position) {
         View view = mLayoutInflater.inflate(R.layout.item_infinite_cycle_view_pager, container, false);
 
         ImageView bookImage = (ImageView) view.findViewById(R.id.bookImageInfiniteCycle);
-        CardView cardView = (CardView) view.findViewById(R.id.horizontalPagerCardView);
 
         Glide.with(mContext)
                 .load(mBooks.get(position).getThumbnailURL())
@@ -63,7 +62,7 @@ public class HorizontalPagerAdapter extends PagerAdapter {
         ((TextView)view.findViewById(R.id.bookNameInfiniteCycleTextView)).setText(mBooks.get(position).getName());
         ((TextView)view.findViewById(R.id.authorInfiniteCycleTextView)).setText(mBooks.get(position).getAuthor());
 
-        cardView.setOnClickListener(new View.OnClickListener() {
+        view.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
                 Intent intent = new Intent(mContext, BookActivity.class);
@@ -85,15 +84,19 @@ public class HorizontalPagerAdapter extends PagerAdapter {
     }
 
     @Override
-    public void destroyItem(final ViewGroup container, final int position, final Object object) {
+    public void destroyItemView(final ViewGroup container, final int position, final Object object) {
         container.removeView((View) object);
     }
-
 
     @Override
     public void unregisterDataSetObserver(DataSetObserver observer) {
         if (observer != null) {
             super.unregisterDataSetObserver(observer);
         }
+    }
+
+    public void setBooks(ArrayList<Book> books){
+        mBooks.clear();
+        mBooks.addAll(books);
     }
 }

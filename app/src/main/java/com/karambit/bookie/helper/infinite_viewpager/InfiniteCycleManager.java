@@ -5,7 +5,6 @@ import android.content.res.Resources;
 import android.content.res.TypedArray;
 import android.graphics.Rect;
 import android.os.Build;
-import android.os.Handler;
 import android.support.v4.view.PagerAdapter;
 import android.support.v4.view.ViewCompat;
 import android.support.v4.view.ViewPager;
@@ -22,6 +21,7 @@ import java.lang.reflect.Field;
 import static android.support.v4.view.ViewPager.GONE;
 import static android.support.v4.view.ViewPager.OnPageChangeListener;
 import static android.support.v4.view.ViewPager.PageTransformer;
+import static android.support.v4.view.ViewPager.SCROLL_STATE_SETTLING;
 import static android.support.v4.view.ViewPager.VISIBLE;
 import static android.view.View.OVER_SCROLL_NEVER;
 
@@ -36,7 +36,7 @@ class InfiniteCycleManager implements InfiniteCyclePagerAdapter.OnNotifyDataSetC
     private final static int MIN_POINTER_COUNT = 1;
 
     // Default ViewPager constants and flags
-    protected final static int DEFAULT_OFFSCREEN_PAGE_LIMIT = 2;
+    protected final static int DEFAULT_OFFSCREEN_PAGE_LIMIT = 3;
     protected final static int DEFAULT_PAGE_MARGIN = 0;
     protected final static boolean DEFAULT_DISABLE_FLAG = false;
     protected final static boolean DEFAULT_ENABLE_FLAG = true;
@@ -87,8 +87,8 @@ class InfiniteCycleManager implements InfiniteCyclePagerAdapter.OnNotifyDataSetC
     private boolean mIsAdapterInitialPosition;
     // Flag for data set changed callback to invalidateTransformer()
     private boolean mIsDataSetChanged;
-    // Detect is ViewPager state
-    private int mState;
+    // Detect is ViewPager settling
+    private boolean mIsSettling;
 
     // Custom transform listener
     private OnInfiniteCyclePageTransformListener mOnInfiniteCyclePageTransformListener;
@@ -114,20 +114,6 @@ class InfiniteCycleManager implements InfiniteCyclePagerAdapter.OnNotifyDataSetC
     private int mScrollDuration;
     // Interpolator of snapping
     private Interpolator mInterpolator;
-
-    // Auto scroll values
-    private boolean mIsAutoScroll;
-    private boolean mIsAutoScrollPositive;
-    // Auto scroll handlers
-    private final Handler mAutoScrollHandler = new Handler();
-    private final Runnable mAutoScrollRunnable = new Runnable() {
-        @Override
-        public void run() {
-            if (!mIsAutoScroll) return;
-            mViewPageable.setCurrentItem(getRealItem() + (mIsAutoScrollPositive ? 1 : -1));
-            mAutoScrollHandler.postDelayed(this, mScrollDuration);
-        }
-    };
 
     public InfiniteCycleManager(
             final Context context,
@@ -289,17 +275,11 @@ class InfiniteCycleManager implements InfiniteCyclePagerAdapter.OnNotifyDataSetC
         return mIsVertical;
     }
 
-    public int getState() {
-        return mState;
-    }
-
     public OnInfiniteCyclePageTransformListener getOnInfiniteCyclePageTransformListener() {
         return mOnInfiniteCyclePageTransformListener;
     }
 
-    public void setOnInfiniteCyclePageTransformListener(
-            final OnInfiniteCyclePageTransformListener onInfiniteCyclePageTransformListener
-    ) {
+    public void setOnInfiniteCyclePageTransformListener(final OnInfiniteCyclePageTransformListener onInfiniteCyclePageTransformListener) {
         mOnInfiniteCyclePageTransformListener = onInfiniteCyclePageTransformListener;
     }
 
@@ -311,11 +291,11 @@ class InfiniteCycleManager implements InfiniteCyclePagerAdapter.OnNotifyDataSetC
         return mInfiniteCyclePagerAdapter;
     }
 
-    public PagerAdapter setAdapter(final PagerAdapter adapter) {
+    public PagerAdapter setAdapter(final InfiniteCyclePagerAdapter adapter) {
         // If adapter count bigger then 2 need to set InfiniteCyclePagerAdapter
-        if (adapter != null && adapter.getCount() >= MIN_CYCLE_COUNT) {
-            mItemCount = adapter.getCount();
-            mInfiniteCyclePagerAdapter = new InfiniteCyclePagerAdapter(adapter);
+        if (adapter != null && adapter.getItemCount() >= MIN_CYCLE_COUNT) {
+            mItemCount = adapter.getItemCount();
+            mInfiniteCyclePagerAdapter = adapter;
             mInfiniteCyclePagerAdapter.setOnNotifyDataSetChangedListener(this);
             return mInfiniteCyclePagerAdapter;
         } else {
@@ -329,17 +309,34 @@ class InfiniteCycleManager implements InfiniteCyclePagerAdapter.OnNotifyDataSetC
 
     // We are disable multitouch on ViewPager and settling scroll, also we disable outside drag
     public boolean onTouchEvent(final MotionEvent event) {
-        if (mViewPageable.getAdapter() == null || mViewPageable.getAdapter().getCount() == 0)
+        if (mViewPageable.getAdapter() == null || getItemCount() == 0)
             return false;
-        if (mIsAutoScroll || mIsInitialItem || mViewPageable.isFakeDragging()) return false;
+        if (mIsSettling || mViewPageable.isFakeDragging()) return false;
         if (event.getPointerCount() > MIN_POINTER_COUNT || !mViewPageable.hasWindowFocus())
             event.setAction(MotionEvent.ACTION_UP);
         checkHitRect(event);
         return true;
     }
 
+    private int getItemCount() {
+        int count;
+        PagerAdapter adapter = mViewPageable.getAdapter();
+        if (adapter instanceof InfiniteCyclePagerAdapter) {
+            count = ((InfiniteCyclePagerAdapter) adapter).getItemCount();
+        } else {
+            count = mViewPageable.getAdapter().getCount();
+        }
+        return count;
+    }
+
     public boolean onInterceptTouchEvent(MotionEvent event) {
-        return onTouchEvent(event);
+        if (mViewPageable.getAdapter() == null || getItemCount() == 0)
+            return false;
+        if (mIsSettling || mViewPageable.isFakeDragging()) return false;
+        if (event.getPointerCount() > MIN_POINTER_COUNT || !mViewPageable.hasWindowFocus())
+            event.setAction(MotionEvent.ACTION_UP);
+        checkHitRect(event);
+        return true;
     }
 
     // When not has window focus clamp to nearest position
@@ -353,20 +350,21 @@ class InfiniteCycleManager implements InfiniteCyclePagerAdapter.OnNotifyDataSetC
         mIsInitialItem = true;
 
         if (mViewPageable.getAdapter() == null ||
-                mViewPageable.getAdapter().getCount() < MIN_CYCLE_COUNT) return item;
+                getItemCount() < MIN_CYCLE_COUNT) return item;
 
-        final int count = mViewPageable.getAdapter().getCount();
+        final int count = getItemCount();
         if (mIsAdapterInitialPosition) {
             mIsAdapterInitialPosition = false;
             return ((mInfiniteCyclePagerAdapter.getCount() / 2) / count) * count;
-        } else return mViewPageable.getCurrentItem() + Math.min(count, item) - getRealItem();
+        } else return mViewPageable.getCurrentItem() +
+                (Math.max(0, Math.min(count, item))) - getRealItem();
     }
 
     // Need to get current position of original adapter. We cant override getCurrentItem() method,
     // because ViewPager must have original item count relative to virtual adapter count
     public int getRealItem() {
         if (mViewPageable.getAdapter() == null ||
-                mViewPageable.getAdapter().getCount() < MIN_CYCLE_COUNT)
+                getItemCount() < MIN_CYCLE_COUNT)
             return mViewPageable.getCurrentItem();
         return mInfiniteCyclePagerAdapter.getVirtualPosition(mViewPageable.getCurrentItem());
     }
@@ -382,7 +380,7 @@ class InfiniteCycleManager implements InfiniteCyclePagerAdapter.OnNotifyDataSetC
 
     // If you need to update transformer call this method, which is trigger fake scroll
     public void invalidateTransformer() {
-        if (mViewPageable.getAdapter() == null || mViewPageable.getAdapter().getCount() == 0 ||
+        if (mViewPageable.getAdapter() == null || getItemCount() == 0 ||
                 mViewPageable.getChildCount() == 0) return;
         if (mViewPageable.beginFakeDrag()) {
             mViewPageable.fakeDragBy(0.0F);
@@ -463,23 +461,6 @@ class InfiniteCycleManager implements InfiniteCyclePagerAdapter.OnNotifyDataSetC
         mCenterScaleBy = (mMaxPageScale - mMinPageScale) * 0.5F;
     }
 
-    // Start auto scroll
-    public void startAutoScroll(final boolean isAutoScrollPositive) {
-        if (mIsAutoScroll && isAutoScrollPositive == mIsAutoScrollPositive) return;
-        mIsAutoScroll = true;
-        mIsAutoScrollPositive = isAutoScrollPositive;
-
-        mAutoScrollHandler.removeCallbacks(mAutoScrollRunnable);
-        mAutoScrollHandler.post(mAutoScrollRunnable);
-    }
-
-    // Stop auto scroll
-    public void stopAutoScroll() {
-        if (!mIsAutoScroll) return;
-        mIsAutoScroll = false;
-        mAutoScrollHandler.removeCallbacks(mAutoScrollRunnable);
-    }
-
     @Override
     public void onChanged() {
         mIsDataSetChanged = true;
@@ -498,9 +479,7 @@ class InfiniteCycleManager implements InfiniteCyclePagerAdapter.OnNotifyDataSetC
             // Handle page layer and bounds visibility
             enableHardwareLayer(page);
             if (mItemCount == MIN_CYCLE_COUNT) {
-                if (position > 2.0F || position < -2.0F ||
-                        (mStackCount != 0 && position > 1.0F) ||
-                        (mStackCount != 0 && position < -1.0F)) {
+                if (position > 2.0F || position < -2.0F) {
                     page.setVisibility(GONE);
                     return;
                 } else page.setVisibility(VISIBLE);
@@ -736,7 +715,9 @@ class InfiniteCycleManager implements InfiniteCyclePagerAdapter.OnNotifyDataSetC
             mStackCount = 0;
 
             // We need to rewrite states when is dragging and when setCurrentItem() from idle
-            if (mState != ViewPager.SCROLL_STATE_SETTLING || mIsInitialItem) {
+            if (!mIsSettling || mIsInitialItem) {
+                mIsInitialItem = false;
+
                 // Detect first state from idle
                 if (mOuterPageScrolledState == PageScrolledState.IDLE && positionOffset > 0) {
                     mPageScrolledPosition = mViewPageable.getCurrentItem();
@@ -770,14 +751,12 @@ class InfiniteCycleManager implements InfiniteCyclePagerAdapter.OnNotifyDataSetC
                 mWasPlusOne = false;
                 mIsLeftPageBringToFront = false;
                 mIsRightPageBringToFront = false;
-
-                mIsInitialItem = false;
             }
         }
 
         @Override
         public void onPageScrollStateChanged(final int state) {
-            mState = state;
+            mIsSettling = state == SCROLL_STATE_SETTLING;
         }
     };
 
