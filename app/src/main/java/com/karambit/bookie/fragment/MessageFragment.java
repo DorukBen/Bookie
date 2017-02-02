@@ -70,7 +70,7 @@ public class MessageFragment extends Fragment {
         Collections.sort(mLastMessages);
 
         mLastMessageAdapter = new LastMessageAdapter(getActivity(), mLastMessages);
-        mLastMessageAdapter.setMessageClickListener(new LastMessageAdapter.MessageClickListener() {
+        mLastMessageAdapter.setOnMessageClickListener(new LastMessageAdapter.OnMessageClickListener() {
             @Override
             public void onMessageClick(Message lastMessage, int position) {
 
@@ -158,13 +158,12 @@ public class MessageFragment extends Fragment {
             }
         });
 
-        mLastMessageAdapter.setSelectedClickListener(new LastMessageAdapter.SelectedClickListener() {
+        mLastMessageAdapter.setOnSelectedStateClickListener(new LastMessageAdapter.OnSelectedStateClickListener() {
             @Override
             public void onDeleteClick(final Message message, final int position) {
                 new AlertDialog.Builder(getContext())
-                    .setTitle(R.string.are_you_sure)
-                    .setMessage(R.string.delete_prompt_message_user)
-                    .setPositiveButton(android.R.string.ok, new DialogInterface.OnClickListener() {
+                    .setMessage(getString(R.string.delete_prompt_message_user, message.getOppositeUser(currentUser).getName()))
+                    .setPositiveButton(R.string.delete, new DialogInterface.OnClickListener() {
                         @Override
                         public void onClick(DialogInterface dialog, int which) {
                             unSelectMessages();
@@ -242,7 +241,7 @@ public class MessageFragment extends Fragment {
             @Override
             public void run() {
 
-                // createMessages(); // TODO REMOVE
+                createMessages(); // TODO REMOVE
 
                 ArrayList<User> users = mDbHandler.getMessageUsers();
                 mLastMessages = new ArrayList<>();
@@ -281,16 +280,40 @@ public class MessageFragment extends Fragment {
     @Override
     public void onActivityResult(int requestCode, int resultCode, Intent data) {
         if (requestCode == LAST_MESSAGE_REQUEST_CODE) {
+
             if (resultCode == ConversationActivity.MESSAGE_INSERTED) {
                 Message lastMessage = data.getParcelableExtra("last_message");
                 insertLastMessage(lastMessage);
+
+            } else if (resultCode == ConversationActivity.ALL_MESSAGES_DELETED) {
+
+                User currentUser = SessionManager.getCurrentUser(getContext());
+                User oppositeUser = data.getParcelableExtra("opposite_user");
+
+                for (int i = 0; i < mLastMessages.size(); i++) {
+                    Message message = mLastMessages.get(i);
+                    if (message.getOppositeUser(currentUser).getID() == oppositeUser.getID()) {
+                        mLastMessages.remove(i);
+                        mLastMessageAdapter.notifyItemRemoved(i);
+                        mDbHandler.deleteMessageUser(oppositeUser);
+                    }
+                }
             }
         }
     }
 
     public void insertLastMessage(Message newMessage) {
 
-        int messageUserIndex = mLastMessages.indexOf(newMessage);
+        User currentUser = SessionManager.getCurrentUser(getContext());
+
+        int messageUserIndex = -1;
+
+        for (int i = 0; i < mLastMessages.size(); i++) {
+            Message m = mLastMessages.get(i);
+            if (m.getOppositeUser(currentUser).getID() == newMessage.getOppositeUser(currentUser).getID()) {
+                messageUserIndex = i;
+            }
+        }
 
         if (messageUserIndex == -1) {
             mLastMessages.add(0, newMessage);

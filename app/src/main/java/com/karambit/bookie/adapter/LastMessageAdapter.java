@@ -37,8 +37,8 @@ public class LastMessageAdapter extends RecyclerView.Adapter<RecyclerView.ViewHo
 
     private int mSelectedPosition = -1;
 
-    private MessageClickListener mMessageClickListener;
-    private SelectedClickListener mSelectedClickListener;
+    private OnMessageClickListener mOnMessageClickListener;
+    private OnSelectedStateClickListener mOnSelectedStateClickListener;
 
     public LastMessageAdapter(Context context, ArrayList<Message> lastMessages) {
         mContext = context;
@@ -104,7 +104,7 @@ public class LastMessageAdapter extends RecyclerView.Adapter<RecyclerView.ViewHo
                 return new MessageViewHolder(messageView);
 
             case VIEW_TYPE_SELECTED:
-                View selectedView = LayoutInflater.from(parent.getContext()).inflate(R.layout.item_selected_last_message, parent, false);
+                View selectedView = LayoutInflater.from(parent.getContext()).inflate(R.layout.item_last_message_selected, parent, false);
                 return new SelectedViewHolder(selectedView);
 
             default:
@@ -189,18 +189,18 @@ public class LastMessageAdapter extends RecyclerView.Adapter<RecyclerView.ViewHo
                     messageHolder.mIndicator.setVisibility(View.INVISIBLE);
                 }
 
-                if (mMessageClickListener != null) {
+                if (mOnMessageClickListener != null) {
                     messageHolder.itemView.setOnClickListener(new View.OnClickListener() {
                         @Override
                         public void onClick(View v) {
-                            mMessageClickListener.onMessageClick(message, finalPosition);
+                            mOnMessageClickListener.onMessageClick(message, finalPosition);
                         }
                     });
 
                     messageHolder.itemView.setOnLongClickListener(new View.OnLongClickListener() {
                         @Override
                         public boolean onLongClick(View v) {
-                            return mMessageClickListener.onMessageLongClick(message, finalPosition);
+                            return mOnMessageClickListener.onMessageLongClick(message, finalPosition);
                         }
                     });
                 }
@@ -212,25 +212,25 @@ public class LastMessageAdapter extends RecyclerView.Adapter<RecyclerView.ViewHo
 
                 SelectedViewHolder selectedHolder = (SelectedViewHolder) holder;
 
-                if (mSelectedClickListener != null) {
+                if (mOnSelectedStateClickListener != null) {
                     selectedHolder.mDelete.setOnClickListener(new View.OnClickListener() {
                         @Override
                         public void onClick(View v) {
-                            mSelectedClickListener.onDeleteClick(message, finalPosition);
+                            mOnSelectedStateClickListener.onDeleteClick(message, finalPosition);
                         }
                     });
 
                     selectedHolder.itemView.setOnClickListener(new View.OnClickListener() {
                         @Override
                         public void onClick(View v) {
-                            mSelectedClickListener.onSelectedEmptyClick(message, finalPosition);
+                            mOnSelectedStateClickListener.onSelectedEmptyClick(message, finalPosition);
                         }
                     });
 
                     selectedHolder.itemView.setOnLongClickListener(new View.OnLongClickListener() {
                         @Override
                         public boolean onLongClick(View v) {
-                            return mSelectedClickListener.onSelectedEmptyClick(message, finalPosition);
+                            return mOnSelectedStateClickListener.onSelectedEmptyClick(message, finalPosition);
                         }
                     });
                 }
@@ -271,12 +271,12 @@ public class LastMessageAdapter extends RecyclerView.Adapter<RecyclerView.ViewHo
         notifyDataSetChanged();
     }
 
-    public interface MessageClickListener {
+    public interface OnMessageClickListener {
         void onMessageClick(Message lastMessage, int position);
         boolean onMessageLongClick(Message lastMessage, int position);
     }
 
-    public interface SelectedClickListener {
+    public interface OnSelectedStateClickListener {
         boolean onSelectedEmptyClick(Message message, int position);
         void onDeleteClick(Message message, int position);
     }
@@ -289,19 +289,19 @@ public class LastMessageAdapter extends RecyclerView.Adapter<RecyclerView.ViewHo
         mSelectedPosition = selectedPosition;
     }
 
-    public SelectedClickListener getSelectedClickListener() {
-        return mSelectedClickListener;
+    public OnSelectedStateClickListener getOnSelectedStateClickListener() {
+        return mOnSelectedStateClickListener;
     }
 
-    public void setSelectedClickListener(SelectedClickListener selectedClickListener) {
-        mSelectedClickListener = selectedClickListener;
+    public void setOnSelectedStateClickListener(OnSelectedStateClickListener onSelectedStateClickListener) {
+        mOnSelectedStateClickListener = onSelectedStateClickListener;
     }
 
-    public MessageClickListener getMessageClickListener() {
-        return mMessageClickListener;
+    public OnMessageClickListener getOnMessageClickListener() {
+        return mOnMessageClickListener;
     }
 
-    public void setMessageClickListener(MessageClickListener messageClickListener) {
-        mMessageClickListener = messageClickListener;
+    public void setOnMessageClickListener(OnMessageClickListener onMessageClickListener) {
+        mOnMessageClickListener = onMessageClickListener;
     }
 }

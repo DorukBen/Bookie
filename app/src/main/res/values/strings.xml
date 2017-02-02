@@ -134,5 +134,10 @@
     <string name="x_sent_request_to_you">%s sent request to you</string>
     <string name="x_accepted_your_request">%s accepted your request</string>
     <string name="x_rejected_your_request">%s rejected your request</string>
-    <string name="delete_prompt_message_user">All the conversation will deleted.</string>
+    <string name="delete_prompt_message_user">Delete chat with %s?</string>
+    <string name="delete_prompt_conversation_message_single">Delete message from %s?</string>
+    <string name="delete_prompt_conversation_message_multiple">Delete %1$d messages from %2$s?</string>
+    <string name="x__messages_selected">%d selected</string>
+    <string name="action_delete">Delete</string>
+    <string name="delete">Delete</string>
 </resources>

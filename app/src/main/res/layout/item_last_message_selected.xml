@@ -8,7 +8,7 @@
               android:paddingLeft="24dp"
               android:paddingRight="24dp">
 
-    <ImageView
+    <ImageButton
         android:id="@+id/deleteImageButton"
         style="@style/Widget.AppCompat.ActionButton"
         android:layout_width="wrap_content"

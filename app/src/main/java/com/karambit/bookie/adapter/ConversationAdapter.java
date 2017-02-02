@@ -1,7 +1,9 @@
 package com.karambit.bookie.adapter;
 
 import android.content.Context;
+import android.graphics.Color;
 import android.support.v4.content.ContextCompat;
+import android.support.v7.widget.CardView;
 import android.support.v7.widget.RecyclerView;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -37,6 +39,10 @@ public class ConversationAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
     private User mCurrentUser;
     private User mOppositeUser;
 
+    private OnMessageClickListener mOnMessageClickListener;
+
+    private ArrayList<Integer> mSelectedIndexes = new ArrayList<>();
+
     public ConversationAdapter(Context context, ArrayList<Message> messages) {
         mContext = context;
         mMessages = messages;
@@ -46,7 +52,7 @@ public class ConversationAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
     }
 
     private static class CurrentUserMessageViewHolder extends RecyclerView.ViewHolder {
-        private View mRootView;
+        private CardView mCardView;
         private TextView mText;
         private CircleImageView mProfilePicture;
         private TextView mCreatedAt;
@@ -57,7 +63,7 @@ public class ConversationAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
         public CurrentUserMessageViewHolder(View currentUserMessageView) {
             super(currentUserMessageView);
 
-            mRootView = currentUserMessageView.findViewById(R.id.currentUserMessageRoot);
+            mCardView = (CardView) currentUserMessageView.findViewById(R.id.currentUserMessageCardView);
             mText = (TextView) currentUserMessageView.findViewById(R.id.currentUserMessageText);
             mProfilePicture = (CircleImageView) currentUserMessageView.findViewById(R.id.currentUserMessageProfilePicture);
             mCreatedAt = (TextView) currentUserMessageView.findViewById(R.id.currentUserCreatedAt);
@@ -68,7 +74,7 @@ public class ConversationAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
     }
 
     private static class OppositeUserMessageViewHolder extends RecyclerView.ViewHolder {
-        private View mRootView;
+        private CardView mCardView;
         private TextView mText;
         private CircleImageView mProfilePicture;
         private TextView mCreatedAt;
@@ -76,7 +82,7 @@ public class ConversationAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
         public OppositeUserMessageViewHolder(View oppositeUserMessageView) {
             super(oppositeUserMessageView);
 
-            mRootView = oppositeUserMessageView.findViewById(R.id.oppositeUserMessageRoot);
+            mCardView = (CardView) oppositeUserMessageView.findViewById(R.id.oppositeUserMessageCardView);
             mText = (TextView) oppositeUserMessageView.findViewById(R.id.oppositeUserMessageText);
             mProfilePicture = (CircleImageView) oppositeUserMessageView.findViewById(R.id.oppositeUserMessageProfilePicture);
             mCreatedAt = (TextView) oppositeUserMessageView.findViewById(R.id.oppositeUserCreatedAt);
@@ -125,10 +131,32 @@ public class ConversationAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
     }
 
     @Override
-    public void onBindViewHolder(RecyclerView.ViewHolder holder, final int position) {
+    public void onBindViewHolder(RecyclerView.ViewHolder holder, int position) {
 
-        Message message = mMessages.get(position);
+        final int finalPosition = position;
 
+        final Message message = mMessages.get(position);
+
+        if (mSelectedIndexes.contains(position)) {
+            int color = ContextCompat.getColor(mContext, R.color.colorAccent);
+            color = Color.argb((int) (255 * 1f / 4f), Color.red(color), Color.green(color), Color.blue(color));
+            holder.itemView.setBackgroundColor(color);
+        } else {
+            holder.itemView.setBackgroundColor(0);
+        }
+
+        View.OnLongClickListener onLongClickListener = new View.OnLongClickListener() {
+            @Override
+            public boolean onLongClick(View v) {
+                return mOnMessageClickListener.onMessageLongClick(message, finalPosition);
+            }
+        };
+        View.OnClickListener onClickListener = new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                mOnMessageClickListener.onMessageClick(message, finalPosition);
+            }
+        };
         switch (getItemViewType(position)) {
 
             case TYPE_CURRENT_USER: {
@@ -206,6 +234,13 @@ public class ConversationAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
                     currentUserHolder.mProfilePicture.setVisibility(View.INVISIBLE);
                 }
 
+                if (mOnMessageClickListener != null) {
+                    currentUserHolder.mCardView.setOnClickListener(onClickListener);
+                    currentUserHolder.mCardView.setOnLongClickListener(onLongClickListener);
+                    currentUserHolder.itemView.setOnClickListener(onClickListener);
+                    currentUserHolder.itemView.setOnLongClickListener(onLongClickListener);
+                }
+
                 break;
             }
 
@@ -239,6 +274,13 @@ public class ConversationAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
                     oppositeUserHolder.mProfilePicture.setVisibility(View.INVISIBLE);
                 }
 
+                if (mOnMessageClickListener != null) {
+                    oppositeUserHolder.mCardView.setOnClickListener(onClickListener);
+                    oppositeUserHolder.mCardView.setOnLongClickListener(onLongClickListener);
+                    oppositeUserHolder.itemView.setOnClickListener(onClickListener);
+                    oppositeUserHolder.itemView.setOnLongClickListener(onLongClickListener);
+                }
+
                 break;
             }
         }
@@ -256,6 +298,19 @@ public class ConversationAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
         return df.format(calendar.getTime());
     }
 
+    public interface OnMessageClickListener {
+        void onMessageClick(Message message, int position);
+        boolean onMessageLongClick(Message message, int position);
+    }
+
+    public OnMessageClickListener getOnMessageClickListener() {
+        return mOnMessageClickListener;
+    }
+
+    public void setOnMessageClickListener(OnMessageClickListener onMessageClickListener) {
+        mOnMessageClickListener = onMessageClickListener;
+    }
+
     public ArrayList<Message> getMessages() {
         return mMessages;
     }
@@ -263,5 +318,13 @@ public class ConversationAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
     public void setMessages(ArrayList<Message> messages) {
         mMessages = messages;
         notifyDataSetChanged();
+    }
+
+    public ArrayList<Integer> getSelectedIndexes() {
+        return mSelectedIndexes;
+    }
+
+    public void setSelectedIndexes(ArrayList<Integer> selectedIndexes) {
+        mSelectedIndexes = selectedIndexes;
     }
 }

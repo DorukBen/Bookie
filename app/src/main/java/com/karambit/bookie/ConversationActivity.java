@@ -1,6 +1,9 @@
 package com.karambit.bookie;
 
+import android.app.AlertDialog;
+import android.content.DialogInterface;
 import android.os.Bundle;
+import android.support.v7.app.ActionBar;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
@@ -10,6 +13,10 @@ import android.text.SpannableString;
 import android.text.TextUtils;
 import android.text.TextWatcher;
 import android.text.style.AbsoluteSizeSpan;
+import android.util.Log;
+import android.view.Menu;
+import android.view.MenuInflater;
+import android.view.MenuItem;
 import android.view.View;
 import android.widget.EditText;
 import android.widget.ImageButton;
@@ -23,42 +30,36 @@ import com.karambit.bookie.model.User;
 
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.Collections;
 
 public class ConversationActivity extends AppCompatActivity {
 
     private static final String TAG = ConversationActivity.class.getSimpleName();
 
     public static final int MESSAGE_INSERTED = 1;
+    public static final int ALL_MESSAGES_DELETED = 2;
 
+    private User mOppositeUser;
     private DBHandler mDbHandler;
     private ConversationAdapter mConversationAdapter;
     private ImageButton mSendMessageButton;
     private EditText mMessageEditText;
     private ArrayList<Message> mMessages;
     private RecyclerView mRecyclerView;
+    private MenuItem mDeleteMenuItem;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_conversation);
 
-        final User oppositeUser = getIntent().getExtras().getParcelable("user");
+        mOppositeUser = getIntent().getExtras().getParcelable("user");
 
-        //Changes action bar font style by getting font.ttf from assets/fonts action bars font style doesn't
-        // change from styles.xml
-        SpannableString s = new SpannableString(oppositeUser.getName());
-        s.setSpan(new TypefaceSpan(this, "montserrat_regular.ttf"), 0, s.length(),
-                  Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
-        s.setSpan(new AbsoluteSizeSpan(60), 0, s.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
-
-        // Update the action bar title with the TypefaceSpan instance
-        if (getSupportActionBar() != null) {
-            getSupportActionBar().setTitle(s);
-        }
+        setActionBarTitle(mOppositeUser.getName());
 
         final User currentUser = SessionManager.getCurrentUser(this);
         mDbHandler = new DBHandler(getApplicationContext());
-        mMessages = mDbHandler.getConversationMessages(oppositeUser, currentUser);
+        mMessages = mDbHandler.getConversationMessages(mOppositeUser, currentUser);
 
         // TODO Broadcast Manager for messages
 
@@ -73,6 +74,71 @@ public class ConversationActivity extends AppCompatActivity {
         mRecyclerView.setLayoutManager(layoutManager);
 
         mConversationAdapter = new ConversationAdapter(this, mMessages);
+
+        mConversationAdapter.setOnMessageClickListener(new ConversationAdapter.OnMessageClickListener() {
+            @Override
+            public void onMessageClick(Message message, int position) {
+
+                ArrayList<Integer> selectedIndexes = mConversationAdapter.getSelectedIndexes();
+
+                if (!selectedIndexes.isEmpty()) {
+
+                    if (!selectedIndexes.contains(position)) {
+
+                        if (selectedIndexes.size() == 0) {
+                            setSelectionMode(true);
+                        }
+
+                        selectedIndexes.add(position);
+
+                        String selectedTitle = getString(R.string.x__messages_selected, selectedIndexes.size());
+                        setActionBarTitle(selectedTitle);
+
+                    } else {
+
+                        selectedIndexes.remove((Integer) position);
+
+                        if (selectedIndexes.isEmpty()) {
+                            setSelectionMode(false);
+                        } else {
+                            String selectedTitle = getString(R.string.x__messages_selected, selectedIndexes.size());
+                            setActionBarTitle(selectedTitle);
+                        }
+                    }
+                    mConversationAdapter.notifyItemChanged(position);
+
+                }
+            }
+            @Override
+            public boolean onMessageLongClick(Message message, int position) {
+
+                ArrayList<Integer> selectedIndexes = mConversationAdapter.getSelectedIndexes();
+
+                if (!selectedIndexes.contains(position)) {
+
+                    if (selectedIndexes.size() == 0) {
+                        setSelectionMode(true);
+                    }
+
+                    selectedIndexes.add(position);
+
+                    String selectedTitle = getString(R.string.x__messages_selected, selectedIndexes.size());
+                    setActionBarTitle(selectedTitle);
+
+                } else {
+                    selectedIndexes.remove((Integer) position);
+
+                    if (selectedIndexes.isEmpty()) {
+                        setSelectionMode(false);
+                    } else {
+                        String selectedTitle = getString(R.string.x__messages_selected, selectedIndexes.size());
+                        setActionBarTitle(selectedTitle);
+                    }
+                }
+                mConversationAdapter.notifyItemChanged(position);
+                return true;
+            }
+        });
 
         mRecyclerView.setAdapter(mConversationAdapter);
 
@@ -126,7 +192,7 @@ public class ConversationActivity extends AppCompatActivity {
 
                     int id = createTemporaryMessageID();
                     Message message = new Message(id, messageText, currentUser,
-                                                        oppositeUser, Calendar.getInstance(), Message.State.PENDING);
+                                                  mOppositeUser, Calendar.getInstance(), Message.State.PENDING);
                     insertMessage(message);
 
                     mMessageEditText.setText("");
@@ -195,6 +261,119 @@ public class ConversationActivity extends AppCompatActivity {
             }
         }
         return false;
+    }
+
+    private void clearSelections() {
+        ArrayList<Integer> selectedIndexes = new ArrayList<>(mConversationAdapter.getSelectedIndexes());
+        mConversationAdapter.getSelectedIndexes().clear();
+        for (int i : selectedIndexes) {
+            mConversationAdapter.notifyItemChanged(i);
+        }
+    }
+
+    private void setSelectionMode(boolean toggle) {
+        ActionBar actionBar = getSupportActionBar();
+
+        if (toggle) {
+            String selectedTitle = getString(R.string.x__messages_selected, mConversationAdapter.getSelectedIndexes().size());
+            setActionBarTitle(selectedTitle);
+
+            actionBar.setDisplayHomeAsUpEnabled(true);
+            actionBar.setHomeAsUpIndicator(R.drawable.ic_messaging_cancel_selection);
+
+            mDeleteMenuItem.setVisible(true);
+        } else {
+            setActionBarTitle(mOppositeUser.getName());
+
+            actionBar.setDisplayHomeAsUpEnabled(false);
+
+            mDeleteMenuItem.setVisible(false);
+        }
+    }
+
+    private void setActionBarTitle(String selectedTitle) {
+        ActionBar actionBar = getSupportActionBar();
+
+        SpannableString title = new SpannableString(selectedTitle);
+        title.setSpan(new TypefaceSpan(this, "montserrat_regular.ttf"), 0, title.length(),
+                      Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+        title.setSpan(new AbsoluteSizeSpan(60), 0, title.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+
+        // Update the action bar title with the TypefaceSpan instance
+        actionBar.setTitle(title);
+    }
+
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        MenuInflater inflater = getMenuInflater();
+        inflater.inflate(R.menu.conversation_menu, menu);
+
+        mDeleteMenuItem = menu.findItem(R.id.action_delete_messages);
+
+        return super.onCreateOptionsMenu(menu);
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+
+        switch (item.getItemId()) {
+
+            case R.id.action_delete_messages:
+
+                int selectedCount = mConversationAdapter.getSelectedIndexes().size();
+
+                String prompt;
+                if (selectedCount > 1) {
+                    prompt = getString(R.string.delete_prompt_conversation_message_multiple, selectedCount, mOppositeUser.getName());
+                } else {
+                    prompt = getString(R.string.delete_prompt_conversation_message_single, mOppositeUser.getName());
+                }
+
+                new AlertDialog.Builder(this)
+                    .setMessage(prompt)
+                    .setPositiveButton(R.string.delete, new DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(DialogInterface dialog, int which) {
+
+                            ArrayList<Integer> selectedIndexes = mConversationAdapter.getSelectedIndexes();
+
+                            Log.d(TAG, selectedIndexes.toString());
+
+                            Collections.sort(selectedIndexes);
+                            Collections.reverse(selectedIndexes);
+
+                            for (int index : selectedIndexes) {
+                                Message message = mMessages.get(index);
+                                mMessages.remove(index);
+                                mDbHandler.deleteMessage(message);
+                            }
+
+                            selectedIndexes.clear();
+                            setSelectionMode(false);
+                            mConversationAdapter.notifyDataSetChanged();
+
+                            if (!mMessages.isEmpty()) {
+                                setResult(MESSAGE_INSERTED, getIntent().putExtra("last_message", mMessages.get(0)));
+                            } else {
+                                setResult(ALL_MESSAGES_DELETED, getIntent().putExtra("opposite_user", mOppositeUser));
+                            }
+
+                            // TODO Server delete notify
+                        }
+                    })
+                    .setNegativeButton(android.R.string.cancel, null)
+                    .create().show();
+
+                break;
+
+            case android.R.id.home:
+                setSelectionMode(false);
+                mConversationAdapter.getSelectedIndexes().clear();
+                mConversationAdapter.notifyDataSetChanged();
+
+                break;
+        }
+        return super.onOptionsItemSelected(item);
     }
 
     private void toggleSendButton(boolean active) {
