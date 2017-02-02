@@ -6,7 +6,6 @@ import android.os.Bundle;
 import android.support.v4.app.Fragment;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -14,13 +13,15 @@ import android.widget.Toast;
 
 import com.karambit.bookie.BookActivity;
 import com.karambit.bookie.LocationActivity;
-import com.karambit.bookie.MainActivity;
+import com.karambit.bookie.ProfileActivity;
 import com.karambit.bookie.R;
 import com.karambit.bookie.adapter.SearchAdapter;
-import com.karambit.bookie.helper.DBHandler;
-import com.karambit.bookie.helper.ElevationScrollListener;
 import com.karambit.bookie.helper.SessionManager;
 import com.karambit.bookie.model.Book;
+import com.karambit.bookie.model.User;
+
+import java.util.ArrayList;
+import java.util.Random;
 
 /**
  * A simple {@link Fragment} subclass.
@@ -43,13 +44,32 @@ public class SearchFragment extends Fragment {
 
         RecyclerView recyclerView = (RecyclerView) rootView.findViewById(R.id.searchResultsRecyclerView);
         recyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
-        SearchAdapter searchAdapter = new SearchAdapter(getContext(), Book.GENERATOR.generateBookList(15));
-        searchAdapter.setBookClickListener(new SearchAdapter.BookClickListener() {
+        ArrayList<Integer> arrayList = new ArrayList<>();
+        arrayList.add(new Random().nextInt(30));
+        arrayList.add(new Random().nextInt(30));
+        arrayList.add(new Random().nextInt(30));
+
+        SearchAdapter searchAdapter = new SearchAdapter(getContext(), arrayList, Book.GENERATOR.generateBookList(3), User.GENERATOR.generateUserList(3));
+        searchAdapter.setBookClickListener(new SearchAdapter.SearchItemClickListener() {
+            @Override
+            public void onGenreClick(int genreCode) {
+                //TODO: ON genre click
+            }
+
             @Override
             public void onBookClick(Book book) {
                 Intent intent = new Intent(getContext(), BookActivity.class);
                 intent.putExtra("book", book);
                 getContext().startActivity(intent);
+            }
+
+            @Override
+            public void onUserClick(User user) {
+                Intent intent = new Intent(getContext(), ProfileActivity.class);
+                Bundle bundle = new Bundle();
+                bundle.putParcelable(ProfileActivity.USER, user);
+                intent.putExtras(bundle);
+                startActivity(intent);
             }
         });
 

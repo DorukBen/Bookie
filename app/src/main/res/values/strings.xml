@@ -139,4 +139,7 @@
     <string name="x_lost_y">%1$s lost %2$s</string>
     <string name="x_accepted_your_request_for_y">%1$s accepted your request for %2$s</string>
     <string name="x_rejected_your_request_for_y">%1$s rejected your request for %2$s</string>
+    <string name="genres">Genres</string>
+    <string name="books">Books</string>
+    <string name="users">Users</string>
 </resources>
