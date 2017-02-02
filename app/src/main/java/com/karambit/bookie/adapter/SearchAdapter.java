@@ -468,4 +468,12 @@ public class SearchAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder>
         mSearchItemClickListener = searchItemClickListener;
     }
 
+    public void setItems(ArrayList<Integer> genreCodes, ArrayList<Book> books, ArrayList<User> users){
+        mGenreCodes = genreCodes;
+        mBooks = books;
+        mUsers = users;
+
+        notifyDataSetChanged();
+    }
+
 }

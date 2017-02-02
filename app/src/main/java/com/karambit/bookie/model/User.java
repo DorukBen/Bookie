@@ -6,6 +6,7 @@ import android.support.annotation.Nullable;
 
 import com.karambit.bookie.helper.ImageLinkSource;
 
+import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -110,6 +111,19 @@ public class User implements Parcelable {
 
             return null;
         }
+    }
+
+    public static ArrayList<User> jsonArrayToUserList(JSONArray userJsonArray) {
+        ArrayList<User> users = new ArrayList<>(userJsonArray.length());
+        for (int i = 0; i < userJsonArray.length(); i++) {
+            try {
+                JSONObject userObject = userJsonArray.getJSONObject(i);
+                users.add(jsonObjectToUser(userObject));
+            } catch (JSONException e) {
+                e.printStackTrace();
+            }
+        }
+        return users;
     }
 
     public void setID(int ID) {
