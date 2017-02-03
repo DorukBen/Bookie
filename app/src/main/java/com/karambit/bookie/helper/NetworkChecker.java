@@ -20,6 +20,17 @@ public class NetworkChecker {
         NetworkInfo activeNetworkInfo = connectivityManager.getActiveNetworkInfo();
         boolean isInternetAvaible = activeNetworkInfo != null && activeNetworkInfo.isConnectedOrConnecting();
 
+        return isInternetAvaible;
+
+    }
+
+
+    public static boolean isConnectedToNetwork(Context context) {
+        ConnectivityManager connectivityManager
+                = (ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);
+        NetworkInfo activeNetworkInfo = connectivityManager.getActiveNetworkInfo();
+        boolean isInternetAvaible = activeNetworkInfo != null && activeNetworkInfo.isConnectedOrConnecting();
+
         if (isInternetAvaible){
             try {
                 InetAddress ipAddr = InetAddress.getByName("google.com"); //You can replace it with your name
@@ -33,5 +44,7 @@ public class NetworkChecker {
         }
 
     }
+
+
 
 }
