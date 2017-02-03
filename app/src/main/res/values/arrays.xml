@@ -1,37 +1,37 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string-array name="genre_types">
-        <item>Science fiction</item>
-        <item>Satire</item>
-        <item>Drama</item>
-        <item>Action</item>
-        <item>Adventure</item>
-        <item>Romance</item>
-        <item>Mystery</item>
-        <item>Horror</item>
-        <item>Self help</item>
-        <item>Health</item>
-        <item>Guide</item>
-        <item>Travel</item>
-        <item>Religion</item>
-        <item>Children\'s</item>
-        <item>Science</item>
-        <item>History</item>
-        <item>Math</item>
-        <item>Anthology</item>
-        <item>Poetry</item>
-        <item>Encyclopedias</item>
-        <item>Dictionaries</item>
-        <item>Comics</item>
-        <item>Art</item>
-        <item>Cookbooks</item>
-        <item>Diaries</item>
-        <item>Journals</item>
-        <item>Prayer books</item>
-        <item>Series</item>
-        <item>Trilogy</item>
-        <item>Biographies</item>
-        <item>Autobiographies</item>
-        <item>Fantasy</item>
+        <item>@string/genre_value_1</item>
+        <item>@string/genre_value_2</item>
+        <item>@string/genre_value_3</item>
+        <item>@string/genre_value_4</item>
+        <item>@string/genre_value_5</item>
+        <item>@string/genre_value_6</item>
+        <item>@string/genre_value_7</item>
+        <item>@string/genre_value_8</item>
+        <item>@string/genre_value_9</item>
+        <item>@string/genre_value_10</item>
+        <item>@string/genre_value_11</item>
+        <item>@string/genre_value_12</item>
+        <item>@string/genre_value_13</item>
+        <item>@string/genre_value_14</item>
+        <item>@string/genre_value_15</item>
+        <item>@string/genre_value_16</item>
+        <item>@string/genre_value_17</item>
+        <item>@string/genre_value_18</item>
+        <item>@string/genre_value_19</item>
+        <item>@string/genre_value_20</item>
+        <item>@string/genre_value_21</item>
+        <item>@string/genre_value_22</item>
+        <item>@string/genre_value_23</item>
+        <item>@string/genre_value_24</item>
+        <item>@string/genre_value_25</item>
+        <item>@string/genre_value_26</item>
+        <item>@string/genre_value_27</item>
+        <item>@string/genre_value_28</item>
+        <item>@string/genre_value_29</item>
+        <item>@string/genre_value_30</item>
+        <item>@string/genre_value_31</item>
+        <item>@string/genre_value_32</item>
     </string-array>
 </resources>

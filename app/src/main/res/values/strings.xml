@@ -139,7 +139,44 @@
     <string name="x_lost_y">%1$s lost %2$s</string>
     <string name="x_accepted_your_request_for_y">%1$s accepted your request for %2$s</string>
     <string name="x_rejected_your_request_for_y">%1$s rejected your request for %2$s</string>
+
+
     <string name="genres">Genres</string>
     <string name="books">Books</string>
     <string name="users">Users</string>
+
+
+    <string name="genre_value_1">Science fiction</string>
+    <string name="genre_value_2">Satire</string>
+    <string name="genre_value_3">Drama</string>
+    <string name="genre_value_4">Action</string>
+    <string name="genre_value_5">Adventure</string>
+    <string name="genre_value_6">Romance</string>
+    <string name="genre_value_7">Mystery</string>
+    <string name="genre_value_8">Horror</string>
+    <string name="genre_value_9">Self help</string>
+    <string name="genre_value_10">Health</string>
+    <string name="genre_value_11">Guide</string>
+    <string name="genre_value_12">Travel</string>
+    <string name="genre_value_13">Religion</string>
+    <string name="genre_value_14">Children\\\'s</string>
+    <string name="genre_value_15">Science</string>
+    <string name="genre_value_16">History</string>
+    <string name="genre_value_17">Math</string>
+    <string name="genre_value_18">Anthology</string>
+    <string name="genre_value_19">Poetry</string>
+    <string name="genre_value_20">Encyclopedias</string>
+    <string name="genre_value_21">Dictionaries</string>
+    <string name="genre_value_22">Comics</string>
+    <string name="genre_value_23">Art</string>
+    <string name="genre_value_24">Cookbooks</string>
+    <string name="genre_value_25">Diaries</string>
+    <string name="genre_value_26">Journals</string>
+    <string name="genre_value_27">Prayer books</string>
+    <string name="genre_value_28">Series</string>
+    <string name="genre_value_29">Trilogy</string>
+    <string name="genre_value_30">Biographies</string>
+    <string name="genre_value_31">Autobiographies</string>
+    <string name="genre_value_32">Fantasy</string>
+
 </resources>
