@@ -24,7 +24,9 @@ import com.karambit.bookie.ProfileActivity;
 import com.karambit.bookie.R;
 import com.karambit.bookie.adapter.SearchAdapter;
 import com.karambit.bookie.helper.SessionManager;
+import com.karambit.bookie.helper.string_similarity.JaroWinkler;
 import com.karambit.bookie.model.Book;
+import com.karambit.bookie.model.Notification;
 import com.karambit.bookie.model.User;
 import com.karambit.bookie.rest_api.BookieClient;
 import com.karambit.bookie.rest_api.ErrorCodes;
@@ -36,8 +38,16 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.IOException;
+import java.lang.reflect.Array;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
 import java.util.Random;
+import java.util.Set;
 
 import okhttp3.ResponseBody;
 import retrofit2.Call;
@@ -52,6 +62,7 @@ public class SearchFragment extends Fragment {
 
     private static final String TAG = SearchFragment.class.getSimpleName();
 
+    private String[] mAllGenres ;
     private ArrayList<Integer> mGenreCodes = new ArrayList<>();
     private ArrayList<Book> mBooks = new ArrayList<>();
     private ArrayList<User> mUsers = new ArrayList<>();
@@ -73,6 +84,8 @@ public class SearchFragment extends Fragment {
 
         RecyclerView recyclerView = (RecyclerView) rootView.findViewById(R.id.searchResultsRecyclerView);
         recyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
+
+        mAllGenres  = getContext().getResources().getStringArray(R.array.genre_types);
 
         mSearchAdapter = new SearchAdapter(getContext(), mGenreCodes, mBooks, mUsers);
         mSearchAdapter.setBookClickListener(new SearchAdapter.SearchItemClickListener() {
@@ -133,6 +146,7 @@ public class SearchFragment extends Fragment {
             @Override
              public void onTextChanged(CharSequence s, int start, int before, int count) {
                 String string = searchEditText.getText().toString();
+
                 getSearchResults(string);
             }
 
@@ -144,8 +158,8 @@ public class SearchFragment extends Fragment {
         return rootView;
     }
 
-    private void getSearchResults(String searchString) {
-        SearchApi searchApi = BookieClient.getClient().create(SearchApi.class);
+    private void getSearchResults(final String searchString) {
+        final SearchApi searchApi = BookieClient.getClient().create(SearchApi.class);
         String email = SessionManager.getCurrentUserDetails(getContext()).getEmail();
         String password = SessionManager.getCurrentUserDetails(getContext()).getPassword();
         Call<ResponseBody> register = searchApi.getSearchResults(email, password, searchString, mFetchGenreCode, mFetchSearchButtonPressed);
@@ -169,7 +183,7 @@ public class SearchFragment extends Fragment {
                         mBooks.addAll(Book.jsonArrayToBookList(booksArray));
                         mUsers.addAll(User.jsonArrayToUserList(usersArray));
 
-                        mSearchAdapter.setItems(new ArrayList<Integer>(), mBooks, mUsers);
+                        mSearchAdapter.setItems(getMostSimilarGenreIndex(searchString), mBooks, mUsers);
                     } else {
 
                         int errorCode = responseObject.getInt("error_code");
@@ -194,4 +208,48 @@ public class SearchFragment extends Fragment {
         });
     }
 
+    private ArrayList<Integer> getMostSimilarGenreIndex(String searchString){
+        final HashMap<Integer, Double> searchGenreSimilarityMap = new HashMap<>();
+        for (int i = 0; i < mAllGenres.length; i++){
+            double similarity = getStringSimilarity(mAllGenres[i], searchString);
+            if (similarity > 0.5){
+                searchGenreSimilarityMap.put(i, similarity);
+                if (similarity > 0.9){
+                    ArrayList<Integer> finalResult = new ArrayList<>();
+                    finalResult.add(i);
+                    return finalResult;
+                }
+            }
+        }
+
+        ArrayList<Integer> sortedGenres = new ArrayList<>(searchGenreSimilarityMap.keySet());
+        Collections.sort(sortedGenres, new Comparator<Integer>() {
+            @Override
+            public int compare(Integer s1, Integer s2) {
+                Double similarity1 = searchGenreSimilarityMap.get(s1);
+                Double similarity2 = searchGenreSimilarityMap.get(s2);
+                return similarity2.compareTo(similarity1);
+            }
+        });
+
+
+        ArrayList<Integer> finalResults = new ArrayList<>();
+        if (sortedGenres.size() > 1){
+            finalResults.add(sortedGenres.get(0));
+        }
+        if (sortedGenres.size()> 2){
+            finalResults.add(sortedGenres.get(1));
+        }
+
+        return finalResults;
+    }
+
+    private double getStringSimilarity(String string1, String string2){
+        string1 = string1.toLowerCase();
+        string2 = string2.toLowerCase();
+
+        JaroWinkler jaroWinkler = new JaroWinkler();
+
+        return jaroWinkler.similarity(string1, string2);
+    }
 }

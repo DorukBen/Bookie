@@ -430,17 +430,17 @@ public class SearchAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder>
 
     private int calculateItemCount() {
         int totalSize = mGenreCodes.size();
-        if (mGenreCodes.size() > 1) {
+        if (mGenreCodes.size() > 0) {
             totalSize++; //GenreSubtitle
         }
 
         totalSize += mBooks.size();
-        if (mBooks.size() > 1) {
+        if (mBooks.size() > 0) {
             totalSize++; //BookSubtitle
         }
 
         totalSize += mUsers.size();
-        if (mUsers.size() > 1) {
+        if (mUsers.size() > 0) {
             totalSize++; //UserSubtitle
         }
         totalSize++; //Footer
