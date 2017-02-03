@@ -65,7 +65,7 @@ public class MessageFragment extends Fragment {
 
         // TODO Setup Broadcast Listener for messages
 
-        ArrayList<User> users = mDbHandler.getMessageUsers();
+        ArrayList<User> users = mDbHandler.getAllMessageUsers();
         mLastMessages = mDbHandler.getLastMessages(users, currentUser);
         Collections.sort(mLastMessages);
 
@@ -243,7 +243,7 @@ public class MessageFragment extends Fragment {
 
                 createMessages(); // TODO REMOVE
 
-                ArrayList<User> users = mDbHandler.getMessageUsers();
+                ArrayList<User> users = mDbHandler.getAllMessageUsers();
                 mLastMessages = new ArrayList<>();
                 mLastMessages = mDbHandler.getLastMessages(users, currentUser);
                 getActivity().runOnUiThread(new Runnable() {
@@ -262,7 +262,7 @@ public class MessageFragment extends Fragment {
 
         mDbHandler.deleteAllMessages();
 
-        if (mDbHandler.getMessageUsers().isEmpty()) {
+        if (mDbHandler.getAllMessageUsers().isEmpty()) {
 
             User currentUser = SessionManager.getCurrentUser(getContext());
 
