@@ -263,8 +263,6 @@ public class Book implements Parcelable {
             }
         }
         return books;
-
-
     }
 
     @Override
