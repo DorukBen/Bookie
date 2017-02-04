@@ -1,8 +1,6 @@
 package com.karambit.bookie.fragment;
 
 
-import android.app.Activity;
-import android.app.ProgressDialog;
 import android.content.Intent;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
@@ -15,39 +13,30 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.EditText;
-import android.widget.Toast;
 
 import com.karambit.bookie.BookActivity;
 import com.karambit.bookie.LocationActivity;
-import com.karambit.bookie.LoginRegisterActivity;
 import com.karambit.bookie.ProfileActivity;
 import com.karambit.bookie.R;
 import com.karambit.bookie.adapter.SearchAdapter;
+import com.karambit.bookie.helper.NetworkChecker;
+import com.karambit.bookie.helper.SearchPrefs;
 import com.karambit.bookie.helper.SessionManager;
 import com.karambit.bookie.helper.string_similarity.JaroWinkler;
 import com.karambit.bookie.model.Book;
-import com.karambit.bookie.model.Notification;
 import com.karambit.bookie.model.User;
 import com.karambit.bookie.rest_api.BookieClient;
-import com.karambit.bookie.rest_api.ErrorCodes;
 import com.karambit.bookie.rest_api.SearchApi;
-import com.karambit.bookie.rest_api.UserApi;
 
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.IOException;
-import java.lang.reflect.Array;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Random;
-import java.util.Set;
 
 import okhttp3.ResponseBody;
 import retrofit2.Call;
@@ -84,6 +73,7 @@ public class SearchFragment extends Fragment {
 
         RecyclerView recyclerView = (RecyclerView) rootView.findViewById(R.id.searchResultsRecyclerView);
         recyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
+        final EditText searchEditText = (EditText)rootView.findViewById(R.id.searchEditText);
 
         mAllGenres  = getContext().getResources().getStringArray(R.array.genre_types);
 
@@ -92,6 +82,9 @@ public class SearchFragment extends Fragment {
             @Override
             public void onGenreClick(int genreCode) {
                 mFetchGenreCode = genreCode;
+                searchEditText.setText(mAllGenres[genreCode]);
+                SearchPrefs.changeLastSearch(getContext(), genreCode);
+                getSearchResults("");
             }
 
             @Override
@@ -122,20 +115,14 @@ public class SearchFragment extends Fragment {
 
         recyclerView.setHasFixedSize(true);
 
-        final EditText searchEditText = (EditText)rootView.findViewById(R.id.searchEditText);
-
         rootView.findViewById(R.id.searchButton).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                if (SessionManager.getCurrentUser(getContext().getApplicationContext()).getLatitude() != 0.0d && SessionManager.getCurrentUser(getContext().getApplicationContext()).getLongitude() != 0.0d ){
-                    mFetchSearchButtonPressed = 1;
-                    getSearchResults(searchEditText.getText().toString());
-                }else{
-                    startActivity(new Intent(getContext(), LocationActivity.class));
-                }
+            mFetchSearchButtonPressed = 1;
+            getSearchResults(searchEditText.getText().toString());
+            SearchPrefs.changeLastSearch(getContext(),searchEditText.getText().toString());
             }
         });
-
 
         searchEditText.addTextChangedListener(new TextWatcher() {
             @Override
@@ -155,6 +142,19 @@ public class SearchFragment extends Fragment {
 
             }
         });
+
+        if (!SearchPrefs.isSearchedBefore(getContext())){
+            mSearchAdapter.setWarning(SearchAdapter.WARNING_TYPE_NOTHING_TO_SHOW);
+        }else {
+            if (SearchPrefs.isLastSearchGenreCode(getContext())){
+                mFetchGenreCode = SearchPrefs.getLastSearchedGenre(getContext());
+                searchEditText.setText(mAllGenres[mFetchGenreCode]);
+                getSearchResults("");
+            }else {
+                searchEditText.setText(SearchPrefs.getLastSearchedString(getContext()));
+                getSearchResults(SearchPrefs.getLastSearchedString(getContext()));
+            }
+        }
         return rootView;
     }
 
@@ -174,36 +174,64 @@ public class SearchFragment extends Fragment {
                     boolean error = responseObject.getBoolean("error");
 
                     if (!error) {
-                        JSONArray booksArray = responseObject.getJSONArray("books");
-                        JSONArray usersArray = responseObject.getJSONArray("users");
+                        mSearchAdapter.setError(SearchAdapter.ERROR_TYPE_NONE);
+                        mSearchAdapter.setWarning(SearchAdapter.WARNING_TYPE_NONE);
 
                         mBooks.clear();
                         mUsers.clear();
 
-                        mBooks.addAll(Book.jsonArrayToBookList(booksArray));
-                        mUsers.addAll(User.jsonArrayToUserList(usersArray));
+                        if (!responseObject.isNull("books")){
+                            JSONArray booksArray = responseObject.getJSONArray("books");
+                            mBooks.addAll(Book.jsonArrayToBookList(booksArray));
+                        }
+                        if (!responseObject.isNull("users")){
+                            JSONArray usersArray = responseObject.getJSONArray("users");
+                            mUsers.addAll(User.jsonArrayToUserList(usersArray));
+                        }
 
-                        mSearchAdapter.setItems(getMostSimilarGenreIndex(searchString), mBooks, mUsers);
+                        if (mFetchGenreCode > -1){
+                            mSearchAdapter.setItems(new ArrayList<Integer>(), mBooks, mUsers);
+                        }else {
+                            mSearchAdapter.setItems(getMostSimilarGenreIndex(searchString), mBooks, mUsers);
+                        }
+
+                        if (mBooks.size() < 1 && mUsers.size() < 1){
+                            mSearchAdapter.setWarning(SearchAdapter.WARNING_TYPE_NO_RESULT_FOUND);
+                        }
+
+                        mFetchGenreCode = -1;
                     } else {
 
                         int errorCode = responseObject.getInt("error_code");
 
-                        if (errorCode == ErrorCodes.EMAIL_TAKEN) {
-                        } else {
-                            Log.e(TAG, "onResponse: errorCode = " + errorCode);
+                        if(NetworkChecker.isNetworkAvailable(getContext())){
+                            mSearchAdapter.setError(SearchAdapter.ERROR_TYPE_UNKNOWN_ERROR);
+                        }else{
+                            mSearchAdapter.setError(SearchAdapter.ERROR_TYPE_NO_CONNECTION);
                         }
                     }
 
                 } catch (IOException | JSONException e) {
                     e.printStackTrace();
 
+                    if(NetworkChecker.isNetworkAvailable(getContext())){
+                        mSearchAdapter.setError(SearchAdapter.ERROR_TYPE_UNKNOWN_ERROR);
+                    }else{
+                        mSearchAdapter.setError(SearchAdapter.ERROR_TYPE_NO_CONNECTION);
+                    }
+
                 }
             }
 
             @Override
             public void onFailure(Call<ResponseBody> call, Throwable t) {
+                if(NetworkChecker.isNetworkAvailable(getContext())){
+                    mSearchAdapter.setError(SearchAdapter.ERROR_TYPE_UNKNOWN_ERROR);
+                }else{
+                    mSearchAdapter.setError(SearchAdapter.ERROR_TYPE_NO_CONNECTION);
+                }
 
-                Log.e(TAG, "Register onFailure: " + t.getMessage());
+                Log.e(TAG, "Search onFailure: " + t.getMessage());
             }
         });
     }

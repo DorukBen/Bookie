@@ -17,9 +17,9 @@ public class SessionManager {
 
     public static final String TAG = SessionManager.class.getSimpleName();
 
-    public static final String NAME_SHARED_PREFERENCES = "bookie_sp";
+    private static final String NAME_SHARED_PREFERENCES = "bookie_general_sp";
 
-    public static final String IS_LOGGED_IN = "is_logged_in";
+    private static final String IS_LOGGED_IN = "is_logged_in";
 
     public static boolean isLoggedIn(Context context) {
         SharedPreferences sharedPreferences = context.getSharedPreferences(NAME_SHARED_PREFERENCES, Context.MODE_PRIVATE);

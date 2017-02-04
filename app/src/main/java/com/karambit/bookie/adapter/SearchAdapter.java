@@ -2,6 +2,7 @@ package com.karambit.bookie.adapter;
 
 import android.content.Context;
 import android.graphics.Bitmap;
+import android.support.v4.content.ContextCompat;
 import android.support.v4.view.ViewCompat;
 import android.support.v7.widget.CardView;
 import android.support.v7.widget.RecyclerView;
@@ -45,7 +46,23 @@ public class SearchAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder>
     public static final int TYPE_BOOK = 3;
     public static final int TYPE_USER_SUBTITLE = 4;
     public static final int TYPE_USER = 5;
-    public static final int TYPE_FOOTER = 6;
+    private static final int TYPE_NO_CONNECTION = 6;
+    private static final int TYPE_UNKNOWN_ERROR = 7;
+    private static final int TYPE_NOTHING_TO_SHOW = 8;
+    private static final int TYPE_NO_RESULT_FOUND = 9;
+    public static final int TYPE_FOOTER = 10;
+
+    public static final int ERROR_TYPE_NONE = 0;
+    public static final int ERROR_TYPE_NO_CONNECTION = 1;
+    public static final int ERROR_TYPE_UNKNOWN_ERROR = 2;
+    private int mErrorType = ERROR_TYPE_NONE;
+
+
+    public static final int WARNING_TYPE_NONE = 0;
+    public static final int WARNING_TYPE_NOTHING_TO_SHOW = 1;
+    public static final int WARNING_TYPE_NO_RESULT_FOUND = 2;
+    private int mWarningType = WARNING_TYPE_NONE;
+    
 
     private Context mContext;
 
@@ -147,6 +164,58 @@ public class SearchAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder>
         }
     }
 
+    private static class NoConnectionViewHolder extends RecyclerView.ViewHolder {
+
+        private ImageView mNoConnectionImageView;
+        private TextView mNoConnectionTextView;
+
+        private NoConnectionViewHolder(View noConnectionView) {
+            super(noConnectionView);
+
+            mNoConnectionImageView = (ImageView) noConnectionView.findViewById(R.id.emptyStateImageView);
+            mNoConnectionTextView = (TextView) noConnectionView.findViewById(R.id.emptyStateTextView);
+        }
+    }
+
+    private static class UnknownErrorViewHolder extends RecyclerView.ViewHolder {
+
+        private ImageView mUnknownErrorImageView;
+        private TextView mUnknownErrorTextView;
+
+        private UnknownErrorViewHolder(View unknownErrorView) {
+            super(unknownErrorView);
+
+            mUnknownErrorImageView = (ImageView) unknownErrorView.findViewById(R.id.emptyStateImageView);
+            mUnknownErrorTextView = (TextView) unknownErrorView.findViewById(R.id.emptyStateTextView);
+        }
+    }
+
+    private static class NothingToShowViewHolder extends RecyclerView.ViewHolder {
+
+        private ImageView mNothingToShowImageView;
+        private TextView mNothingToShowTextView;
+
+        private NothingToShowViewHolder(View nothingToShowView) {
+            super(nothingToShowView);
+
+            mNothingToShowImageView = (ImageView) nothingToShowView.findViewById(R.id.emptyStateImageView);
+            mNothingToShowTextView = (TextView) nothingToShowView.findViewById(R.id.emptyStateTextView);
+        }
+    }
+
+    private static class NoResultFoundViewHolder extends RecyclerView.ViewHolder {
+
+        private ImageView mNoResultFoundImageView;
+        private TextView mNoResultFoundTextView;
+
+        private NoResultFoundViewHolder(View noResultFoundView) {
+            super(noResultFoundView);
+
+            mNoResultFoundImageView = (ImageView) noResultFoundView.findViewById(R.id.noResultFoundImageView);
+            mNoResultFoundTextView = (TextView) noResultFoundView.findViewById(R.id.noResultFoundTextView);
+        }
+    }
+
     private static class FooterViewHolder extends RecyclerView.ViewHolder {
 
         private ProgressBar mProgressBar;
@@ -175,99 +244,134 @@ public class SearchAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder>
     @Override
     public int getItemViewType(int position) {
 
-        if (position == getItemCount() - 1) {
-            return TYPE_FOOTER;
+        
+        if (mErrorType != ERROR_TYPE_NONE) {
+            if (mErrorType == ERROR_TYPE_NO_CONNECTION && position == 0) {
+                return TYPE_NO_CONNECTION;
+            }else if (mErrorType == ERROR_TYPE_UNKNOWN_ERROR && position == 0){
+                return TYPE_UNKNOWN_ERROR;
+            }else {
+                throw new IllegalArgumentException("Invalid view type at position " + position);
+            }
+        }else if (mWarningType != WARNING_TYPE_NOTHING_TO_SHOW){
 
-        } else if (mGenreCodes.size() > 0 && mBooks.size() > 0 && mUsers.size() > 0) {
-            genrePosition = 1;
-            bookPosition = mGenreCodes.size() + 2;
-            userPosition = mGenreCodes.size() + mBooks.size() + 3;
-            if (position == 0) {
-                return TYPE_GENRE_SUBTITLE;
-            } else if (position < mGenreCodes.size() + 1) {
-                return TYPE_GENRE;
-            } else if (position == mGenreCodes.size() + 1) {
-                return TYPE_BOOK_SUBTITLE;
-            } else if (position < mGenreCodes.size() + mBooks.size() + 2) {
-                return TYPE_BOOK;
-            } else if (position == mGenreCodes.size() + mBooks.size() + 2) {
-                return TYPE_USER_SUBTITLE;
-            } else if (position < mGenreCodes.size() + mBooks.size() + mUsers.size() + 3) {
-                return TYPE_USER;
+            if (mWarningType == WARNING_TYPE_NO_RESULT_FOUND && mGenreCodes.size() < 1){
+                return TYPE_NO_RESULT_FOUND;
+            }
+
+            if (position == getItemCount() - 1) {
+                if (mProgressBarActive){
+                    return TYPE_FOOTER;
+                }
+            }
+
+            if (mGenreCodes.size() > 0 && mBooks.size() > 0 && mUsers.size() > 0) {
+                genrePosition = 1;
+                bookPosition = mGenreCodes.size() + 2;
+                userPosition = mGenreCodes.size() + mBooks.size() + 3;
+                if (position == 0) {
+                    return TYPE_GENRE_SUBTITLE;
+                } else if (position < mGenreCodes.size() + 1) {
+                    return TYPE_GENRE;
+                } else if (position == mGenreCodes.size() + 1) {
+                    if (mWarningType == WARNING_TYPE_NO_RESULT_FOUND){
+                        return TYPE_NO_RESULT_FOUND;
+                    }else{
+                        return TYPE_BOOK_SUBTITLE;
+                    }
+                } else if (position < mGenreCodes.size() + mBooks.size() + 2) {
+                    return TYPE_BOOK;
+                } else if (position == mGenreCodes.size() + mBooks.size() + 2) {
+                    return TYPE_USER_SUBTITLE;
+                } else if (position < mGenreCodes.size() + mBooks.size() + mUsers.size() + 3) {
+                    return TYPE_USER;
+                } else {
+                    throw new IllegalArgumentException("Invalid view type at position " + position);
+                }
+            } else if (mGenreCodes.size() > 0 && mBooks.size() > 0 && mUsers.size() < 1) {
+                genrePosition = 1;
+                bookPosition = mGenreCodes.size() + 2;
+                if (position == 0) {
+                    return TYPE_GENRE_SUBTITLE;
+                } else if (position < mGenreCodes.size() + 1) {
+                    return TYPE_GENRE;
+                } else if (position == mGenreCodes.size() + 1) {
+                    if (mWarningType == WARNING_TYPE_NO_RESULT_FOUND){
+                        return TYPE_NO_RESULT_FOUND;
+                    }else{
+                        return TYPE_BOOK_SUBTITLE;
+                    }
+                } else if (position < mGenreCodes.size() + mBooks.size() + 2) {
+                    return TYPE_BOOK;
+                } else {
+                    throw new IllegalArgumentException("Invalid view type at position " + position);
+                }
+            } else if (mGenreCodes.size() > 0 && mBooks.size() < 1 && mUsers.size() > 0) {
+                genrePosition = 1;
+                userPosition = mGenreCodes.size() + 2;
+                if (position == 0) {
+                    return TYPE_GENRE_SUBTITLE;
+                } else if (position < mGenreCodes.size() + 1) {
+                    return TYPE_GENRE;
+                } else if (position == mGenreCodes.size() + 1) {
+                    if (mWarningType == WARNING_TYPE_NO_RESULT_FOUND){
+                        return TYPE_NO_RESULT_FOUND;
+                    }else{
+                        return TYPE_USER_SUBTITLE;
+                    }
+                } else if (position < mGenreCodes.size() + mUsers.size() + 2) {
+                    return TYPE_USER;
+                } else {
+                    throw new IllegalArgumentException("Invalid view type at position " + position);
+                }
+            } else if (mGenreCodes.size() < 1 && mBooks.size() > 0 && mUsers.size() > 0) {
+                bookPosition = 1;
+                userPosition = mBooks.size() + 2;
+                if (position == 0) {
+                    return TYPE_BOOK_SUBTITLE;
+                } else if (position < mBooks.size() + 1) {
+                    return TYPE_BOOK;
+                } else if (position == mBooks.size() + 1) {
+                    return TYPE_USER_SUBTITLE;
+                } else if (position < mBooks.size() + mUsers.size() + 2) {
+                    return TYPE_USER;
+                } else {
+                    throw new IllegalArgumentException("Invalid view type at position " + position);
+                }
+            } else if (mGenreCodes.size() > 0 && mBooks.size() < 1 && mUsers.size() < 1) {
+                genrePosition = 1;
+                if (position == 0) {
+                    return TYPE_GENRE_SUBTITLE;
+                } else if (position < mGenreCodes.size() + 1) {
+                    return TYPE_GENRE;
+                } else if (position == mGenreCodes.size() + 1){
+                    return TYPE_NO_RESULT_FOUND;
+                } else {
+                    throw new IllegalArgumentException("Invalid view type at position " + position);
+                }
+            } else if (mGenreCodes.size() < 1 && mBooks.size() < 1 && mUsers.size() > 0) {
+                userPosition = 1;
+                if (position == 0) {
+                    return TYPE_USER_SUBTITLE;
+                } else if (position < mUsers.size() + 1) {
+                    return TYPE_USER;
+                } else {
+                    throw new IllegalArgumentException("Invalid view type at position " + position);
+                }
+            } else if (mGenreCodes.size() < 1 && mBooks.size() > 0 && mUsers.size() < 1) {
+                bookPosition = 1;
+                if (position == 0) {
+                    return TYPE_BOOK_SUBTITLE;
+                } else if (position < mBooks.size() + 1) {
+                    return TYPE_BOOK;
+                } else {
+                    throw new IllegalArgumentException("Invalid view type at position " + position);
+                }
             } else {
                 throw new IllegalArgumentException("Invalid view type at position " + position);
             }
-        } else if (mGenreCodes.size() > 0 && mBooks.size() > 0 && mUsers.size() < 1) {
-            genrePosition = 1;
-            bookPosition = mGenreCodes.size() + 2;
-            if (position == 0) {
-                return TYPE_GENRE_SUBTITLE;
-            } else if (position < mGenreCodes.size() + 1) {
-                return TYPE_GENRE;
-            } else if (position == mGenreCodes.size() + 1) {
-                return TYPE_BOOK_SUBTITLE;
-            } else if (position < mGenreCodes.size() + mBooks.size() + 2) {
-                return TYPE_BOOK;
-            } else {
-                throw new IllegalArgumentException("Invalid view type at position " + position);
-            }
-        } else if (mGenreCodes.size() > 0 && mBooks.size() < 1 && mUsers.size() > 0) {
-            genrePosition = 1;
-            userPosition = mGenreCodes.size() + 2;
-            if (position == 0) {
-                return TYPE_GENRE_SUBTITLE;
-            } else if (position < mGenreCodes.size() + 1) {
-                return TYPE_GENRE;
-            } else if (position == mGenreCodes.size() + 1) {
-                return TYPE_USER_SUBTITLE;
-            } else if (position < mGenreCodes.size() + mUsers.size() + 2) {
-                return TYPE_USER;
-            } else {
-                throw new IllegalArgumentException("Invalid view type at position " + position);
-            }
-        } else if (mGenreCodes.size() < 1 && mBooks.size() > 0 && mUsers.size() > 0) {
-            bookPosition = 1;
-            userPosition = mBooks.size() + 2;
-            if (position == 0) {
-                return TYPE_BOOK_SUBTITLE;
-            } else if (position < mBooks.size() + 1) {
-                return TYPE_BOOK;
-            } else if (position == mBooks.size() + 1) {
-                return TYPE_USER_SUBTITLE;
-            } else if (position < mBooks.size() + mUsers.size() + 2) {
-                return TYPE_USER;
-            } else {
-                throw new IllegalArgumentException("Invalid view type at position " + position);
-            }
-        } else if (mGenreCodes.size() > 0 && mBooks.size() < 1 && mUsers.size() < 1) {
-            genrePosition = 1;
-            if (position == 0) {
-                return TYPE_GENRE_SUBTITLE;
-            } else if (position < mGenreCodes.size() + 1) {
-                return TYPE_GENRE;
-            } else {
-                throw new IllegalArgumentException("Invalid view type at position " + position);
-            }
-        } else if (mGenreCodes.size() < 1 && mBooks.size() < 1 && mUsers.size() > 0) {
-            userPosition = 1;
-            if (position == 0) {
-                return TYPE_USER_SUBTITLE;
-            } else if (position < mUsers.size() + 1) {
-                return TYPE_USER;
-            } else {
-                throw new IllegalArgumentException("Invalid view type at position " + position);
-            }
-        } else if (mGenreCodes.size() < 1 && mBooks.size() > 0 && mUsers.size() < 1) {
-            bookPosition = 1;
-            if (position == 0) {
-                return TYPE_BOOK_SUBTITLE;
-            } else if (position < mBooks.size() + 1) {
-                return TYPE_BOOK;
-            } else {
-                throw new IllegalArgumentException("Invalid view type at position " + position);
-            }
-        } else {
-            throw new IllegalArgumentException("Invalid view type at position " + position);
+        }else {
+            return TYPE_NOTHING_TO_SHOW;
         }
     }
 
@@ -299,6 +403,22 @@ public class SearchAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder>
             case TYPE_USER:
                 View userView = LayoutInflater.from(parent.getContext()).inflate(R.layout.item_user, parent, false);
                 return new UserViewHolder(userView);
+
+            case TYPE_NO_CONNECTION:
+                View noConnectionView = LayoutInflater.from(parent.getContext()).inflate(R.layout.item_empty_state, parent, false);
+                return new NoConnectionViewHolder(noConnectionView);
+
+            case TYPE_UNKNOWN_ERROR:
+                View unknownErrorView = LayoutInflater.from(parent.getContext()).inflate(R.layout.item_empty_state, parent, false);
+                return new UnknownErrorViewHolder(unknownErrorView);
+
+            case TYPE_NOTHING_TO_SHOW:
+                View nothingToShowView = LayoutInflater.from(parent.getContext()).inflate(R.layout.item_empty_state, parent, false);
+                return new NothingToShowViewHolder(nothingToShowView);
+
+            case TYPE_NO_RESULT_FOUND:
+                View noResultFoundView = LayoutInflater.from(parent.getContext()).inflate(R.layout.item_no_result_found, parent, false);
+                return new NoResultFoundViewHolder(noResultFoundView);
 
             case TYPE_FOOTER:
                 View footerView = LayoutInflater.from(parent.getContext()).inflate(R.layout.item_footer, parent, false);
@@ -411,6 +531,40 @@ public class SearchAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder>
                         });
                 break;
             }
+            case TYPE_NO_CONNECTION: {
+
+                NoConnectionViewHolder noConnectionViewHolder = (NoConnectionViewHolder) holder;
+                noConnectionViewHolder.mNoConnectionTextView.setText(mContext.getString(R.string.no_internet_connection));
+
+                break;
+            }
+
+            case TYPE_UNKNOWN_ERROR: {
+
+                UnknownErrorViewHolder unknownErrorViewHolder = (UnknownErrorViewHolder) holder;
+                unknownErrorViewHolder.mUnknownErrorTextView.setText(mContext.getString(R.string.unknown_error));
+
+                break;
+            }
+
+            case TYPE_NOTHING_TO_SHOW: {
+
+                NothingToShowViewHolder nothingToShowViewHolder = (NothingToShowViewHolder) holder;
+                //TODO: Change image.
+                nothingToShowViewHolder.mNothingToShowImageView.setImageDrawable(ContextCompat.getDrawable(mContext, R.drawable.ic_search_black_24dp));
+                nothingToShowViewHolder.mNothingToShowTextView.setText(mContext.getString(R.string.nothing_to_show));
+
+                break;
+            }
+
+            case TYPE_NO_RESULT_FOUND: {
+
+                NoResultFoundViewHolder noResultFoundViewHolder = (NoResultFoundViewHolder) holder;
+                noResultFoundViewHolder.mNoResultFoundImageView.setImageDrawable(ContextCompat.getDrawable(mContext, R.drawable.ic_search_black_24dp));
+                noResultFoundViewHolder.mNoResultFoundTextView.setText(mContext.getString(R.string.no_result_found));
+
+                break;
+            }
 
             case TYPE_FOOTER: {
 
@@ -443,7 +597,19 @@ public class SearchAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder>
         if (mUsers.size() > 0) {
             totalSize++; //UserSubtitle
         }
-        totalSize++; //Footer
+
+        if (mProgressBarActive){
+            totalSize++; //Footer
+        }
+
+        if (mErrorType != ERROR_TYPE_NONE){
+            totalSize++;
+        }
+
+        if (mWarningType != WARNING_TYPE_NONE){
+            totalSize++;
+        }
+
         return totalSize;
     }
 
@@ -473,6 +639,30 @@ public class SearchAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder>
         mBooks = books;
         mUsers = users;
 
+        notifyDataSetChanged();
+    }
+
+    public void setError(int errorType){
+        mErrorType = errorType;
+        mWarningType = WARNING_TYPE_NONE;
+        if (errorType != ERROR_TYPE_NONE){
+            mGenreCodes.clear();
+            mBooks.clear();
+            mUsers.clear();
+
+            setProgressBarActive(false);
+        }
+        notifyDataSetChanged();
+    }
+
+    public void setWarning(int warningType){
+        mWarningType = warningType;
+        if (warningType != WARNING_TYPE_NONE){
+            mBooks.clear();
+            mUsers.clear();
+
+            setProgressBarActive(false);
+        }
         notifyDataSetChanged();
     }
 

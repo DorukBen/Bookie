@@ -178,5 +178,7 @@
     <string name="genre_value_30">Biographies</string>
     <string name="genre_value_31">Autobiographies</string>
     <string name="genre_value_32">Fantasy</string>
+    <string name="nothing_to_show">Search for books, users and genres.</string>
+    <string name="no_result_found">No result found.</string>
 
 </resources>
