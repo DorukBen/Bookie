@@ -89,26 +89,41 @@ public class User implements Parcelable {
     }
 
     public static User.Details jsonObjectToUserDetails(JSONObject userJsonObject) {
+
         try {
-            return new User(
+            User user = new User(
                     userJsonObject.getInt("user_id"),
                     userJsonObject.getString("name_surname"),
                     userJsonObject.getString("profile_picture_url"),
                     userJsonObject.getString("profile_picture_thumbnail_url"),
                     userJsonObject.getDouble("latitude"),
                     userJsonObject.getDouble("longitude")
-            ).new Details(
-                    userJsonObject.getString("password"),
-                    userJsonObject.getString("email"),
-                    userJsonObject.getBoolean("email_verified"),
-                    userJsonObject.getString("bio"),
-                    userJsonObject.getInt("book_counter"),
-                    userJsonObject.getInt("point")
             );
+            User.Details details;
+            if (userJsonObject.getInt("email_verified") == 0){
+                details = user.new Details(
+                        userJsonObject.getString("password"),
+                        userJsonObject.getString("email"),
+                        false,
+                        userJsonObject.getString("bio"),
+                        userJsonObject.getInt("book_counter"),
+                        userJsonObject.getInt("point")
+                );
+            }else{
+                details = user.new Details(
+                        userJsonObject.getString("password"),
+                        userJsonObject.getString("email"),
+                        true,
+                        userJsonObject.getString("bio"),
+                        userJsonObject.getInt("book_counter"),
+                        userJsonObject.getInt("point")
+                );
+            }
+
+            return details;
 
         } catch (JSONException e) {
             e.printStackTrace();
-
             return null;
         }
     }
