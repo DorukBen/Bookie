@@ -20,6 +20,7 @@ import android.view.MenuItem;
 import android.view.View;
 import android.widget.EditText;
 import android.widget.ImageButton;
+import android.widget.TextView;
 
 import com.karambit.bookie.adapter.ConversationAdapter;
 import com.karambit.bookie.helper.DBHandler;
@@ -28,9 +29,11 @@ import com.karambit.bookie.helper.TypefaceSpan;
 import com.karambit.bookie.model.Message;
 import com.karambit.bookie.model.User;
 
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Collections;
+import java.util.Locale;
 
 public class ConversationActivity extends AppCompatActivity {
 
@@ -66,12 +69,60 @@ public class ConversationActivity extends AppCompatActivity {
         mMessageEditText = (EditText) findViewById(R.id.messageEditText);
         mSendMessageButton = (ImageButton) findViewById(R.id.messageSendButton);
 
+        final TextView dateLabel = (TextView) findViewById(R.id.dateLabelTextView);
+
         mRecyclerView = (RecyclerView) findViewById(R.id.conversationRecyclerView);
 
-        LinearLayoutManager layoutManager = new LinearLayoutManager(this);
+        final LinearLayoutManager layoutManager = new LinearLayoutManager(this);
         layoutManager.setReverseLayout(true);
 
         mRecyclerView.setLayoutManager(layoutManager);
+
+        mRecyclerView.setOnScrollListener(new RecyclerView.OnScrollListener() {
+
+            private final int DAY_DURATION = 1000 * 60 * 60 * 24;
+            private int mStoredPosition;
+
+            @Override
+            public void onScrolled(RecyclerView recyclerView, int dx, int dy) {
+                super.onScrolled(recyclerView, dx, dy);
+
+                int currentPosition = layoutManager.findLastCompletelyVisibleItemPosition();
+
+                if (currentPosition != mStoredPosition) {
+
+                    mStoredPosition = currentPosition;
+
+                    Calendar createdAt = mMessages.get(currentPosition).getCreatedAt();
+                    long createdAtMillis = createdAt.getTimeInMillis();
+
+                    Calendar now = Calendar.getInstance();
+                    now.set(Calendar.MINUTE, 0);
+                    now.set(Calendar.HOUR_OF_DAY, 0);
+                    long dayStartMillis = now.getTimeInMillis();
+
+                    String yesterday = getString(R.string.yesterday);
+
+                    if (dayStartMillis < createdAtMillis) {
+                        dateLabel.setVisibility(View.GONE);
+                    } else {
+                         if (dayStartMillis - createdAtMillis < DAY_DURATION) {
+                             if (!dateLabel.getText().toString().equals(yesterday)) {
+                                 dateLabel.setVisibility(View.VISIBLE);
+                                 dateLabel.setText(yesterday);
+                             }
+                        } else {
+                            dateLabel.setVisibility(View.VISIBLE);
+
+                            SimpleDateFormat sdf = new SimpleDateFormat("dd MMMMMMM", Locale.getDefault());
+                            String dateText = sdf.format(createdAt.getTime());
+
+                            dateLabel.setText(dateText);
+                        }
+                    }
+                }
+            }
+        });
 
         mConversationAdapter = new ConversationAdapter(this, mMessages);
 

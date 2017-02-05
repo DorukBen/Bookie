@@ -270,7 +270,7 @@ public class MessageFragment extends Fragment {
                 User messageUser = User.GENERATOR.generateUser();
                 mDbHandler.insertMessageUser(messageUser);
 
-                for (Message message : Message.GENERATOR.generateMessageList(currentUser, messageUser, 20)) {
+                for (Message message : Message.GENERATOR.generateMessageList(currentUser, messageUser, 50)) {
                     mDbHandler.insertMessage(message);
                 }
             }

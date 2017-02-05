@@ -140,4 +140,5 @@
     <string name="x__messages_selected">%d selected</string>
     <string name="action_delete">Delete</string>
     <string name="delete">Delete</string>
+    <string name="yesterday">YESTERDAY</string>
 </resources>

@@ -9,6 +9,26 @@
     android:background="@color/colorPrimary"
     tools:context="com.karambit.bookie.ConversationActivity">
 
+    <android.support.v7.widget.CardView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        app:cardUseCompatPadding="true"
+        android:layout_centerHorizontal="true"
+        android:layout_marginTop="4dp"
+        app:cardElevation="4dp">
+
+    <TextView
+        android:id="@+id/dateLabelTextView"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textSize="14sp"
+        android:padding="6dp"
+        android:textAllCaps="true"
+        android:textColor="@color/secondaryTextColor"
+        android:text="DATE"/>
+
+    </android.support.v7.widget.CardView>
+
     <android.support.v7.widget.RecyclerView
         android:id="@+id/conversationRecyclerView"
         android:layout_width="match_parent"

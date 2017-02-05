@@ -157,7 +157,9 @@ public class Message implements Parcelable, Comparable<Message> {
 
                 messages.add(new Message(RANDOM.nextInt(100000), generateRandomText(), sender, receiver, createdAt, State.SEEN));
 
-                createdMillis -= MIN_IN_MILLIS * RANDOM.nextInt(5);
+                // createdMillis -= MIN_IN_MILLIS * RANDOM.nextInt(5);
+
+                createdMillis -= 1000000 * RANDOM.nextInt(5);
             }
 
             Collections.sort(messages);
