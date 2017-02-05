@@ -210,7 +210,7 @@ public class ConversationAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
                     }
                 });
 
-                currentUserHolder.mCreatedAt.setText(calendarToCreatedAt(message.getCreatedAt()));
+                currentUserHolder.mCreatedAt.setText(createdAtToString(message.getCreatedAt()));
 
                 if (mCurrentUser.getThumbnailUrl() != null && mCurrentUser.getThumbnailUrl() != "") {
                     Glide.with(mContext)
@@ -250,7 +250,7 @@ public class ConversationAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
 
                 oppositeUserHolder.mText.setText(message.getText());
 
-                oppositeUserHolder.mCreatedAt.setText(calendarToCreatedAt(message.getCreatedAt()));
+                oppositeUserHolder.mCreatedAt.setText(createdAtToString(message.getCreatedAt()));
 
                 if (mOppositeUser.getThumbnailUrl() != null && mOppositeUser.getThumbnailUrl() != "") {
                     Glide.with(mContext)
@@ -286,16 +286,9 @@ public class ConversationAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
         }
     }
 
-    private String calendarToCreatedAt(Calendar calendar) {
-
-        int hour = calendar.get(Calendar.HOUR_OF_DAY);
-
-        int minute = calendar.get(Calendar.MINUTE);
-        String minuteString = minute < 10 ? ("0" + minute) : String.valueOf(minute);
-
-        SimpleDateFormat df = new SimpleDateFormat("kk:mm", Locale.getDefault());
-
-        return df.format(calendar.getTime());
+    private String createdAtToString(Calendar createdAt) {
+        SimpleDateFormat sdf = new SimpleDateFormat("HH:mm", Locale.getDefault());
+        return sdf.format(createdAt.getTime());
     }
 
     public interface OnMessageClickListener {

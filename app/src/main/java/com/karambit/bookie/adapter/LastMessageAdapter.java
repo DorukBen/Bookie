@@ -189,7 +189,7 @@ public class LastMessageAdapter extends RecyclerView.Adapter<RecyclerView.ViewHo
                 }
 
                 messageHolder.mLastMessageText.setText(message.getText());
-                messageHolder.mCreatedAt.setText(calendarToCreatedAt(message.getCreatedAt()));
+                messageHolder.mCreatedAt.setText(createdAtToString(message.getCreatedAt()));
 
                 int unseenCount = mUnseenCounts.get(position, -1);
 
@@ -258,7 +258,7 @@ public class LastMessageAdapter extends RecyclerView.Adapter<RecyclerView.ViewHo
         }
     }
 
-    private String calendarToCreatedAt(Calendar createdAt) {
+    private String createdAtToString(Calendar createdAt) {
 
         int dayDurationMillis = 24 * 60 * 60 * 1000;
 
