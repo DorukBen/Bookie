@@ -24,4 +24,10 @@ public interface UserApi {
     Call<ResponseBody> register(@Field("name_surname") String nameSurname,
                                 @Field("email") String email,
                                 @Field("password") String password);
+
+    @FormUrlEncoded
+    @POST("profile_page_api.php")
+    Call<ResponseBody> getUserProfilePageArguments(@Field("email") String email,
+                                @Field("password") String password,
+                                @Field("user_id") int anotherUserId);
 }

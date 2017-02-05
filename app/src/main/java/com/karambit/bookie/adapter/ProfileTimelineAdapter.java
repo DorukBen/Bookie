@@ -30,6 +30,7 @@ import com.karambit.bookie.model.Book;
 import com.karambit.bookie.model.User;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 
@@ -50,6 +51,13 @@ public class ProfileTimelineAdapter extends RecyclerView.Adapter<RecyclerView.Vi
     private static final int TYPE_FOOTER = 7;
     private static final int TYPE_START_READING = 8;
     private static final int TYPE_EMPTY_STATE = 9;
+    private static final int TYPE_NO_CONNECTION = 10;
+    private static final int TYPE_UNKNOWN_ERROR = 11;
+
+    public static final int ERROR_TYPE_NONE = 0;
+    public static final int ERROR_TYPE_NO_CONNECTION = 1;
+    public static final int ERROR_TYPE_UNKNOWN_ERROR = 2;
+    private int mErrorType = ERROR_TYPE_NONE;
 
     private Context mContext;
     private User.Details mUserDetails;
@@ -70,7 +78,7 @@ public class ProfileTimelineAdapter extends RecyclerView.Adapter<RecyclerView.Vi
     public ProfileTimelineAdapter(Context context) {
         mContext = context;
 
-        mProgressBarActive = true;
+        mProgressBarActive = false;
     }
 
     private static class HeaderViewHolder extends RecyclerView.ViewHolder {
@@ -166,6 +174,45 @@ public class ProfileTimelineAdapter extends RecyclerView.Adapter<RecyclerView.Vi
         }
     }
 
+    private static class EmptyStateViewHolder extends RecyclerView.ViewHolder {
+
+        private ImageView mEmptyStateImageView;
+        private TextView mEmptyStateTextView;
+
+        private EmptyStateViewHolder(View emptyStateView) {
+            super(emptyStateView);
+
+            mEmptyStateImageView = (ImageView) emptyStateView.findViewById(R.id.emptyStateImageView);
+            mEmptyStateTextView = (TextView) emptyStateView.findViewById(R.id.emptyStateTextView);
+        }
+    }
+
+    private static class NoConnectionViewHolder extends RecyclerView.ViewHolder {
+
+        private ImageView mNoConnectionImageView;
+        private TextView mNoConnectionTextView;
+
+        private NoConnectionViewHolder(View noConnectionView) {
+            super(noConnectionView);
+
+            mNoConnectionImageView = (ImageView) noConnectionView.findViewById(R.id.emptyStateImageView);
+            mNoConnectionTextView = (TextView) noConnectionView.findViewById(R.id.emptyStateTextView);
+        }
+    }
+
+    private static class UnknownErrorViewHolder extends RecyclerView.ViewHolder {
+
+        private ImageView mUnknownErrorImageView;
+        private TextView mUnknownErrorTextView;
+
+        private UnknownErrorViewHolder(View unkonwnErrorView) {
+            super(unkonwnErrorView);
+
+            mUnknownErrorImageView = (ImageView) unkonwnErrorView.findViewById(R.id.emptyStateImageView);
+            mUnknownErrorTextView = (TextView) unkonwnErrorView.findViewById(R.id.emptyStateTextView);
+        }
+    }
+
     @Override
     public long getItemId(int position) {
         return position;
@@ -204,6 +251,16 @@ public class ProfileTimelineAdapter extends RecyclerView.Adapter<RecyclerView.Vi
 
     @Override
     public int getItemViewType(int position) {
+
+        if (mErrorType != ERROR_TYPE_NONE){
+            if (position == 0){
+                if (mErrorType == ERROR_TYPE_NO_CONNECTION){
+                    return TYPE_NO_CONNECTION;
+                }else {
+                    return TYPE_UNKNOWN_ERROR;
+                }
+            }
+        }
 
         if (mUserDetails != null) {
 
@@ -362,7 +419,15 @@ public class ProfileTimelineAdapter extends RecyclerView.Adapter<RecyclerView.Vi
 
             case TYPE_EMPTY_STATE:
                 View emptyStateView = LayoutInflater.from(parent.getContext()).inflate(R.layout.item_empty_state, parent, false);
-                return new RecyclerView.ViewHolder(emptyStateView) {};
+                return new EmptyStateViewHolder(emptyStateView);
+
+            case TYPE_NO_CONNECTION:
+                View noConnectionView = LayoutInflater.from(parent.getContext()).inflate(R.layout.item_empty_state, parent, false);
+                return new NoConnectionViewHolder(noConnectionView);
+
+            case TYPE_UNKNOWN_ERROR:
+                View unknownErrorView = LayoutInflater.from(parent.getContext()).inflate(R.layout.item_empty_state, parent, false);
+                return new UnknownErrorViewHolder(unknownErrorView);
 
             case TYPE_BOOKS_ON_HAND: case TYPE_READ_BOOKS:
                 View bookView = LayoutInflater.from(parent.getContext()).inflate(R.layout.item_book, parent, false);
@@ -454,8 +519,14 @@ public class ProfileTimelineAdapter extends RecyclerView.Adapter<RecyclerView.Vi
                 if (latitude != -1 && longitude != -1) {
 
                     try {
+                        List<Address> addresses;
                         Geocoder geocoder = new Geocoder(mContext, Locale.getDefault());
-                        List<Address> addresses = geocoder.getFromLocation(latitude, longitude, 1);
+                        if (latitude > -90 && latitude < 90 && longitude > -90 && longitude < 90){
+                            addresses = geocoder.getFromLocation(latitude, longitude, 1);
+                        }else {
+                            addresses = new ArrayList<>();
+                        }
+
 
                         // Admin area equals Istanbul
                         // Subadmin are equals Bahçelievler
@@ -626,6 +697,30 @@ public class ProfileTimelineAdapter extends RecyclerView.Adapter<RecyclerView.Vi
 
                 break;
             }
+
+            case TYPE_EMPTY_STATE: {
+
+                EmptyStateViewHolder emptyStateViewHolder = (EmptyStateViewHolder) holder;
+                emptyStateViewHolder.mEmptyStateTextView.setText(mContext.getString(R.string.nothing_to_show));
+
+                break;
+            }
+
+            case TYPE_NO_CONNECTION: {
+
+                NoConnectionViewHolder noConnectionViewHolder = (NoConnectionViewHolder) holder;
+                noConnectionViewHolder.mNoConnectionTextView.setText(mContext.getString(R.string.no_internet_connection));
+
+                break;
+            }
+
+            case TYPE_UNKNOWN_ERROR: {
+
+                UnknownErrorViewHolder unknownErrorViewHolder = (UnknownErrorViewHolder) holder;
+                unknownErrorViewHolder.mUnknownErrorTextView.setText(mContext.getString(R.string.unknown_error));
+
+                break;
+            }
         }
     }
 
@@ -675,12 +770,22 @@ public class ProfileTimelineAdapter extends RecyclerView.Adapter<RecyclerView.Vi
 
     public void setUserDetails(User.Details userDetails) {
         mUserDetails = userDetails;
+        setProgressBarActive(false);
         notifyDataSetChanged();
     }
 
-    public void setProgressBar(boolean active) {
+    public void setProgressBarActive(boolean active) {
         mProgressBarActive = active;
         notifyItemChanged(getItemCount() - 1);
+    }
+
+    public void setError(int errorType){
+        mErrorType = errorType;
+        if (errorType != ERROR_TYPE_NONE){
+            mUserDetails = null;
+            setProgressBarActive(false);
+        }
+        notifyDataSetChanged();
     }
 
     public interface HeaderClickListeners {
