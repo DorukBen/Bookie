@@ -11,6 +11,7 @@ import org.json.JSONObject;
 import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.Objects;
 import java.util.Random;
 
 /**
@@ -244,9 +245,42 @@ public class Book implements Parcelable {
             Book book = jsonObjectToBook(bookDetailsObject);
             User added_by = User.jsonObjectToUser(bookDetailsObject.getJSONObject("added_by"));
 
+            ArrayList<Book.BookProcess> bookProcesses = new ArrayList<>();
+
+            if (!bookDetailsObject.isNull("book_processes")){
+                if (!bookDetailsObject.getJSONObject("book_processes").isNull("book_interactions")){
+                    JSONArray jsonArray = bookDetailsObject.getJSONObject("book_processes").getJSONArray("book_interactions");
+                    for (int i = 0; i < jsonArray.length(); i++){
+                        bookProcesses.add(book.new Interaction(InteractionType.values()[jsonArray.getJSONObject(i).getInt("interaction_type") - Book.InteractionType.values()[0].getInteractionCode()],
+                                User.jsonObjectToUser(jsonArray.getJSONObject(i).getJSONObject("user")),
+                                jsonArray.getJSONObject(i).getString("created_at")));
+                    }
+                }
+
+                if (!bookDetailsObject.getJSONObject("book_processes").isNull("book_transactions")){
+                    JSONArray jsonArray = bookDetailsObject.getJSONObject("book_processes").getJSONArray("book_transactions");
+                    for (int i = 0; i < jsonArray.length(); i++){
+                        bookProcesses.add(book.new Transaction(User.jsonObjectToUser(jsonArray.getJSONObject(i).getJSONObject("from_user")),
+                                Book.TransactionType.values()[jsonArray.getJSONObject(i).getInt("transaction_type") - Book.TransactionType.values()[0].getTransactionCode()],
+                                User.jsonObjectToUser(jsonArray.getJSONObject(i).getJSONObject("to_user")),
+                                jsonArray.getJSONObject(i).getString("created_at")));
+                    }
+                }
+
+                if (!bookDetailsObject.getJSONObject("book_processes").isNull("book_requests")){
+                    JSONArray jsonArray = bookDetailsObject.getJSONObject("book_processes").getJSONArray("book_requests");
+                    for (int i = 0; i < jsonArray.length(); i++){
+                        bookProcesses.add(book.new Request(Book.RequestType.values()[jsonArray.getJSONObject(i).getInt("request_type") - Book.RequestType.values()[0].getRequestCode()],
+                                User.jsonObjectToUser(jsonArray.getJSONObject(i).getJSONObject("to_user")),
+                                User.jsonObjectToUser(jsonArray.getJSONObject(i).getJSONObject("from_user")),
+                                jsonArray.getJSONObject(i).getString("created_at")));
+                    }
+                }
+            }
+
             return book.new Details(bookDetailsObject.getInt("genre_code"),
                     added_by,
-                    null); // TODO book process api
+                    bookProcesses); // TODO book process api
         } catch (JSONException e) {
             e.printStackTrace();
             return null;

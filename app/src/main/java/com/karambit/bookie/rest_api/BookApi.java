@@ -30,4 +30,11 @@ public interface BookApi {
                                   @Field("email") String email,
                                   @Field("password") String password,
                                   @Field("fetched_books[]") int[] fetchedBooks);
+
+    @FormUrlEncoded
+    @POST("get_book_api.php")
+    Call<ResponseBody> getBookPageArguments(
+            @Field("email") String email,
+            @Field("password") String password,
+            @Field("book_id") int bookId);
 }

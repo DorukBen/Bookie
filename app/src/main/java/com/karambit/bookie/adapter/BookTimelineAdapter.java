@@ -49,6 +49,13 @@ public class BookTimelineAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
     private static final int TYPE_SUBTITLE = 4;
     private static final int TYPE_FOOTER = 5;
     private static final int TYPE_EMPTY_STATE = 6;
+    private static final int TYPE_NO_CONNECTION = 7;
+    private static final int TYPE_UNKNOWN_ERROR = 8;
+
+    public static final int ERROR_TYPE_NONE = 0;
+    public static final int ERROR_TYPE_NO_CONNECTION = 1;
+    public static final int ERROR_TYPE_UNKNOWN_ERROR = 2;
+    private int mErrorType = ERROR_TYPE_NONE;
 
     private Context mContext;
     private Book.Details mBookDetails;
@@ -169,6 +176,43 @@ public class BookTimelineAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
         }
     }
 
+    private static class EmptyStateViewHolder extends RecyclerView.ViewHolder {
+
+        private TextView mEmptyStateTextView;
+
+        private EmptyStateViewHolder(View emptyStateView) {
+            super(emptyStateView);
+
+            mEmptyStateTextView = (TextView) emptyStateView.findViewById(R.id.emptyStateTextView);
+        }
+    }
+
+    private static class NoConnectionViewHolder extends RecyclerView.ViewHolder {
+
+        private ImageView mNoConnectionImageView;
+        private TextView mNoConnectionTextView;
+
+        private NoConnectionViewHolder(View noConnectionView) {
+            super(noConnectionView);
+
+            mNoConnectionImageView = (ImageView) noConnectionView.findViewById(R.id.emptyStateImageView);
+            mNoConnectionTextView = (TextView) noConnectionView.findViewById(R.id.emptyStateTextView);
+        }
+    }
+
+    private static class UnknownErrorViewHolder extends RecyclerView.ViewHolder {
+
+        private ImageView mUnknownErrorImageView;
+        private TextView mUnknownErrorTextView;
+
+        private UnknownErrorViewHolder(View unkonwnErrorView) {
+            super(unkonwnErrorView);
+
+            mUnknownErrorImageView = (ImageView) unkonwnErrorView.findViewById(R.id.emptyStateImageView);
+            mUnknownErrorTextView = (TextView) unkonwnErrorView.findViewById(R.id.emptyStateTextView);
+        }
+    }
+
     @Override
     public long getItemId(int position) {
         return position;
@@ -210,6 +254,16 @@ public class BookTimelineAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
      */
     @Override
     public int getItemViewType(int position) {
+
+        if (mErrorType != ERROR_TYPE_NONE){
+            if (position == 0){
+                if (mErrorType == ERROR_TYPE_NO_CONNECTION){
+                    return TYPE_NO_CONNECTION;
+                }else {
+                    return TYPE_UNKNOWN_ERROR;
+                }
+            }
+        }
 
         if (mBookDetails != null) {
 
@@ -289,8 +343,16 @@ public class BookTimelineAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
                 return new FooterViewHolder(footerView);
 
             case TYPE_EMPTY_STATE:
-                View emptyStateView = LayoutInflater.from(parent.getContext()).inflate(R.layout.item_empty_state, parent, false);
-                return new FooterViewHolder(emptyStateView);
+                View emptyStateView = LayoutInflater.from(parent.getContext()).inflate(R.layout.item_profile_book_empty_state, parent, false);
+                return new EmptyStateViewHolder(emptyStateView);
+
+            case TYPE_NO_CONNECTION:
+                View noConnectionView = LayoutInflater.from(parent.getContext()).inflate(R.layout.item_empty_state, parent, false);
+                return new NoConnectionViewHolder(noConnectionView);
+
+            case TYPE_UNKNOWN_ERROR:
+                View unknownErrorView = LayoutInflater.from(parent.getContext()).inflate(R.layout.item_empty_state, parent, false);
+                return new UnknownErrorViewHolder(unknownErrorView);
 
             default:
                 throw new IllegalArgumentException("Invalid view type variable: viewType=" + viewType);
@@ -1176,6 +1238,30 @@ public class BookTimelineAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
 
                 break;
             }
+
+            case TYPE_EMPTY_STATE: {
+
+                EmptyStateViewHolder emptyStateViewHolder = (EmptyStateViewHolder) holder;
+                emptyStateViewHolder.mEmptyStateTextView.setText(mContext.getString(R.string.nothing_to_show_book_and_profile));
+
+                break;
+            }
+
+            case TYPE_NO_CONNECTION: {
+
+                NoConnectionViewHolder noConnectionViewHolder = (NoConnectionViewHolder) holder;
+                noConnectionViewHolder.mNoConnectionTextView.setText(mContext.getString(R.string.no_internet_connection));
+
+                break;
+            }
+
+            case TYPE_UNKNOWN_ERROR: {
+
+                UnknownErrorViewHolder unknownErrorViewHolder = (UnknownErrorViewHolder) holder;
+                unknownErrorViewHolder.mUnknownErrorTextView.setText(mContext.getString(R.string.unknown_error));
+
+                break;
+            }
         }
     }
 
@@ -1273,6 +1359,15 @@ public class BookTimelineAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
     public void setBookDetails(Book.Details bookDetails) {
         mBookDetails = bookDetails;
         mProgressBarActive = false;
+        notifyDataSetChanged();
+    }
+
+    public void setError(int errorType){
+        mErrorType = errorType;
+        if (errorType != ERROR_TYPE_NONE){
+            mBookDetails = null;
+            setProgressBarActive(false);
+        }
         notifyDataSetChanged();
     }
 

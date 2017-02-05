@@ -176,13 +176,11 @@ public class ProfileTimelineAdapter extends RecyclerView.Adapter<RecyclerView.Vi
 
     private static class EmptyStateViewHolder extends RecyclerView.ViewHolder {
 
-        private ImageView mEmptyStateImageView;
         private TextView mEmptyStateTextView;
 
         private EmptyStateViewHolder(View emptyStateView) {
             super(emptyStateView);
 
-            mEmptyStateImageView = (ImageView) emptyStateView.findViewById(R.id.emptyStateImageView);
             mEmptyStateTextView = (TextView) emptyStateView.findViewById(R.id.emptyStateTextView);
         }
     }
@@ -418,7 +416,7 @@ public class ProfileTimelineAdapter extends RecyclerView.Adapter<RecyclerView.Vi
                 return new StartReadingViewHolder(startReadingView);
 
             case TYPE_EMPTY_STATE:
-                View emptyStateView = LayoutInflater.from(parent.getContext()).inflate(R.layout.item_empty_state, parent, false);
+                View emptyStateView = LayoutInflater.from(parent.getContext()).inflate(R.layout.item_profile_book_empty_state, parent, false);
                 return new EmptyStateViewHolder(emptyStateView);
 
             case TYPE_NO_CONNECTION:
@@ -701,7 +699,7 @@ public class ProfileTimelineAdapter extends RecyclerView.Adapter<RecyclerView.Vi
             case TYPE_EMPTY_STATE: {
 
                 EmptyStateViewHolder emptyStateViewHolder = (EmptyStateViewHolder) holder;
-                emptyStateViewHolder.mEmptyStateTextView.setText(mContext.getString(R.string.nothing_to_show));
+                emptyStateViewHolder.mEmptyStateTextView.setText(mContext.getString(R.string.nothing_to_show_book_and_profile));
 
                 break;
             }
