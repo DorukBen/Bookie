@@ -258,16 +258,24 @@ public class LastMessageAdapter extends RecyclerView.Adapter<RecyclerView.ViewHo
         }
     }
 
-    private String calendarToCreatedAt(Calendar calendar) {
+    private String calendarToCreatedAt(Calendar createdAt) {
 
-        int hour = calendar.get(Calendar.HOUR_OF_DAY);
+        int dayDurationMillis = 24 * 60 * 60 * 1000;
 
-        int minute = calendar.get(Calendar.MINUTE);
-        String minuteString = minute < 10 ? ("0" + minute) : String.valueOf(minute);
+        long nowMillis = Calendar.getInstance().getTimeInMillis();
+        long createdAtMillis = createdAt.getTimeInMillis();
+        long difMillis = nowMillis - createdAtMillis;
 
-        SimpleDateFormat df = new SimpleDateFormat("kk:mm", Locale.getDefault());
+        SimpleDateFormat sdf;
+        if (difMillis < dayDurationMillis) {
+            sdf = new SimpleDateFormat("kk:mm", Locale.getDefault());
+        } else if (difMillis < 2 * dayDurationMillis){
+            return mContext.getString(R.string.yesterday);
+        } else {
+            sdf = new SimpleDateFormat("d/M/yy", Locale.getDefault());
+        }
 
-        return df.format(calendar.getTime());
+        return sdf.format(createdAt.getTime());
     }
 
     public void setSelectedMessage(int selectedPosition) {

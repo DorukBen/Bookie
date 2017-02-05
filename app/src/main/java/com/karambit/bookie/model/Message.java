@@ -140,7 +140,7 @@ public class Message implements Parcelable, Comparable<Message> {
         public static ArrayList<Message> generateMessageList(User phoneOwner, User oppositeUser, int count) {
             ArrayList<Message> messages = new ArrayList<>(count);
 
-            long createdMillis = System.currentTimeMillis();
+            long createdMillis = System.currentTimeMillis() - RANDOM.nextInt(72 * 60 * 60 * 1000);
 
             for (int i = 0; i < count; i++) {
 
