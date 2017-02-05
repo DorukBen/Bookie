@@ -12,6 +12,7 @@ import android.support.v7.widget.RecyclerView;
 import android.text.Spannable;
 import android.text.SpannableString;
 import android.text.style.AbsoluteSizeSpan;
+import android.util.Log;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
@@ -22,14 +23,28 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.karambit.bookie.adapter.BookTimelineAdapter;
+import com.karambit.bookie.adapter.ProfileTimelineAdapter;
 import com.karambit.bookie.helper.ElevationScrollListener;
+import com.karambit.bookie.helper.NetworkChecker;
 import com.karambit.bookie.helper.SessionManager;
 import com.karambit.bookie.helper.TypefaceSpan;
 import com.karambit.bookie.helper.pull_refresh_layout.PullRefreshLayout;
 import com.karambit.bookie.model.Book;
 import com.karambit.bookie.model.User;
+import com.karambit.bookie.rest_api.BookApi;
+import com.karambit.bookie.rest_api.BookieClient;
+import com.karambit.bookie.rest_api.UserApi;
 
+import org.json.JSONException;
+import org.json.JSONObject;
+
+import java.io.IOException;
 import java.util.Calendar;
+
+import okhttp3.ResponseBody;
+import retrofit2.Call;
+import retrofit2.Callback;
+import retrofit2.Response;
 
 public class BookActivity extends AppCompatActivity {
 
@@ -38,6 +53,7 @@ public class BookActivity extends AppCompatActivity {
     private Book mBook;
     private BookTimelineAdapter mBookTimelineAdapter;
     private Book.Details mBookDetails;
+    private PullRefreshLayout mPullRefreshLayout;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -194,14 +210,14 @@ public class BookActivity extends AppCompatActivity {
 
         bookRecyclerView.setAdapter(mBookTimelineAdapter);
 
-        PullRefreshLayout layout = (PullRefreshLayout) findViewById(R.id.swipeRefreshLayout);
+        mPullRefreshLayout = (PullRefreshLayout) findViewById(R.id.swipeRefreshLayout);
 
         // listen refresh event
-        layout.setOnRefreshListener(new PullRefreshLayout.OnRefreshListener() {
+        mPullRefreshLayout.setOnRefreshListener(new PullRefreshLayout.OnRefreshListener() {
             @Override
             public void onRefresh() {
                 // start refresh
-                //TODO: On page refresh events here layout.serRefreshing() true for start on refresh method
+                fetchBookPageArguments();
             }
         });
 
@@ -225,6 +241,9 @@ public class BookActivity extends AppCompatActivity {
                 actionBar.setElevation(ElevationScrollListener.getActionbarElevation(totalScrolled));
             }
         });
+
+        mPullRefreshLayout.setRefreshing(false);
+        fetchBookPageArguments();
     }
 
     @Override
@@ -460,4 +479,68 @@ public class BookActivity extends AppCompatActivity {
             }
         });
     }
+
+    private void fetchBookPageArguments() {
+        final BookApi bookApi = BookieClient.getClient().create(BookApi.class);
+        String email = SessionManager.getCurrentUserDetails(this).getEmail();
+        String password = SessionManager.getCurrentUserDetails(this).getPassword();
+        Call<ResponseBody> getBookPageArguments = bookApi.getBookPageArguments(email, password, mBook.getID());
+
+        getBookPageArguments.enqueue(new Callback<ResponseBody>() {
+            @Override
+            public void onResponse(Call<ResponseBody> call, Response<ResponseBody> response) {
+
+                try {
+                    String json = response.body().string();
+
+                    JSONObject responseObject = new JSONObject(json);
+                    boolean error = responseObject.getBoolean("error");
+
+                    if (!error) {
+                        mBookTimelineAdapter.setError(ProfileTimelineAdapter.ERROR_TYPE_NONE);
+                        if (!responseObject.isNull("book")){
+                            JSONObject bookDetailsJson = responseObject.getJSONObject("book");
+                            Book.Details bookDetails = Book.jsonObjectToBookDetails(bookDetailsJson);
+
+                            mBookTimelineAdapter.setBookDetails(bookDetails);
+                        }
+
+                    } else {
+                        int errorCode = responseObject.getInt("error_code");
+
+                        if(NetworkChecker.isNetworkAvailable(BookActivity.this)){
+                            mBookTimelineAdapter.setError(ProfileTimelineAdapter.ERROR_TYPE_UNKNOWN_ERROR);
+                        }else{
+                            mBookTimelineAdapter.setError(ProfileTimelineAdapter.ERROR_TYPE_NO_CONNECTION);
+                        }
+                    }
+
+                } catch (IOException | JSONException e) {
+                    e.printStackTrace();
+
+                    if(NetworkChecker.isNetworkAvailable(BookActivity.this)){
+                        mBookTimelineAdapter.setError(ProfileTimelineAdapter.ERROR_TYPE_UNKNOWN_ERROR);
+                    }else{
+                        mBookTimelineAdapter.setError(ProfileTimelineAdapter.ERROR_TYPE_NO_CONNECTION);
+                    }
+                }
+
+                mPullRefreshLayout.setRefreshing(false);
+            }
+
+            @Override
+            public void onFailure(Call<ResponseBody> call, Throwable t) {
+
+                if(NetworkChecker.isNetworkAvailable(BookActivity.this)){
+                    mBookTimelineAdapter.setError(ProfileTimelineAdapter.ERROR_TYPE_UNKNOWN_ERROR);
+                }else{
+                    mBookTimelineAdapter.setError(ProfileTimelineAdapter.ERROR_TYPE_NO_CONNECTION);
+                }
+
+                mPullRefreshLayout.setRefreshing(false);
+                Log.e(TAG, "ProfilePage onFailure: " + t.getMessage());
+            }
+        });
+    }
+
 }
