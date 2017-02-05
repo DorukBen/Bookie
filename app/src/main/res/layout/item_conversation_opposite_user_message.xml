@@ -7,18 +7,23 @@
     android:layout_height="wrap_content"
     android:paddingLeft="16dp"
     android:paddingRight="84dp"
-    android:paddingTop="4dp">
+    android:paddingTop="2dp"
+    android:paddingBottom="2dp">
 
     <android.support.v7.widget.CardView
+        android:id="@+id/oppositeUserMessageCardView"
+        style="@style/Widget.AppCompat.Button"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginLeft="8dp"
         android:layout_toRightOf="@+id/oppositeUserMessageProfilePicture"
+        app:cardBackgroundColor="@color/colorPrimary"
         app:cardUseCompatPadding="true"
         app:contentPadding="8dp"
         >
 
         <LinearLayout
+            android:id="@+id/textAndMetaLinearLayout"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:orientation="horizontal">
@@ -28,20 +33,22 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginRight="8dp"
+                android:layout_gravity="center"
+                android:padding="4dp"
                 android:layout_toLeftOf="@+id/oppositeUserCreatedAt"
                 android:layout_weight="1"
                 android:text="Opposite user message"
                 android:textColor="@color/primaryTextColor"
-                android:textSize="16sp"/>
+                android:textSize="14sp"/>
 
             <TextView
                 android:id="@+id/oppositeUserCreatedAt"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_gravity="bottom"
+                android:layout_gravity="bottom|right"
                 android:layout_weight="0"
                 android:text="00:00"
-                android:textSize="10sp"/>
+                android:textSize="12sp"/>
 
         </LinearLayout>
 

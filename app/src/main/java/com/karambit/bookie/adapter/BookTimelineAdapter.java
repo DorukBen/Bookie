@@ -274,7 +274,7 @@ public class BookTimelineAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
 
                 } else if (position == 1) {
 
-                    if (SessionManager.getCurrentUser(mContext.getApplicationContext()).getID() == mBookDetails.getBook().getOwner().getID()) {
+                    if (SessionManager.getCurrentUser(mContext).getID() == mBookDetails.getBook().getOwner().getID()) {
                         return TYPE_STATE_SECTION_CURRENT_USER;
 
                     } else {

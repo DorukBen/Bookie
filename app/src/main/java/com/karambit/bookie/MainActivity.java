@@ -17,6 +17,7 @@ import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
+import android.view.MotionEvent;
 import android.view.View;
 import android.widget.ImageView;
 import android.widget.TabHost;
@@ -25,7 +26,6 @@ import com.karambit.bookie.fragment.HomeFragment;
 import com.karambit.bookie.fragment.MessageFragment;
 import com.karambit.bookie.fragment.ProfileFragment;
 import com.karambit.bookie.fragment.SearchFragment;
-import com.karambit.bookie.helper.DBHandler;
 import com.karambit.bookie.helper.SessionManager;
 import com.karambit.bookie.helper.TabFactory;
 import com.karambit.bookie.helper.TypefaceSpan;
@@ -33,6 +33,7 @@ import com.karambit.bookie.helper.ViewPagerAdapter;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Iterator;
 import java.util.List;
 
 public class MainActivity extends AppCompatActivity implements TabHost.OnTabChangeListener {
@@ -57,6 +58,8 @@ public class MainActivity extends AppCompatActivity implements TabHost.OnTabChan
     private MenuItem mProfilePageMenuItem;
     private MenuItem mNotificationMenuItem;
     private DoubleTapHomeButtonListener mDoubleTapHomeButtonListener;
+    private ArrayList<TouchEventListener> mTouchEventListeners = new ArrayList<>();
+    private ArrayList<Integer> mIndexOfListenersWillBeDeleted = new ArrayList<>();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -195,7 +198,7 @@ public class MainActivity extends AppCompatActivity implements TabHost.OnTabChan
 
         mHomeFragment = new HomeFragment();
         mSearchFragment = new SearchFragment();
-        mProfileFragment = ProfileFragment.newInstance(SessionManager.getCurrentUser(getApplicationContext()));
+        mProfileFragment = ProfileFragment.newInstance(SessionManager.getCurrentUser(this));
         mMessageFragment = new MessageFragment();
         fList.add(mHomeFragment);
         fList.add(mSearchFragment);
@@ -293,6 +296,26 @@ public class MainActivity extends AppCompatActivity implements TabHost.OnTabChan
         }
     }
 
+    @Override
+    public boolean dispatchTouchEvent(MotionEvent ev) {
+        Iterator<TouchEventListener> iterator = mTouchEventListeners.iterator();
+
+        while (iterator.hasNext()) {
+            TouchEventListener touchEventListener = iterator.next();
+
+            touchEventListener.onTouchEvent(ev);
+
+            Integer index = mTouchEventListeners.indexOf(touchEventListener);
+
+            if (mIndexOfListenersWillBeDeleted.contains(index)) {
+                mIndexOfListenersWillBeDeleted.remove(index);
+                iterator.remove();
+            }
+        }
+
+        return super.dispatchTouchEvent(ev);
+    }
+
     public void setActionBarElevation(float dp, int tabIndex) {
         if (mActionBar != null && tabIndex == mTabHost.getCurrentTab()) {
             mActionBar.setElevation(dp);
@@ -346,5 +369,21 @@ public class MainActivity extends AppCompatActivity implements TabHost.OnTabChan
 
     public void setDoubleTapHomeButtonListener(DoubleTapHomeButtonListener doubleTapHomeButtonListener){
         mDoubleTapHomeButtonListener = doubleTapHomeButtonListener;
+    }
+
+    public interface TouchEventListener {
+        void onTouchEvent(MotionEvent event);
+    }
+
+    public void addTouchEventListener(TouchEventListener touchEventListener) {
+        mTouchEventListeners.add(touchEventListener);
+    }
+
+    public void removeTouchEventListener(TouchEventListener touchEventListener) {
+        mIndexOfListenersWillBeDeleted.add(mTouchEventListeners.indexOf(touchEventListener));
+    }
+
+    public void clearTouchEventListener() {
+        mTouchEventListeners.clear();
     }
 }

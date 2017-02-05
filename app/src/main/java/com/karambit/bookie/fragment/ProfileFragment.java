@@ -130,7 +130,7 @@ public class ProfileFragment extends Fragment {
 
         recyclerView.setAdapter(mProfileTimelineAdapter);
 
-        if (mUser.getID() == SessionManager.getCurrentUser(getContext().getApplicationContext()).getID()){
+        if (mUser.getID() == SessionManager.getCurrentUser(getContext()).getID()){
             recyclerView.setOnScrollListener(new ElevationScrollListener((MainActivity) getActivity(), PROFILE_FRAGMENT_TAB_INEX));
         }else{
             recyclerView.setOnScrollListener(new ElevationScrollListener((ProfileActivity) getActivity()));

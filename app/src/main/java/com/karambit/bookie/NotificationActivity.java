@@ -12,6 +12,7 @@ import android.text.style.AbsoluteSizeSpan;
 import android.view.View;
 
 import com.karambit.bookie.adapter.NotificationAdapter;
+import com.karambit.bookie.helper.DBHandler;
 import com.karambit.bookie.helper.ElevationScrollListener;
 import com.karambit.bookie.helper.TypefaceSpan;
 import com.karambit.bookie.helper.pull_refresh_layout.PullRefreshLayout;
@@ -43,9 +44,15 @@ public class NotificationActivity extends AppCompatActivity {
 
         RecyclerView recyclerView = (RecyclerView) findViewById(R.id.notificationRecyclerView);
         recyclerView.setLayoutManager(new LinearLayoutManager(NotificationActivity.this));
-        ArrayList<Notification> notifications = Notification.GENERATOR.generateNotificationList(15);
 
-        NotificationAdapter notificationAdapter = new NotificationAdapter(this, notifications);
+
+        DBHandler dbHandler = new DBHandler(getApplicationContext());
+        ArrayList<Notification> notifications = Notification.GENERATOR.generateNotificationList(15);
+        for (Notification notification: notifications){
+            dbHandler.saveNotificationToDatabase(notification);
+        }
+
+        NotificationAdapter notificationAdapter = new NotificationAdapter(this, dbHandler.getAllNotifications(dbHandler.getAllNotificationUsers(), dbHandler.getAllNotificationBooks(dbHandler.getAllBookUsers())));
 
         notificationAdapter.setSpanTextClickListeners(new NotificationAdapter.SpanTextClickListeners() {
             @Override

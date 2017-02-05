@@ -17,7 +17,7 @@ import java.util.Random;
 
 public class Message implements Parcelable, Comparable<Message> {
 
-    public enum State {PENDING, SENT, DELIVERED, SEEN, ERROR, NONE}
+    public enum State {PENDING, SENT, DELIVERED, SEEN, ERROR}
 
     private int mID;
     private String mText;
@@ -25,15 +25,6 @@ public class Message implements Parcelable, Comparable<Message> {
     private User mReceiver;
     private Calendar mCreatedAt;
     private State mState;
-
-    public Message(String text, User sender, User receiver, Calendar createdAt, State state) {
-        mID = -1;
-        mText = text;
-        mSender = sender;
-        mReceiver = receiver;
-        mCreatedAt = createdAt;
-        mState = state;
-    }
 
     public Message(Integer id, String text, User sender, User receiver, Calendar createdAt, State state) {
         mID = id;
@@ -81,6 +72,15 @@ public class Message implements Parcelable, Comparable<Message> {
         dest.writeParcelable(mReceiver, flags);
         dest.writeLong(mCreatedAt.getTimeInMillis());
         dest.writeSerializable(mState);
+    }
+
+    public User getOppositeUser(User currentUser) {
+
+        if (currentUser.getID() != mSender.getID()) {
+            return mSender;
+        } else {
+            return mReceiver;
+        }
     }
 
     public int getID() {
@@ -140,7 +140,7 @@ public class Message implements Parcelable, Comparable<Message> {
         public static ArrayList<Message> generateMessageList(User phoneOwner, User oppositeUser, int count) {
             ArrayList<Message> messages = new ArrayList<>(count);
 
-            long createdMillis = System.currentTimeMillis();
+            long createdMillis = System.currentTimeMillis() - RANDOM.nextInt(72 * 60 * 60 * 1000);
 
             for (int i = 0; i < count; i++) {
 
@@ -155,9 +155,11 @@ public class Message implements Parcelable, Comparable<Message> {
                 Calendar createdAt = Calendar.getInstance();
                 createdAt.setTimeInMillis(createdMillis);
 
-                messages.add(new Message(generateRandomText(), sender, receiver, createdAt, State.DELIVERED));
+                messages.add(new Message(RANDOM.nextInt(100000), generateRandomText(), sender, receiver, createdAt, State.SEEN));
 
-                createdMillis -= MIN_IN_MILLIS * RANDOM.nextInt(5);
+                // createdMillis -= MIN_IN_MILLIS * RANDOM.nextInt(5);
+
+                createdMillis -= 1000000 * RANDOM.nextInt(5);
             }
 
             Collections.sort(messages);
@@ -166,31 +168,7 @@ public class Message implements Parcelable, Comparable<Message> {
         }
 
         public static ArrayList<Message> generateMessageList(User phoneOwner, int count) {
-            ArrayList<Message> messages = new ArrayList<>(count);
-
-            long createdMillis = System.currentTimeMillis();
-
-            for (int i = 0; i < count; i++) {
-
-                User sender = RANDOM.nextBoolean() ? User.GENERATOR.generateUser() : phoneOwner;
-                User receiver;
-                if (sender != phoneOwner) {
-                    receiver = phoneOwner;
-                } else {
-                    receiver = User.GENERATOR.generateUser();
-                }
-
-                Calendar createdAt = Calendar.getInstance();
-                createdAt.setTimeInMillis(createdMillis);
-
-                messages.add(new Message(generateRandomText(), sender, receiver, createdAt, State.SEEN));
-
-                createdMillis -= MIN_IN_MILLIS * RANDOM.nextInt(5);
-            }
-
-            Collections.sort(messages);
-
-            return messages;
+            return generateMessageList(phoneOwner, User.GENERATOR.generateUser(), count);
         }
 
         public static String generateRandomText(int length) {
@@ -226,7 +204,7 @@ public class Message implements Parcelable, Comparable<Message> {
                 return
                     otherMessage.mSender.getID() == this.mSender.getID() &&
                     otherMessage.mReceiver.getID() == this.mReceiver.getID() &&
-                    otherMessage.mText == this.mText &&
+                    otherMessage.mText.equals(this.mText) &&
                     otherMessage.mCreatedAt.getTimeInMillis() == this.mCreatedAt.getTimeInMillis();
             } else {
                 return otherMessage.mID == this.mID;

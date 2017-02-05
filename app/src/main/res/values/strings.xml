@@ -182,4 +182,11 @@
     <string name="no_result_found">No result found.</string>
     <string name="nothing_to_show_book_and_profile">Nothing to show here.</string>
 
+    <string name="delete_prompt_message_user">Delete chat with %s?</string>
+    <string name="delete_prompt_conversation_message_single">Delete message from %s?</string>
+    <string name="delete_prompt_conversation_message_multiple">Delete %1$d messages from %2$s?</string>
+    <string name="x_messages_selected">%d selected</string>
+    <string name="action_delete">Delete</string>
+    <string name="delete">Delete</string>
+    <string name="yesterday">YESTERDAY</string>
 </resources>
