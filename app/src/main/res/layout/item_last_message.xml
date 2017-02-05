@@ -82,13 +82,17 @@
                 android:textColor="@color/secondaryTextColor"
                 android:textSize="12sp"/>
 
-            <ImageView
+            <TextView
                 android:id="@+id/indicatorMessage"
-                android:layout_width="12dp"
-                android:layout_height="12dp"
+                android:layout_width="22dp"
+                android:layout_height="22dp"
                 android:layout_marginTop="4dp"
-                android:src="@drawable/indicator_drawable"
-                android:tint="@color/colorAccent"/>
+                android:text="2"
+                android:textSize="11sp"
+                android:gravity="center"
+                android:textColor="@color/colorPrimary"
+                android:textStyle="bold"
+                android:background="@drawable/circle_accent_color"/>
 
 
         </LinearLayout>

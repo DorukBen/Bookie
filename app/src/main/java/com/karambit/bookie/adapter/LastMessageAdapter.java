@@ -4,6 +4,7 @@ import android.content.Context;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.widget.RecyclerView;
 import android.text.TextUtils;
+import android.util.SparseIntArray;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -34,15 +35,23 @@ public class LastMessageAdapter extends RecyclerView.Adapter<RecyclerView.ViewHo
     private Context mContext;
 
     private ArrayList<Message> mLastMessages;
+    private SparseIntArray mUnseenCounts;
 
     private int mSelectedPosition = -1;
 
     private OnMessageClickListener mOnMessageClickListener;
     private OnSelectedStateClickListener mOnSelectedStateClickListener;
 
-    public LastMessageAdapter(Context context, ArrayList<Message> lastMessages) {
+    public LastMessageAdapter(Context context) {
+        mContext = context;
+        mLastMessages = new ArrayList<>();
+        mUnseenCounts = new SparseIntArray();
+    }
+
+    public LastMessageAdapter(Context context, ArrayList<Message> lastMessages, SparseIntArray unseenCounts) {
         mContext = context;
         mLastMessages = lastMessages;
+        mUnseenCounts = unseenCounts;
     }
 
     public static class MessageViewHolder extends RecyclerView.ViewHolder {
@@ -51,7 +60,7 @@ public class LastMessageAdapter extends RecyclerView.Adapter<RecyclerView.ViewHo
         private TextView mUserName;
         private TextView mLastMessageText;
         private TextView mCreatedAt;
-        private View mIndicator;
+        private TextView mIndicator;
         private ImageView mState;
 
         public MessageViewHolder(View messageView) {
@@ -61,7 +70,7 @@ public class LastMessageAdapter extends RecyclerView.Adapter<RecyclerView.ViewHo
             mUserName = (TextView) messageView.findViewById(R.id.userNameMessage);
             mLastMessageText = (TextView) messageView.findViewById(R.id.lastMessageTextMessage);
             mCreatedAt = (TextView) messageView.findViewById(R.id.createdAtMessage);
-            mIndicator = messageView.findViewById(R.id.indicatorMessage);
+            mIndicator = (TextView) messageView.findViewById(R.id.indicatorMessage);
             mState = (ImageView) messageView.findViewById(R.id.lastMessageState);
         }
     }
@@ -182,8 +191,14 @@ public class LastMessageAdapter extends RecyclerView.Adapter<RecyclerView.ViewHo
                 messageHolder.mLastMessageText.setText(message.getText());
                 messageHolder.mCreatedAt.setText(calendarToCreatedAt(message.getCreatedAt()));
 
-                if (message.getState() == Message.State.DELIVERED && message.getSender().getID() != currentUser.getID()) {
+                int unseenCount = mUnseenCounts.get(position, -1);
+
+                if (message.getState() == Message.State.DELIVERED &&
+                    message.getSender().getID() != currentUser.getID() &&
+                    unseenCount > 0) {
+
                     messageHolder.mIndicator.setVisibility(View.VISIBLE);
+                    messageHolder.mIndicator.setText(String.valueOf(unseenCount));
 
                 } else {
                     messageHolder.mIndicator.setVisibility(View.INVISIBLE);
@@ -268,6 +283,11 @@ public class LastMessageAdapter extends RecyclerView.Adapter<RecyclerView.ViewHo
 
     public void setLastMessages(ArrayList<Message> lastMessages) {
         mLastMessages = lastMessages;
+        notifyDataSetChanged();
+    }
+
+    public void setUnseenCounts(SparseIntArray unseenCounts) {
+        mUnseenCounts = unseenCounts;
         notifyDataSetChanged();
     }
 

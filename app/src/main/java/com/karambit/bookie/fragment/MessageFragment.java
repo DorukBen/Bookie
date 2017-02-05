@@ -8,6 +8,7 @@ import android.os.Bundle;
 import android.support.v4.app.Fragment;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
+import android.util.SparseIntArray;
 import android.view.LayoutInflater;
 import android.view.MotionEvent;
 import android.view.View;
@@ -39,9 +40,10 @@ public class MessageFragment extends Fragment {
     public static final int LAST_MESSAGE_REQUEST_CODE = 1;
 
     private DBHandler mDbHandler;
-    private ArrayList<Message> mLastMessages = new ArrayList<>();
+    private ArrayList<Message> mLastMessages;
     private LastMessageAdapter mLastMessageAdapter;
     private PullRefreshLayout mPullRefreshLayout;
+    private SparseIntArray mUnseenCounts;
 
     public MessageFragment() {
         // Required empty public constructor
@@ -61,11 +63,9 @@ public class MessageFragment extends Fragment {
 
         final User currentUser = SessionManager.getCurrentUser(getContext());
 
-        //createMessages(); // TODO Remove
-
         // TODO Setup Broadcast Listener for messages
 
-        mLastMessageAdapter = new LastMessageAdapter(getActivity(), mLastMessages);
+        mLastMessageAdapter = new LastMessageAdapter(getActivity());
 
         mPullRefreshLayout = (PullRefreshLayout) rootView.findViewById(R.id.swipeRefreshLayout);
 
@@ -224,12 +224,6 @@ public class MessageFragment extends Fragment {
         return rootView;
     }
 
-    private void unSelectMessages() {
-        int tempIndex = mLastMessageAdapter.getSelectedPosition();
-        mLastMessageAdapter.setSelectedPosition(-1);
-        mLastMessageAdapter.notifyItemChanged(tempIndex);
-    }
-
     /**
      * TODO Firstly fetch from internet. This is just a demo method...
      */
@@ -241,41 +235,45 @@ public class MessageFragment extends Fragment {
             @Override
             public void run() {
 
-                createMessages(); // TODO REMOVE
+                generateMessages(); // TODO REMOVE
 
                 final User currentUser = SessionManager.getCurrentUser(getContext());
                 ArrayList<User> users = mDbHandler.getAllMessageUsers();
                 mLastMessages = mDbHandler.getLastMessages(users, currentUser);
                 Collections.sort(mLastMessages);
+
                 getActivity().runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
                         mLastMessageAdapter.setLastMessages(mLastMessages);
 
                         mPullRefreshLayout.setRefreshing(false);
+
+                        fetchUnseenCounts();
                     }
                 });
             }
         }).start();
     }
 
-    private void createMessages() {
+    // Last messages should be sorted
+    private void fetchUnseenCounts() {
 
-        mDbHandler.deleteAllMessages();
+        User currentUser = SessionManager.getCurrentUser(getContext());
 
-        if (mDbHandler.getAllMessageUsers().isEmpty()) {
-
-            User currentUser = SessionManager.getCurrentUser(getContext());
-
-            for (int i = 0; i < 6; i++) {
-                User messageUser = User.GENERATOR.generateUser();
-                mDbHandler.insertMessageUser(messageUser);
-
-                for (Message message : Message.GENERATOR.generateMessageList(currentUser, messageUser, 50)) {
-                    mDbHandler.insertMessage(message);
-                }
-            }
+        if (mUnseenCounts == null) {
+            mUnseenCounts = new SparseIntArray(mLastMessages.size());
+        } else {
+            mUnseenCounts.clear();
         }
+
+        for (int i = 0; i < mLastMessages.size(); i++) {
+            Message message = mLastMessages.get(i);
+            int unseenCount = mDbHandler.getUnseenMessageCount(message.getOppositeUser(currentUser));
+            mUnseenCounts.append(i, unseenCount);
+        }
+
+        mLastMessageAdapter.setUnseenCounts(mUnseenCounts);
     }
 
     @Override
@@ -300,6 +298,8 @@ public class MessageFragment extends Fragment {
                     }
                 }
             }
+
+            fetchUnseenCounts();
         }
     }
 
@@ -329,7 +329,9 @@ public class MessageFragment extends Fragment {
 
         Collections.sort(mLastMessages);
 
-        mLastMessageAdapter.notifyDataSetChanged();
+        fetchUnseenCounts();
+
+        mLastMessageAdapter.setLastMessages(mLastMessages);
     }
 
     public boolean changeMessageState(int messageID, Message.State state) {
@@ -351,5 +353,30 @@ public class MessageFragment extends Fragment {
             }
         }
         return false;
+    }
+
+    private void unSelectMessages() {
+        int tempIndex = mLastMessageAdapter.getSelectedPosition();
+        mLastMessageAdapter.setSelectedPosition(-1);
+        mLastMessageAdapter.notifyItemChanged(tempIndex);
+    }
+
+    private void generateMessages() {
+
+        mDbHandler.deleteAllMessages();
+
+        if (mDbHandler.getAllMessageUsers().isEmpty()) {
+
+            User currentUser = SessionManager.getCurrentUser(getContext());
+
+            for (int i = 0; i < 6; i++) {
+                User messageUser = User.GENERATOR.generateUser();
+                mDbHandler.insertMessageUser(messageUser);
+
+                for (Message message : Message.GENERATOR.generateMessageList(currentUser, messageUser, 50)) {
+                    mDbHandler.insertMessage(message);
+                }
+            }
+        }
     }
 }

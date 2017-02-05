@@ -155,7 +155,7 @@ public class Message implements Parcelable, Comparable<Message> {
                 Calendar createdAt = Calendar.getInstance();
                 createdAt.setTimeInMillis(createdMillis);
 
-                messages.add(new Message(RANDOM.nextInt(100000), generateRandomText(), sender, receiver, createdAt, State.SEEN));
+                messages.add(new Message(RANDOM.nextInt(100000), generateRandomText(), sender, receiver, createdAt, State.DELIVERED));
 
                 // createdMillis -= MIN_IN_MILLIS * RANDOM.nextInt(5);
 
@@ -204,7 +204,7 @@ public class Message implements Parcelable, Comparable<Message> {
                 return
                     otherMessage.mSender.getID() == this.mSender.getID() &&
                     otherMessage.mReceiver.getID() == this.mReceiver.getID() &&
-                    otherMessage.mText == this.mText &&
+                    otherMessage.mText.equals(this.mText) &&
                     otherMessage.mCreatedAt.getTimeInMillis() == this.mCreatedAt.getTimeInMillis();
             } else {
                 return otherMessage.mID == this.mID;
