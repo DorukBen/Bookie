@@ -155,7 +155,7 @@ public class Message implements Parcelable, Comparable<Message> {
                 Calendar createdAt = Calendar.getInstance();
                 createdAt.setTimeInMillis(createdMillis);
 
-                messages.add(new Message(RANDOM.nextInt(100000), generateRandomText(), sender, receiver, createdAt, State.DELIVERED));
+                messages.add(new Message(RANDOM.nextInt(100000), generateRandomText(), sender, receiver, createdAt, State.SEEN));
 
                 // createdMillis -= MIN_IN_MILLIS * RANDOM.nextInt(5);
 

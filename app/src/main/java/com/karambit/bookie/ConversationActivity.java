@@ -80,14 +80,14 @@ public class ConversationActivity extends AppCompatActivity {
 
         mRecyclerView.setOnScrollListener(new RecyclerView.OnScrollListener() {
 
-            private final int DAY_DURATION = 1000 * 60 * 60 * 24;
+            private final int DAY_DURATION_MILLIS = 1000 * 60 * 60 * 24;
             private int mStoredPosition;
 
             @Override
             public void onScrolled(RecyclerView recyclerView, int dx, int dy) {
                 super.onScrolled(recyclerView, dx, dy);
 
-                int currentPosition = layoutManager.findLastCompletelyVisibleItemPosition();
+                int currentPosition = layoutManager.findLastVisibleItemPosition();
 
                 if (currentPosition != mStoredPosition) {
 
@@ -105,21 +105,26 @@ public class ConversationActivity extends AppCompatActivity {
 
                     if (dayStartMillis < createdAtMillis) {
                         dateLabel.setVisibility(View.GONE);
-                    } else {
-                         if (dayStartMillis - createdAtMillis < DAY_DURATION) {
-                             if (!dateLabel.getText().toString().equals(yesterday)) {
-                                 dateLabel.setVisibility(View.VISIBLE);
-                                 dateLabel.setText(yesterday);
-                             }
-                        } else {
+
+                    } else if (dayStartMillis - createdAtMillis < DAY_DURATION_MILLIS) {
+
+                        if (dateLabel.getVisibility() != View.VISIBLE || !dateLabel.getText().equals(yesterday)) {
                             dateLabel.setVisibility(View.VISIBLE);
-
-                            SimpleDateFormat sdf = new SimpleDateFormat("dd MMMMMMM", Locale.getDefault());
-                            String dateText = sdf.format(createdAt.getTime());
-
-                            dateLabel.setText(dateText);
+                            dateLabel.setText(yesterday);
                         }
+                    } else {
+
+                        if (dateLabel.getVisibility() != View.VISIBLE) {
+                            dateLabel.setVisibility(View.VISIBLE);
+                        }
+
+                        SimpleDateFormat sdf = new SimpleDateFormat("d MMMM", Locale.getDefault());
+                        String dateText = sdf.format(createdAt.getTime());
+
+                        dateLabel.setText(dateText);
                     }
+
+                    dateLabel.bringToFront();
                 }
             }
         });
@@ -160,6 +165,7 @@ public class ConversationActivity extends AppCompatActivity {
 
                 }
             }
+
             @Override
             public boolean onMessageLongClick(Message message, int position) {
 
