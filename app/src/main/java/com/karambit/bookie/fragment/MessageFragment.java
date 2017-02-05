@@ -39,7 +39,7 @@ public class MessageFragment extends Fragment {
     public static final int LAST_MESSAGE_REQUEST_CODE = 1;
 
     private DBHandler mDbHandler;
-    private ArrayList<Message> mLastMessages;
+    private ArrayList<Message> mLastMessages = new ArrayList<>();
     private LastMessageAdapter mLastMessageAdapter;
     private PullRefreshLayout mPullRefreshLayout;
 
@@ -65,11 +65,13 @@ public class MessageFragment extends Fragment {
 
         // TODO Setup Broadcast Listener for messages
 
-        ArrayList<User> users = mDbHandler.getAllMessageUsers();
-        mLastMessages = mDbHandler.getLastMessages(users, currentUser);
-        Collections.sort(mLastMessages);
-
         mLastMessageAdapter = new LastMessageAdapter(getActivity(), mLastMessages);
+
+        mPullRefreshLayout = (PullRefreshLayout) rootView.findViewById(R.id.swipeRefreshLayout);
+
+        // First fetch messages
+        fetchMessages();
+
         mLastMessageAdapter.setOnMessageClickListener(new LastMessageAdapter.OnMessageClickListener() {
             @Override
             public void onMessageClick(Message lastMessage, int position) {
@@ -198,14 +200,6 @@ public class MessageFragment extends Fragment {
             }
         });
 
-        mLastMessageAdapter.setHasStableIds(true);
-
-        recyclerView.setAdapter(mLastMessageAdapter);
-
-        recyclerView.setOnScrollListener(new ElevationScrollListener((MainActivity) getActivity(), MESSAGE_FRAGMENT_TAB_INEX));
-
-        mPullRefreshLayout = (PullRefreshLayout) rootView.findViewById(R.id.swipeRefreshLayout);
-
         // listen refresh event
         mPullRefreshLayout.setOnRefreshListener(new PullRefreshLayout.OnRefreshListener() {
             @Override
@@ -213,6 +207,12 @@ public class MessageFragment extends Fragment {
                 fetchMessages();
             }
         });
+
+        mLastMessageAdapter.setHasStableIds(true);
+
+        recyclerView.setAdapter(mLastMessageAdapter);
+
+        recyclerView.setOnScrollListener(new ElevationScrollListener((MainActivity) getActivity(), MESSAGE_FRAGMENT_TAB_INEX));
 
         //For improving recyclerviews performance
         recyclerView.setItemViewCacheSize(20);
@@ -235,7 +235,7 @@ public class MessageFragment extends Fragment {
      */
     private void fetchMessages() {
 
-        final User currentUser = SessionManager.getCurrentUser(getContext());
+        mPullRefreshLayout.setRefreshing(true);
 
         new Thread(new Runnable() {
             @Override
@@ -243,9 +243,10 @@ public class MessageFragment extends Fragment {
 
                 createMessages(); // TODO REMOVE
 
+                final User currentUser = SessionManager.getCurrentUser(getContext());
                 ArrayList<User> users = mDbHandler.getAllMessageUsers();
-                mLastMessages = new ArrayList<>();
                 mLastMessages = mDbHandler.getLastMessages(users, currentUser);
+                Collections.sort(mLastMessages);
                 getActivity().runOnUiThread(new Runnable() {
                     @Override
                     public void run() {

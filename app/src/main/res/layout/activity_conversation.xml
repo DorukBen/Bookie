@@ -25,6 +25,7 @@
         android:padding="6dp"
         android:textAllCaps="true"
         android:textColor="@color/secondaryTextColor"
+        android:visibility="invisible"
         android:text="DATE"/>
 
     </android.support.v7.widget.CardView>
