@@ -96,31 +96,18 @@ public class User implements Parcelable {
                     userJsonObject.getString("name_surname"),
                     userJsonObject.getString("profile_picture_url"),
                     userJsonObject.getString("profile_picture_thumbnail_url"),
-                    userJsonObject.getDouble("latitude"),
-                    userJsonObject.getDouble("longitude")
+                    userJsonObject.isNull("latitude") ? -1 : userJsonObject.getDouble("latitude"),
+                    userJsonObject.isNull("longitude") ? -1 : userJsonObject.getDouble("longitude")
             );
-            User.Details details;
-            if (userJsonObject.getInt("email_verified") == 0){
-                details = user.new Details(
-                        userJsonObject.getString("password"),
-                        userJsonObject.getString("email"),
-                        false,
-                        userJsonObject.getString("bio"),
-                        userJsonObject.getInt("book_counter"),
-                        userJsonObject.getInt("point")
-                );
-            }else{
-                details = user.new Details(
-                        userJsonObject.getString("password"),
-                        userJsonObject.getString("email"),
-                        true,
-                        userJsonObject.getString("bio"),
-                        userJsonObject.getInt("book_counter"),
-                        userJsonObject.getInt("point")
-                );
-            }
 
-            return details;
+            return user.new Details(
+                    userJsonObject.getString("password"),
+                    userJsonObject.getString("email"),
+                    (userJsonObject.getInt("email_verified") != 0),
+                    userJsonObject.getString("bio"),
+                    userJsonObject.getInt("book_counter"),
+                    userJsonObject.getInt("point")
+            );
 
         } catch (JSONException e) {
             e.printStackTrace();
