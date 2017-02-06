@@ -74,8 +74,6 @@ public class BookActivity extends AppCompatActivity {
 
         mBook = getIntent().getParcelableExtra("book");
 
-        mBookDetails = Book.GENERATOR.generateBookDetails(mBook);
-
         RecyclerView bookRecyclerView = (RecyclerView) findViewById(R.id.bookRecyclerView);
         bookRecyclerView.setLayoutManager(new LinearLayoutManager(this));
 
