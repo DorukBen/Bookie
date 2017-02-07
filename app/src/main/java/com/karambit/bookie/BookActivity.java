@@ -240,7 +240,7 @@ public class BookActivity extends AppCompatActivity {
             }
         });
 
-        mPullRefreshLayout.setRefreshing(false);
+        mPullRefreshLayout.setRefreshing(true);
         fetchBookPageArguments();
     }
 
