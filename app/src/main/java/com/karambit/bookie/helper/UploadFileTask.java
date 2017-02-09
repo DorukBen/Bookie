@@ -48,7 +48,7 @@ public class UploadFileTask extends AsyncTask<Void, Integer, Integer> {
     public static final String LINE_END = "\r\n";   //for server
     public static final String TWO_HYPHENS = "--"; //for server
     public static final String BOUNDARY =  "*****"; //indicator specifies start and end of byte array
-    public static final int MAX_BUFFER_SIZE = 16000; //8K < buffer size < 32K
+    public static final int MAX_BUFFER_SIZE = 32000; //8K < buffer size < 32K
 
     private String mFileName;
     private String mFilePath;
@@ -185,7 +185,7 @@ public class UploadFileTask extends AsyncTask<Void, Integer, Integer> {
 
                 default:
                     Log.e(TAG, "UploadFilesTask: Unknown reponse code..!");
-
+                    Log.e(TAG, responseCode.toString());
                     mUploadProgressChangedListener.onProgressError();
 
                     break; // abort
