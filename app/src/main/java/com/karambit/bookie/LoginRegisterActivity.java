@@ -210,44 +210,56 @@ public class LoginRegisterActivity extends AppCompatActivity {
 
         register.enqueue(new Callback<ResponseBody>() {
             @Override
-            public void onResponse(Call<ResponseBody> call, Response<ResponseBody> response) {
-                progressDialog.dismiss();
+            public void onResponse(Call<ResponseBody> call, final Response<ResponseBody> response) {
 
-                try {
-                    String json = response.body().string();
+                new Thread(new Runnable() {
+                    @Override
+                    public void run() {
 
-                    JSONObject responseObject = new JSONObject(json);
-                    boolean error = responseObject.getBoolean("error");
+                        try {
+                            String json = response.body().string();
 
-                    if (!error) {
+                            JSONObject responseObject = new JSONObject(json);
+                            boolean error = responseObject.getBoolean("error");
 
-                        JSONObject userObject = responseObject.getJSONObject("user");
-                        User.Details userDetails = User.jsonObjectToUserDetails(userObject);
+                            if (!error) {
 
-                        SessionManager.login(LoginRegisterActivity.this, userDetails);
+                                JSONObject userObject = responseObject.getJSONObject("user");
+                                User.Details userDetails = User.jsonObjectToUserDetails(userObject);
 
-                        Log.i(TAG, "Registered!");
+                                SessionManager.login(LoginRegisterActivity.this, userDetails);
 
-                        setResult(Activity.RESULT_OK);
-                        finish();
+                                Log.i(TAG, "Registered!");
 
-                    } else {
+                                setResult(Activity.RESULT_OK);
+                                finish();
 
-                        int errorCode = responseObject.getInt("error_code");
+                            } else {
 
-                        if (errorCode == ErrorCodes.EMAIL_TAKEN) {
-                            mEmailEditText.setError(getString(R.string.email_taken));
-                        } else {
+                                int errorCode = responseObject.getInt("error_code");
+
+                                if (errorCode == ErrorCodes.EMAIL_TAKEN) {
+                                    mEmailEditText.setError(getString(R.string.email_taken));
+                                } else {
+                                    Toast.makeText(LoginRegisterActivity.this, R.string.unknown_error, Toast.LENGTH_SHORT).show();
+                                    Log.e(TAG, "onResponse: errorCode = " + errorCode);
+                                }
+                            }
+
+                        } catch (IOException | JSONException e) {
+                            e.printStackTrace();
+
                             Toast.makeText(LoginRegisterActivity.this, R.string.unknown_error, Toast.LENGTH_SHORT).show();
-                            Log.e(TAG, "onResponse: errorCode = " + errorCode);
                         }
+
+                        runOnUiThread(new Runnable() {
+                            @Override
+                            public void run() {
+                                progressDialog.dismiss();
+                            }
+                        });
                     }
-
-                } catch (IOException | JSONException e) {
-                    e.printStackTrace();
-
-                    Toast.makeText(LoginRegisterActivity.this, R.string.unknown_error, Toast.LENGTH_SHORT).show();
-                }
+                }).start();
             }
 
             @Override
@@ -276,50 +288,61 @@ public class LoginRegisterActivity extends AppCompatActivity {
 
         login.enqueue(new Callback<ResponseBody>() {
             @Override
-            public void onResponse(Call<ResponseBody> call, Response<ResponseBody> response) {
-                progressDialog.dismiss();
+            public void onResponse(Call<ResponseBody> call, final Response<ResponseBody> response) {
 
-                try {
-                    String json = response.body().string();
+                new Thread(new Runnable() {
+                    @Override
+                    public void run() {
+                        try {
+                            String json = response.body().string();
 
-                    JSONObject responseObject = new JSONObject(json);
-                    boolean error = responseObject.getBoolean("error");
+                            JSONObject responseObject = new JSONObject(json);
+                            boolean error = responseObject.getBoolean("error");
 
-                    if (!error) {
-                        User.Details userDetails = User.jsonObjectToUserDetails(responseObject.getJSONObject("user"));
+                            if (!error) {
+                                User.Details userDetails = User.jsonObjectToUserDetails(responseObject.getJSONObject("user"));
 
-                        SessionManager.login(LoginRegisterActivity.this, userDetails);
+                                SessionManager.login(LoginRegisterActivity.this, userDetails);
 
-                        Log.i(TAG, "Logged in!");
+                                Log.i(TAG, "Logged in!");
 
-                        setResult(Activity.RESULT_OK);
-                        finish();
+                                setResult(Activity.RESULT_OK);
+                                finish();
 
-                    } else {
+                            } else {
 
-                        int errorCode = responseObject.getInt("error_code");
+                                int errorCode = responseObject.getInt("error_code");
 
-                        switch (errorCode) {
+                                switch (errorCode) {
 
-                            case ErrorCodes.EMAIL_NOT_FOUND:
-                                mEmailEditText.setError(getString(R.string.email_not_found, getString(R.string.app_name)));
-                                break;
+                                    case ErrorCodes.EMAIL_NOT_FOUND:
+                                        mEmailEditText.setError(getString(R.string.email_not_found, getString(R.string.app_name)));
+                                        break;
 
-                            case ErrorCodes.FALSE_COMBINATION:
-                                mPasswordEditText.setError(getString(R.string.false_combination));
-                                break;
+                                    case ErrorCodes.FALSE_COMBINATION:
+                                        mPasswordEditText.setError(getString(R.string.false_combination));
+                                        break;
 
-                            default:
-                                Toast.makeText(LoginRegisterActivity.this, R.string.unknown_error, Toast.LENGTH_SHORT).show();
-                                Log.e(TAG, "onResponse: errorCode = " + errorCode);
+                                    default:
+                                        Toast.makeText(LoginRegisterActivity.this, R.string.unknown_error, Toast.LENGTH_SHORT).show();
+                                        Log.e(TAG, "onResponse: errorCode = " + errorCode);
+                                }
+                            }
+
+                        } catch (IOException | JSONException e) {
+                            e.printStackTrace();
+
+                            Toast.makeText(LoginRegisterActivity.this, R.string.unknown_error, Toast.LENGTH_SHORT).show();
                         }
+
+                        runOnUiThread(new Runnable() {
+                            @Override
+                            public void run() {
+                                progressDialog.dismiss();
+                            }
+                        });
                     }
-
-                } catch (IOException | JSONException e) {
-                    e.printStackTrace();
-
-                    Toast.makeText(LoginRegisterActivity.this, R.string.unknown_error, Toast.LENGTH_SHORT).show();
-                }
+                }).start();
             }
 
             @Override
