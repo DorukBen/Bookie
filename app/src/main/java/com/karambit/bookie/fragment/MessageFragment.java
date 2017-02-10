@@ -69,8 +69,8 @@ public class MessageFragment extends Fragment {
 
         mPullRefreshLayout = (PullRefreshLayout) rootView.findViewById(R.id.swipeRefreshLayout);
 
-        // First fetch messages
-        fetchMessages();
+        // TODO First fetch messages
+        // fetchMessages();
 
         mLastMessageAdapter.setOnMessageClickListener(new LastMessageAdapter.OnMessageClickListener() {
             @Override
