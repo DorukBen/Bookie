@@ -135,8 +135,6 @@ public class RequestActivity extends AppCompatActivity {
 
                             mRequestAdapter.notifyDataSetChanged();
 
-//                            mRequestRecyclerView.smoothScrollToPosition(0);
-
                             setAcceptedRequestText(request);
 
                             setResult(REQUESTS_MODIFIED); // for refreshing previous page
@@ -256,18 +254,9 @@ public class RequestActivity extends AppCompatActivity {
         mAcceptedRequestTextView.setText(spanAcceptRequest);
 
         getSupportActionBar().setElevation(0);
-        mRequestRecyclerView.setOnScrollListener(new RecyclerView.OnScrollListener() {
+        mRequestRecyclerView.setOnScrollListener(null);
 
-            @Override
-            public void onScrolled(RecyclerView recyclerView, int dx, int dy) {
-                super.onScrolled(recyclerView, dx, dy);
-
-                mTotalScrolled += dy;
-                mTotalScrolled = Math.abs(mTotalScrolled);
-
-                ViewCompat.setElevation(mAcceptedRequestTextView, ElevationScrollListener.getActionbarElevation((int) (mTotalScrolled - (28 * LayoutUtils.DP))));
-            }
-        });
+        ViewCompat.setElevation(mAcceptedRequestTextView, 8f * LayoutUtils.DP);
     }
 
     @Override
