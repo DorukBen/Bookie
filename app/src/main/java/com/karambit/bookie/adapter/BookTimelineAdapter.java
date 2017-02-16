@@ -452,13 +452,11 @@ public class BookTimelineAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
                     case READING:
                         stateCurrentHolder.mStateText.setText(R.string.reading);
                         stateCurrentHolder.mStateIcon.setImageResource(R.drawable.ic_book_timeline_read_start_stop_36dp);
-                        stateCurrentHolder.mRequestCount.setVisibility(View.VISIBLE);
                         break;
 
                     case OPENED_TO_SHARE:
                         stateCurrentHolder.mStateText.setText(R.string.opened_to_share);
                         stateCurrentHolder.mStateIcon.setImageResource(R.drawable.ic_book_timeline_opened_to_share_36dp);
-                        stateCurrentHolder.mRequestCount.setVisibility(View.VISIBLE);
                         break;
 
                     case CLOSED_TO_SHARE:
@@ -1265,7 +1263,12 @@ public class BookTimelineAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
 
     public int getRequestCount() {
         final int[] requestCountFinal = {0};
-        for (Book.BookProcess process : mBookDetails.getBookProcesses()) {
+        ArrayList<Book.BookProcess> bookProcesses = mBookDetails.getBookProcesses();
+        int i = 0;
+        while
+            (i < bookProcesses.size() &&
+            ((bookProcesses.get(i) instanceof Book.Request) && ((Book.Request) bookProcesses.get(i)).getRequestType() == Book.RequestType.ACCEPT)) {
+            Book.BookProcess process = bookProcesses.get(i);
             process.accept(new Book.TimelineDisplayableVisitor() {
                 @Override
                 public void visit(Book.Interaction interaction) {}
@@ -1280,6 +1283,7 @@ public class BookTimelineAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
                     }
                 }
             });
+            i++;
         }
         return requestCountFinal[0];
     }

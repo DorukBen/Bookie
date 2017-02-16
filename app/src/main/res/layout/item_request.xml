@@ -6,10 +6,10 @@
 
     <RelativeLayout
         android:id="@+id/fromUserClickContainer"
-        android:layout_toLeftOf="@+id/buttonContainer"
-        android:layout_margin="8dp"
         android:layout_width="match_parent"
-        android:layout_height="match_parent">
+        android:layout_height="match_parent"
+        android:layout_margin="8dp"
+        android:layout_toLeftOf="@+id/buttonContainer">
 
         <com.karambit.bookie.helper.CircleImageView
             android:id="@+id/profilePictureRequest"
@@ -78,9 +78,9 @@
         android:layout_height="match_parent"
         android:layout_alignParentRight="true"
         android:layout_centerVertical="true"
-        android:layout_marginRight="8dp"
         android:gravity="center"
-        android:orientation="horizontal">
+        android:orientation="horizontal"
+        android:paddingRight="16dp">
 
         <ImageButton
             android:id="@+id/acceptRequest"

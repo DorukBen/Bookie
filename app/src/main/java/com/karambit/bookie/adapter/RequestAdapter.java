@@ -276,7 +276,7 @@ public class RequestAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
 
     }
 
-    private ArrayList<Book.Request> getRejectedRequests() {
+    public ArrayList<Book.Request> getRejectedRequests() {
         ArrayList<Book.Request> rejectedRequests = new ArrayList<>();
         for (int i = 0; i < mRequests.size(); i++) {
             Book.Request request = mRequests.get(i);
@@ -287,7 +287,7 @@ public class RequestAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
         return rejectedRequests;
     }
 
-    private int getRejectedRequestCount() {
+    public int getRejectedRequestCount() {
         int count = 0;
         for (int i = 0; i < mRequests.size(); i++) {
             Book.Request request = mRequests.get(i);
@@ -298,7 +298,7 @@ public class RequestAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
         return count;
     }
 
-    private ArrayList<Book.Request> getSentRequests() {
+    public ArrayList<Book.Request> getSentRequests() {
         ArrayList<Book.Request> sentRequests = new ArrayList<>();
         for (int i = 0; i < mRequests.size(); i++) {
             Book.Request request = mRequests.get(i);
@@ -309,7 +309,7 @@ public class RequestAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
         return sentRequests;
     }
 
-    private int getSentRequestCount() {
+    public int getSentRequestCount() {
         int count = 0;
         for (int i = 0; i < mRequests.size(); i++) {
             Book.Request request = mRequests.get(i);
@@ -350,23 +350,6 @@ public class RequestAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
             }
         }
         notifyDataSetChanged();
-    }
-
-    public void notifyItemMovedWithLocation(int fromPosition, int toPosition) {
-
-//        if (mLocations.containsKey(fromPosition) && mLocations.containsKey(toPosition)) {
-//            String temp = mLocations.get(toPosition);
-//            mLocations.put(toPosition, mLocations.get(fromPosition));
-//            mLocations.put(fromPosition, temp);
-//        } else if (mLocations.containsKey(fromPosition)) {
-//            mLocations.put(toPosition, mLocations.get(fromPosition));
-//            mLocations.remove(fromPosition);
-//        } else if (mLocations.containsKey(toPosition)) {
-//            mLocations.put(fromPosition, mLocations.get(toPosition));
-//            mLocations.remove(toPosition);
-//        }
-
-        notifyItemMoved(fromPosition, toPosition);
     }
 
     public Hashtable<Book.Request, String> getLocations() {

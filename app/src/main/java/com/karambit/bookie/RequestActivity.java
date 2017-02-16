@@ -29,6 +29,7 @@ import android.widget.TextView;
 
 import com.karambit.bookie.adapter.RequestAdapter;
 import com.karambit.bookie.helper.ElevationScrollListener;
+import com.karambit.bookie.helper.LayoutUtils;
 import com.karambit.bookie.helper.SessionManager;
 import com.karambit.bookie.helper.pull_refresh_layout.PullRefreshLayout;
 import com.karambit.bookie.model.Book;
@@ -55,6 +56,7 @@ public class RequestActivity extends AppCompatActivity {
     private RecyclerView mRequestRecyclerView;
     private TextView mAcceptedRequestTextView;
     private Hashtable<Book.Request, String> mLocations;
+    private int mTotalScrolled = 0;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -93,16 +95,15 @@ public class RequestActivity extends AppCompatActivity {
         mRequestRecyclerView.setOnScrollListener(new RecyclerView.OnScrollListener() {
 
             ActionBar actionBar = getSupportActionBar();
-            int totalScrolled = 0;
 
             @Override
             public void onScrolled(RecyclerView recyclerView, int dx, int dy) {
                 super.onScrolled(recyclerView, dx, dy);
 
-                totalScrolled += dy;
-                totalScrolled = Math.abs(totalScrolled);
+                mTotalScrolled += dy;
+                mTotalScrolled = Math.abs(mTotalScrolled);
 
-                actionBar.setElevation(ElevationScrollListener.getActionbarElevation(totalScrolled));
+                actionBar.setElevation(ElevationScrollListener.getActionbarElevation(mTotalScrolled));
             }
         });
 
@@ -134,9 +135,9 @@ public class RequestActivity extends AppCompatActivity {
 
                             mRequestAdapter.notifyDataSetChanged();
 
-                            setAcceptedRequestText(request);
+//                            mRequestRecyclerView.smoothScrollToPosition(0);
 
-                            mRequestRecyclerView.smoothScrollToPosition(0);
+                            setAcceptedRequestText(request);
 
                             setResult(REQUESTS_MODIFIED); // for refreshing previous page
                         }
@@ -161,6 +162,7 @@ public class RequestActivity extends AppCompatActivity {
                             Collections.sort(mRequests);
                             int indexAfter = mRequests.indexOf(request) + 1; // Subtitle
                             mRequestAdapter.notifyItemMoved(indexBefore, indexAfter);
+                            mRequestAdapter.notifyItemChanged(mRequestAdapter.getSentRequestCount() - 1);
 
                             setResult(REQUESTS_MODIFIED); // for refreshing previous page
                         }
@@ -255,16 +257,15 @@ public class RequestActivity extends AppCompatActivity {
 
         getSupportActionBar().setElevation(0);
         mRequestRecyclerView.setOnScrollListener(new RecyclerView.OnScrollListener() {
-            int totalScrolled = 0;
 
             @Override
             public void onScrolled(RecyclerView recyclerView, int dx, int dy) {
                 super.onScrolled(recyclerView, dx, dy);
 
-                totalScrolled += dy;
-                totalScrolled = Math.abs(totalScrolled);
+                mTotalScrolled += dy;
+                mTotalScrolled = Math.abs(mTotalScrolled);
 
-                ViewCompat.setElevation(mAcceptedRequestTextView, ElevationScrollListener.getActionbarElevation(totalScrolled));
+                ViewCompat.setElevation(mAcceptedRequestTextView, ElevationScrollListener.getActionbarElevation((int) (mTotalScrolled - (28 * LayoutUtils.DP))));
             }
         });
     }
