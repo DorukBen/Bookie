@@ -56,7 +56,6 @@ public class RequestActivity extends AppCompatActivity {
     private RecyclerView mRequestRecyclerView;
     private TextView mAcceptedRequestTextView;
     private Hashtable<Book.Request, String> mLocations;
-    private int mTotalScrolled = 0;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -94,16 +93,17 @@ public class RequestActivity extends AppCompatActivity {
 
         mRequestRecyclerView.setOnScrollListener(new RecyclerView.OnScrollListener() {
 
+            int totalScrolled = 0;
             ActionBar actionBar = getSupportActionBar();
 
             @Override
             public void onScrolled(RecyclerView recyclerView, int dx, int dy) {
                 super.onScrolled(recyclerView, dx, dy);
 
-                mTotalScrolled += dy;
-                mTotalScrolled = Math.abs(mTotalScrolled);
+                totalScrolled += dy;
+                totalScrolled = Math.abs(totalScrolled);
 
-                actionBar.setElevation(ElevationScrollListener.getActionbarElevation(mTotalScrolled));
+                actionBar.setElevation(ElevationScrollListener.getActionbarElevation(totalScrolled));
             }
         });
 
