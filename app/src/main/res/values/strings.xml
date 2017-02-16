@@ -189,4 +189,11 @@
     <string name="action_delete">Delete</string>
     <string name="delete">Delete</string>
     <string name="yesterday">YESTERDAY</string>
+
+    <string name="x_point">%d point</string>
+    <string name="request_activity_title">Requests</string>
+    <string name="accept_request_prompt">Accept request from %s? All the other requests have been rejected!</string>
+    <string name="reject">Reject</string>
+    <string name="rejected_requests">Rejected requests</string>
+    <string name="reject_request_prompt">Reject request from %s?</string>
 </resources>

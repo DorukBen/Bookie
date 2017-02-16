@@ -1,0 +1,111 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+                android:layout_width="match_parent"
+                android:layout_height="88dp"
+                android:orientation="horizontal">
+
+    <RelativeLayout
+        android:id="@+id/fromUserClickContainer"
+        android:layout_toLeftOf="@+id/buttonContainer"
+        android:layout_margin="8dp"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+
+        <com.karambit.bookie.helper.CircleImageView
+            android:id="@+id/profilePictureRequest"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:layout_centerVertical="true"
+            android:layout_marginLeft="16dp"
+            android:src="@drawable/placeholder_88dp"/>
+
+
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_centerVertical="true"
+            android:layout_marginLeft="16dp"
+            android:layout_toRightOf="@+id/profilePictureRequest"
+            android:animateLayoutChanges="true"
+            android:orientation="vertical">
+
+            <TextView
+                android:id="@+id/userNameRequest"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginRight="8dp"
+                android:ellipsize="end"
+                android:maxLines="2"
+                android:text="User Name"
+                android:textColor="@color/primaryTextColor"
+                android:textSize="16sp"/>
+
+
+            <TextView
+                android:id="@+id/locationRequest"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginRight="8dp"
+                android:layout_marginTop="2dp"
+                android:ellipsize="end"
+                android:maxLines="1"
+                android:text="Location"
+                android:textColor="@color/secondaryTextColor"
+                android:textSize="14sp"
+                android:visibility="gone"
+                />
+
+            <TextView
+                android:id="@+id/createdAtRequest"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginRight="8dp"
+                android:layout_marginTop="2dp"
+                android:ellipsize="end"
+                android:maxLines="1"
+                android:text="Created at"
+                android:textColor="@color/secondaryTextColor"
+                android:textSize="14sp"/>
+
+        </LinearLayout>
+
+    </RelativeLayout>
+
+
+    <LinearLayout
+        android:id="@+id/buttonContainer"
+        android:layout_width="wrap_content"
+        android:layout_height="match_parent"
+        android:layout_alignParentRight="true"
+        android:layout_centerVertical="true"
+        android:layout_marginRight="8dp"
+        android:gravity="center"
+        android:orientation="horizontal">
+
+        <ImageButton
+            android:id="@+id/acceptRequest"
+            android:layout_width="36dp"
+            android:layout_height="36dp"
+            android:layout_marginRight="16dp"
+            android:background="@drawable/circle_accent_color"
+            android:src="@drawable/ic_done_white_24dp"/>
+
+        <ImageButton
+            android:id="@+id/rejectRequest"
+            android:layout_width="36dp"
+            android:layout_height="36dp"
+            android:background="@drawable/circle_primary_dark"
+            android:src="@drawable/ic_close_primary_text_color"/>
+
+    </LinearLayout>
+
+    <View
+        android:id="@+id/divider"
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:layout_alignParentBottom="true"
+        android:layout_marginLeft="80dp"
+        android:alpha="0.13"
+        android:background="@color/primaryTextColor"/>
+
+</RelativeLayout>

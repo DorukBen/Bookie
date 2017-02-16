@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/activity_request"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:animateLayoutChanges="true"
+    android:background="@color/colorPrimary"
+    android:orientation="vertical"
+    tools:context="com.karambit.bookie.RequestActivity">
+
+
+    <TextView
+        android:id="@+id/acceptedRequestText"
+        android:layout_width="match_parent"
+        android:layout_height="72dp"
+        android:background="@color/colorPrimary"
+        android:elevation="8dp"
+        android:gravity="center"
+        android:text="@string/you_accepted_request"
+        android:textColor="@color/primaryTextColor"
+        android:textSize="16sp"
+        android:visibility="gone"/>
+
+    <com.karambit.bookie.helper.pull_refresh_layout.PullRefreshLayout
+        android:id="@+id/swipeRefreshLayout"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        app:refreshColor="@color/progressBarColor"
+        app:refreshType="smartisan">
+
+        <android.support.v7.widget.RecyclerView
+            android:id="@+id/requestRecyclerView"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:background="@color/colorPrimary"
+            android:overScrollMode="never"/>
+
+    </com.karambit.bookie.helper.pull_refresh_layout.PullRefreshLayout>
+
+</LinearLayout>

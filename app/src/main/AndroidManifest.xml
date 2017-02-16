@@ -24,48 +24,63 @@
                 <category android:name="android.intent.category.LAUNCHER"/>
             </intent-filter>
         </activity>
-        <activity android:name=".BookActivity"
-                  android:screenOrientation="portrait">
+        <activity
+            android:name=".BookActivity"
+            android:screenOrientation="portrait">
         </activity>
-        <activity android:name=".ConversationActivity"
-                  android:screenOrientation="portrait">
+        <activity
+            android:name=".ConversationActivity"
+            android:screenOrientation="portrait">
         </activity>
-        <activity android:name=".AddBookActivity"
-                  android:screenOrientation="portrait">
+        <activity
+            android:name=".AddBookActivity"
+            android:screenOrientation="portrait">
         </activity>
-        <activity android:name=".LoginRegisterActivity"
-                  android:screenOrientation="portrait">
+        <activity
+            android:name=".LoginRegisterActivity"
+            android:screenOrientation="portrait">
         </activity>
-        <activity android:name=".CurrentUserProfileSettingsActivity"
-                  android:screenOrientation="portrait">
+        <activity
+            android:name=".CurrentUserProfileSettingsActivity"
+            android:screenOrientation="portrait">
         </activity>
-        <activity android:name=".introduction.IntroductionActivity"
-                  android:screenOrientation="portrait">
+        <activity
+            android:name=".introduction.IntroductionActivity"
+            android:screenOrientation="portrait">
         </activity>
-        <activity android:name=".LovedGenresActivity"
-                  android:screenOrientation="portrait">
+        <activity
+            android:name=".LovedGenresActivity"
+            android:screenOrientation="portrait">
         </activity>
-        <activity android:name=".ProfileActivity"
-                  android:screenOrientation="portrait">
+        <activity
+            android:name=".ProfileActivity"
+            android:screenOrientation="portrait">
         </activity>
-        <activity android:name=".UserProfileSettingsActivity"
-                  android:screenOrientation="portrait">
+        <activity
+            android:name=".UserProfileSettingsActivity"
+            android:screenOrientation="portrait">
         </activity>
-        <activity android:name=".BookSettingsActivity"
-                  android:screenOrientation="portrait">
+        <activity
+            android:name=".BookSettingsActivity"
+            android:screenOrientation="portrait">
         </activity>
-        <activity android:name=".PhotoViewerActivity"
-                  android:screenOrientation="portrait">
+        <activity
+            android:name=".PhotoViewerActivity"
+            android:screenOrientation="portrait">
         </activity>
-        <activity android:name=".NotificationActivity"
-                  android:screenOrientation="portrait">
+        <activity
+            android:name=".NotificationActivity"
+            android:screenOrientation="portrait">
         </activity>
         <activity android:name=".LocationActivity">
         </activity>
 
-        <meta-data android:name="com.google.android.geo.API_KEY"
+        <meta-data
+            android:name="com.google.android.geo.API_KEY"
             android:value="AIzaSyAYqy3e7cyu4lutdpH2dZeBAuSf1UKU6hA"/>
 
+        <activity android:name=".RequestActivity">
+        </activity>
     </application>
 
 </manifest>

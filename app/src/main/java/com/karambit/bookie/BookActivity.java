@@ -187,8 +187,10 @@ public class BookActivity extends AppCompatActivity {
             }
 
             @Override
-            public void onRequestCountClick(Book.Details bookDetails) {
-                // TODO Request Count Click
+            public void onRequestButtonClick(Book.Details bookDetails) {
+                Intent intent = new Intent(BookActivity.this, RequestActivity.class);
+                intent.putExtra("book", mBook);
+                startActivity(intent);
             }
         });
 

@@ -121,7 +121,6 @@ public class BookTimelineAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
         private TextView mStateText;
         private View mRequestClickArea;
         private TextView mRequestCount;
-        private TextView mRequestsText;
         private TextView mStateDuration;
 
         private StateSectionCurrentUserViewHolder(View stateSectionView) {
@@ -133,7 +132,6 @@ public class BookTimelineAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
             mRequestClickArea = stateSectionView.findViewById(R.id.requestsClickArea);
             mRequestCount = (TextView) stateSectionView.findViewById(R.id.requestCountTextView);
             mStateDuration = (TextView) stateSectionView.findViewById(R.id.stateDurationTextView);
-            mRequestsText = (TextView) stateSectionView.findViewById(R.id.requestsTextView);
         }
     }
 
@@ -436,17 +434,17 @@ public class BookTimelineAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
                         stateCurrentHolder.mRequestCount.setText("9+");
                     }
 
-                    if (mCurrentUserClickListeners != null) {
-                        stateCurrentHolder.mRequestCount.setOnClickListener(new View.OnClickListener() {
-                            @Override
-                            public void onClick(View v) {
-                                mCurrentUserClickListeners.onRequestCountClick(mBookDetails);
-                            }
-                        });
-                    }
-
                 } else {
                     stateCurrentHolder.mRequestCount.setVisibility(View.GONE);
+                }
+
+                if (mCurrentUserClickListeners != null) {
+                    stateCurrentHolder.mRequestClickArea.setOnClickListener(new View.OnClickListener() {
+                        @Override
+                        public void onClick(View v) {
+                            mCurrentUserClickListeners.onRequestButtonClick(mBookDetails);
+                        }
+                    });
                 }
 
                 switch (mBookDetails.getBook().getState()) {
@@ -1349,7 +1347,7 @@ public class BookTimelineAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
     public interface StateCurrentUserClickListeners {
         void onStateClick(Book.Details bookDetails);
 
-        void onRequestCountClick(Book.Details bookDetails);
+        void onRequestButtonClick(Book.Details bookDetails);
     }
 
     public interface SpanTextClickListeners {

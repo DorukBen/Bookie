@@ -30,6 +30,7 @@ import com.karambit.bookie.helper.SessionManager;
 import com.karambit.bookie.helper.TabFactory;
 import com.karambit.bookie.helper.TypefaceSpan;
 import com.karambit.bookie.helper.ViewPagerAdapter;
+import com.karambit.bookie.model.Book;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -68,6 +69,10 @@ public class MainActivity extends AppCompatActivity implements TabHost.OnTabChan
 
         mViewPager = (ViewPager) findViewById(R.id.viewpager);
         mTabHost = (TabHost) findViewById(R.id.tabhost);
+
+        Intent intent = new Intent(this, RequestActivity.class);
+        intent.putExtra("book", Book.GENERATOR.generateBook());
+        startActivity(intent);
 
         if (! SessionManager.isLoggedIn(this)) {
             startActivityForResult(new Intent(this, LoginRegisterActivity.class), REQUEST_CODE_LOGIN_REGISTER_ACTIVITY);

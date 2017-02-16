@@ -2,7 +2,7 @@ package com.karambit.bookie.model;
 
 import android.os.Parcel;
 import android.os.Parcelable;
-import android.util.Log;
+import android.support.annotation.NonNull;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -11,7 +11,6 @@ import org.json.JSONObject;
 import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Calendar;
-import java.util.Objects;
 import java.util.Random;
 
 /**
@@ -469,7 +468,7 @@ public class Book implements Parcelable {
         }
     }
 
-    public class Request implements BookProcess {
+    public class Request implements BookProcess, Comparable<Book.Request> {
         private RequestType mRequestType;
         private User mFromUser;
         private User mToUser;
@@ -511,6 +510,22 @@ public class Book implements Parcelable {
             return Book.this;
         }
 
+        public void setRequestType(RequestType requestType) {
+            mRequestType = requestType;
+        }
+
+        public void setFromUser(User fromUser) {
+            mFromUser = fromUser;
+        }
+
+        public void setToUser(User toUser) {
+            mToUser = toUser;
+        }
+
+        public void setCreatedAt(Calendar createdAt) {
+            mCreatedAt = createdAt;
+        }
+
         @Override
         public String toString() {
             return Book.this.toString() + ".Request{" +
@@ -523,6 +538,16 @@ public class Book implements Parcelable {
         @Override
         public void accept(TimelineDisplayableVisitor visitor) {
             visitor.visit(this);
+        }
+
+        @Override
+        public int compareTo(@NonNull Request otherRequest) {
+            int ordinalDifference = this.mRequestType.ordinal() - otherRequest.getRequestType().ordinal();
+            if (ordinalDifference != 0) {
+                return ordinalDifference;
+            } else {
+                return (int) (otherRequest.getCreatedAt().getTimeInMillis() - this.mCreatedAt.getTimeInMillis());
+            }
         }
     }
 

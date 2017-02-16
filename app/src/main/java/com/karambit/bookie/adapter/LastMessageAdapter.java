@@ -14,14 +14,12 @@ import android.widget.TextView;
 import com.bumptech.glide.Glide;
 import com.karambit.bookie.R;
 import com.karambit.bookie.helper.CircleImageView;
+import com.karambit.bookie.helper.CreatedAtHelper;
 import com.karambit.bookie.helper.SessionManager;
 import com.karambit.bookie.model.Message;
 import com.karambit.bookie.model.User;
 
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Calendar;
-import java.util.Locale;
 
 /**
  * Created by orcan on 10/27/16.
@@ -189,7 +187,7 @@ public class LastMessageAdapter extends RecyclerView.Adapter<RecyclerView.ViewHo
                 }
 
                 messageHolder.mLastMessageText.setText(message.getText());
-                messageHolder.mCreatedAt.setText(createdAtToString(message.getCreatedAt()));
+                messageHolder.mCreatedAt.setText(CreatedAtHelper.createdAtToSimpleString(mContext, message.getCreatedAt()));
 
                 int unseenCount = mUnseenCounts.get(position, -1);
 
@@ -256,26 +254,6 @@ public class LastMessageAdapter extends RecyclerView.Adapter<RecyclerView.ViewHo
             default:
                 throw new IllegalArgumentException("Invalid view type at position: " + position);
         }
-    }
-
-    private String createdAtToString(Calendar createdAt) {
-
-        int dayDurationMillis = 24 * 60 * 60 * 1000;
-
-        long nowMillis = Calendar.getInstance().getTimeInMillis();
-        long createdAtMillis = createdAt.getTimeInMillis();
-        long difMillis = nowMillis - createdAtMillis;
-
-        SimpleDateFormat sdf;
-        if (difMillis < dayDurationMillis) {
-            sdf = new SimpleDateFormat("kk:mm", Locale.getDefault());
-        } else if (difMillis < 2 * dayDurationMillis){
-            return mContext.getString(R.string.yesterday);
-        } else {
-            sdf = new SimpleDateFormat("d/M/yy", Locale.getDefault());
-        }
-
-        return sdf.format(createdAt.getTime());
     }
 
     public void setSelectedMessage(int selectedPosition) {

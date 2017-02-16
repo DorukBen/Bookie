@@ -12,6 +12,7 @@
         android:layout_marginRight="8dp"
         android:layout_centerVertical="true"
         android:text="SUBTITLE"
+        android:textAllCaps="true"
         android:textColor="@color/primaryTextColor"
         android:textSize="14sp"/>
 
