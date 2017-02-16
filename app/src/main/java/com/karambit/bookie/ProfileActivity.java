@@ -60,11 +60,11 @@ public class ProfileActivity extends AppCompatActivity {
     public boolean onOptionsItemSelected(MenuItem item) {
         switch (item.getItemId()) {
             case R.id.action_more:
-                startActivity(new Intent(this,UserProfileSettingsActivity.class));
+                startActivity(new Intent(this,OtherUserProfileSettingsActivity.class));
                 return true;
 
             default:
-                startActivity(new Intent(this,UserProfileSettingsActivity.class));
+                startActivity(new Intent(this,OtherUserProfileSettingsActivity.class));
                 return super.onOptionsItemSelected(item);
 
         }
