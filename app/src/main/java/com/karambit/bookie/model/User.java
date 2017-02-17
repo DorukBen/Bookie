@@ -75,10 +75,10 @@ public class User implements Parcelable {
     public static User jsonObjectToUser(JSONObject userJsonObject) {
         try {
             return new User(
-                    userJsonObject.getInt("user_id"),
-                    userJsonObject.getString("name_surname"),
-                    userJsonObject.getString("profile_picture_url"),
-                    userJsonObject.getString("profile_picture_thumbnail_url"),
+                    userJsonObject.getInt("ID"),
+                    userJsonObject.getString("nameSurname"),
+                    userJsonObject.getString("profilePictureURL"),
+                    userJsonObject.getString("profilePictureThumbnailURL"),
                     userJsonObject.isNull("latitude") ? -1 : userJsonObject.getDouble("latitude"),
                     userJsonObject.isNull("longitude") ? -1 : userJsonObject.getDouble("longitude")
             );
@@ -92,10 +92,10 @@ public class User implements Parcelable {
 
         try {
             User user = new User(
-                    userJsonObject.getInt("user_id"),
-                    userJsonObject.getString("name_surname"),
-                    userJsonObject.getString("profile_picture_url"),
-                    userJsonObject.getString("profile_picture_thumbnail_url"),
+                    userJsonObject.getInt("ID"),
+                    userJsonObject.getString("nameSurname"),
+                    userJsonObject.getString("profilePictureURL"),
+                    userJsonObject.getString("profilePictureThumbnailURL"),
                     userJsonObject.isNull("latitude") ? -1 : userJsonObject.getDouble("latitude"),
                     userJsonObject.isNull("longitude") ? -1 : userJsonObject.getDouble("longitude")
             );
@@ -103,9 +103,9 @@ public class User implements Parcelable {
             return user.new Details(
                     userJsonObject.getString("password"),
                     userJsonObject.getString("email"),
-                    (userJsonObject.getInt("email_verified") != 0),
+                    userJsonObject.getBoolean("emailVerified"),
                     userJsonObject.getString("bio"),
-                    userJsonObject.getInt("book_counter"),
+                    userJsonObject.getInt("counter"),
                     userJsonObject.getInt("point")
             );
 

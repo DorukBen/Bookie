@@ -4,6 +4,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.database.DataSetObserver;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -28,6 +29,7 @@ public class HorizontalPagerAdapter extends InfiniteCyclePagerAdapter {
     private ArrayList<Book> mBooks = new ArrayList<>();
     private Context mContext;
     private LayoutInflater mLayoutInflater;
+    private BookClickListener mBookClickListener;
 
     public HorizontalPagerAdapter(final Context context, ArrayList<Book> books) {
         mContext = context;
@@ -42,7 +44,7 @@ public class HorizontalPagerAdapter extends InfiniteCyclePagerAdapter {
 
     @Override
     public int getItemPosition(final Object object) {
-        return POSITION_NONE;
+        return mBooks.indexOf(object);
     }
 
     @Override
@@ -62,15 +64,12 @@ public class HorizontalPagerAdapter extends InfiniteCyclePagerAdapter {
         ((TextView)view.findViewById(R.id.bookNameInfiniteCycleTextView)).setText(mBooks.get(position).getName());
         ((TextView)view.findViewById(R.id.authorInfiniteCycleTextView)).setText(mBooks.get(position).getAuthor());
 
-        view.setOnClickListener(new View.OnClickListener() {
+        view.findViewById(R.id.horizontalPagerCardView).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                Intent intent = new Intent(mContext, BookActivity.class);
-                Bundle bundle = new Bundle();
-                bundle.putParcelable("book", mBooks.get(position));
-                intent.putExtras(bundle);
-                mContext.startActivity(intent);
-
+                if (mBookClickListener != null){
+                    mBookClickListener.onBookClick(mBooks.get(position));
+                }
             }
         });
 
@@ -98,5 +97,17 @@ public class HorizontalPagerAdapter extends InfiniteCyclePagerAdapter {
     public void setBooks(ArrayList<Book> books){
         mBooks.clear();
         mBooks.addAll(books);
+    }
+
+    public interface BookClickListener {
+        void onBookClick(Book book);
+    }
+
+    public BookClickListener getBookClickListener() {
+        return mBookClickListener;
+    }
+
+    public void setBookClickListener(BookClickListener bookClickListener) {
+        mBookClickListener = bookClickListener;
     }
 }

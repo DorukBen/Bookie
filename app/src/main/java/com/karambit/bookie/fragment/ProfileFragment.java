@@ -2,6 +2,7 @@ package com.karambit.bookie.fragment;
 
 
 import android.content.Intent;
+import android.icu.text.LocaleDisplayNames;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
 import android.support.v7.widget.LinearLayoutManager;
@@ -10,8 +11,10 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Toast;
 
 import com.karambit.bookie.BookActivity;
+import com.karambit.bookie.LoginRegisterActivity;
 import com.karambit.bookie.MainActivity;
 import com.karambit.bookie.PhotoViewerActivity;
 import com.karambit.bookie.ProfileActivity;
@@ -24,6 +27,7 @@ import com.karambit.bookie.helper.pull_refresh_layout.PullRefreshLayout;
 import com.karambit.bookie.model.Book;
 import com.karambit.bookie.model.User;
 import com.karambit.bookie.rest_api.BookieClient;
+import com.karambit.bookie.rest_api.ErrorCodes;
 import com.karambit.bookie.rest_api.UserApi;
 
 import org.json.JSONException;
@@ -36,10 +40,15 @@ import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
 
+import static com.karambit.bookie.model.Book.State.READING;
+
 /**
  * A simple {@link Fragment} subclass.
  */
 public class ProfileFragment extends Fragment {
+
+    private static final int UPDATE_PROFILE_PICTURE_REQUEST_CODE = 1;
+    private static final int UPDATE_BOOK_PROCESS_REQUEST_CODE = 2;
 
     public static final String TAG = ProfileFragment.class.getSimpleName();
 
@@ -50,6 +59,7 @@ public class ProfileFragment extends Fragment {
     public static final int PROFILE_FRAGMENT_TAB_INEX = 3;
     private ProfileTimelineAdapter mProfileTimelineAdapter;
     private PullRefreshLayout mPullRefreshLayout;
+    private User.Details mUserDetails;
 
     public ProfileFragment() {
         // Required empty public constructor
@@ -99,7 +109,7 @@ public class ProfileFragment extends Fragment {
             public void onBookClick(Book book) {
                 Intent intent = new Intent(getContext(), BookActivity.class);
                 intent.putExtra("book", book);
-                startActivity(intent);
+                startActivityForResult(intent, UPDATE_BOOK_PROCESS_REQUEST_CODE);
             }
         });
 
@@ -115,9 +125,10 @@ public class ProfileFragment extends Fragment {
             public void onProfilePictureClick(User.Details details) {
                 Intent intent = new Intent(getContext(), PhotoViewerActivity.class);
                 Bundle bundle = new Bundle();
+                bundle.putParcelable("user", details.getUser());
                 bundle.putString("image", details.getUser().getImageUrl());
                 intent.putExtras(bundle);
-                startActivity(intent);
+                startActivityForResult(intent, UPDATE_PROFILE_PICTURE_REQUEST_CODE);
             }
 
             @Override
@@ -161,55 +172,72 @@ public class ProfileFragment extends Fragment {
         final UserApi userApi = BookieClient.getClient().create(UserApi.class);
         String email = SessionManager.getCurrentUserDetails(getContext()).getEmail();
         String password = SessionManager.getCurrentUserDetails(getContext()).getPassword();
-        Call<ResponseBody> getUserProfilePageArguments = userApi.getUserProfilePageArguments(email, password, mUser.getID());
+        Call<ResponseBody> getUserProfilePageComponents = userApi.getUserProfilePageComponents(email, password, mUser.getID());
 
-        getUserProfilePageArguments.enqueue(new Callback<ResponseBody>() {
+        getUserProfilePageComponents.enqueue(new Callback<ResponseBody>() {
             @Override
             public void onResponse(Call<ResponseBody> call, Response<ResponseBody> response) {
 
                 try {
-                    String json = response.body().string();
+                    if (response != null){
+                        if (response.body() != null){
+                            String json = response.body().string();
 
-                    JSONObject responseObject = new JSONObject(json);
-                    boolean error = responseObject.getBoolean("error");
+                            JSONObject responseObject = new JSONObject(json);
+                            boolean error = responseObject.getBoolean("error");
 
-                    if (!error) {
-                        mProfileTimelineAdapter.setError(ProfileTimelineAdapter.ERROR_TYPE_NONE);
-                        User.Details userDetails ;
-                        if (!responseObject.isNull("user")){
-                            JSONObject userObject = responseObject.getJSONObject("user");
-                            userDetails = User.jsonObjectToUserDetails(userObject);
+                            if (!error) {
+                                mProfileTimelineAdapter.setError(ProfileTimelineAdapter.ERROR_TYPE_NONE);
 
-                            if (!responseObject.isNull("currently_reading")){
-                                if (userDetails != null) {
-                                    userDetails.setCurrentlyReading(Book.jsonArrayToBookList(responseObject.getJSONArray("currently_reading")));
+                                if (!responseObject.isNull("userDetails")){
+                                    JSONObject userObject = responseObject.getJSONObject("userDetails");
+                                    mUserDetails = User.jsonObjectToUserDetails(userObject);
+
+                                    if (!responseObject.isNull("currentlyReading")){
+                                        if (mUserDetails != null) {
+                                            mUserDetails.setCurrentlyReading(Book.jsonArrayToBookList(responseObject.getJSONArray("currentlyReading")));
+                                        }
+
+                                    }
+                                    if (!responseObject.isNull("booksOnHand")){
+                                        if (mUserDetails != null) {
+                                            mUserDetails.setBooksOnHand(Book.jsonArrayToBookList(responseObject.getJSONArray("booksOnHand")));
+                                        }
+
+                                    }
+                                    if (!responseObject.isNull("readBooks")){
+                                        if (mUserDetails != null) {
+                                            mUserDetails.setReadBooks(Book.jsonArrayToBookList(responseObject.getJSONArray("readBooks")));
+                                        }
+                                    }
+                                    mProfileTimelineAdapter.setUserDetails(mUserDetails);
                                 }
 
-                            }
-                            if (!responseObject.isNull("books_on_hand")){
-                                if (userDetails != null) {
-                                    userDetails.setBooksOnHand(Book.jsonArrayToBookList(responseObject.getJSONArray("books_on_hand")));
+                            } else {
+                                int errorCode = responseObject.getInt("errorCode");
+
+                                if (errorCode == ErrorCodes.EMPTY_POST){
+                                    Log.e(TAG, "Post is empty. (Profile Page Error)");
+                                }else if (errorCode == ErrorCodes.MISSING_POST_ELEMENT){
+                                    Log.e(TAG, "Post element missing. (Profile Page Error)");
+                                }else if (errorCode == ErrorCodes.INVALID_EMAIL){
+                                    Log.e(TAG, "Invalid email. (Profile Page Error)");
+                                }else if (errorCode == ErrorCodes.INVALID_REQUEST){
+                                    Log.e(TAG, "Invalid request. (Profile Page Error)");
+                                }else if (errorCode == ErrorCodes.UNKNOWN){
+                                    Log.e(TAG, "onResponse: errorCode = " + errorCode);
                                 }
 
+                                mProfileTimelineAdapter.setError(ProfileTimelineAdapter.ERROR_TYPE_UNKNOWN_ERROR);
                             }
-                            if (!responseObject.isNull("read_books")){
-                                if (userDetails != null) {
-                                    userDetails.setReadBooks(Book.jsonArrayToBookList(responseObject.getJSONArray("read_books")));
-                                }
-                            }
-                            mProfileTimelineAdapter.setUserDetails(userDetails);
-                        }
-
-                    } else {
-                        int errorCode = responseObject.getInt("error_code");
-
-                        if(NetworkChecker.isNetworkAvailable(getContext())){
-                            mProfileTimelineAdapter.setError(ProfileTimelineAdapter.ERROR_TYPE_UNKNOWN_ERROR);
                         }else{
-                            mProfileTimelineAdapter.setError(ProfileTimelineAdapter.ERROR_TYPE_NO_CONNECTION);
+                            Log.e(TAG, "Response body is null. (Profile Page Error)");
+                            mProfileTimelineAdapter.setError(ProfileTimelineAdapter.ERROR_TYPE_UNKNOWN_ERROR);
                         }
+                    }else {
+                        Log.e(TAG, "Response object is null. (Profile Page Error)");
+                        mProfileTimelineAdapter.setError(ProfileTimelineAdapter.ERROR_TYPE_UNKNOWN_ERROR);
                     }
-
                 } catch (IOException | JSONException e) {
                     e.printStackTrace();
 
@@ -236,5 +264,72 @@ public class ProfileFragment extends Fragment {
                 Log.e(TAG, "ProfilePage onFailure: " + t.getMessage());
             }
         });
+    }
+
+    public void refreshProfilePage(){
+        fetchProfilePageArguments();
+    }
+
+    @Override
+    public void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if (requestCode == UPDATE_PROFILE_PICTURE_REQUEST_CODE){
+            if (resultCode == PhotoViewerActivity.RESULT_PROFILE_PICTURE_UPDATED){
+                refreshProfilePage();
+            }
+        } else if (requestCode == UPDATE_BOOK_PROCESS_REQUEST_CODE){
+            if (resultCode == BookActivity.BOOK_PROCESS_CHANGED_RESULT_CODE){
+                if (mUserDetails != null){
+                    Book book = data.getExtras().getParcelable("book");
+                    if (mUserDetails.getBooksOnHand().contains(book)){
+                        if (book != null) {
+                            switch (book.getState()){
+                                case READING:{
+                                    mUserDetails.getBooksOnHand().remove(book);
+                                    mUserDetails.getCurrentlyReading().add(book);
+                                    break;
+                                }
+
+                                case OPENED_TO_SHARE:{
+                                    break;
+                                }
+
+                                case CLOSED_TO_SHARE:{
+                                    break;
+                                }
+                            }
+                        }
+                    }else if (mUserDetails.getCurrentlyReading().contains(book)){
+                        if (book != null) {
+                            switch (book.getState()){
+                                case READING:{
+                                    break;
+                                }
+
+                                case OPENED_TO_SHARE:{
+                                    mUserDetails.getCurrentlyReading().remove(book);
+                                    mUserDetails.getBooksOnHand().add(book);
+                                    if (!mUserDetails.getReadBooks().contains(book)){
+                                        mUserDetails.getReadBooks().add(book);
+                                    }
+                                    break;
+                                }
+
+                                case CLOSED_TO_SHARE:{
+                                    mUserDetails.getCurrentlyReading().remove(book);
+                                    mUserDetails.getBooksOnHand().add(book);
+                                    if (!mUserDetails.getReadBooks().contains(book)){
+                                        mUserDetails.getReadBooks().add(book);
+                                    }
+                                    break;
+                                }
+                            }
+                        }
+                    }
+
+                    mProfileTimelineAdapter.setUserDetails(mUserDetails);
+                }
+            }
+        }
     }
 }

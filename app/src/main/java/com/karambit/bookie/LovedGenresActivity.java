@@ -20,6 +20,19 @@ import com.karambit.bookie.helper.DBHandler;
 import com.karambit.bookie.helper.SessionManager;
 import com.karambit.bookie.helper.TypefaceSpan;
 import com.karambit.bookie.model.User;
+import com.karambit.bookie.rest_api.BookieClient;
+import com.karambit.bookie.rest_api.ErrorCodes;
+import com.karambit.bookie.rest_api.UserApi;
+
+import org.json.JSONException;
+import org.json.JSONObject;
+
+import java.io.IOException;
+
+import okhttp3.ResponseBody;
+import retrofit2.Call;
+import retrofit2.Callback;
+import retrofit2.Response;
 
 public class LovedGenresActivity extends AppCompatActivity {
 
@@ -112,15 +125,94 @@ public class LovedGenresActivity extends AppCompatActivity {
     }
 
     private void postToServer(Integer[] selectedGenreCodes) {
-        //TODO Post to Server
+        final UserApi userApi = BookieClient.getClient().create(UserApi.class);
+        String email = SessionManager.getCurrentUserDetails(this).getEmail();
+        String password = SessionManager.getCurrentUserDetails(this).getPassword();
 
-        mServerDone = true;
+        String lovedGenreCodes;
 
-        if (mLocalDone) {
-            if (mProgressDialog.isShowing()) {
-                mProgressDialog.dismiss();
+        int i = 0;
+
+        StringBuilder builder = new StringBuilder();
+        for (Integer genreCode: selectedGenreCodes){
+            builder.append(genreCode);
+            if (i < selectedGenreCodes.length - 1){
+                builder.append("_");
             }
-            finish();
+            i++;
         }
+        lovedGenreCodes = builder.toString();
+
+        Call<ResponseBody> setLovedGenres = userApi.setLovedGenres(email, password, lovedGenreCodes);
+
+        setLovedGenres.enqueue(new Callback<ResponseBody>() {
+            @Override
+            public void onResponse(Call<ResponseBody> call, Response<ResponseBody> response) {
+
+                try {
+                    if (response != null){
+                        if (response.body() != null){
+                            String json = response.body().string();
+
+                            JSONObject responseObject = new JSONObject(json);
+                            boolean error = responseObject.getBoolean("error");
+
+                            if (!error) {
+                                mServerDone = true;
+
+                                if (mLocalDone) {
+                                    if (mProgressDialog.isShowing()) {
+                                        mProgressDialog.dismiss();
+                                    }
+                                    finish();
+                                }
+
+                            } else {
+
+                                int errorCode = responseObject.getInt("errorCode");
+
+                                if (errorCode == ErrorCodes.EMPTY_POST){
+                                    Log.e(TAG, "Post is empty. (Loved Genres Error)");
+                                }else if (errorCode == ErrorCodes.MISSING_POST_ELEMENT){
+                                    Log.e(TAG, "Post element missing. (Loved Genres Error)");
+                                }else if (errorCode == ErrorCodes.INVALID_REQUEST){
+                                    Log.e(TAG, "Invalid request. (Loved Genres Error)");
+                                }else if (errorCode == ErrorCodes.INVALID_EMAIL){
+                                    Log.e(TAG, "Invalid email. (Loved Genres Error)");
+                                }else if (errorCode == ErrorCodes.UNKNOWN){
+                                    Log.e(TAG, "onResponse: errorCode = " + errorCode);
+                                }
+
+                                mProgressDialog.dismiss();
+                                Toast.makeText(LovedGenresActivity.this, R.string.unknown_error, Toast.LENGTH_SHORT).show();
+
+                            }
+                        }else{
+                            Log.e(TAG, "Response body is null. (Login Error)");
+                            mProgressDialog.dismiss();
+                            Toast.makeText(LovedGenresActivity.this, R.string.unknown_error, Toast.LENGTH_SHORT).show();
+                        }
+                    }else{
+                        Log.e(TAG, "Response object is null. (Login Error)");
+                        mProgressDialog.dismiss();
+                        Toast.makeText(LovedGenresActivity.this, R.string.unknown_error, Toast.LENGTH_SHORT).show();
+                    }
+                } catch (IOException | JSONException e) {
+                    e.printStackTrace();
+
+                    mProgressDialog.dismiss();
+                    Toast.makeText(LovedGenresActivity.this, R.string.unknown_error, Toast.LENGTH_SHORT).show();
+                }
+            }
+
+            @Override
+            public void onFailure(Call<ResponseBody> call, Throwable t) {
+                mProgressDialog.dismiss();
+
+                Log.e(TAG, "Login onFailure: " + t.getMessage());
+
+                Toast.makeText(LovedGenresActivity.this, R.string.unknown_error, Toast.LENGTH_SHORT).show();
+            }
+        });
     }
 }

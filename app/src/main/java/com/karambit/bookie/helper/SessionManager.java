@@ -35,6 +35,7 @@ public class SessionManager {
     }
 
     public static void logout(Context context) {
+        new DBHandler(context.getApplicationContext()).resetLovedGenres(getCurrentUser(context.getApplicationContext()));
         new DBHandler(context.getApplicationContext()).deleteCurrentUser();
         changeLoginStatus(context, false);
         mUserDetails = null;

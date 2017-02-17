@@ -1,7 +1,9 @@
 package com.karambit.bookie;
 
 import android.app.Activity;
+import android.content.Context;
 import android.content.Intent;
+import android.content.res.Resources;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
 import android.support.v4.content.ContextCompat;
@@ -12,6 +14,7 @@ import android.support.v7.app.AppCompatActivity;
 import android.text.Spannable;
 import android.text.SpannableString;
 import android.text.style.AbsoluteSizeSpan;
+import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.Menu;
@@ -41,6 +44,7 @@ public class MainActivity extends AppCompatActivity implements TabHost.OnTabChan
     private static final String TAG = MainActivity.class.getSimpleName();
     private static final int REQUEST_CODE_LOGIN_REGISTER_ACTIVITY = 1;
     private static final int REQUEST_CODE_CURRENT_USER_PROFILE_SETTINGS_ACTIVITY = 2;
+    private static final int REQUEST_CODE_ADD_BOOK_ACTIVITY = 3;
     private TabHost mTabHost;
     private ViewPager mViewPager;
     private int mOldPos = 0; //Specifys old position for tab view
@@ -83,7 +87,7 @@ public class MainActivity extends AppCompatActivity implements TabHost.OnTabChan
         SpannableString s = new SpannableString(getResources().getString(R.string.app_name));
         s.setSpan(new TypefaceSpan(this, "autograf.ttf"), 0, s.length(),
                 Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
-        s.setSpan(new AbsoluteSizeSpan(120), 0, s.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+        s.setSpan(new AbsoluteSizeSpan((int) convertDpToPixel(32, this)), 0, s.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
 
         // Update the action bar title with the TypefaceSpan instance
         if(getSupportActionBar() != null){
@@ -257,7 +261,7 @@ public class MainActivity extends AppCompatActivity implements TabHost.OnTabChan
         }else {
             mIndicator.setSelected(false);
             mTabHost.setCurrentTab(mOldPos);
-            startActivity(new Intent(this,AddBookActivity.class));
+            startActivityForResult(new Intent(this,AddBookActivity.class), REQUEST_CODE_ADD_BOOK_ACTIVITY);
         }
     }
 
@@ -291,6 +295,12 @@ public class MainActivity extends AppCompatActivity implements TabHost.OnTabChan
                     //Using SessionManager here to use startActivityForResult() on MainActivity
                     SessionManager.logout(getApplicationContext());
                     startActivityForResult(new Intent(this, LoginRegisterActivity.class), REQUEST_CODE_LOGIN_REGISTER_ACTIVITY);
+                }
+                break;
+
+            case REQUEST_CODE_ADD_BOOK_ACTIVITY:
+                if (resultCode == AddBookActivity.RESULT_BOOK_CREATED){
+                    mProfileFragment.refreshProfilePage();
                 }
                 break;
         }
@@ -385,5 +395,19 @@ public class MainActivity extends AppCompatActivity implements TabHost.OnTabChan
 
     public void clearTouchEventListener() {
         mTouchEventListeners.clear();
+    }
+
+    /**
+     * This method converts dp unit to equivalent pixels, depending on device density.
+     *
+     * @param dp A value in dp (density independent pixels) unit. Which we need to convert into pixels
+     * @param context Context to get resources and device specific display metrics
+     * @return A float value to represent px equivalent to dp depending on device density
+     */
+    public static float convertDpToPixel(float dp, Context context){
+        Resources resources = context.getResources();
+        DisplayMetrics metrics = resources.getDisplayMetrics();
+        float px = dp * ((float)metrics.densityDpi / DisplayMetrics.DENSITY_DEFAULT);
+        return px;
     }
 }

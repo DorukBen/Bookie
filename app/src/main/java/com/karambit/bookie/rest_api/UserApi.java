@@ -4,7 +4,9 @@ import okhttp3.ResponseBody;
 import retrofit2.Call;
 import retrofit2.http.Field;
 import retrofit2.http.FormUrlEncoded;
+import retrofit2.http.GET;
 import retrofit2.http.POST;
+import retrofit2.http.Query;
 
 /**
  * This interface contains all the user api methods used by retrofit
@@ -15,19 +17,24 @@ import retrofit2.http.POST;
 public interface UserApi {
 
     @FormUrlEncoded
-    @POST("login.php")
+    @POST("UserLogin")
     Call<ResponseBody> login(@Field("email") String email,
                              @Field("password") String password);
 
     @FormUrlEncoded
-    @POST("register.php")
-    Call<ResponseBody> register(@Field("name_surname") String nameSurname,
-                                @Field("email") String email,
-                                @Field("password") String password);
+    @POST("UserRegister")
+    Call<ResponseBody> register(@Field("email") String email,
+                                @Field("password") String password,
+                                @Field("nameSurname") String nameSurname);
 
     @FormUrlEncoded
-    @POST("profile_page_api.php")
-    Call<ResponseBody> getUserProfilePageArguments(@Field("email") String email,
-                                @Field("password") String password,
-                                @Field("user_id") int anotherUserId);
+    @POST("addLovedGenre")
+    Call<ResponseBody> setLovedGenres(@Field("email") String email,
+                                      @Field("password") String password,
+                                      @Field("genreCodes") String lovedGenres);
+
+    @GET("UserProfilePageComponents")
+    Call<ResponseBody> getUserProfilePageComponents(@Query("email") String email,
+                                                    @Query("password") String password,
+                                                    @Query("userID") int anotherUserId);
 }

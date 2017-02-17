@@ -189,4 +189,8 @@
     <string name="action_delete">Delete</string>
     <string name="delete">Delete</string>
     <string name="yesterday">YESTERDAY</string>
+    <string name="short_password">Short Password</string>
+    <string name="long_password">Long Password</string>
+    <string name="invalid_name_surname">Invalid Name Surname</string>
+    <string name="uploading_image">Uploading Image</string>
 </resources>

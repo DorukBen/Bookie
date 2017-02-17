@@ -1,26 +1,64 @@
 package com.karambit.bookie;
 
+import android.Manifest;
+import android.app.Activity;
+import android.app.ProgressDialog;
+import android.content.Context;
+import android.content.Intent;
+import android.content.pm.PackageManager;
+import android.content.res.Resources;
 import android.graphics.Bitmap;
+import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Matrix;
 import android.graphics.Point;
 import android.graphics.PointF;
 import android.graphics.RectF;
+import android.graphics.drawable.BitmapDrawable;
+import android.graphics.drawable.Drawable;
 import android.os.Build;
+import android.os.Environment;
+import android.support.annotation.NonNull;
+import android.support.v4.app.ActivityCompat;
+import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.util.DisplayMetrics;
+import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
+import android.widget.ImageButton;
 import android.widget.ImageView;
+import android.widget.RelativeLayout;
+import android.widget.Toast;
 
 import com.bumptech.glide.Glide;
+import com.bumptech.glide.load.engine.DiskCacheStrategy;
 import com.bumptech.glide.request.animation.GlideAnimation;
 import com.bumptech.glide.request.target.BitmapImageViewTarget;
+import com.karambit.bookie.helper.FileNameGenerator;
+import com.karambit.bookie.helper.ImagePicker;
+import com.karambit.bookie.helper.ImageScaler;
+import com.karambit.bookie.helper.SessionManager;
+import com.karambit.bookie.helper.UploadFileTask;
+import com.karambit.bookie.model.User;
+import com.karambit.bookie.rest_api.BookieClient;
+
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
 
 public class PhotoViewerActivity extends AppCompatActivity implements View.OnTouchListener {
 
+
+    private static final int CUSTOM_PERMISSIONS_REQUEST_CODE = 123;
+
+    private static final int SELECT_IMAGE_REQUEST_CODE = 1;
+    public static final int RESULT_PROFILE_PICTURE_UPDATED = 1002;
+    private static final String UPLOAD_IMAGE_URL = "ProfilePictureUpload";
+
     // these matrices will be used to move and zoom image
-    private Matrix matrix = new Matrix();
+    private Matrix mMatrix = new Matrix();
     private Matrix savedMatrix = new Matrix();
     // we can be in one of these 3 states
     private static final int NONE = 0;
@@ -35,9 +73,19 @@ public class PhotoViewerActivity extends AppCompatActivity implements View.OnTou
     private float newRot = 0f;
     private float[] lastEvent = null;
     private ImageView mPhotoView;
+    private ImageView mEditPhotoView;
 
     private float mImageWidth;
     private float mImageHeight;
+    private ImageButton mEditPhotoButton;
+    private ImageButton mCloseButton;
+    private ImageButton mUploadButton;
+
+    private File mSavedBookImageFile;
+
+    private static final String TAG = PhotoViewerActivity.class.getSimpleName();
+    private ProgressDialog mProgressDialog;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -58,11 +106,84 @@ public class PhotoViewerActivity extends AppCompatActivity implements View.OnTou
         }
 
         mPhotoView = (ImageView) findViewById(R.id.profilePictureFullSize);
+        mEditPhotoView = (ImageView) findViewById(R.id.editProfilePictureFullSize);
+        mEditPhotoButton = (ImageButton) findViewById(R.id.editButton);
+        mCloseButton = (ImageButton) findViewById(R.id.closeButton);
+        mUploadButton = (ImageButton) findViewById(R.id.uploadButton);
+
+        RelativeLayout.LayoutParams params = (RelativeLayout.LayoutParams) mUploadButton.getLayoutParams();
+        Point size = new Point();
+        getWindow().getWindowManager().getDefaultDisplay().getSize(size);
+        params.setMargins(0, 0, (int)convertDpToPixel(16, PhotoViewerActivity.this), (size.y - size.x) / 2 - (int)convertDpToPixel(28, PhotoViewerActivity.this));
+
+        mUploadButton.setLayoutParams(params);
+
+        bringFrontPhotoForGlide();
+
+        if (getIntent().getParcelableExtra("user") != null){
+            if (((User)getIntent().getParcelableExtra("user")).getID() == SessionManager.getCurrentUser(getApplicationContext()).getID()){
+                mEditPhotoButton.setVisibility(View.VISIBLE);
+
+                mEditPhotoButton.setOnClickListener(new View.OnClickListener() {
+                    @Override
+                    public void onClick(View v) {
+                        if (checkPermissions()) {
+                            startActivityForResult(ImagePicker.getPickImageIntent(getBaseContext()), SELECT_IMAGE_REQUEST_CODE);
+
+                            Log.i(TAG, "Permissions OK!");
+                        } else {
+                            String[] permissions = {
+                                    android.Manifest.permission.WRITE_EXTERNAL_STORAGE,
+                                    android.Manifest.permission.READ_EXTERNAL_STORAGE,
+                                    Manifest.permission.CAMERA
+                            };
+
+                            ActivityCompat.requestPermissions(PhotoViewerActivity.this, permissions, CUSTOM_PERMISSIONS_REQUEST_CODE);
+
+                            Log.i(TAG, "Permissions NOT OK!");
+                        }
+                    }
+                });
+
+                mUploadButton.setOnClickListener(new View.OnClickListener() {
+                    @Override
+                    public void onClick(View v) {
+                        attemptUploadProfilePicture();
+                    }
+                });
+            }else {
+                mEditPhotoButton.setVisibility(View.GONE);
+            }
+        }else{
+            mEditPhotoButton.setVisibility(View.GONE);
+        }
+
 
         Glide.with(PhotoViewerActivity.this)
                 .load(getIntent().getStringExtra("image"))
                 .asBitmap()
+                .diskCacheStrategy(DiskCacheStrategy.SOURCE)
+                .error(ContextCompat.getDrawable(this, R.drawable.error_192dp))
                 .into(new BitmapImageViewTarget(mPhotoView) {
+                    @Override
+                    public void onLoadFailed(Exception e, Drawable errorDrawable) {
+                        super.onLoadFailed(e, errorDrawable);
+                        Bitmap resource = drawableToBitmap(errorDrawable);
+
+                        findViewById(R.id.progressBar).setVisibility(View.INVISIBLE);
+
+                        mImageWidth = resource.getWidth();
+                        mImageHeight = resource.getHeight();
+
+                        Point size = new Point();
+                        getWindow().getWindowManager().getDefaultDisplay().getSize(size);
+                        RectF drawableRect = new RectF(0, 0, resource.getWidth(), resource.getHeight());
+                        RectF viewRect = new RectF(0, 0, size.x, size.y);
+                        mMatrix = new Matrix();
+                        mMatrix.setRectToRect(drawableRect, viewRect, Matrix.ScaleToFit.CENTER);
+                        mPhotoView.setImageMatrix(mMatrix);
+                    }
+
                     @Override
                     public void onResourceReady(Bitmap resource, GlideAnimation<? super Bitmap> glideAnimation) {
                         super.onResourceReady(resource, glideAnimation);
@@ -76,14 +197,15 @@ public class PhotoViewerActivity extends AppCompatActivity implements View.OnTou
                         getWindow().getWindowManager().getDefaultDisplay().getSize(size);
                         RectF drawableRect = new RectF(0, 0, resource.getWidth(), resource.getHeight());
                         RectF viewRect = new RectF(0, 0, size.x, size.y);
-                        matrix.setRectToRect(drawableRect, viewRect, Matrix.ScaleToFit.CENTER);
-                        mPhotoView.setImageMatrix(matrix);
+                        mMatrix = new Matrix();
+                        mMatrix.setRectToRect(drawableRect, viewRect, Matrix.ScaleToFit.CENTER);
+                        mPhotoView.setImageMatrix(mMatrix);
                     }
                 });
 
         mPhotoView.setOnTouchListener(this);
 
-        findViewById(R.id.closeButton).setOnClickListener(new View.OnClickListener() {
+        mCloseButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
                 finish();
@@ -109,7 +231,7 @@ public class PhotoViewerActivity extends AppCompatActivity implements View.OnTou
 
         switch (event.getAction() & MotionEvent.ACTION_MASK) {
             case MotionEvent.ACTION_DOWN:
-                savedMatrix.set(matrix);
+                savedMatrix.set(mMatrix);
                 start.set(event.getX(), event.getY());
                 mode = DRAG;
                 lastEvent = null;
@@ -117,7 +239,7 @@ public class PhotoViewerActivity extends AppCompatActivity implements View.OnTou
             case MotionEvent.ACTION_POINTER_DOWN:
                 oldDist = spacing(event);
                 if (oldDist > 10f) {
-                    savedMatrix.set(matrix);
+                    savedMatrix.set(mMatrix);
                     midPoint(mid, event);
                     mode = ZOOM;
                 }
@@ -135,7 +257,7 @@ public class PhotoViewerActivity extends AppCompatActivity implements View.OnTou
                 break;
             case MotionEvent.ACTION_MOVE:
                 if (mode == DRAG) {
-                    matrix.set(savedMatrix);
+                    mMatrix.set(savedMatrix);
                     float dx = event.getX() - start.x;
                     float dy = event.getY() - start.y;
 
@@ -160,12 +282,12 @@ public class PhotoViewerActivity extends AppCompatActivity implements View.OnTou
                         dy = size.y - (globalY + height);
                     }
 
-                    matrix.postTranslate(dx, dy);
+                    mMatrix.postTranslate(dx, dy);
 
                 } else if (mode == ZOOM) {
                     float newDist = spacing(event);
                     if (newDist > 10f) {
-                        matrix.set(savedMatrix);
+                        mMatrix.set(savedMatrix);
                         float scale = (newDist / oldDist);
                         if (width * scale < size.x){
                             scale = size.x / width;
@@ -192,11 +314,11 @@ public class PhotoViewerActivity extends AppCompatActivity implements View.OnTou
                             deltaY = (topFlowY - botFlowY) / 2;
 
 
-                            matrix.postTranslate(deltaX, deltaY);
-                            matrix.postScale(scale, scale, size.x / 2, size.y / 2);
+                            mMatrix.postTranslate(deltaX, deltaY);
+                            mMatrix.postScale(scale, scale, size.x / 2, size.y / 2);
 
                         }else {
-                            matrix.postScale(scale, scale, mid.x, mid.y);
+                            mMatrix.postScale(scale, scale, mid.x, mid.y);
                         }
 
                     }
@@ -204,7 +326,7 @@ public class PhotoViewerActivity extends AppCompatActivity implements View.OnTou
                 break;
         }
 
-        view.setImageMatrix(matrix);
+        view.setImageMatrix(mMatrix);
 
         return true;
     }
@@ -238,5 +360,198 @@ public class PhotoViewerActivity extends AppCompatActivity implements View.OnTou
         double delta_y = (event.getY(0) - event.getY(1));
         double radians = Math.atan2(delta_y, delta_x);
         return (float) Math.toDegrees(radians);
+    }
+
+    public static Bitmap drawableToBitmap (Drawable drawable) {
+        Bitmap bitmap = null;
+
+        if (drawable instanceof BitmapDrawable) {
+            BitmapDrawable bitmapDrawable = (BitmapDrawable) drawable;
+            if(bitmapDrawable.getBitmap() != null) {
+                return bitmapDrawable.getBitmap();
+            }
+        }
+
+        if(drawable.getIntrinsicWidth() <= 0 || drawable.getIntrinsicHeight() <= 0) {
+            bitmap = Bitmap.createBitmap(1, 1, Bitmap.Config.ARGB_8888); // Single color bitmap will be created of 1x1 pixel
+        } else {
+            bitmap = Bitmap.createBitmap(drawable.getIntrinsicWidth(), drawable.getIntrinsicHeight(), Bitmap.Config.ARGB_8888);
+        }
+
+        Canvas canvas = new Canvas(bitmap);
+        drawable.setBounds(0, 0, canvas.getWidth(), canvas.getHeight());
+        drawable.draw(canvas);
+        return bitmap;
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+
+        if (requestCode == SELECT_IMAGE_REQUEST_CODE) {
+            if (resultCode == Activity.RESULT_OK) {
+                Bitmap bitmap = ImagePicker.getImageFromResult(getBaseContext(), resultCode, data);
+                Bitmap croppedBitmap = ImageScaler.cropImage(bitmap, 72 / 72f);
+
+                savedMatrix = new Matrix();
+                savedMatrix.reset();
+                mMatrix = new Matrix();
+                mode = NONE;
+                mid = new PointF();
+                start = new PointF();
+                oldDist = 1f;
+                d = 0f;
+                newRot = 0f;
+
+                bringFrontPhotoForEdit();
+                mEditPhotoView.setImageBitmap(croppedBitmap);
+                mSavedBookImageFile = saveBitmap(croppedBitmap);
+
+                mImageWidth = croppedBitmap.getWidth();
+                mImageHeight = croppedBitmap.getHeight();
+
+                Point size = new Point();
+                getWindow().getWindowManager().getDefaultDisplay().getSize(size);
+                RectF drawableRect = new RectF(0, 0, croppedBitmap.getWidth(), croppedBitmap.getHeight());
+                RectF viewRect = new RectF(0, 0, size.x, size.y);
+                mMatrix.setRectToRect(drawableRect, viewRect, Matrix.ScaleToFit.CENTER);
+                mEditPhotoView.setImageMatrix(mMatrix);
+            }
+        }
+    }
+
+    private File saveBitmap(Bitmap bitmap) {
+
+        String path = Environment.getExternalStorageDirectory().getPath() + File.separator + getString(R.string.app_name) + File.separator;
+
+        File file = new File(path);
+        if (!file.exists()) {
+            file.mkdir();
+        }
+
+        String imageName = FileNameGenerator.generateBookImageName(SessionManager.getCurrentUserDetails(this).getEmail());
+
+        FileOutputStream out = null;
+        try {
+            out = new FileOutputStream(path + imageName);
+            bitmap.compress(Bitmap.CompressFormat.PNG, 100, out); // bmp is your Bitmap instance
+            // PNG is a lossless format, the compression factor (100) is ignored
+        } catch (Exception e) {
+            e.printStackTrace();
+        } finally {
+            try {
+                if (out != null) {
+                    out.close();
+                }
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+
+        return new File(path + imageName);
+    }
+
+    private boolean checkPermissions() {
+
+        return !(ContextCompat.checkSelfPermission(this, android.Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED ||
+                ContextCompat.checkSelfPermission(this, android.Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED ||
+                ContextCompat.checkSelfPermission(this, android.Manifest.permission.READ_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED);
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String permissions[], @NonNull int[] grantResults) {
+        switch (requestCode) {
+            case CUSTOM_PERMISSIONS_REQUEST_CODE: {
+                // If request is cancelled, the result arrays are empty.
+                if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+
+                    startActivityForResult(ImagePicker.getPickImageIntent(getBaseContext()), 1);
+
+                } else {
+                    Toast.makeText(this, R.string.permission_request_message, Toast.LENGTH_SHORT).show();
+                    finish();
+                }
+            }
+        }
+    }
+
+    private void bringFrontPhotoForGlide(){
+        mPhotoView.setVisibility(View.VISIBLE);
+        mPhotoView.bringToFront();
+        mEditPhotoView.setVisibility(View.GONE);
+        mUploadButton.setVisibility(View.GONE);
+        mCloseButton.bringToFront();
+        mEditPhotoButton.bringToFront();
+    }
+
+    private void bringFrontPhotoForEdit(){
+        mEditPhotoView.setVisibility(View.VISIBLE);
+        mUploadButton.setVisibility(View.VISIBLE);
+        mEditPhotoView.bringToFront();
+        mPhotoView.setVisibility(View.GONE);
+        mCloseButton.bringToFront();
+        mEditPhotoButton.bringToFront();
+    }
+
+    private void attemptUploadProfilePicture() {
+
+        mProgressDialog = new ProgressDialog(this);
+        mProgressDialog.setMessage(getString(R.string.uploading_image));
+        mProgressDialog.setCancelable(false);
+        mProgressDialog.setCanceledOnTouchOutside(false);
+        mProgressDialog.setIndeterminate(true);
+        mProgressDialog.show();
+
+        // Upload Book image
+        String path = mSavedBookImageFile.getPath();
+        String name = mSavedBookImageFile.getName();
+
+        String serverArgsString = "?email=" + SessionManager.getCurrentUserDetails(getApplicationContext()).getEmail()
+                + "&password=" + SessionManager.getCurrentUserDetails(getApplicationContext()).getPassword()
+                + "&imageName=" + name;
+
+        String imageUrlString = BookieClient.BASE_URL + UPLOAD_IMAGE_URL + serverArgsString;
+
+
+        final UploadFileTask uftImage = new UploadFileTask(path, imageUrlString, name);
+
+        uftImage.setUploadProgressListener(new UploadFileTask.UploadProgressChangedListener() {
+            @Override
+            public void onProgressChanged(int progress) {
+                Log.i(TAG, "Image upload progress => " + progress + " / 100");
+            }
+
+            @Override
+            public void onProgressCompleted() {
+                Log.w(TAG, "Image upload is OK");
+                mProgressDialog.dismiss();
+
+                setResult(RESULT_PROFILE_PICTURE_UPDATED);
+                finish();
+            }
+
+            @Override
+            public void onProgressError() {
+                mProgressDialog.dismiss();
+                Log.e(TAG, "Image upload ERROR");
+                Toast.makeText(PhotoViewerActivity.this, R.string.unknown_error, Toast.LENGTH_SHORT).show();
+            }
+        });
+
+        uftImage.execute();
+    }
+
+    /**
+     * This method converts dp unit to equivalent pixels, depending on device density.
+     *
+     * @param dp A value in dp (density independent pixels) unit. Which we need to convert into pixels
+     * @param context Context to get resources and device specific display metrics
+     * @return A float value to represent px equivalent to dp depending on device density
+     */
+    public static float convertDpToPixel(float dp, Context context){
+        Resources resources = context.getResources();
+        DisplayMetrics metrics = resources.getDisplayMetrics();
+        float px = dp * ((float)metrics.densityDpi / DisplayMetrics.DENSITY_DEFAULT);
+        return px;
     }
 }

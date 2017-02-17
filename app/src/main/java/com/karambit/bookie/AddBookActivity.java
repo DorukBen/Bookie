@@ -3,11 +3,11 @@ package com.karambit.bookie;
 import android.Manifest;
 import android.app.Dialog;
 import android.app.ProgressDialog;
+import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.content.res.Resources;
 import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
 import android.graphics.Point;
 import android.os.Bundle;
 import android.os.Environment;
@@ -15,10 +15,12 @@ import android.support.annotation.NonNull;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
+import android.text.InputType;
 import android.text.Spannable;
 import android.text.SpannableString;
 import android.text.TextUtils;
 import android.text.style.AbsoluteSizeSpan;
+import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.Display;
 import android.view.View;
@@ -36,26 +38,19 @@ import com.karambit.bookie.helper.SessionManager;
 import com.karambit.bookie.helper.TypefaceSpan;
 import com.karambit.bookie.helper.UploadFileTask;
 import com.karambit.bookie.model.Book;
-import com.karambit.bookie.model.User;
-import com.karambit.bookie.rest_api.BookApi;
 import com.karambit.bookie.rest_api.BookieClient;
 
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 
-import okhttp3.ResponseBody;
-import retrofit2.Call;
-import retrofit2.Callback;
-import retrofit2.Response;
-
 public class AddBookActivity extends AppCompatActivity {
 
     private static final String TAG = AddBookActivity.class.getSimpleName();
 
-    private static final String UPLOAD_IMAGE_URL = "upload_book_image.php";
-    private static final String UPLOAD_THUMBNAIL_URL = "upload_book_thumbnail.php";
+    private static final String UPLOAD_IMAGE_URL = "BookCreate";
 
+    public static final int RESULT_BOOK_CREATED = 1001;
     private static final int CUSTOM_PERMISSIONS_REQUEST_CODE = 123;
 
     private int mScreenHeight;
@@ -82,7 +77,7 @@ public class AddBookActivity extends AppCompatActivity {
         SpannableString s = new SpannableString(getResources().getString(R.string.app_name));
         s.setSpan(new TypefaceSpan(this, "autograf.ttf"), 0, s.length(),
                 Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
-        s.setSpan(new AbsoluteSizeSpan(120), 0, s.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+        s.setSpan(new AbsoluteSizeSpan((int) convertDpToPixel(32, this)), 0, s.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
 
         // Update the action bar title with the TypefaceSpan instance
         if (getSupportActionBar() != null) {
@@ -90,7 +85,9 @@ public class AddBookActivity extends AppCompatActivity {
         }
 
         mNameEditText = (EditText) findViewById(R.id.bookNameEditText);
+        mNameEditText.setInputType(InputType.TYPE_TEXT_FLAG_CAP_WORDS);
         mAuthorEditText = (EditText) findViewById(R.id.authorEditText);
+        mAuthorEditText.setInputType(InputType.TYPE_TEXT_FLAG_CAP_WORDS);
 
         this.getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_HIDDEN);
 
@@ -256,6 +253,10 @@ public class AddBookActivity extends AppCompatActivity {
         String path = mSavedBookImageFile.getPath();
         String name = mSavedBookImageFile.getName();
 
+        bookName.trim();
+        author.trim();
+        bookName = upperCaseString(bookName);
+        author = upperCaseString(author);
         bookName = bookName.replace(" ","_");
         author = author.replace(" ","_");
 
@@ -266,7 +267,7 @@ public class AddBookActivity extends AppCompatActivity {
                 + "&author=" + author
                 + "&bookState=" + bookState
                 + "&genreCode=" + genreCode;
-        String imageUrlString = "http://82.165.97.141/api/bookcreate" + serverArgsString;
+        String imageUrlString = BookieClient.BASE_URL + UPLOAD_IMAGE_URL + serverArgsString;
 
 
         final UploadFileTask uftImage = new UploadFileTask(path, imageUrlString, name);
@@ -281,6 +282,8 @@ public class AddBookActivity extends AppCompatActivity {
             public void onProgressCompleted() {
                 Log.w(TAG, "Book image upload is OK");
                 mProgressDialog.dismiss();
+
+                setResult(RESULT_BOOK_CREATED);
                 finish();
             }
 
@@ -352,6 +355,19 @@ public class AddBookActivity extends AppCompatActivity {
         return new File(path + imageName);
     }
 
+    private String upperCaseString(String input){
+        String[] words = input.split(" ");
+        StringBuilder sb = new StringBuilder();
+        if (words[0].length() > 0) {
+            sb.append(Character.toUpperCase(words[0].charAt(0)) + words[0].subSequence(1, words[0].length()).toString().toLowerCase());
+            for (int i = 1; i < words.length; i++) {
+                sb.append(" ");
+                sb.append(Character.toUpperCase(words[i].charAt(0)) + words[i].subSequence(1, words[i].length()).toString().toLowerCase());
+            }
+        }
+        return sb.toString();
+    }
+
     private boolean checkPermissions() {
 
         return !(ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED ||
@@ -374,6 +390,20 @@ public class AddBookActivity extends AppCompatActivity {
                 }
             }
         }
+    }
+
+    /**
+     * This method converts dp unit to equivalent pixels, depending on device density.
+     *
+     * @param dp A value in dp (density independent pixels) unit. Which we need to convert into pixels
+     * @param context Context to get resources and device specific display metrics
+     * @return A float value to represent px equivalent to dp depending on device density
+     */
+    public static float convertDpToPixel(float dp, Context context){
+        Resources resources = context.getResources();
+        DisplayMetrics metrics = resources.getDisplayMetrics();
+        float px = dp * ((float)metrics.densityDpi / DisplayMetrics.DENSITY_DEFAULT);
+        return px;
     }
 
 }

@@ -4,6 +4,9 @@ package com.karambit.bookie.fragment;
 import android.app.Activity;
 import android.app.ProgressDialog;
 import android.content.Intent;
+import android.icu.text.LocaleDisplayNames;
+import android.net.http.HttpResponseCache;
+import android.os.Build;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
 import android.support.v7.widget.LinearLayoutManager;
@@ -15,10 +18,14 @@ import android.view.ViewGroup;
 import android.widget.LinearLayout;
 import android.widget.Toast;
 
+import com.bumptech.glide.load.engine.cache.DiskLruCacheFactory;
+import com.karambit.bookie.BookActivity;
+import com.karambit.bookie.Bookie;
 import com.karambit.bookie.LoginRegisterActivity;
 import com.karambit.bookie.MainActivity;
 import com.karambit.bookie.R;
 import com.karambit.bookie.adapter.HomeTimelineAdapter;
+import com.karambit.bookie.adapter.ProfileTimelineAdapter;
 import com.karambit.bookie.helper.ElevationScrollListener;
 import com.karambit.bookie.helper.NetworkChecker;
 import com.karambit.bookie.helper.SessionManager;
@@ -34,15 +41,24 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileReader;
 import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.net.CacheResponse;
 import java.sql.Time;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.Objects;
 
+import okhttp3.Cache;
 import okhttp3.ResponseBody;
 import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
+import retrofit2.Retrofit;
 
 /**
  * A simple {@link Fragment} subclass.
@@ -95,6 +111,15 @@ public class HomeFragment extends Fragment {
 
         mRecyclerView.setAdapter(mHomeTimelineAdapter);
 
+        mHomeTimelineAdapter.setBookClickListener(new HomeTimelineAdapter.BookClickListener() {
+            @Override
+            public void onBookClick(Book book) {
+                Intent intent = new Intent(getContext(), BookActivity.class);
+                intent.putExtra("book", book);
+                startActivity(intent);
+            }
+        });
+
         mPullRefreshLayout = (PullRefreshLayout) rootView.findViewById(R.id.swipeRefreshLayout);
 
         // listen refresh event
@@ -137,63 +162,92 @@ public class HomeFragment extends Fragment {
     private void fetchHomePageBooks(final boolean isFromTop) {
         mIsBooksFetching = true;
         BookApi bookApi = BookieClient.getClient().create(BookApi.class);
-        int[] fetchedBookIds = new int[mListBooks.size()];
+        String fetchedBookIds;
+
         int i = 0;
-        for (Book book: mListBooks){
-            fetchedBookIds[i] = book.getID();
-            i++;
+        if (mListBooks.size() > 0){
+            StringBuilder builder = new StringBuilder();
+            for (Book book: mListBooks){
+                builder.append(book.getID());
+                if (i < mListBooks.size() - 1){
+                    builder.append("_");
+                }
+                i++;
+            }
+            fetchedBookIds = builder.toString();
+        }else{
+            fetchedBookIds = "-1";
         }
+
 
         String email = SessionManager.getCurrentUserDetails(getContext().getApplicationContext()).getEmail();
         String password = SessionManager.getCurrentUserDetails(getContext().getApplicationContext()).getPassword();
-        Call<ResponseBody> register = bookApi.getHomePageBooks(email, password, fetchedBookIds);
+        Call<ResponseBody> getHomePageBooks = bookApi.getHomePageBooks(email, password, fetchedBookIds);
 
-        register.enqueue(new Callback<ResponseBody>() {
+        getHomePageBooks.enqueue(new Callback<ResponseBody>() {
             @Override
             public void onResponse(Call<ResponseBody> call, Response<ResponseBody> response) {
                 try {
-                    String json = response.body().string();
+                    if (response != null){
+                        if (response.body() != null){
+                            String json = response.body().string();
 
-                    JSONObject responseObject = new JSONObject(json);
-                    boolean error = responseObject.getBoolean("error");
+                            JSONObject responseObject = new JSONObject(json);
+                            boolean error = responseObject.getBoolean("error");
 
-                    if (!error) {
-                        if (mListBooks.size() > 0){
-                            JSONArray listBooksArray = responseObject.getJSONArray("list_books");
-                            mListBooks.addAll(Book.jsonArrayToBookList(listBooksArray));
+                            if (!error) {
+                                if (mListBooks.size() > 0){
+                                    JSONArray listBooksArray = responseObject.getJSONArray("listBooks");
+                                    ArrayList<Book> feedBooks = Book.jsonArrayToBookList(listBooksArray);
 
-                            mHomeTimelineAdapter.setError(HomeTimelineAdapter.ERROR_TYPE_NONE);
-                            mHomeTimelineAdapter.addFeedBooks(mListBooks);
-                        }else {
-                            JSONArray headerBooksArray = responseObject.getJSONArray("header_books");
-                            mHeaderBooks.addAll(Book.jsonArrayToBookList(headerBooksArray));
+                                    if (feedBooks.size() < 20){
+                                        mHomeTimelineAdapter.setProgressBarActive(false);
+                                    }else {
+                                        mListBooks.addAll(feedBooks);
 
-                            JSONArray listBooksArray = responseObject.getJSONArray("list_books");
-                            mListBooks.addAll(Book.jsonArrayToBookList(listBooksArray));
+                                        mHomeTimelineAdapter.setError(HomeTimelineAdapter.ERROR_TYPE_NONE);
+                                        mHomeTimelineAdapter.addFeedBooks(feedBooks);
+                                    }
+                                }else {
+                                    JSONArray headerBooksArray = responseObject.getJSONArray("headerBooks");
+                                    mHeaderBooks.addAll(Book.jsonArrayToBookList(headerBooksArray));
 
-                            mHomeTimelineAdapter.setError(HomeTimelineAdapter.ERROR_TYPE_NONE);
-                            mHomeTimelineAdapter.setHeaderAndFeedBooks(mHeaderBooks, mListBooks);
-                        }
+                                    JSONArray listBooksArray = responseObject.getJSONArray("listBooks");
+                                    ArrayList<Book> feedBooks = Book.jsonArrayToBookList(listBooksArray);
+                                    mListBooks.addAll(feedBooks);
 
-                        Log.i(TAG, "Home page books fetched");
+                                    mHomeTimelineAdapter.setError(HomeTimelineAdapter.ERROR_TYPE_NONE);
+                                    mHomeTimelineAdapter.setHeaderAndFeedBooks(mHeaderBooks, feedBooks);
+                                }
 
-                    } else {
+                                Log.i(TAG, "Home page books fetched");
 
-                        if (NetworkChecker.isNetworkAvailable(getContext())){
-                            if(!isFromTop){
-                                Toast.makeText(getContext(), getString(R.string.unknown_error), Toast.LENGTH_SHORT).show();
-                            }else{
+                            } else {
+
+                                int errorCode = responseObject.getInt("errorCode");
+
+                                if (errorCode == ErrorCodes.EMPTY_POST){
+                                    Log.e(TAG, "Post is empty. (Home Page Error)");
+                                }else if (errorCode == ErrorCodes.MISSING_POST_ELEMENT){
+                                    Log.e(TAG, "Post element missing. (Home Page Error)");
+                                }else if (errorCode == ErrorCodes.INVALID_REQUEST){
+                                    Log.e(TAG, "Invalid request. (Home Page Error)");
+                                }else if (errorCode == ErrorCodes.INVALID_EMAIL){
+                                    Log.e(TAG, "Invalid email. (Home Page Error)");
+                                }else if (errorCode == ErrorCodes.UNKNOWN){
+                                    Log.e(TAG, "onResponse: errorCode = " + errorCode);
+                                }
+
                                 mHomeTimelineAdapter.setError(HomeTimelineAdapter.ERROR_TYPE_UNKNOWN_ERROR);
                             }
-                        }else {
-                            if(!isFromTop){
-                                Toast.makeText(getContext(), getString(R.string.no_internet_connection), Toast.LENGTH_SHORT).show();
-                            }else {
-                                mHomeTimelineAdapter.setError(HomeTimelineAdapter.ERROR_TYPE_NO_CONNECTION);
-                            }
+                        }else{
+                            Log.e(TAG, "Response body is null. (Home Page Error)");
+                            mHomeTimelineAdapter.setError(HomeTimelineAdapter.ERROR_TYPE_UNKNOWN_ERROR);
                         }
+                    }else {
+                        Log.e(TAG, "Response object is null. (Home Page Error)");
+                        mHomeTimelineAdapter.setError(HomeTimelineAdapter.ERROR_TYPE_UNKNOWN_ERROR);
                     }
-
                 } catch (IOException | JSONException e) {
                     e.printStackTrace();
 

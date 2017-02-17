@@ -94,6 +94,7 @@ public class DBHandler extends SQLiteOpenHelper {
     private static final String NOTIFICATION_BOOK_COLUMN_THUMBNAIL_URL = "thumbnail_url";
     private static final String NOTIFICATION_BOOK_COLUMN_AUTHOR = "author";
     private static final String NOTIFICATION_BOOK_COLUMN_STATE = "state";
+    private static final String NOTIFICATION_BOOK_COLUMN_GENRE = "genre";
     private static final String NOTIFICATION_BOOK_COLUMN_OWNER_ID = "owner_id";
 
     private static final String BOOK_USER_TABLE_NAME = "book_user";
@@ -185,6 +186,7 @@ public class DBHandler extends SQLiteOpenHelper {
                         NOTIFICATION_BOOK_COLUMN_THUMBNAIL_URL + " TEXT NOT NULL, " +
                         NOTIFICATION_BOOK_COLUMN_AUTHOR + " TEXT NOT NULL, " +
                         NOTIFICATION_BOOK_COLUMN_STATE + " INTEGER NOT NULL, " +
+                        NOTIFICATION_BOOK_COLUMN_GENRE + " INTEGER NOT NULL, " +
                         NOTIFICATION_BOOK_COLUMN_OWNER_ID + " INTEGER NOT NULL)"
         );
 
@@ -1467,6 +1469,7 @@ public class DBHandler extends SQLiteOpenHelper {
             contentValues.put(NOTIFICATION_BOOK_COLUMN_THUMBNAIL_URL, book.getThumbnailURL());
             contentValues.put(NOTIFICATION_BOOK_COLUMN_AUTHOR, book.getAuthor());
             contentValues.put(NOTIFICATION_BOOK_COLUMN_STATE, book.getState().getStateCode());
+            contentValues.put(NOTIFICATION_BOOK_COLUMN_GENRE, book.getGenreCode());
             contentValues.put(NOTIFICATION_BOOK_COLUMN_OWNER_ID, book.getOwner().getID());
 
             result = db.insert(NOTIFICATION_BOOK_TABLE_NAME, null, contentValues) > 0;
@@ -1542,6 +1545,7 @@ public class DBHandler extends SQLiteOpenHelper {
                                     res.getString(res.getColumnIndex(NOTIFICATION_BOOK_COLUMN_THUMBNAIL_URL)),
                                     res.getString(res.getColumnIndex(NOTIFICATION_BOOK_COLUMN_AUTHOR)),
                                     Book.State.valueOf(res.getInt(res.getColumnIndex(NOTIFICATION_BOOK_COLUMN_STATE))),
+                                    res.getInt(res.getColumnIndex(NOTIFICATION_BOOK_COLUMN_GENRE)),
                                     user);
 
                             books.add(book);

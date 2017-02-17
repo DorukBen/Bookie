@@ -16,6 +16,7 @@ import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.karambit.bookie.helper.DBHandler;
 import com.karambit.bookie.helper.NetworkChecker;
 import com.karambit.bookie.helper.SessionManager;
 import com.karambit.bookie.helper.TypefaceSpan;
@@ -26,6 +27,7 @@ import com.karambit.bookie.rest_api.BookieClient;
 import com.karambit.bookie.rest_api.ErrorCodes;
 import com.karambit.bookie.rest_api.UserApi;
 
+import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -206,7 +208,7 @@ public class LoginRegisterActivity extends AppCompatActivity {
         String nameSurname = mNameEditText.getText().toString() + " " + mSurnameEditText.getText().toString();
         String email = mEmailEditText.getText().toString();
         String password = mPasswordEditText.getText().toString();
-        Call<ResponseBody> register = userApi.register(nameSurname, email, password);
+        Call<ResponseBody> register = userApi.register(email, password, nameSurname);
 
         register.enqueue(new Callback<ResponseBody>() {
             @Override
@@ -214,35 +216,65 @@ public class LoginRegisterActivity extends AppCompatActivity {
                 progressDialog.dismiss();
 
                 try {
-                    String json = response.body().string();
+                    if (response != null){
+                        if (response.body() != null){
+                            String json = response.body().string();
 
-                    JSONObject responseObject = new JSONObject(json);
-                    boolean error = responseObject.getBoolean("error");
+                            JSONObject responseObject = new JSONObject(json);
+                            boolean error = responseObject.getBoolean("error");
 
-                    if (!error) {
+                            if (!error) {
 
-                        JSONObject userObject = responseObject.getJSONObject("user");
-                        User.Details userDetails = User.jsonObjectToUserDetails(userObject);
+                                JSONObject userObject = responseObject.getJSONObject("userLoginModel");
+                                User.Details userDetails = User.jsonObjectToUserDetails(userObject);
 
-                        SessionManager.login(LoginRegisterActivity.this, userDetails);
+                                SessionManager.login(LoginRegisterActivity.this, userDetails);
 
-                        Log.i(TAG, "Registered!");
+                                if (userDetails != null) {
+                                    Log.i(TAG, userDetails.getUser().getName() + " Registered!");
+                                }else {
+                                    Log.e(TAG, "Error occured while registering new user.");
+                                }
 
-                        setResult(Activity.RESULT_OK);
-                        finish();
+                                setResult(Activity.RESULT_OK);
+                                finish();
 
-                    } else {
+                            } else {
 
-                        int errorCode = responseObject.getInt("error_code");
+                                int errorCode = responseObject.getInt("errorCode");
 
-                        if (errorCode == ErrorCodes.EMAIL_TAKEN) {
-                            mEmailEditText.setError(getString(R.string.email_taken));
-                        } else {
+                                if (errorCode == ErrorCodes.EMPTY_POST){
+                                    Log.e(TAG, "Post is empty. (Register Error)");
+                                }else if (errorCode == ErrorCodes.MISSING_POST_ELEMENT){
+                                    Log.e(TAG, "Post element missing. (Register Error)");
+                                }else if (errorCode == ErrorCodes.SHORT_PASSWORD){
+                                    Log.w(TAG, "Short Password. (Register Warning)");
+                                    mPasswordEditText.setError(getString(R.string.short_password));
+                                }else if (errorCode == ErrorCodes.LONG_PASSWORD){
+                                    Log.w(TAG, "Long Password. (Register Warning)");
+                                    mPasswordEditText.setError(getString(R.string.long_password));
+                                }else if (errorCode == ErrorCodes.INVALID_EMAIL){
+                                    Log.w(TAG, "Invalid Email. (Register Warning)");
+                                    mEmailEditText.setError(getString(R.string.invalid_email_address));
+                                }else if (errorCode == ErrorCodes.INVALID_NAME_SURNAME){
+                                    Log.w(TAG, "Invalid Name Surname. (Register Warning)");
+                                    mNameEditText.setError(getString(R.string.invalid_name_surname));
+                                    mSurnameEditText.setError(getString(R.string.invalid_name_surname));
+                                }else if (errorCode == ErrorCodes.EMAIL_TAKEN) {
+                                    mEmailEditText.setError(getString(R.string.email_taken));
+                                }else if (errorCode == ErrorCodes.UNKNOWN){
+                                    Toast.makeText(LoginRegisterActivity.this, R.string.unknown_error, Toast.LENGTH_SHORT).show();
+                                    Log.e(TAG, "onResponse: errorCode = " + errorCode);
+                                }
+                            }
+                        }else{
+                            Log.e(TAG, "Response body is null. (Register Error)");
                             Toast.makeText(LoginRegisterActivity.this, R.string.unknown_error, Toast.LENGTH_SHORT).show();
-                            Log.e(TAG, "onResponse: errorCode = " + errorCode);
                         }
+                    }else {
+                        Log.e(TAG, "Response object is null. (Register Error)");
+                        Toast.makeText(LoginRegisterActivity.this, R.string.unknown_error, Toast.LENGTH_SHORT).show();
                     }
-
                 } catch (IOException | JSONException e) {
                     e.printStackTrace();
 
@@ -280,41 +312,74 @@ public class LoginRegisterActivity extends AppCompatActivity {
                 progressDialog.dismiss();
 
                 try {
-                    String json = response.body().string();
+                    if (response != null){
+                        if (response.body() != null){
+                            String json = response.body().string();
 
-                    JSONObject responseObject = new JSONObject(json);
-                    boolean error = responseObject.getBoolean("error");
+                            JSONObject responseObject = new JSONObject(json);
+                            boolean error = responseObject.getBoolean("error");
 
-                    if (!error) {
-                        User.Details userDetails = User.jsonObjectToUserDetails(responseObject.getJSONObject("user"));
+                            if (!error) {
+                                if (!responseObject.isNull("userLoginModel")){
+                                    User.Details userDetails = User.jsonObjectToUserDetails(responseObject.getJSONObject("userLoginModel"));
 
-                        SessionManager.login(LoginRegisterActivity.this, userDetails);
+                                    SessionManager.login(LoginRegisterActivity.this, userDetails);
 
-                        Log.i(TAG, "Logged in!");
+                                    if (!responseObject.isNull("lovedGenres")){
+                                        JSONArray lovedGenresJsonArray = responseObject.getJSONArray("lovedGenres");
+                                        if (lovedGenresJsonArray != null) {
+                                            Integer[] lovedGenres = new Integer[lovedGenresJsonArray.length()];
 
-                        setResult(Activity.RESULT_OK);
-                        finish();
+                                            for (int i = 0; i < lovedGenresJsonArray.length(); ++i) {
+                                                lovedGenres[i] = lovedGenresJsonArray.optInt(i);
+                                            }
 
-                    } else {
+                                            if (userDetails != null) {
+                                                new DBHandler(getApplicationContext()).insertLovedGenres(userDetails.getUser(),lovedGenres);
+                                            }
+                                        }
+                                    }else {
+                                        Log.e(TAG, "lovedGenres is empty. (Login Error)");
+                                        Toast.makeText(LoginRegisterActivity.this, R.string.unknown_error, Toast.LENGTH_SHORT).show();
+                                    }
 
-                        int errorCode = responseObject.getInt("error_code");
+                                    if (userDetails != null) {
+                                        Log.i(TAG, userDetails.getUser().getName() + " Logged in!");
+                                    }else{
+                                        Log.e(TAG, "Error occured while Login.");
+                                    }
 
-                        switch (errorCode) {
+                                    setResult(Activity.RESULT_OK);
+                                    finish();
+                                }else {
+                                    Log.e(TAG, "userLoginModel is empty. (Login Error)");
+                                    Toast.makeText(LoginRegisterActivity.this, R.string.unknown_error, Toast.LENGTH_SHORT).show();
+                                }
 
-                            case ErrorCodes.EMAIL_NOT_FOUND:
-                                mEmailEditText.setError(getString(R.string.email_not_found, getString(R.string.app_name)));
-                                break;
+                            } else {
 
-                            case ErrorCodes.FALSE_COMBINATION:
-                                mPasswordEditText.setError(getString(R.string.false_combination));
-                                break;
+                                int errorCode = responseObject.getInt("errorCode");
 
-                            default:
-                                Toast.makeText(LoginRegisterActivity.this, R.string.unknown_error, Toast.LENGTH_SHORT).show();
-                                Log.e(TAG, "onResponse: errorCode = " + errorCode);
+                                if (errorCode == ErrorCodes.EMPTY_POST){
+                                    Log.e(TAG, "Post is empty. (Login Error)");
+                                }else if (errorCode == ErrorCodes.MISSING_POST_ELEMENT){
+                                    Log.e(TAG, "Post element missing. (Login Error)");
+                                }else if (errorCode == ErrorCodes.FALSE_COMBINATION){
+                                    Log.w(TAG, "False combination. (Login Warning)");
+                                    mPasswordEditText.setError(getString(R.string.false_combination));
+                                }else if (errorCode == ErrorCodes.UNKNOWN){
+                                    Toast.makeText(LoginRegisterActivity.this, R.string.unknown_error, Toast.LENGTH_SHORT).show();
+                                    Log.e(TAG, "onResponse: errorCode = " + errorCode);
+                                }
+                            }
+                        }else{
+                            Log.e(TAG, "Response body is null. (Login Error)");
+                            Toast.makeText(LoginRegisterActivity.this, R.string.unknown_error, Toast.LENGTH_SHORT).show();
                         }
+                    }else{
+                        Log.e(TAG, "Response object is null. (Login Error)");
+                        Toast.makeText(LoginRegisterActivity.this, R.string.unknown_error, Toast.LENGTH_SHORT).show();
                     }
-
                 } catch (IOException | JSONException e) {
                     e.printStackTrace();
 

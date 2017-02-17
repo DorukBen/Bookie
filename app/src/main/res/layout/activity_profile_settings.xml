@@ -9,12 +9,19 @@
     android:paddingRight="@dimen/activity_horizontal_margin"
     android:paddingTop="@dimen/activity_vertical_margin"
     tools:context=".CurrentUserProfileSettingsActivity">
-
     <Button
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="LOGOUT"
         android:id="@+id/logoutButton"
         android:layout_centerVertical="true"
+        android:layout_centerHorizontal="true"/>
+
+    <Button
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Change profile picture"
+        android:id="@+id/changeProfilePicture"
+        android:layout_below="@+id/logoutButton"
         android:layout_centerHorizontal="true"/>
 </RelativeLayout>
