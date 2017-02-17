@@ -389,6 +389,7 @@ public class LoginRegisterActivity extends AppCompatActivity {
 
                     Toast.makeText(LoginRegisterActivity.this, R.string.unknown_error, Toast.LENGTH_SHORT).show();
                 }
+                progressDialog.dismiss();
             }
 
             @Override

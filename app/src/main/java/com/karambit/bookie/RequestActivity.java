@@ -23,17 +23,28 @@ import android.text.method.LinkMovementMethod;
 import android.text.style.ClickableSpan;
 import android.text.style.ForegroundColorSpan;
 import android.text.style.StyleSpan;
+import android.util.Log;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.TextView;
+import android.widget.Toast;
 
+import com.karambit.bookie.adapter.HomeTimelineAdapter;
 import com.karambit.bookie.adapter.RequestAdapter;
 import com.karambit.bookie.helper.ElevationScrollListener;
 import com.karambit.bookie.helper.LayoutUtils;
+import com.karambit.bookie.helper.NetworkChecker;
 import com.karambit.bookie.helper.SessionManager;
 import com.karambit.bookie.helper.pull_refresh_layout.PullRefreshLayout;
 import com.karambit.bookie.model.Book;
 import com.karambit.bookie.model.User;
+import com.karambit.bookie.rest_api.BookApi;
+import com.karambit.bookie.rest_api.BookieClient;
+import com.karambit.bookie.rest_api.ErrorCodes;
+
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -42,6 +53,11 @@ import java.util.Collections;
 import java.util.Hashtable;
 import java.util.List;
 import java.util.Locale;
+
+import okhttp3.ResponseBody;
+import retrofit2.Call;
+import retrofit2.Callback;
+import retrofit2.Response;
 
 public class RequestActivity extends AppCompatActivity {
 
@@ -175,48 +191,97 @@ public class RequestActivity extends AppCompatActivity {
     }
 
     private void fetchRequests() {
-        // TODO Request api
+        BookApi bookApi = BookieClient.getClient().create(BookApi.class);
 
-        new Thread(new Runnable() {
+        String email = SessionManager.getCurrentUserDetails(getApplicationContext()).getEmail();
+        String password = SessionManager.getCurrentUserDetails(getApplicationContext()).getPassword();
+        final Call<ResponseBody> getBookRequests = bookApi.getBookRequests(email, password, mBook.getID());
+
+        getBookRequests.enqueue(new Callback<ResponseBody>() {
             @Override
-            public void run() {
+            public void onResponse(Call<ResponseBody> call, Response<ResponseBody> response) {
                 try {
-                    Thread.sleep(2000);
+                    if (response != null){
+                        if (response.body() != null){
+                            String json = response.body().string();
 
-                    for (int i = 0; i < 10; i++) {
-                        User currentUser = SessionManager.getCurrentUser(RequestActivity.this);
-                        User fromUser = User.GENERATOR.generateUser();
+                            JSONObject responseObject = new JSONObject(json);
+                            boolean error = responseObject.getBoolean("error");
 
-                        Calendar calendar = Calendar.getInstance();
-                        calendar.set(2016, 7, 4);
-                        Book.Request request = mBook.new Request(Book.RequestType.SEND, currentUser,
-                                                                 fromUser,
-                                                                 calendar);
+                            if (!error) {
+                                if (!responseObject.isNull("bookRequests")){
+                                    mRequests.clear();
+                                    mRequests.addAll(Book.jsonObjectToBookRequests(responseObject, mBook));
 
-                        mRequests.add(request);
-                    }
+                                    mRequestAdapter.setError(RequestAdapter.ERROR_TYPE_NONE);
+                                    mRequestAdapter.setRequests(mRequests);
+                                    mRequestAdapter.notifyDataSetChanged();
 
-                    Collections.sort(mRequests);
+                                    mLocations = new Hashtable<>(mRequests.size());
+                                    mRequestAdapter.setLocations(mLocations);
 
-                    runOnUiThread(new Runnable() {
-                        @Override
-                        public void run() {
-                            mRequestAdapter.setRequests(mRequests);
-                            mRequestAdapter.notifyDataSetChanged();
+                                    mPullRefreshLayout.setRefreshing(false);
 
-                            mLocations = new Hashtable<>(mRequests.size());
-                            mRequestAdapter.setLocations(mLocations);
+                                    fetchLocations();
 
-                            mPullRefreshLayout.setRefreshing(false);
+                                    Log.i(TAG, "Book requests fetched");
+                                }else {
+                                    Log.e(TAG, "bookRequests is empty. (Request Page Error)");
+                                    mRequestAdapter.setError(RequestAdapter.ERROR_TYPE_UNKNOWN_ERROR);
+                                }
 
-                            fetchLocations();
+
+                            } else {
+
+                                int errorCode = responseObject.getInt("errorCode");
+
+                                if (errorCode == ErrorCodes.EMPTY_POST){
+                                    Log.e(TAG, "Post is empty. (Request Page Error)");
+                                }else if (errorCode == ErrorCodes.MISSING_POST_ELEMENT){
+                                    Log.e(TAG, "Post element missing. (Request Page Error)");
+                                }else if (errorCode == ErrorCodes.INVALID_REQUEST){
+                                    Log.e(TAG, "Invalid request. (Request Page Error)");
+                                }else if (errorCode == ErrorCodes.INVALID_EMAIL){
+                                    Log.e(TAG, "Invalid email. (Request Page Error)");
+                                }else if (errorCode == ErrorCodes.UNKNOWN){
+                                    Log.e(TAG, "onResponse: errorCode = " + errorCode);
+                                }
+
+                                mRequestAdapter.setError(RequestAdapter.ERROR_TYPE_UNKNOWN_ERROR);
+                            }
+                        }else{
+                            Log.e(TAG, "Response body is null. (Home Page Error)");
+                            mRequestAdapter.setError(RequestAdapter.ERROR_TYPE_UNKNOWN_ERROR);
                         }
-                    });
-                } catch (InterruptedException e) {
+                    }else {
+                        Log.e(TAG, "Response object is null. (Home Page Error)");
+                        mRequestAdapter.setError(RequestAdapter.ERROR_TYPE_UNKNOWN_ERROR);
+                    }
+                } catch (IOException | JSONException e) {
                     e.printStackTrace();
+
+                    if (NetworkChecker.isNetworkAvailable(RequestActivity.this)){
+                        mRequestAdapter.setError(RequestAdapter.ERROR_TYPE_UNKNOWN_ERROR);
+                    }else {
+                        mRequestAdapter.setError(RequestAdapter.ERROR_TYPE_NO_CONNECTION);
+                    }
                 }
+
+                mPullRefreshLayout.setRefreshing(false);
             }
-        }).start();
+
+            @Override
+            public void onFailure(Call<ResponseBody> call, Throwable t) {
+                Log.e(TAG, "Home Page book fetch onFailure: " + t.getMessage());
+                if (NetworkChecker.isNetworkAvailable(RequestActivity.this)){
+                    mRequestAdapter.setError(RequestAdapter.ERROR_TYPE_UNKNOWN_ERROR);
+                }else {
+                    mRequestAdapter.setError(RequestAdapter.ERROR_TYPE_NO_CONNECTION);
+                }
+
+                mPullRefreshLayout.setRefreshing(false);
+            }
+        });
     }
 
     private void setAcceptedRequestText(final Book.Request request) {

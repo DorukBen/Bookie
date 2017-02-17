@@ -293,7 +293,6 @@ public class Book implements Parcelable {
                 }
             }
 
-
             return book.new Details(
                     added_by,
                     bookProcesses);
@@ -301,6 +300,25 @@ public class Book implements Parcelable {
             e.printStackTrace();
             return null;
         }
+    }
+
+    public static ArrayList<Book.Request> jsonObjectToBookRequests(JSONObject jsonObject, Book book){
+        ArrayList<Book.Request> bookRequests = new ArrayList<>();
+        try {
+            if (!jsonObject.isNull("bookRequests")){
+                JSONArray jsonArray = jsonObject.getJSONArray("bookRequests");
+                for (int i = 0; i < jsonArray.length(); i++){
+                    bookRequests.add(book.new Request(Book.RequestType.values()[jsonArray.getJSONObject(i).getInt("requestType") - Book.RequestType.values()[0].getRequestCode()],
+                            User.jsonObjectToUser(jsonArray.getJSONObject(i).getJSONObject("toUser")),
+                            User.jsonObjectToUser(jsonArray.getJSONObject(i).getJSONObject("fromUser")),
+                            jsonArray.getJSONObject(i).getString("createdAt")));
+                }
+            }
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+        return bookRequests;
+
     }
 
     public static ArrayList<Book> jsonArrayToBookList(JSONArray bookJsonArray) {

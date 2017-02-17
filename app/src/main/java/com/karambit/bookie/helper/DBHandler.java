@@ -295,8 +295,8 @@ public class DBHandler extends SQLiteOpenHelper {
             contentValues.put(USER_COLUMN_NAME, user.getUser().getName());
             contentValues.put(USER_COLUMN_IMAGE_URL, user.getUser().getImageUrl());
             contentValues.put(USER_COLUMN_THUMBNAIL_URL, user.getUser().getThumbnailUrl());
-            contentValues.put(USER_COLUMN_LATITUDE, user.getUser().getLocation().latitude);
-            contentValues.put(USER_COLUMN_LONGITUDE, user.getUser().getLocation().longitude);
+            contentValues.put(USER_COLUMN_LATITUDE, (user.getUser().getLocation() != null) ? user.getUser().getLocation().latitude : null);
+            contentValues.put(USER_COLUMN_LONGITUDE, (user.getUser().getLocation() != null) ? user.getUser().getLocation().longitude : null);
             contentValues.put(USER_COLUMN_PASSWORD, user.getPassword());
             contentValues.put(USER_COLUMN_EMAIL, user.getEmail());
             contentValues.put(USER_COLUMN_VERIFIED, user.isVerified());
@@ -1085,8 +1085,8 @@ public class DBHandler extends SQLiteOpenHelper {
             contentValues.put(MESSAGE_USER_COLUMN_NAME, user.getName());
             contentValues.put(MESSAGE_USER_COLUMN_IMAGE_URL, user.getImageUrl());
             contentValues.put(MESSAGE_USER_COLUMN_THUMBNAIL_URL, user.getThumbnailUrl());
-            contentValues.put(MESSAGE_USER_COLUMN_LATITUDE, user.getLocation().latitude);
-            contentValues.put(MESSAGE_USER_COLUMN_LONGITUDE, user.getLocation().longitude);
+            contentValues.put(MESSAGE_USER_COLUMN_LATITUDE, (user.getLocation() != null) ? user.getLocation().latitude : null);
+            contentValues.put(MESSAGE_USER_COLUMN_LONGITUDE, (user.getLocation() != null) ? user.getLocation().longitude : null);
 
             result = db.insert(MESSAGE_USER_TABLE_NAME, null, contentValues) > 0;
         }finally {
@@ -1613,8 +1613,8 @@ public class DBHandler extends SQLiteOpenHelper {
             contentValues.put(NOTIFICATION_USER_COLUMN_NAME, user.getName());
             contentValues.put(NOTIFICATION_USER_COLUMN_IMAGE_URL, user.getImageUrl());
             contentValues.put(NOTIFICATION_USER_COLUMN_THUMBNAIL_URL, user.getThumbnailUrl());
-            contentValues.put(NOTIFICATION_USER_COLUMN_LATITUDE, user.getLocation().latitude);
-            contentValues.put(NOTIFICATION_USER_COLUMN_LONGITUDE, user.getLocation().longitude);
+            contentValues.put(NOTIFICATION_USER_COLUMN_LATITUDE, (user.getLocation() != null) ? user.getLocation().latitude : null);
+            contentValues.put(NOTIFICATION_USER_COLUMN_LONGITUDE, (user.getLocation() != null) ? user.getLocation().longitude : null);
 
             result = db.insert(NOTIFICATION_USER_TABLE_NAME, null, contentValues) > 0;
         }finally {
@@ -1734,8 +1734,8 @@ public class DBHandler extends SQLiteOpenHelper {
             contentValues.put(BOOK_USER_COLUMN_NAME, user.getName());
             contentValues.put(BOOK_USER_COLUMN_IMAGE_URL, user.getImageUrl());
             contentValues.put(BOOK_USER_COLUMN_THUMBNAIL_URL, user.getThumbnailUrl());
-            contentValues.put(BOOK_USER_COLUMN_LATITUDE, user.getLocation().latitude);
-            contentValues.put(BOOK_USER_COLUMN_LONGITUDE, user.getLocation().longitude);
+            contentValues.put(BOOK_USER_COLUMN_LATITUDE, (user.getLocation() != null) ? user.getLocation().latitude : null);
+            contentValues.put(BOOK_USER_COLUMN_LONGITUDE, (user.getLocation() != null) ? user.getLocation().longitude : null);
 
             result = db.insert(BOOK_USER_TABLE_NAME, null, contentValues) > 0;
         }finally {

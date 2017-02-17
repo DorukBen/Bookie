@@ -84,7 +84,7 @@ public class BookieClient {
                         Log.d(TAG, message);
                     }
                 } );
-        httpLoggingInterceptor.setLevel( BuildConfig.DEBUG ? HEADERS : NONE );
+        httpLoggingInterceptor.setLevel( BuildConfig.DEBUG ? HttpLoggingInterceptor.Level.BODY : NONE );
         return httpLoggingInterceptor;
     }
 

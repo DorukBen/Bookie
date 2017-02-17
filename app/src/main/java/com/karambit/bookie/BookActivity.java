@@ -28,6 +28,7 @@ import android.widget.Toast;
 import com.karambit.bookie.adapter.BookTimelineAdapter;
 import com.karambit.bookie.adapter.HomeTimelineAdapter;
 import com.karambit.bookie.adapter.ProfileTimelineAdapter;
+import com.karambit.bookie.helper.ComfortableProgressDialog;
 import com.karambit.bookie.helper.ElevationScrollListener;
 import com.karambit.bookie.helper.NetworkChecker;
 import com.karambit.bookie.helper.SessionManager;
@@ -220,7 +221,6 @@ public class BookActivity extends AppCompatActivity {
         bookRecyclerView.setAdapter(mBookTimelineAdapter);
 
         mPullRefreshLayout = (PullRefreshLayout) findViewById(R.id.swipeRefreshLayout);
-        mPullRefreshLayout.setRefreshing(true);
 
         // listen refresh event
         mPullRefreshLayout.setOnRefreshListener(new PullRefreshLayout.OnRefreshListener() {
@@ -479,12 +479,6 @@ public class BookActivity extends AppCompatActivity {
             @Override
             public void visit(Book.Interaction interaction) {
                 addBookInteractionToServer(interaction);
-
-                Intent intent = new Intent();
-                Bundle bundle = new Bundle();
-                bundle.putParcelable("book",mBookDetails.getBook());
-                intent.putExtras(bundle);
-                setResult(BOOK_PROCESS_CHANGED_RESULT_CODE, intent);
             }
 
             @Override
@@ -582,6 +576,11 @@ public class BookActivity extends AppCompatActivity {
     }
 
     private void addBookInteractionToServer(Book.Interaction interaction) {
+
+        final ComfortableProgressDialog comfortableProgressDialog = new ComfortableProgressDialog(BookActivity.this);
+        comfortableProgressDialog.setMessage(getString(R.string.updating_process));
+        comfortableProgressDialog.show();
+
         final BookApi bookApi = BookieClient.getClient().create(BookApi.class);
         String email = SessionManager.getCurrentUserDetails(this).getEmail();
         String password = SessionManager.getCurrentUserDetails(this).getPassword();
@@ -600,7 +599,13 @@ public class BookActivity extends AppCompatActivity {
                             boolean error = responseObject.getBoolean("error");
 
                             if (!error) {
+                                Intent data = new Intent();
+                                Bundle bundle = new Bundle();
+                                bundle.putParcelable("book",mBookDetails.getBook());
+                                data.putExtras(bundle);
+                                setResult(BOOK_PROCESS_CHANGED_RESULT_CODE, data);
 
+                                comfortableProgressDialog.dismiss();
                             } else {
                                 int errorCode = responseObject.getInt("errorCode");
 
@@ -615,21 +620,32 @@ public class BookActivity extends AppCompatActivity {
                                 }else if (errorCode == ErrorCodes.UNKNOWN){
                                     Log.e(TAG, "onResponse: errorCode = " + errorCode);
                                 }
+
+                                comfortableProgressDialog.dismiss();
+                                Toast.makeText(BookActivity.this, getString(R.string.unknown_error), Toast.LENGTH_SHORT).show();
                             }
                         }else{
                             Log.e(TAG, "Response body is null. (Book Page Error)");
+                            comfortableProgressDialog.dismiss();
+                            Toast.makeText(BookActivity.this, getString(R.string.unknown_error), Toast.LENGTH_SHORT).show();
                         }
                     }else {
                         Log.e(TAG, "Response object is null. (Book Page Error)");
+                        comfortableProgressDialog.dismiss();
+                        Toast.makeText(BookActivity.this, getString(R.string.unknown_error), Toast.LENGTH_SHORT).show();
                     }
                 } catch (IOException | JSONException e) {
                     e.printStackTrace();
+                    comfortableProgressDialog.dismiss();
+                    Toast.makeText(BookActivity.this, getString(R.string.unknown_error), Toast.LENGTH_SHORT).show();
                 }
             }
 
             @Override
             public void onFailure(Call<ResponseBody> call, Throwable t) {
                 Log.e(TAG, "Book Page onFailure: " + t.getMessage());
+                comfortableProgressDialog.dismiss();
+                Toast.makeText(BookActivity.this, getString(R.string.unknown_error), Toast.LENGTH_SHORT).show();
             }
         });
     }

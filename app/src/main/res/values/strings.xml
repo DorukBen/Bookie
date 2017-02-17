@@ -198,4 +198,5 @@
     <string name="reject">Reject</string>
     <string name="rejected_requests">Rejected requests</string>
     <string name="reject_request_prompt">Reject request from %s?</string>
+    <string name="updating_process">Updating Book Process...</string>
 </resources>

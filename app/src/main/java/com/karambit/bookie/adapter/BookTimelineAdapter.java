@@ -13,6 +13,7 @@ import android.text.method.LinkMovementMethod;
 import android.text.style.ClickableSpan;
 import android.text.style.ForegroundColorSpan;
 import android.text.style.StyleSpan;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -517,13 +518,11 @@ public class BookTimelineAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
                         case READING:
                             stateCurrentHolder.mStateText.setText(R.string.reading);
                             stateCurrentHolder.mStateIcon.setImageResource(R.drawable.ic_book_timeline_read_start_stop_36dp);
-                            stateCurrentHolder.mRequestCount.setVisibility(View.VISIBLE);
                             break;
 
                         case OPENED_TO_SHARE:
                             stateCurrentHolder.mStateText.setText(R.string.opened_to_share);
                             stateCurrentHolder.mStateIcon.setImageResource(R.drawable.ic_book_timeline_opened_to_share_36dp);
-                            stateCurrentHolder.mRequestCount.setVisibility(View.VISIBLE);
                             break;
 
                         case CLOSED_TO_SHARE:
@@ -1390,30 +1389,15 @@ public class BookTimelineAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
     }
 
     public int getRequestCount() {
-        final int[] requestCountFinal = {0};
+        int requestCount = 0;
         ArrayList<Book.BookProcess> bookProcesses = mBookDetails.getBookProcesses();
-        int i = 0;
-        while
-            (i < bookProcesses.size() &&
-            ((bookProcesses.get(i) instanceof Book.Request) && ((Book.Request) bookProcesses.get(i)).getRequestType() == Book.RequestType.ACCEPT)) {
-            Book.BookProcess process = bookProcesses.get(i);
-            process.accept(new Book.TimelineDisplayableVisitor() {
-                @Override
-                public void visit(Book.Interaction interaction) {}
+        for (Book.BookProcess process : bookProcesses){
+            if (process instanceof Book.Request && ((Book.Request) process).getToUser().getID() == SessionManager.getCurrentUser(mContext).getID()){
+                requestCount++;
 
-                @Override
-                public void visit(Book.Transaction transaction) {}
-
-                @Override
-                public void visit(Book.Request request) {
-                    if (request.getRequestType() == Book.RequestType.SEND) {
-                        requestCountFinal[0]++;
-                    }
-                }
-            });
-            i++;
+            }
         }
-        return requestCountFinal[0];
+        return requestCount;
     }
 
     private String getStateDurationText() {

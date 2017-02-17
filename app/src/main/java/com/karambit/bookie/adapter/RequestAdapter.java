@@ -127,8 +127,12 @@ public class RequestAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
             return 1;
         } else {
             int rejectedRequestCount = getRejectedRequestCount();
-            int i = getSentRequestCount() + (rejectedRequestCount > 0 ? rejectedRequestCount + 1/*subtitle*/ : 0);
-            return i;
+            int sentRequestsCount = getSentRequestCount();
+            if (rejectedRequestCount + sentRequestsCount > 0){
+                return sentRequestsCount + (rejectedRequestCount > 0 ? rejectedRequestCount + 1/*subtitle*/ : 0);
+            }else {
+                return 1;// Empty State
+            }
         }
     }
 
@@ -142,12 +146,16 @@ public class RequestAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
                 return TYPE_UNKNOWN_ERROR;
             }
         } else {
-            if (position < getSentRequestCount()) {
-                return TYPE_SENT_REQUEST;
-            } else if (position == getSentRequestCount()) {
-                return TYPE_SUBTITLE;
-            } else {
-                return TYPE_REJECTED_REQUEST;
+            if (getRejectedRequestCount() + getSentRequestCount() > 0){
+                if (position < getSentRequestCount()) {
+                    return TYPE_SENT_REQUEST;
+                } else if (position == getSentRequestCount()) {
+                    return TYPE_SUBTITLE;
+                } else {
+                    return TYPE_REJECTED_REQUEST;
+                }
+            }else {
+                return TYPE_EMPTY_STATE;
             }
         }
     }

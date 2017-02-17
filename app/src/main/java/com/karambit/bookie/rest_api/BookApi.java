@@ -35,4 +35,11 @@ public interface BookApi {
             @Field("password") String password,
             @Field("bookID") int bookId,
             @Field("interactionType") int interactionType);
+
+    @FormUrlEncoded
+    @POST("BookRequest")
+    Call<ResponseBody> getBookRequests(
+            @Field("email") String email,
+            @Field("password") String password,
+            @Field("bookID") int bookId);
 }
