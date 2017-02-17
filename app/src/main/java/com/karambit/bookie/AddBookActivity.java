@@ -3,11 +3,11 @@ package com.karambit.bookie;
 import android.Manifest;
 import android.app.Dialog;
 import android.app.ProgressDialog;
+import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.content.res.Resources;
 import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
 import android.graphics.Point;
 import android.os.Bundle;
 import android.os.Environment;
@@ -15,10 +15,12 @@ import android.support.annotation.NonNull;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
+import android.text.InputType;
 import android.text.Spannable;
 import android.text.SpannableString;
 import android.text.TextUtils;
 import android.text.style.AbsoluteSizeSpan;
+import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.Display;
 import android.view.View;
@@ -36,29 +38,19 @@ import com.karambit.bookie.helper.SessionManager;
 import com.karambit.bookie.helper.TypefaceSpan;
 import com.karambit.bookie.helper.UploadFileTask;
 import com.karambit.bookie.model.Book;
-import com.karambit.bookie.model.User;
-import com.karambit.bookie.rest_api.BookApi;
 import com.karambit.bookie.rest_api.BookieClient;
 
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 
-import okhttp3.ResponseBody;
-import retrofit2.Call;
-import retrofit2.Callback;
-import retrofit2.Response;
-
 public class AddBookActivity extends AppCompatActivity {
 
     private static final String TAG = AddBookActivity.class.getSimpleName();
 
-    private static final String UPLOAD_IMAGE_URL = "upload_book_image.php";
-    private static final String UPLOAD_THUMBNAIL_URL = "upload_book_thumbnail.php";
+    private static final String UPLOAD_IMAGE_URL = "BookCreate";
 
-    public static final String SERVER_BOOK_IMAGES_FOLDER = "http://46.101.171.117/bookie/book_images/";
-    public static final String SERVER_BOOK_THUMBNAILS_FOLDER = "http://46.101.171.117/bookie/book_thumbnails/";
-
+    public static final int RESULT_BOOK_CREATED = 1001;
     private static final int CUSTOM_PERMISSIONS_REQUEST_CODE = 123;
 
     private int mScreenHeight;
@@ -85,7 +77,7 @@ public class AddBookActivity extends AppCompatActivity {
         SpannableString s = new SpannableString(getResources().getString(R.string.app_name));
         s.setSpan(new TypefaceSpan(this, "autograf.ttf"), 0, s.length(),
                 Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
-        s.setSpan(new AbsoluteSizeSpan(120), 0, s.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+        s.setSpan(new AbsoluteSizeSpan((int) convertDpToPixel(32, this)), 0, s.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
 
         // Update the action bar title with the TypefaceSpan instance
         if (getSupportActionBar() != null) {
@@ -93,7 +85,9 @@ public class AddBookActivity extends AppCompatActivity {
         }
 
         mNameEditText = (EditText) findViewById(R.id.bookNameEditText);
+        mNameEditText.setInputType(InputType.TYPE_TEXT_FLAG_CAP_WORDS);
         mAuthorEditText = (EditText) findViewById(R.id.authorEditText);
+        mAuthorEditText.setInputType(InputType.TYPE_TEXT_FLAG_CAP_WORDS);
 
         this.getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_HIDDEN);
 
@@ -145,7 +139,7 @@ public class AddBookActivity extends AppCompatActivity {
                         public void onClick(View v) {
                             statePromptDialog.dismiss();
                             mSelectedState = Book.State.READING;
-                            attemptUploadBook();
+                            attemptUploadBook(mNameEditText.getText().toString(), mAuthorEditText.getText().toString(), mSelectedState.getStateCode(), mSelectedGenre);
                         }
                     });
 
@@ -154,7 +148,7 @@ public class AddBookActivity extends AppCompatActivity {
                         public void onClick(View v) {
                             statePromptDialog.dismiss();
                             mSelectedState = Book.State.OPENED_TO_SHARE;
-                            attemptUploadBook();
+                            attemptUploadBook(mNameEditText.getText().toString(), mAuthorEditText.getText().toString(), mSelectedState.getStateCode(), mSelectedGenre);
                         }
                     });
 
@@ -163,7 +157,7 @@ public class AddBookActivity extends AppCompatActivity {
                         public void onClick(View v) {
                             statePromptDialog.dismiss();
                             mSelectedState = Book.State.CLOSED_TO_SHARE;
-                            attemptUploadBook();
+                            attemptUploadBook(mNameEditText.getText().toString(), mAuthorEditText.getText().toString(), mSelectedState.getStateCode(), mSelectedGenre);
                         }
                     });
 
@@ -246,7 +240,7 @@ public class AddBookActivity extends AppCompatActivity {
         }
     }
 
-    private void attemptUploadBook() {
+    private void attemptUploadBook(String bookName, String author, int bookState, int genreCode) {
 
         mProgressDialog = new ProgressDialog(this);
         mProgressDialog.setMessage(getString(R.string.creating_book));
@@ -257,8 +251,24 @@ public class AddBookActivity extends AppCompatActivity {
 
         // Upload Book image
         String path = mSavedBookImageFile.getPath();
-        String imageUrlString = BookieClient.BASE_URL + UPLOAD_IMAGE_URL;
         String name = mSavedBookImageFile.getName();
+
+        bookName.trim();
+        author.trim();
+        bookName = upperCaseString(bookName);
+        author = upperCaseString(author);
+        bookName = bookName.replace(" ","_");
+        author = author.replace(" ","_");
+
+        String serverArgsString = "?email=" + SessionManager.getCurrentUserDetails(getApplicationContext()).getEmail()
+                + "&password=" + SessionManager.getCurrentUserDetails(getApplicationContext()).getPassword()
+                + "&imageName=" + name
+                + "&bookName=" + bookName
+                + "&author=" + author
+                + "&bookState=" + bookState
+                + "&genreCode=" + genreCode;
+        String imageUrlString = BookieClient.BASE_URL + UPLOAD_IMAGE_URL + serverArgsString;
+
 
         final UploadFileTask uftImage = new UploadFileTask(path, imageUrlString, name);
 
@@ -270,39 +280,11 @@ public class AddBookActivity extends AppCompatActivity {
 
             @Override
             public void onProgressCompleted() {
-
                 Log.w(TAG, "Book image upload is OK");
+                mProgressDialog.dismiss();
 
-                // Upload Thumbnail of image
-                Bitmap bookImageBitmap = BitmapFactory.decodeFile(mSavedBookImageFile.getAbsolutePath(), new BitmapFactory.Options());
-                Bitmap thumbnailBitmap = Bitmap.createScaledBitmap(bookImageBitmap, 288, 384, true);
-                final File thumbnailFile = saveThumbnail(thumbnailBitmap, mSavedBookImageFile.getName());
-
-                String thumbnailUrlString = BookieClient.BASE_URL + UPLOAD_THUMBNAIL_URL;
-
-                UploadFileTask uftThumbnail = new UploadFileTask(thumbnailFile.getPath(), thumbnailUrlString, thumbnailFile.getName());
-
-                uftThumbnail.setUploadProgressListener(new UploadFileTask.UploadProgressChangedListener() {
-                    @Override
-                    public void onProgressChanged(int progress) {
-                        Log.i(TAG, "Thumbnail Upload Progress = " + progress + " / 100");
-                    }
-
-                    @Override
-                    public void onProgressCompleted() {
-                        Log.w(TAG, "Thumbnail upload is OK");
-                        attemptInsertBook(mSavedBookImageFile.getName(), thumbnailFile.getName());
-                    }
-
-                    @Override
-                    public void onProgressError() {
-                        mProgressDialog.dismiss();
-                        Log.e(TAG, "Thumbnail upload ERROR");
-                        Toast.makeText(AddBookActivity.this, R.string.unknown_error, Toast.LENGTH_SHORT).show();
-                    }
-                });
-
-                uftThumbnail.execute();
+                setResult(RESULT_BOOK_CREATED);
+                finish();
             }
 
             @Override
@@ -314,34 +296,6 @@ public class AddBookActivity extends AppCompatActivity {
         });
 
         uftImage.execute();
-    }
-
-    private void attemptInsertBook(String bookImageName, String thumbnailName) {
-        User.Details userDetails = SessionManager.getCurrentUserDetails(this);
-
-        BookApi bookApi = BookieClient.getClient().create(BookApi.class);
-
-        Call<ResponseBody> call = bookApi.insertBook(userDetails.getEmail(), userDetails.getPassword(), mNameEditText.getText().toString(),
-                mSelectedState.getStateCode(), mAuthorEditText.getText().toString(), mSelectedGenre, userDetails.getUser().getID(),
-                SERVER_BOOK_IMAGES_FOLDER + bookImageName,
-                SERVER_BOOK_THUMBNAILS_FOLDER + thumbnailName);
-
-        call.enqueue(new Callback<ResponseBody>() {
-            @Override
-            public void onResponse(Call<ResponseBody> call, Response<ResponseBody> response) {
-                Log.i(TAG, "Book created");
-
-                mProgressDialog.dismiss();
-                Toast.makeText(AddBookActivity.this, R.string.book_has_created, Toast.LENGTH_SHORT).show();
-                finish();
-            }
-
-            @Override
-            public void onFailure(Call<ResponseBody> call, Throwable t) {
-                mProgressDialog.dismiss();
-                Toast.makeText(AddBookActivity.this, R.string.unknown_error, Toast.LENGTH_SHORT).show();
-            }
-        });
     }
 
     private boolean areAllInputsValid() {
@@ -401,35 +355,17 @@ public class AddBookActivity extends AppCompatActivity {
         return new File(path + imageName);
     }
 
-    private File saveThumbnail(Bitmap thumbnail, String bookImageName) {
-        String path = Environment.getExternalStorageDirectory().getPath() + File.separator +
-                getString(R.string.app_name) + File.separator + ".thumbnails" + File.separator;
-
-        File file = new File(path);
-        if (!file.exists()) {
-            file.mkdir();
-        }
-
-        String thumbnailName = FileNameGenerator.generateBookThumbnailName(bookImageName);
-
-        FileOutputStream out = null;
-        try {
-            out = new FileOutputStream(path + thumbnailName);
-            thumbnail.compress(Bitmap.CompressFormat.PNG, 100, out); // bmp is your Bitmap instance
-            // PNG is a lossless format, the compression factor (100) is ignored
-        } catch (Exception e) {
-            e.printStackTrace();
-        } finally {
-            try {
-                if (out != null) {
-                    out.close();
-                }
-            } catch (IOException e) {
-                e.printStackTrace();
+    private String upperCaseString(String input){
+        String[] words = input.split(" ");
+        StringBuilder sb = new StringBuilder();
+        if (words[0].length() > 0) {
+            sb.append(Character.toUpperCase(words[0].charAt(0)) + words[0].subSequence(1, words[0].length()).toString().toLowerCase());
+            for (int i = 1; i < words.length; i++) {
+                sb.append(" ");
+                sb.append(Character.toUpperCase(words[i].charAt(0)) + words[i].subSequence(1, words[i].length()).toString().toLowerCase());
             }
         }
-
-        return new File(path + thumbnailName);
+        return sb.toString();
     }
 
     private boolean checkPermissions() {
@@ -454,6 +390,20 @@ public class AddBookActivity extends AppCompatActivity {
                 }
             }
         }
+    }
+
+    /**
+     * This method converts dp unit to equivalent pixels, depending on device density.
+     *
+     * @param dp A value in dp (density independent pixels) unit. Which we need to convert into pixels
+     * @param context Context to get resources and device specific display metrics
+     * @return A float value to represent px equivalent to dp depending on device density
+     */
+    public static float convertDpToPixel(float dp, Context context){
+        Resources resources = context.getResources();
+        DisplayMetrics metrics = resources.getDisplayMetrics();
+        float px = dp * ((float)metrics.densityDpi / DisplayMetrics.DENSITY_DEFAULT);
+        return px;
     }
 
 }

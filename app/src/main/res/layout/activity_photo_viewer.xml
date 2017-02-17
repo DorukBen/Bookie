@@ -20,6 +20,15 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:scaleType="matrix"
+        android:adjustViewBounds="true"
+        android:layout_centerInParent="true"/>
+
+    <ImageView
+        android:id="@+id/editProfilePictureFullSize"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:scaleType="matrix"
+        android:adjustViewBounds="true"
         android:layout_centerInParent="true"/>
 
     <ImageButton
@@ -32,5 +41,26 @@
         android:src="@drawable/ic_close_white_24dp"
         style="@style/Widget.AppCompat.ActionButton"
         android:layout_alignParentTop="true"/>
+
+    <ImageButton
+        android:id="@+id/editButton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentLeft="true"
+        android:layout_marginLeft="16dp"
+        android:layout_marginTop="24dp"
+        android:src="@drawable/ic_border_color_white_24dp"
+        style="@style/Widget.AppCompat.ActionButton"
+        android:layout_alignParentTop="true"/>
+
+    <android.support.design.widget.FloatingActionButton
+        android:id="@+id/uploadButton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentRight="true"
+        android:layout_alignParentBottom="true"
+        android:layout_marginRight="16dp"
+        android:clickable="true"
+        android:src="@drawable/ic_done_white_24dp" />
 
 </RelativeLayout>

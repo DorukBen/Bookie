@@ -15,7 +15,7 @@ import android.view.ViewGroup;
 // At start, ViewPager set position to half of virtual and find nearest zero position.
 public abstract class InfiniteCyclePagerAdapter extends PagerAdapter {
 
-    private final static int VIRTUAL_ITEM_COUNT = 10_000_000;
+    public final static int VIRTUAL_ITEM_COUNT = 1000;
 
     private OnNotifyDataSetChangedListener mOnNotifyDataSetChangedListener;
 
@@ -46,6 +46,8 @@ public abstract class InfiniteCyclePagerAdapter extends PagerAdapter {
     @Override
     public int getCount() {
         if (getItemCount() == 0) return 0;
+        if (getItemCount() == 1) return 1;
+        if (getItemCount() == 2) return 2;
         return VIRTUAL_ITEM_COUNT;
     }
 
@@ -114,7 +116,11 @@ public abstract class InfiniteCyclePagerAdapter extends PagerAdapter {
     // Main feature of this adapter which return virtual position
     // relative to virtual count and original count
     protected int getVirtualPosition(final int realPosition) {
-        return realPosition % getItemCount();
+        if (getItemCount() == 0){
+            return 0;
+        }else{
+            return realPosition % getItemCount();
+        }
     }
 
     protected interface OnNotifyDataSetChangedListener {

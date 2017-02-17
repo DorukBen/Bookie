@@ -21,6 +21,7 @@ import com.karambit.bookie.R;
 import com.karambit.bookie.helper.ImageScaler;
 import com.karambit.bookie.helper.NetworkChecker;
 import com.karambit.bookie.helper.infinite_viewpager.HorizontalInfiniteCycleViewPager;
+import com.karambit.bookie.helper.infinite_viewpager.InfiniteCyclePagerAdapter;
 import com.karambit.bookie.helper.pull_refresh_layout.SmartisanProgressBarDrawable;
 import com.karambit.bookie.model.Book;
 
@@ -52,6 +53,8 @@ public class HomeTimelineAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
     private ArrayList<Book> mFeedBooks = new ArrayList<>();
 
     private boolean mProgressBarActive;
+    private HorizontalPagerAdapter mHorizontalPagerAdapter;
+    private BookClickListener mBookClickListener;
 
     public HomeTimelineAdapter(Context context) {
         mContext = context;
@@ -211,14 +214,22 @@ public class HomeTimelineAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
 
                 HeaderViewHolder headerViewHolder = (HeaderViewHolder) holder;
 
-                HorizontalPagerAdapter adapter = (HorizontalPagerAdapter) headerViewHolder.mCycleViewPager.getAdapter();
-                if (adapter != null){
-                    adapter.setBooks(mHeaderBooks);
+                if (mHorizontalPagerAdapter != null){
+                    mHorizontalPagerAdapter.setBooks(mHeaderBooks);
                     headerViewHolder.mCycleViewPager.notifyDataSetChanged();
-                    headerViewHolder.mCycleViewPager.invalidateTransformer();
+                    headerViewHolder.mCycleViewPager.setInfiniteCyclerManagerPagerAdapter(mHorizontalPagerAdapter);
                 }else{
-                    headerViewHolder.mCycleViewPager.setAdapter(new HorizontalPagerAdapter(mContext, mHeaderBooks));
+                    mHorizontalPagerAdapter = new HorizontalPagerAdapter(mContext, mHeaderBooks);
+                    headerViewHolder.mCycleViewPager.setAdapter(mHorizontalPagerAdapter);
                 }
+
+                mHorizontalPagerAdapter.setBookClickListener(new HorizontalPagerAdapter.BookClickListener() {
+                    @Override
+                    public void onBookClick(Book book) {
+                        mBookClickListener.onBookClick(book);
+                    }
+                });
+
                 break;
             }
 
@@ -234,14 +245,12 @@ public class HomeTimelineAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
                 dualBookViewHolder.mPresentationalLeft.setOnClickListener(new View.OnClickListener() {
                     @Override
                     public void onClick(View v) {
-                        Intent intent = new Intent(mContext, BookActivity.class);
-                        intent.putExtra("book", bookLeft);
-                        mContext.startActivity(intent);
+                        mBookClickListener.onBookClick(bookLeft);
                     }
                 });
 
                 Glide.with(mContext)
-                     .load(bookLeft.getImageURL())
+                     .load(bookLeft.getThumbnailURL())
                      .asBitmap()
                      .placeholder(R.drawable.placeholder_192dp)
                      .error(R.drawable.error_192dp)
@@ -262,15 +271,13 @@ public class HomeTimelineAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
                 dualBookViewHolder.mPresentationalRight.setOnClickListener(new View.OnClickListener() {
                     @Override
                     public void onClick(View v) {
-                        Intent intent = new Intent(mContext, BookActivity.class);
-                        intent.putExtra("book", bookRight);
-                        mContext.startActivity(intent);
+                        mBookClickListener.onBookClick(bookRight);
                     }
                 });
 
 
                 Glide.with(mContext)
-                     .load(bookRight.getImageURL())
+                     .load(bookRight.getThumbnailURL())
                      .asBitmap()
                      .placeholder(R.drawable.placeholder_192dp)
                      .error(R.drawable.error_192dp)
@@ -333,7 +340,7 @@ public class HomeTimelineAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
         notifyDataSetChanged();
     }
 
-    private void setProgressBarActive(boolean progressBarActive) {
+    public void setProgressBarActive(boolean progressBarActive) {
         mProgressBarActive = progressBarActive;
         notifyItemChanged(getItemCount() - 1);
     }
@@ -367,5 +374,17 @@ public class HomeTimelineAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
             setProgressBarActive(false);
             notifyDataSetChanged();
         }
+    }
+
+    public interface BookClickListener {
+        void onBookClick(Book book);
+    }
+
+    public BookClickListener getBookClickListener() {
+        return mBookClickListener;
+    }
+
+    public void setBookClickListener(BookClickListener bookClickListener) {
+        mBookClickListener = bookClickListener;
     }
 }

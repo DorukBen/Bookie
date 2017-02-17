@@ -12,11 +12,11 @@ import retrofit2.http.POST;
 
 public interface SearchApi {
     @FormUrlEncoded
-    @POST("search_page_api.php")
+    @POST("Search")
     Call<ResponseBody> getSearchResults(
             @Field("email") String email,
             @Field("password") String password,
-            @Field("search_string") String searchString,
-            @Field("search_genre") int searchGenre,
-            @Field("search_pressed") int searchPressed);
+            @Field("searchString") String searchString,
+            @Field("searchGenre") int searchGenre,
+            @Field("searchPressed") int searchPressed);
 }

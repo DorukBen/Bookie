@@ -1,8 +1,10 @@
 package com.karambit.bookie;
 
 import android.app.Dialog;
+import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.res.Resources;
 import android.os.Bundle;
 import android.support.v7.app.ActionBar;
 import android.support.v7.app.AlertDialog;
@@ -12,6 +14,7 @@ import android.support.v7.widget.RecyclerView;
 import android.text.Spannable;
 import android.text.SpannableString;
 import android.text.style.AbsoluteSizeSpan;
+import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuInflater;
@@ -23,7 +26,9 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.karambit.bookie.adapter.BookTimelineAdapter;
+import com.karambit.bookie.adapter.HomeTimelineAdapter;
 import com.karambit.bookie.adapter.ProfileTimelineAdapter;
+import com.karambit.bookie.helper.ComfortableProgressDialog;
 import com.karambit.bookie.helper.ElevationScrollListener;
 import com.karambit.bookie.helper.NetworkChecker;
 import com.karambit.bookie.helper.SessionManager;
@@ -33,6 +38,7 @@ import com.karambit.bookie.model.Book;
 import com.karambit.bookie.model.User;
 import com.karambit.bookie.rest_api.BookApi;
 import com.karambit.bookie.rest_api.BookieClient;
+import com.karambit.bookie.rest_api.ErrorCodes;
 
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -46,6 +52,8 @@ import retrofit2.Callback;
 import retrofit2.Response;
 
 public class BookActivity extends AppCompatActivity {
+
+    public static final int BOOK_PROCESS_CHANGED_RESULT_CODE = 1003;
 
     private static final String TAG = BookActivity.class.getSimpleName();
 
@@ -64,7 +72,7 @@ public class BookActivity extends AppCompatActivity {
         SpannableString s = new SpannableString(getResources().getString(R.string.app_name));
         s.setSpan(new TypefaceSpan(this, "autograf.ttf"), 0, s.length(),
                   Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
-        s.setSpan(new AbsoluteSizeSpan(120), 0, s.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+        s.setSpan(new AbsoluteSizeSpan((int)convertDpToPixel(32, this)), 0, s.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
 
         // Update the action bar title with the TypefaceSpan instance
         if (getSupportActionBar() != null) {
@@ -76,15 +84,15 @@ public class BookActivity extends AppCompatActivity {
         RecyclerView bookRecyclerView = (RecyclerView) findViewById(R.id.bookRecyclerView);
         bookRecyclerView.setLayoutManager(new LinearLayoutManager(this));
 
-        mBookTimelineAdapter = new BookTimelineAdapter(this, mBookDetails);
+        mBookTimelineAdapter = new BookTimelineAdapter(this, mBook);
 
         mBookTimelineAdapter.setHeaderClickListeners(new BookTimelineAdapter.HeaderClickListeners() {
 
             @Override
-            public void onBookPictureClick(Book.Details details) {
+            public void onBookPictureClick(Book book) {
                 Intent intent = new Intent(BookActivity.this, PhotoViewerActivity.class);
                 Bundle bundle = new Bundle();
-                bundle.putString("image", details.getBook().getImageURL());
+                bundle.putString("image", book.getImageURL());
                 intent.putExtras(bundle);
                 startActivity(intent);
             }
@@ -117,6 +125,7 @@ public class BookActivity extends AppCompatActivity {
 
                             mBookTimelineAdapter.notifyItemRangeChanged(3, mBookDetails.getBookProcesses().size());
 
+                            mBookDetails.getBook().setState(Book.State.CLOSED_TO_SHARE);
                             mBook.setState(Book.State.CLOSED_TO_SHARE);
 
                             mBook.setOwner(currentUser);
@@ -133,6 +142,7 @@ public class BookActivity extends AppCompatActivity {
 
                                         mBookTimelineAdapter.notifyItemRangeChanged(3, mBookDetails.getBookProcesses().size());
 
+                                        mBookDetails.getBook().setState(Book.State.READING);
                                         mBook.setState(Book.State.READING);
                                         mBookTimelineAdapter.notifyItemChanged(1);
 
@@ -142,6 +152,7 @@ public class BookActivity extends AppCompatActivity {
                                 .setNegativeButton(R.string.no, new DialogInterface.OnClickListener() {
                                     @Override
                                     public void onClick(DialogInterface dialog, int which) {
+                                        mBookDetails.getBook().setState(null);
                                         mBook.setState(null);
                                         new StateSelectorDialog().show();
                                     }
@@ -210,7 +221,6 @@ public class BookActivity extends AppCompatActivity {
         bookRecyclerView.setAdapter(mBookTimelineAdapter);
 
         mPullRefreshLayout = (PullRefreshLayout) findViewById(R.id.swipeRefreshLayout);
-        mPullRefreshLayout.setRefreshing(true);
 
         // listen refresh event
         mPullRefreshLayout.setOnRefreshListener(new PullRefreshLayout.OnRefreshListener() {
@@ -242,7 +252,6 @@ public class BookActivity extends AppCompatActivity {
             }
         });
 
-        mPullRefreshLayout.setRefreshing(true);
         fetchBookPageArguments();
     }
 
@@ -317,6 +326,7 @@ public class BookActivity extends AppCompatActivity {
                     mBookDetails.getBookProcesses().add(openToShare);
                     mBookTimelineAdapter.notifyItemRangeChanged(3, mBookDetails.getBookProcesses().size());
 
+                    mBookDetails.getBook().setState(Book.State.OPENED_TO_SHARE);
                     mBook.setState(Book.State.OPENED_TO_SHARE);
                     mBookTimelineAdapter.notifyItemChanged(1);
 
@@ -354,6 +364,7 @@ public class BookActivity extends AppCompatActivity {
                                     mBookDetails.getBookProcesses().add(closeToShare);
                                     mBookTimelineAdapter.notifyItemRangeChanged(3, mBookDetails.getBookProcesses().size());
 
+                                    mBookDetails.getBook().setState(Book.State.CLOSED_TO_SHARE);
                                     mBook.setState(Book.State.CLOSED_TO_SHARE);
                                     mBookTimelineAdapter.notifyItemChanged(1);
 
@@ -379,6 +390,7 @@ public class BookActivity extends AppCompatActivity {
                         mBookDetails.getBookProcesses().add(closeToShare);
                         mBookTimelineAdapter.notifyItemRangeChanged(3, mBookDetails.getBookProcesses().size());
 
+                        mBookDetails.getBook().setState(Book.State.CLOSED_TO_SHARE);
                         mBook.setState(Book.State.CLOSED_TO_SHARE);
                         mBookTimelineAdapter.notifyItemChanged(1);
 
@@ -392,6 +404,7 @@ public class BookActivity extends AppCompatActivity {
             View.OnClickListener startReadingListener = new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
+                    mBookDetails.getBook().setState(Book.State.READING);
                     mBook.setState(Book.State.READING);
                     Book.Interaction startReading = mBook.new Interaction(Book.InteractionType.READ_START,
                                                                           SessionManager.getCurrentUser(BookActivity.this),
@@ -465,7 +478,7 @@ public class BookActivity extends AppCompatActivity {
         bookProcess.accept(new Book.TimelineDisplayableVisitor() {
             @Override
             public void visit(Book.Interaction interaction) {
-
+                addBookInteractionToServer(interaction);
             }
 
             @Override
@@ -491,31 +504,49 @@ public class BookActivity extends AppCompatActivity {
             public void onResponse(Call<ResponseBody> call, Response<ResponseBody> response) {
 
                 try {
-                    String json = response.body().string();
+                    if (response != null){
+                        if (response.body() != null){
+                            String json = response.body().string();
 
-                    JSONObject responseObject = new JSONObject(json);
-                    boolean error = responseObject.getBoolean("error");
+                            JSONObject responseObject = new JSONObject(json);
+                            boolean error = responseObject.getBoolean("error");
 
-                    if (!error) {
-                        mBookTimelineAdapter.setError(ProfileTimelineAdapter.ERROR_TYPE_NONE);
-                        if (!responseObject.isNull("book")){
-                            JSONObject bookDetailsJson = responseObject.getJSONObject("book");
-                            Book.Details bookDetails = Book.jsonObjectToBookDetails(bookDetailsJson);
+                            if (!error) {
+                                mBookTimelineAdapter.setError(ProfileTimelineAdapter.ERROR_TYPE_NONE);
+                                if (!responseObject.isNull("bookDetails")){
+                                    JSONObject bookDetailsJson = responseObject.getJSONObject("bookDetails");
+                                    mBookDetails = Book.jsonObjectToBookDetails(bookDetailsJson);
 
-                            mBookDetails = bookDetails;
-                            mBookTimelineAdapter.setBookDetails(mBookDetails);
-                        }
+                                    //TODO check problem
+                                    mBookTimelineAdapter.setBookDetails(mBookDetails);
+                                }
 
-                    } else {
-                        int errorCode = responseObject.getInt("error_code");
 
-                        if(NetworkChecker.isNetworkAvailable(BookActivity.this)){
-                            mBookTimelineAdapter.setError(ProfileTimelineAdapter.ERROR_TYPE_UNKNOWN_ERROR);
+                            } else {
+                                int errorCode = responseObject.getInt("errorCode");
+
+                                if (errorCode == ErrorCodes.EMPTY_POST){
+                                    Log.e(TAG, "Post is empty. (Book Page Error)");
+                                }else if (errorCode == ErrorCodes.MISSING_POST_ELEMENT){
+                                    Log.e(TAG, "Post element missing. (Book Page Error)");
+                                }else if (errorCode == ErrorCodes.INVALID_REQUEST){
+                                    Log.e(TAG, "Invalid request. (Book Page Error)");
+                                }else if (errorCode == ErrorCodes.INVALID_EMAIL){
+                                    Log.e(TAG, "Invalid email. (Book Page Error)");
+                                }else if (errorCode == ErrorCodes.UNKNOWN){
+                                    Log.e(TAG, "onResponse: errorCode = " + errorCode);
+                                }
+
+                                mBookTimelineAdapter.setError(BookTimelineAdapter.ERROR_TYPE_UNKNOWN_ERROR);
+                            }
                         }else{
-                            mBookTimelineAdapter.setError(ProfileTimelineAdapter.ERROR_TYPE_NO_CONNECTION);
+                            Log.e(TAG, "Response body is null. (Book Page Error)");
+                            mBookTimelineAdapter.setError(BookTimelineAdapter.ERROR_TYPE_UNKNOWN_ERROR);
                         }
+                    }else {
+                        Log.e(TAG, "Response object is null. (Book Page Error)");
+                        mBookTimelineAdapter.setError(BookTimelineAdapter.ERROR_TYPE_UNKNOWN_ERROR);
                     }
-
                 } catch (IOException | JSONException e) {
                     e.printStackTrace();
 
@@ -539,9 +570,98 @@ public class BookActivity extends AppCompatActivity {
                 }
 
                 mPullRefreshLayout.setRefreshing(false);
-                Log.e(TAG, "ProfilePage onFailure: " + t.getMessage());
+                Log.e(TAG, "Book Page onFailure: " + t.getMessage());
             }
         });
+    }
+
+    private void addBookInteractionToServer(Book.Interaction interaction) {
+
+        final ComfortableProgressDialog comfortableProgressDialog = new ComfortableProgressDialog(BookActivity.this);
+        comfortableProgressDialog.setMessage(getString(R.string.updating_process));
+        comfortableProgressDialog.show();
+
+        final BookApi bookApi = BookieClient.getClient().create(BookApi.class);
+        String email = SessionManager.getCurrentUserDetails(this).getEmail();
+        String password = SessionManager.getCurrentUserDetails(this).getPassword();
+        Call<ResponseBody> addBookInteraction = bookApi.addBookInteraction(email, password, interaction.getBook().getID(), interaction.getInteractionType().getInteractionCode());
+
+        addBookInteraction.enqueue(new Callback<ResponseBody>() {
+            @Override
+            public void onResponse(Call<ResponseBody> call, Response<ResponseBody> response) {
+
+                try {
+                    if (response != null){
+                        if (response.body() != null){
+                            String json = response.body().string();
+
+                            JSONObject responseObject = new JSONObject(json);
+                            boolean error = responseObject.getBoolean("error");
+
+                            if (!error) {
+                                Intent data = new Intent();
+                                Bundle bundle = new Bundle();
+                                bundle.putParcelable("book",mBookDetails.getBook());
+                                data.putExtras(bundle);
+                                setResult(BOOK_PROCESS_CHANGED_RESULT_CODE, data);
+
+                                comfortableProgressDialog.dismiss();
+                            } else {
+                                int errorCode = responseObject.getInt("errorCode");
+
+                                if (errorCode == ErrorCodes.EMPTY_POST){
+                                    Log.e(TAG, "Post is empty. (Book Page Error)");
+                                }else if (errorCode == ErrorCodes.MISSING_POST_ELEMENT){
+                                    Log.e(TAG, "Post element missing. (Book Page Error)");
+                                }else if (errorCode == ErrorCodes.INVALID_REQUEST){
+                                    Log.e(TAG, "Invalid request. (Book Page Error)");
+                                }else if (errorCode == ErrorCodes.INVALID_EMAIL){
+                                    Log.e(TAG, "Invalid email. (Book Page Error)");
+                                }else if (errorCode == ErrorCodes.UNKNOWN){
+                                    Log.e(TAG, "onResponse: errorCode = " + errorCode);
+                                }
+
+                                comfortableProgressDialog.dismiss();
+                                Toast.makeText(BookActivity.this, getString(R.string.unknown_error), Toast.LENGTH_SHORT).show();
+                            }
+                        }else{
+                            Log.e(TAG, "Response body is null. (Book Page Error)");
+                            comfortableProgressDialog.dismiss();
+                            Toast.makeText(BookActivity.this, getString(R.string.unknown_error), Toast.LENGTH_SHORT).show();
+                        }
+                    }else {
+                        Log.e(TAG, "Response object is null. (Book Page Error)");
+                        comfortableProgressDialog.dismiss();
+                        Toast.makeText(BookActivity.this, getString(R.string.unknown_error), Toast.LENGTH_SHORT).show();
+                    }
+                } catch (IOException | JSONException e) {
+                    e.printStackTrace();
+                    comfortableProgressDialog.dismiss();
+                    Toast.makeText(BookActivity.this, getString(R.string.unknown_error), Toast.LENGTH_SHORT).show();
+                }
+            }
+
+            @Override
+            public void onFailure(Call<ResponseBody> call, Throwable t) {
+                Log.e(TAG, "Book Page onFailure: " + t.getMessage());
+                comfortableProgressDialog.dismiss();
+                Toast.makeText(BookActivity.this, getString(R.string.unknown_error), Toast.LENGTH_SHORT).show();
+            }
+        });
+    }
+
+    /**
+     * This method converts dp unit to equivalent pixels, depending on device density.
+     *
+     * @param dp A value in dp (density independent pixels) unit. Which we need to convert into pixels
+     * @param context Context to get resources and device specific display metrics
+     * @return A float value to represent px equivalent to dp depending on device density
+     */
+    public static float convertDpToPixel(float dp, Context context){
+        Resources resources = context.getResources();
+        DisplayMetrics metrics = resources.getDisplayMetrics();
+        float px = dp * ((float)metrics.densityDpi / DisplayMetrics.DENSITY_DEFAULT);
+        return px;
     }
 
 }

@@ -10,6 +10,7 @@ import com.karambit.bookie.helper.SessionManager;
 public class CurrentUserProfileSettingsActivity extends AppCompatActivity {
 
     public static final int RESULT_USER_LOGOUT = 1;
+    public static final int REQUEST_CODE_CHANGE_PROFILE_PICTURE_ACTIVITY = 0;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -23,5 +24,7 @@ public class CurrentUserProfileSettingsActivity extends AppCompatActivity {
                 finish();
             }
         });
+
+
     }
 }

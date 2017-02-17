@@ -13,6 +13,7 @@ import android.text.method.LinkMovementMethod;
 import android.text.style.ClickableSpan;
 import android.text.style.ForegroundColorSpan;
 import android.text.style.StyleSpan;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -48,9 +49,8 @@ public class BookTimelineAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
     private static final int TYPE_BOOK_PROCESS = 3;
     private static final int TYPE_SUBTITLE = 4;
     private static final int TYPE_FOOTER = 5;
-    private static final int TYPE_EMPTY_STATE = 6;
-    private static final int TYPE_NO_CONNECTION = 7;
-    private static final int TYPE_UNKNOWN_ERROR = 8;
+    private static final int TYPE_NO_CONNECTION = 6;
+    private static final int TYPE_UNKNOWN_ERROR = 7;
 
     public static final int ERROR_TYPE_NONE = 0;
     public static final int ERROR_TYPE_NO_CONNECTION = 1;
@@ -58,6 +58,7 @@ public class BookTimelineAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
     private int mErrorType = ERROR_TYPE_NONE;
 
     private Context mContext;
+    private Book mBook;
     private Book.Details mBookDetails;
 
     private HeaderClickListeners mHeaderClickListeners;
@@ -67,11 +68,12 @@ public class BookTimelineAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
     private boolean mProgressBarActive;
     private SpanTextClickListeners mSpanTextClickListener;
 
-    public BookTimelineAdapter(Context context, Book.Details bookDetails) {
+    public BookTimelineAdapter(Context context, Book book) {
         mContext = context;
-        mBookDetails = bookDetails;
+        mBook = book;
+        mBookDetails = null;
 
-        mProgressBarActive = false;
+        mProgressBarActive = true;
     }
 
     public BookTimelineAdapter(Context context) {
@@ -174,40 +176,25 @@ public class BookTimelineAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
         }
     }
 
-    private static class EmptyStateViewHolder extends RecyclerView.ViewHolder {
-
-        private TextView mEmptyStateTextView;
-
-        private EmptyStateViewHolder(View emptyStateView) {
-            super(emptyStateView);
-
-            mEmptyStateTextView = (TextView) emptyStateView.findViewById(R.id.emptyStateTextView);
-        }
-    }
-
     private static class NoConnectionViewHolder extends RecyclerView.ViewHolder {
 
-        private ImageView mNoConnectionImageView;
         private TextView mNoConnectionTextView;
 
         private NoConnectionViewHolder(View noConnectionView) {
             super(noConnectionView);
 
-            mNoConnectionImageView = (ImageView) noConnectionView.findViewById(R.id.emptyStateImageView);
-            mNoConnectionTextView = (TextView) noConnectionView.findViewById(R.id.emptyStateTextView);
+            mNoConnectionTextView = (TextView) noConnectionView.findViewById(R.id.errorTextView);
         }
     }
 
     private static class UnknownErrorViewHolder extends RecyclerView.ViewHolder {
 
-        private ImageView mUnknownErrorImageView;
         private TextView mUnknownErrorTextView;
 
         private UnknownErrorViewHolder(View unkonwnErrorView) {
             super(unkonwnErrorView);
 
-            mUnknownErrorImageView = (ImageView) unkonwnErrorView.findViewById(R.id.emptyStateImageView);
-            mUnknownErrorTextView = (TextView) unkonwnErrorView.findViewById(R.id.emptyStateTextView);
+            mUnknownErrorTextView = (TextView) unkonwnErrorView.findViewById(R.id.errorTextView);
         }
     }
 
@@ -218,17 +205,16 @@ public class BookTimelineAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
 
     @Override
     public int getItemCount() {
+
         if (mBookDetails != null) {
-
             int size = mBookDetails.getBookProcesses().size();
-
-            if (size > 0) {
-                return size + 4; // + Header + State + Subtitle + Footer
-            } else {
-                return 3; // + Header + Empty State + Footer
-            }
+            return size + 4; // Header + State + Subtitle + Footer
         } else {
-            return 1; // Footer
+            if (mBook != null){
+                return 3; // Header + State + Footer
+            }else{
+                return 1; // Error
+            }
         }
     }
 
@@ -253,59 +239,62 @@ public class BookTimelineAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
     @Override
     public int getItemViewType(int position) {
 
-        if (mErrorType != ERROR_TYPE_NONE){
-            if (position == 0){
-                if (mErrorType == ERROR_TYPE_NO_CONNECTION){
-                    return TYPE_NO_CONNECTION;
-                }else {
-                    return TYPE_UNKNOWN_ERROR;
-                }
-            }
-        }
-
         if (mBookDetails != null) {
 
-            if (mBookDetails.getBookProcesses().size() > 0) {
+            if (position == 0) {
+                return TYPE_HEADER;
 
-                if (position == 0) {
-                    return TYPE_HEADER;
+            } else if (position == 1) {
 
-                } else if (position == 1) {
-
-                    if (SessionManager.getCurrentUser(mContext).getID() == mBookDetails.getBook().getOwner().getID()) {
-                        return TYPE_STATE_SECTION_CURRENT_USER;
-
-                    } else {
-                        return TYPE_STATE_SECTION_OTHER_USER;
-                    }
-
-                } else if (position == 2) {
-                    return TYPE_SUBTITLE;
-
-                } else if (position < mBookDetails.getBookProcesses().size() + 3) { // + Header + State + Subtitle
-                    return TYPE_BOOK_PROCESS;
-
-                } else if (position == getItemCount() - 1) {
-                    return TYPE_FOOTER;
+                if (SessionManager.getCurrentUser(mContext).getID() == mBookDetails.getBook().getOwner().getID()) {
+                    return TYPE_STATE_SECTION_CURRENT_USER;
 
                 } else {
-                    throw new IllegalArgumentException("Invalid view type at position " + position);
+                    return TYPE_STATE_SECTION_OTHER_USER;
                 }
+
+            } else if (position == 2) {
+                return TYPE_SUBTITLE;
+
+            } else if (position < mBookDetails.getBookProcesses().size() + 3) { // + Header + State + Subtitle
+                return TYPE_BOOK_PROCESS;
+
+            } else if (position == getItemCount() - 1) {
+                return TYPE_FOOTER;
+
             } else {
+                throw new IllegalArgumentException("Invalid view type at position " + position);
+            }
 
-                if (position == 0) {
-                    return TYPE_HEADER;
+        }else if (mBook != null){
 
-                } else if (position == 1) {
-                    return TYPE_EMPTY_STATE;
+            if (position == 0) {
+                return TYPE_HEADER;
 
-                } else if (position == 2) {
-                    return TYPE_FOOTER;
+            } else if (position == 1) {
+
+                if (SessionManager.getCurrentUser(mContext).getID() == mBook.getOwner().getID()) {
+                    return TYPE_STATE_SECTION_CURRENT_USER;
 
                 } else {
-                    throw new IllegalArgumentException("Invalid view type at position " + position);
+                    return TYPE_STATE_SECTION_OTHER_USER;
                 }
+
+            }else if (position == getItemCount() - 1) {
+                if (mErrorType != ERROR_TYPE_NONE){
+                    if (mErrorType == ERROR_TYPE_NO_CONNECTION){
+                        return TYPE_NO_CONNECTION;
+                    }else {
+                        return TYPE_UNKNOWN_ERROR;
+                    }
+                }else {
+                    return TYPE_FOOTER;
+                }
+
+            } else {
+                throw new IllegalArgumentException("Invalid view type at position " + position);
             }
+
         } else {
             return TYPE_FOOTER;
         }
@@ -340,16 +329,12 @@ public class BookTimelineAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
                 View footerView = LayoutInflater.from(parent.getContext()).inflate(R.layout.item_footer, parent, false);
                 return new FooterViewHolder(footerView);
 
-            case TYPE_EMPTY_STATE:
-                View emptyStateView = LayoutInflater.from(parent.getContext()).inflate(R.layout.item_profile_book_empty_state, parent, false);
-                return new EmptyStateViewHolder(emptyStateView);
-
             case TYPE_NO_CONNECTION:
-                View noConnectionView = LayoutInflater.from(parent.getContext()).inflate(R.layout.item_empty_state, parent, false);
+                View noConnectionView = LayoutInflater.from(parent.getContext()).inflate(R.layout.item_book_error, parent, false);
                 return new NoConnectionViewHolder(noConnectionView);
 
             case TYPE_UNKNOWN_ERROR:
-                View unknownErrorView = LayoutInflater.from(parent.getContext()).inflate(R.layout.item_empty_state, parent, false);
+                View unknownErrorView = LayoutInflater.from(parent.getContext()).inflate(R.layout.item_book_error, parent, false);
                 return new UnknownErrorViewHolder(unknownErrorView);
 
             default:
@@ -365,205 +350,355 @@ public class BookTimelineAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
 
             case TYPE_HEADER: {
 
-                HeaderViewHolder headerViewHolder = (HeaderViewHolder) holder;
+                if (mBookDetails != null){
+                    HeaderViewHolder headerViewHolder = (HeaderViewHolder) holder;
 
-                // Header click listeners setup
-                if (mHeaderClickListeners != null) {
+                    // Header click listeners setup
+                    if (mHeaderClickListeners != null) {
 
-                    // Book picture click listener setup
-                    headerViewHolder.mBookPicture.setOnClickListener(new View.OnClickListener() {
-                        @Override
-                        public void onClick(View v) {
-                            mHeaderClickListeners.onBookPictureClick(mBookDetails);
-                        }
-                    });
+                        // Book picture click listener setup
+                        headerViewHolder.mBookPicture.setOnClickListener(new View.OnClickListener() {
+                            @Override
+                            public void onClick(View v) {
+                                mHeaderClickListeners.onBookPictureClick(mBook);
+                            }
+                        });
+                    }
+
+                    Glide.with(mContext)
+                            .load(mBookDetails.getBook().getThumbnailURL())
+                            .asBitmap()
+                            .placeholder(R.drawable.placeholder_192dp)
+                            .centerCrop()
+                            .error(R.drawable.error_56dp)
+                            .into(headerViewHolder.mBookPicture);
+
+                    headerViewHolder.mBookName.setText(mBookDetails.getBook().getName());
+                    headerViewHolder.mAuthor.setText(mBookDetails.getBook().getAuthor());
+
+                    String[] genres = mContext.getResources().getStringArray(R.array.genre_types);
+
+                    if (mBookDetails.getBook().getGenreCode() >= genres.length) { // TODO Remove this section
+                        mBookDetails.getBook().setGenreCode(new Random().nextInt(genres.length));
+                    }
+
+                    headerViewHolder.mGenre.setText(genres[mBookDetails.getBook().getGenreCode()]);
+                }else if(mBook != null){
+                    HeaderViewHolder headerViewHolder = (HeaderViewHolder) holder;
+
+                    // Header click listeners setup
+                    if (mHeaderClickListeners != null) {
+
+                        // Book picture click listener setup
+                        headerViewHolder.mBookPicture.setOnClickListener(new View.OnClickListener() {
+                            @Override
+                            public void onClick(View v) {
+                                mHeaderClickListeners.onBookPictureClick(mBook);
+                            }
+                        });
+                    }
+
+                    Glide.with(mContext)
+                            .load(mBook.getThumbnailURL())
+                            .asBitmap()
+                            .placeholder(R.drawable.placeholder_192dp)
+                            .centerCrop()
+                            .error(R.drawable.error_56dp)
+                            .into(headerViewHolder.mBookPicture);
+
+                    headerViewHolder.mBookName.setText(mBook.getName());
+                    headerViewHolder.mAuthor.setText(mBook.getAuthor());
+
+
+                    String[] genres = mContext.getResources().getStringArray(R.array.genre_types);
+
+                    if (mBook.getGenreCode() >= genres.length) { // TODO Remove this section
+                        mBook.setGenreCode(new Random().nextInt(genres.length));
+                    }
+
+                    headerViewHolder.mGenre.setText(genres[mBook.getGenreCode()]);
                 }
-
-                Glide.with(mContext)
-                     .load(mBookDetails.getBook().getThumbnailURL())
-                     .asBitmap()
-                     .placeholder(R.drawable.placeholder_192dp)
-                     .centerCrop()
-                     .error(R.drawable.error_56dp)
-                     .into(headerViewHolder.mBookPicture);
-
-                headerViewHolder.mBookName.setText(mBookDetails.getBook().getName());
-                headerViewHolder.mAuthor.setText(mBookDetails.getBook().getAuthor());
-
-                String[] genres = mContext.getResources().getStringArray(R.array.genre_types);
-
-                if (mBookDetails.getGenreCode() >= genres.length) { // TODO Remove this section
-                    mBookDetails.setGenreCode(new Random().nextInt(genres.length));
-                }
-
-                headerViewHolder.mGenre.setText(genres[mBookDetails.getGenreCode()]);
-
                 break;
             }
 
             case TYPE_STATE_SECTION_CURRENT_USER: {
 
-                StateSectionCurrentUserViewHolder stateCurrentHolder = (StateSectionCurrentUserViewHolder) holder;
+                if (mBookDetails != null){
+                    StateSectionCurrentUserViewHolder stateCurrentHolder = (StateSectionCurrentUserViewHolder) holder;
 
-                if (mBookDetails.getBook().getState() != Book.State.LOST && mBookDetails.getBook().getState() != Book.State.ON_ROAD) {
+                    if (mBookDetails.getBook().getState() != Book.State.LOST && mBookDetails.getBook().getState() != Book.State.ON_ROAD) {
+                        if (mCurrentUserClickListeners != null) {
+                            stateCurrentHolder.mStateClickArea.setOnClickListener(new View.OnClickListener() {
+                                @Override
+                                public void onClick(View v) {
+                                    mCurrentUserClickListeners.onStateClick(mBookDetails);
+                                }
+                            });
+                        }
+                    }
+
+                    /////////////////////////////////////////////////////////////////////////////////////////////
+
+                    stateCurrentHolder.mStateDuration.setVisibility(View.VISIBLE);
+                    stateCurrentHolder.mStateDuration.setText(getStateDurationText());
+
+                    /////////////////////////////////////////////////////////////////////////////////////////////
+
+                    int requestCount = getRequestCount();
+
+                    if (requestCount > 0) {
+
+                        stateCurrentHolder.mRequestCount.setVisibility(View.VISIBLE);
+
+                        if (requestCount <= 9) {
+                            stateCurrentHolder.mRequestCount.setText(String.valueOf(requestCount));
+                        } else {
+                            stateCurrentHolder.mRequestCount.setText("9+");
+                        }
+
+                    } else {
+                        stateCurrentHolder.mRequestCount.setVisibility(View.GONE);
+                    }
+
                     if (mCurrentUserClickListeners != null) {
-                        stateCurrentHolder.mStateClickArea.setOnClickListener(new View.OnClickListener() {
+                        stateCurrentHolder.mRequestClickArea.setOnClickListener(new View.OnClickListener() {
                             @Override
                             public void onClick(View v) {
-                                mCurrentUserClickListeners.onStateClick(mBookDetails);
+                                mCurrentUserClickListeners.onRequestButtonClick(mBookDetails);
                             }
                         });
                     }
-                }
 
-                /////////////////////////////////////////////////////////////////////////////////////////////
+                    switch (mBookDetails.getBook().getState()) {
 
-                    stateCurrentHolder.mStateDuration.setText(getStateDurationText());
+                        case READING:
+                            stateCurrentHolder.mStateText.setText(R.string.reading);
+                            stateCurrentHolder.mStateIcon.setImageResource(R.drawable.ic_book_timeline_read_start_stop_36dp);
+                            break;
 
-                /////////////////////////////////////////////////////////////////////////////////////////////
+                        case OPENED_TO_SHARE:
+                            stateCurrentHolder.mStateText.setText(R.string.opened_to_share);
+                            stateCurrentHolder.mStateIcon.setImageResource(R.drawable.ic_book_timeline_opened_to_share_36dp);
+                            break;
 
-                int requestCount = getRequestCount();
+                        case CLOSED_TO_SHARE:
+                            stateCurrentHolder.mStateText.setText(R.string.closed_to_share);
+                            stateCurrentHolder.mStateIcon.setImageResource(R.drawable.ic_book_timeline_closed_to_share_36dp);
+                            stateCurrentHolder.mRequestCount.setVisibility(View.GONE);
+                            break;
 
-                if (requestCount > 0) {
+                        case ON_ROAD:
+                            stateCurrentHolder.mStateText.setText(R.string.on_road);
+                            stateCurrentHolder.mStateIcon.setImageResource(R.drawable.ic_book_timeline_dispatch_36dp);
+                            stateCurrentHolder.mRequestCount.setVisibility(View.GONE);
+                            break;
 
-                    stateCurrentHolder.mRequestCount.setVisibility(View.VISIBLE);
-
-                    if (requestCount <= 9) {
-                        stateCurrentHolder.mRequestCount.setText(String.valueOf(requestCount));
-                    } else {
-                        stateCurrentHolder.mRequestCount.setText("9+");
+                        case LOST:
+                            stateCurrentHolder.mStateText.setText(R.string.lost);
+                            stateCurrentHolder.mStateIcon.setImageResource(R.drawable.ic_close_white_24dp);
+                            stateCurrentHolder.mStateIcon.setColorFilter(Color.RED);
+                            stateCurrentHolder.mRequestCount.setVisibility(View.GONE);
+                            break;
                     }
+                } else if (mBook != null){
+                    StateSectionCurrentUserViewHolder stateCurrentHolder = (StateSectionCurrentUserViewHolder) holder;
 
-                } else {
+                    /////////////////////////////////////////////////////////////////////////////////////////////
+
+                    stateCurrentHolder.mStateDuration.setVisibility(View.GONE);
+
+                    /////////////////////////////////////////////////////////////////////////////////////////////
+
+
                     stateCurrentHolder.mRequestCount.setVisibility(View.GONE);
+
+
+                    switch (mBook.getState()) {
+
+                        case READING:
+                            stateCurrentHolder.mStateText.setText(R.string.reading);
+                            stateCurrentHolder.mStateIcon.setImageResource(R.drawable.ic_book_timeline_read_start_stop_36dp);
+                            break;
+
+                        case OPENED_TO_SHARE:
+                            stateCurrentHolder.mStateText.setText(R.string.opened_to_share);
+                            stateCurrentHolder.mStateIcon.setImageResource(R.drawable.ic_book_timeline_opened_to_share_36dp);
+                            break;
+
+                        case CLOSED_TO_SHARE:
+                            stateCurrentHolder.mStateText.setText(R.string.closed_to_share);
+                            stateCurrentHolder.mStateIcon.setImageResource(R.drawable.ic_book_timeline_closed_to_share_36dp);
+                            stateCurrentHolder.mRequestCount.setVisibility(View.GONE);
+                            break;
+
+                        case ON_ROAD:
+                            stateCurrentHolder.mStateText.setText(R.string.on_road);
+                            stateCurrentHolder.mStateIcon.setImageResource(R.drawable.ic_book_timeline_dispatch_36dp);
+                            stateCurrentHolder.mRequestCount.setVisibility(View.GONE);
+                            break;
+
+                        case LOST:
+                            stateCurrentHolder.mStateText.setText(R.string.lost);
+                            stateCurrentHolder.mStateIcon.setImageResource(R.drawable.ic_close_white_24dp);
+                            stateCurrentHolder.mStateIcon.setColorFilter(Color.RED);
+                            stateCurrentHolder.mRequestCount.setVisibility(View.GONE);
+                            break;
+                    }
                 }
-
-                if (mCurrentUserClickListeners != null) {
-                    stateCurrentHolder.mRequestClickArea.setOnClickListener(new View.OnClickListener() {
-                        @Override
-                        public void onClick(View v) {
-                            mCurrentUserClickListeners.onRequestButtonClick(mBookDetails);
-                        }
-                    });
-                }
-
-                switch (mBookDetails.getBook().getState()) {
-
-                    case READING:
-                        stateCurrentHolder.mStateText.setText(R.string.reading);
-                        stateCurrentHolder.mStateIcon.setImageResource(R.drawable.ic_book_timeline_read_start_stop_36dp);
-                        break;
-
-                    case OPENED_TO_SHARE:
-                        stateCurrentHolder.mStateText.setText(R.string.opened_to_share);
-                        stateCurrentHolder.mStateIcon.setImageResource(R.drawable.ic_book_timeline_opened_to_share_36dp);
-                        break;
-
-                    case CLOSED_TO_SHARE:
-                        stateCurrentHolder.mStateText.setText(R.string.closed_to_share);
-                        stateCurrentHolder.mStateIcon.setImageResource(R.drawable.ic_book_timeline_closed_to_share_36dp);
-                        stateCurrentHolder.mRequestCount.setVisibility(View.GONE);
-                        break;
-
-                    case ON_ROAD:
-                        stateCurrentHolder.mStateText.setText(R.string.on_road);
-                        stateCurrentHolder.mStateIcon.setImageResource(R.drawable.ic_book_timeline_dispatch_36dp);
-                        stateCurrentHolder.mRequestCount.setVisibility(View.GONE);
-                        break;
-
-                    case LOST:
-                        stateCurrentHolder.mStateText.setText(R.string.lost);
-                        stateCurrentHolder.mStateIcon.setImageResource(R.drawable.ic_close_white_24dp);
-                        stateCurrentHolder.mStateIcon.setColorFilter(Color.RED);
-                        stateCurrentHolder.mRequestCount.setVisibility(View.GONE);
-                        break;
-                }
-
                 break;
             }
 
             case TYPE_STATE_SECTION_OTHER_USER: {
 
-                StateSectionOtherUserViewHolder stateOtherHolder = (StateSectionOtherUserViewHolder) holder;
+                if (mBookDetails != null){
+                    StateSectionOtherUserViewHolder stateOtherHolder = (StateSectionOtherUserViewHolder) holder;
 
-                Book.State state = mBookDetails.getBook().getState();
+                    Book.State state = mBookDetails.getBook().getState();
 
-                if (mOtherUserClickListeners != null) {
+                    if (mOtherUserClickListeners != null) {
 
-                    stateOtherHolder.mOwnerClickArea.setOnClickListener(new View.OnClickListener() {
-                        @Override
-                        public void onClick(View v) {
-                            mOtherUserClickListeners.onOwnerClick(mBookDetails.getBook().getOwner());
-                        }
-                    });
-
-                    stateOtherHolder.mRequest.setOnClickListener(new View.OnClickListener() {
-                        @Override
-                        public void onClick(View v) {
-                            mOtherUserClickListeners.onRequestButtonClick(mBookDetails);
-                        }
-                    });
-
-
-                    // If book is on road state and book has sent to me. The button changes to arrive button
-                    if (state == Book.State.ON_ROAD) {
-                        ArrayList<Book.BookProcess> bookProcesses = mBookDetails.getBookProcesses();
-                        Book.BookProcess lastProcess = bookProcesses.get(bookProcesses.size() - 1);
-
-                        if (lastProcess instanceof Book.Transaction) {
-                            Book.Transaction sentTransaction = (Book.Transaction) lastProcess;
-
-                            if (sentTransaction.getToUser() == SessionManager.getCurrentUser(mContext)) {
-                                stateOtherHolder.mRequest.setText(R.string.arrived);
-                                stateOtherHolder.mRequest.setEnabled(true);
-                                stateOtherHolder.mRequest.setTextColor(ContextCompat.getColor(mContext, R.color.colorAccent));
-                                stateOtherHolder.mRequest.setAlpha(1f);
-                                stateOtherHolder.mRequest.setOnClickListener(new View.OnClickListener() {
-                                    @Override
-                                    public void onClick(View v) {
-                                        mOtherUserClickListeners.onArrivedButtonClick(mBookDetails);
-                                    }
-                                });
-
-                            } else {
-                                stateOtherHolder.mRequest.setText(R.string.request_button);
-                                stateOtherHolder.mRequest.setEnabled(true);
-                                stateOtherHolder.mRequest.setTextColor(ContextCompat.getColor(mContext, R.color.colorAccent));
-                                stateOtherHolder.mRequest.setAlpha(1f);
+                        stateOtherHolder.mOwnerClickArea.setOnClickListener(new View.OnClickListener() {
+                            @Override
+                            public void onClick(View v) {
+                                mOtherUserClickListeners.onOwnerClick(mBookDetails.getBook().getOwner());
                             }
+                        });
+
+                        stateOtherHolder.mRequest.setOnClickListener(new View.OnClickListener() {
+                            @Override
+                            public void onClick(View v) {
+                                mOtherUserClickListeners.onRequestButtonClick(mBookDetails);
+                            }
+                        });
+
+
+                        // If book is on road state and book has sent to me. The button changes to arrive button
+                        if (state == Book.State.ON_ROAD) {
+                            ArrayList<Book.BookProcess> bookProcesses = mBookDetails.getBookProcesses();
+                            Book.BookProcess lastProcess = bookProcesses.get(bookProcesses.size() - 1);
+
+                            if (lastProcess instanceof Book.Transaction) {
+                                Book.Transaction sentTransaction = (Book.Transaction) lastProcess;
+
+                                if (sentTransaction.getToUser() == SessionManager.getCurrentUser(mContext)) {
+                                    stateOtherHolder.mRequest.setText(R.string.arrived);
+                                    stateOtherHolder.mRequest.setEnabled(true);
+                                    stateOtherHolder.mRequest.setTextColor(ContextCompat.getColor(mContext, R.color.colorAccent));
+                                    stateOtherHolder.mRequest.setAlpha(1f);
+                                    stateOtherHolder.mRequest.setOnClickListener(new View.OnClickListener() {
+                                        @Override
+                                        public void onClick(View v) {
+                                            mOtherUserClickListeners.onArrivedButtonClick(mBookDetails);
+                                        }
+                                    });
+
+                                } else {
+                                    stateOtherHolder.mRequest.setText(R.string.request_button);
+                                    stateOtherHolder.mRequest.setEnabled(true);
+                                    stateOtherHolder.mRequest.setTextColor(ContextCompat.getColor(mContext, R.color.colorAccent));
+                                    stateOtherHolder.mRequest.setAlpha(1f);
+                                }
+                            }
+
+                        } else if (state == Book.State.OPENED_TO_SHARE || state == Book.State.READING) {
+                            stateOtherHolder.mRequest.setText(R.string.request_button);
+                            stateOtherHolder.mRequest.setEnabled(true);
+                            stateOtherHolder.mRequest.setTextColor(ContextCompat.getColor(mContext, R.color.colorAccent));
+                            stateOtherHolder.mRequest.setAlpha(1f);
+                        } else {
+                            stateOtherHolder.mRequest.setText(R.string.request_button);
+                            stateOtherHolder.mRequest.setEnabled(false);
+                            stateOtherHolder.mRequest.setTextColor(ContextCompat.getColor(mContext, R.color.secondaryTextColor));
+                            stateOtherHolder.mRequest.setAlpha(0.5f);
                         }
-
-                    } else if (state == Book.State.OPENED_TO_SHARE || state == Book.State.READING) {
-                        stateOtherHolder.mRequest.setText(R.string.request_button);
-                        stateOtherHolder.mRequest.setEnabled(true);
-                        stateOtherHolder.mRequest.setTextColor(ContextCompat.getColor(mContext, R.color.colorAccent));
-                        stateOtherHolder.mRequest.setAlpha(1f);
-                    } else {
-                        stateOtherHolder.mRequest.setText(R.string.request_button);
-                        stateOtherHolder.mRequest.setEnabled(false);
-                        stateOtherHolder.mRequest.setTextColor(ContextCompat.getColor(mContext, R.color.secondaryTextColor));
-                        stateOtherHolder.mRequest.setAlpha(0.5f);
                     }
+
+                    Glide.with(mContext)
+                            .load(mBookDetails.getBook().getOwner().getThumbnailUrl())
+                            .asBitmap()
+                            .placeholder(R.drawable.placeholder_56dp)
+                            .centerCrop()
+                            .error(R.drawable.error_56dp)
+                            .into(stateOtherHolder.mOwnerPicture);
+
+                    stateOtherHolder.mOwnerName.setText(mBookDetails.getBook().getOwner().getName());
+
+
+                    String durationText = getStateDurationText();
+                    String stateAndDuration = bookStateToString(state) + " " + durationText;
+                    stateOtherHolder.mBookState.setVisibility(View.VISIBLE);
+                    stateOtherHolder.mBookState.setText(stateAndDuration);
+
+                    // Enable or disable book request button
+                }else if (mBook != null){
+                    StateSectionOtherUserViewHolder stateOtherHolder = (StateSectionOtherUserViewHolder) holder;
+
+                    Book.State state = mBook.getState();
+
+                    if (mOtherUserClickListeners != null) {
+
+                        stateOtherHolder.mOwnerClickArea.setOnClickListener(new View.OnClickListener() {
+                            @Override
+                            public void onClick(View v) {
+                                mOtherUserClickListeners.onOwnerClick(mBook.getOwner());
+                            }
+                        });
+
+                        // If book is on road state and book has sent to me. The button changes to arrive button
+                        if (state == Book.State.ON_ROAD) {
+                            ArrayList<Book.BookProcess> bookProcesses = mBookDetails.getBookProcesses();
+                            Book.BookProcess lastProcess = bookProcesses.get(bookProcesses.size() - 1);
+
+                            if (lastProcess instanceof Book.Transaction) {
+                                Book.Transaction sentTransaction = (Book.Transaction) lastProcess;
+
+                                if (sentTransaction.getToUser() == SessionManager.getCurrentUser(mContext)) {
+                                    stateOtherHolder.mRequest.setText(R.string.arrived);
+                                    stateOtherHolder.mRequest.setEnabled(true);
+                                    stateOtherHolder.mRequest.setTextColor(ContextCompat.getColor(mContext, R.color.colorAccent));
+                                    stateOtherHolder.mRequest.setAlpha(1f);
+                                    stateOtherHolder.mRequest.setOnClickListener(new View.OnClickListener() {
+                                        @Override
+                                        public void onClick(View v) {
+                                            mOtherUserClickListeners.onArrivedButtonClick(mBookDetails);
+                                        }
+                                    });
+
+                                } else {
+                                    stateOtherHolder.mRequest.setText(R.string.request_button);
+                                    stateOtherHolder.mRequest.setEnabled(true);
+                                    stateOtherHolder.mRequest.setTextColor(ContextCompat.getColor(mContext, R.color.colorAccent));
+                                    stateOtherHolder.mRequest.setAlpha(1f);
+                                }
+                            }
+
+                        } else if (state == Book.State.OPENED_TO_SHARE || state == Book.State.READING) {
+                            stateOtherHolder.mRequest.setText(R.string.request_button);
+                            stateOtherHolder.mRequest.setEnabled(true);
+                            stateOtherHolder.mRequest.setTextColor(ContextCompat.getColor(mContext, R.color.colorAccent));
+                            stateOtherHolder.mRequest.setAlpha(1f);
+                        } else {
+                            stateOtherHolder.mRequest.setText(R.string.request_button);
+                            stateOtherHolder.mRequest.setEnabled(false);
+                            stateOtherHolder.mRequest.setTextColor(ContextCompat.getColor(mContext, R.color.secondaryTextColor));
+                            stateOtherHolder.mRequest.setAlpha(0.5f);
+                        }
+                    }
+
+                    Glide.with(mContext)
+                            .load(mBook.getOwner().getThumbnailUrl())
+                            .asBitmap()
+                            .placeholder(R.drawable.placeholder_56dp)
+                            .centerCrop()
+                            .error(R.drawable.error_56dp)
+                            .into(stateOtherHolder.mOwnerPicture);
+
+                    stateOtherHolder.mOwnerName.setText(mBook.getOwner().getName());
+
+                    stateOtherHolder.mBookState.setVisibility(View.GONE);
+
+                    // Enable or disable book request button
                 }
-
-                Glide.with(mContext)
-                     .load(mBookDetails.getBook().getOwner().getThumbnailUrl())
-                     .asBitmap()
-                     .placeholder(R.drawable.placeholder_56dp)
-                     .centerCrop()
-                     .error(R.drawable.error_56dp)
-                     .into(stateOtherHolder.mOwnerPicture);
-
-                stateOtherHolder.mOwnerName.setText(mBookDetails.getBook().getOwner().getName());
-
-
-                String durationText = getStateDurationText();
-                String stateAndDuration = bookStateToString(state) + " " + durationText;
-                stateOtherHolder.mBookState.setText(stateAndDuration);
-
-                // Enable or disable book request button
-
-
                 break;
             }
 
@@ -1235,14 +1370,6 @@ public class BookTimelineAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
                 break;
             }
 
-            case TYPE_EMPTY_STATE: {
-
-                EmptyStateViewHolder emptyStateViewHolder = (EmptyStateViewHolder) holder;
-                emptyStateViewHolder.mEmptyStateTextView.setText(mContext.getString(R.string.nothing_to_show_book_and_profile));
-
-                break;
-            }
-
             case TYPE_NO_CONNECTION: {
 
                 NoConnectionViewHolder noConnectionViewHolder = (NoConnectionViewHolder) holder;
@@ -1262,30 +1389,15 @@ public class BookTimelineAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
     }
 
     public int getRequestCount() {
-        final int[] requestCountFinal = {0};
+        int requestCount = 0;
         ArrayList<Book.BookProcess> bookProcesses = mBookDetails.getBookProcesses();
-        int i = 0;
-        while
-            (i < bookProcesses.size() &&
-            ((bookProcesses.get(i) instanceof Book.Request) && ((Book.Request) bookProcesses.get(i)).getRequestType() == Book.RequestType.ACCEPT)) {
-            Book.BookProcess process = bookProcesses.get(i);
-            process.accept(new Book.TimelineDisplayableVisitor() {
-                @Override
-                public void visit(Book.Interaction interaction) {}
+        for (Book.BookProcess process : bookProcesses){
+            if (process instanceof Book.Request && ((Book.Request) process).getToUser().getID() == SessionManager.getCurrentUser(mContext).getID()){
+                requestCount++;
 
-                @Override
-                public void visit(Book.Transaction transaction) {}
-
-                @Override
-                public void visit(Book.Request request) {
-                    if (request.getRequestType() == Book.RequestType.SEND) {
-                        requestCountFinal[0]++;
-                    }
-                }
-            });
-            i++;
+            }
         }
-        return requestCountFinal[0];
+        return requestCount;
     }
 
     private String getStateDurationText() {
@@ -1337,7 +1449,7 @@ public class BookTimelineAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
     }
 
     public interface HeaderClickListeners {
-        void onBookPictureClick(Book.Details details);
+        void onBookPictureClick(Book book);
     }
 
     public interface StateOtherUserClickListeners {

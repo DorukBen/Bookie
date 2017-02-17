@@ -26,15 +26,17 @@ public class Book implements Parcelable {
     private String mThumbnailURL;
     private String mAuthor;
     private State mState;
+    private int mGenreCode;
     private User mOwner;
 
-    public Book(int ID, String name, String imageURL, String thumbnailURL, String author, State state, User owner) {
+    public Book(int ID, String name, String imageURL, String thumbnailURL, String author, State state, int genreCode, User owner) {
         mID = ID;
         mName = name;
         mImageURL = imageURL;
         mThumbnailURL = thumbnailURL;
         mAuthor = author;
         mState = state;
+        mGenreCode = genreCode;
         mOwner = owner;
     }
 
@@ -45,6 +47,7 @@ public class Book implements Parcelable {
         mThumbnailURL = in.readString();
         mAuthor = in.readString();
         mState = (State) in.readSerializable();
+        mGenreCode = in.readInt();
         mOwner = in.readParcelable(User.class.getClassLoader());
     }
 
@@ -73,9 +76,15 @@ public class Book implements Parcelable {
         dest.writeString(mThumbnailURL);
         dest.writeString(mAuthor);
         dest.writeSerializable(mState);
+        dest.writeInt(mGenreCode);
         dest.writeParcelable(mOwner, flags);
     }
 
+    @Override
+    public boolean equals(Object obj) {
+        return obj instanceof Book && mID == ((Book) obj).getID();
+
+    }
 
     //This enum state specifies situation for book
     //Server interprets datas and returns books state as this enum names
@@ -216,6 +225,14 @@ public class Book implements Parcelable {
         mState = state;
     }
 
+    public int getGenreCode() {
+        return mGenreCode;
+    }
+
+    public void setGenreCode(int genreCode) {
+        mGenreCode = genreCode;
+    }
+
     public User getOwner() {
         return mOwner;
     }
@@ -226,12 +243,13 @@ public class Book implements Parcelable {
 
     public static Book jsonObjectToBook(JSONObject bookObject) {
         try {
-            return new Book(bookObject.getInt("book_id"),
-                    bookObject.getString("book_name"),
-                    bookObject.getString("book_picture_url"),
-                    bookObject.getString("book_picture_thumbnail_url"),
+            return new Book(bookObject.getInt("ID"),
+                    bookObject.getString("bookName"),
+                    bookObject.getString("bookPictureURL"),
+                    bookObject.getString("bookPictureThumbnailURL"),
                     bookObject.getString("author"),
-                    State.valueOf(bookObject.getInt("book_state")),
+                    State.valueOf(bookObject.getInt("bookState")),
+                    bookObject.getInt("genreCode"),
                     User.jsonObjectToUser(bookObject.getJSONObject("owner")));
         } catch (JSONException e) {
             e.printStackTrace();
@@ -242,48 +260,65 @@ public class Book implements Parcelable {
     public static Book.Details jsonObjectToBookDetails(JSONObject bookDetailsObject) {
         try {
             Book book = jsonObjectToBook(bookDetailsObject);
-            User added_by = User.jsonObjectToUser(bookDetailsObject.getJSONObject("added_by"));
+            User added_by = User.jsonObjectToUser(bookDetailsObject.getJSONObject("addedBy"));
 
             ArrayList<Book.BookProcess> bookProcesses = new ArrayList<>();
 
-            if (!bookDetailsObject.isNull("book_processes")){
-                if (!bookDetailsObject.getJSONObject("book_processes").isNull("book_interactions")){
-                    JSONArray jsonArray = bookDetailsObject.getJSONObject("book_processes").getJSONArray("book_interactions");
-                    for (int i = 0; i < jsonArray.length(); i++){
-                        bookProcesses.add(book.new Interaction(InteractionType.values()[jsonArray.getJSONObject(i).getInt("interaction_type") - Book.InteractionType.values()[0].getInteractionCode()],
-                                User.jsonObjectToUser(jsonArray.getJSONObject(i).getJSONObject("user")),
-                                jsonArray.getJSONObject(i).getString("created_at")));
-                    }
-                }
-
-                if (!bookDetailsObject.getJSONObject("book_processes").isNull("book_transactions")){
-                    JSONArray jsonArray = bookDetailsObject.getJSONObject("book_processes").getJSONArray("book_transactions");
-                    for (int i = 0; i < jsonArray.length(); i++){
-                        bookProcesses.add(book.new Transaction(User.jsonObjectToUser(jsonArray.getJSONObject(i).getJSONObject("from_user")),
-                                Book.TransactionType.values()[jsonArray.getJSONObject(i).getInt("transaction_type") - Book.TransactionType.values()[0].getTransactionCode()],
-                                User.jsonObjectToUser(jsonArray.getJSONObject(i).getJSONObject("to_user")),
-                                jsonArray.getJSONObject(i).getString("created_at")));
-                    }
-                }
-
-                if (!bookDetailsObject.getJSONObject("book_processes").isNull("book_requests")){
-                    JSONArray jsonArray = bookDetailsObject.getJSONObject("book_processes").getJSONArray("book_requests");
-                    for (int i = 0; i < jsonArray.length(); i++){
-                        bookProcesses.add(book.new Request(Book.RequestType.values()[jsonArray.getJSONObject(i).getInt("request_type") - Book.RequestType.values()[0].getRequestCode()],
-                                User.jsonObjectToUser(jsonArray.getJSONObject(i).getJSONObject("to_user")),
-                                User.jsonObjectToUser(jsonArray.getJSONObject(i).getJSONObject("from_user")),
-                                jsonArray.getJSONObject(i).getString("created_at")));
-                    }
+            if (!bookDetailsObject.isNull("bookInteractions")){
+                JSONArray jsonArray = bookDetailsObject.getJSONArray("bookInteractions");
+                for (int i = 0; i < jsonArray.length(); i++){
+                    bookProcesses.add(book.new Interaction(InteractionType.values()[jsonArray.getJSONObject(i).getInt("interactionType") - Book.InteractionType.values()[0].getInteractionCode()],
+                            User.jsonObjectToUser(jsonArray.getJSONObject(i).getJSONObject("user")),
+                            jsonArray.getJSONObject(i).getString("createdAt")));
                 }
             }
 
-            return book.new Details(bookDetailsObject.getInt("genre_code"),
+            if (!bookDetailsObject.isNull("bookTransactions")){
+                JSONArray jsonArray = bookDetailsObject.getJSONArray("bookTransactions");
+                for (int i = 0; i < jsonArray.length(); i++){
+                    bookProcesses.add(book.new Transaction(User.jsonObjectToUser(jsonArray.getJSONObject(i).getJSONObject("fromUser")),
+                            Book.TransactionType.values()[jsonArray.getJSONObject(i).getInt("transactionType") - Book.TransactionType.values()[0].getTransactionCode()],
+                            User.jsonObjectToUser(jsonArray.getJSONObject(i).getJSONObject("toUser")),
+                            jsonArray.getJSONObject(i).getString("createdAt")));
+                }
+            }
+
+            if (!bookDetailsObject.isNull("bookRequests")){
+                JSONArray jsonArray = bookDetailsObject.getJSONArray("bookRequests");
+                for (int i = 0; i < jsonArray.length(); i++){
+                    bookProcesses.add(book.new Request(Book.RequestType.values()[jsonArray.getJSONObject(i).getInt("requestType") - Book.RequestType.values()[0].getRequestCode()],
+                            User.jsonObjectToUser(jsonArray.getJSONObject(i).getJSONObject("toUser")),
+                            User.jsonObjectToUser(jsonArray.getJSONObject(i).getJSONObject("fromUser")),
+                            jsonArray.getJSONObject(i).getString("createdAt")));
+                }
+            }
+
+            return book.new Details(
                     added_by,
-                    bookProcesses); // TODO book process api
+                    bookProcesses);
         } catch (JSONException e) {
             e.printStackTrace();
             return null;
         }
+    }
+
+    public static ArrayList<Book.Request> jsonObjectToBookRequests(JSONObject jsonObject, Book book){
+        ArrayList<Book.Request> bookRequests = new ArrayList<>();
+        try {
+            if (!jsonObject.isNull("bookRequests")){
+                JSONArray jsonArray = jsonObject.getJSONArray("bookRequests");
+                for (int i = 0; i < jsonArray.length(); i++){
+                    bookRequests.add(book.new Request(Book.RequestType.values()[jsonArray.getJSONObject(i).getInt("requestType") - Book.RequestType.values()[0].getRequestCode()],
+                            User.jsonObjectToUser(jsonArray.getJSONObject(i).getJSONObject("toUser")),
+                            User.jsonObjectToUser(jsonArray.getJSONObject(i).getJSONObject("fromUser")),
+                            jsonArray.getJSONObject(i).getString("createdAt")));
+                }
+            }
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+        return bookRequests;
+
     }
 
     public static ArrayList<Book> jsonArrayToBookList(JSONArray bookJsonArray) {
@@ -308,28 +343,19 @@ public class Book implements Parcelable {
                 ", mThumbnailURL='" + mThumbnailURL + '\'' +
                 ", mAuthor='" + mAuthor + '\'' +
                 ", mState=" + mState +
+                ", mGenreCode=" + mGenreCode +
                 ", mOwner=" + mOwner +
                 '}';
     }
 
     public class Details {
 
-        private int mGenreCode;
         private User mAddedBy;
         private ArrayList<BookProcess> mBookProcesses;
 
-        public Details(int genreCode, User addedBy, ArrayList<BookProcess> bookProcesses) {
-            mGenreCode = genreCode;
+        public Details(User addedBy, ArrayList<BookProcess> bookProcesses) {
             mAddedBy = addedBy;
             mBookProcesses = bookProcesses;
-        }
-
-        public int getGenreCode() {
-            return mGenreCode;
-        }
-
-        public void setGenreCode(int genreCode) {
-            mGenreCode = genreCode;
         }
 
         public User getAddedBy() {
@@ -355,7 +381,6 @@ public class Book implements Parcelable {
         @Override
         public String toString() {
             return Book.this.toString() + ".Details{" +
-                    "mGenreCode=" + mGenreCode +
                     ", mAddedBy=" + mAddedBy + '}';
         }
     }
@@ -657,7 +682,8 @@ public class Book implements Parcelable {
             String bookImageUrl = BOOK_IMAGE_URLS[randomIndex];
             String bookThumbnailUrl = BOOK_IMAGE_URLS[randomIndex];
 
-            return new Book(random.nextInt(), bookName, bookImageUrl, bookThumbnailUrl, author, state, owner);
+            int genre = random.nextInt(100);
+            return new Book(random.nextInt(), bookName, bookImageUrl, bookThumbnailUrl, author, state, genre, owner);
         }
 
         public static Book generateBook(User user) {
@@ -671,7 +697,8 @@ public class Book implements Parcelable {
             String bookImageUrl = BOOK_IMAGE_URLS[randomIndex];
             String bookThumbnailUrl = BOOK_IMAGE_URLS[randomIndex];
 
-            return new Book(random.nextInt(), bookName, bookImageUrl, bookThumbnailUrl, author, state, user);
+            int genre = random.nextInt(100);
+            return new Book(random.nextInt(), bookName, bookImageUrl, bookThumbnailUrl, author, state, genre, user);
         }
 
         public static ArrayList<Book> generateBookList(int count) {
@@ -698,8 +725,7 @@ public class Book implements Parcelable {
         public static Book.Details generateBookDetails(Book book) {
             User addedBy = User.GENERATOR.generateUser();
             Random random = new Random();
-            int genre = random.nextInt(100);
-            return book.new Details(genre, addedBy, generateBookProcesses(random.nextInt(50)));
+            return book.new Details(addedBy, generateBookProcesses(random.nextInt(50)));
         }
 
         public static ArrayList<BookProcess> generateBookProcesses(int count) {

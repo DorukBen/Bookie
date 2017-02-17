@@ -7,6 +7,7 @@ import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
 import android.util.Log;
 
+import com.google.android.gms.maps.model.LatLng;
 import com.karambit.bookie.model.Book;
 import com.karambit.bookie.model.Message;
 import com.karambit.bookie.model.Notification;
@@ -94,6 +95,7 @@ public class DBHandler extends SQLiteOpenHelper {
     private static final String NOTIFICATION_BOOK_COLUMN_THUMBNAIL_URL = "thumbnail_url";
     private static final String NOTIFICATION_BOOK_COLUMN_AUTHOR = "author";
     private static final String NOTIFICATION_BOOK_COLUMN_STATE = "state";
+    private static final String NOTIFICATION_BOOK_COLUMN_GENRE = "genre";
     private static final String NOTIFICATION_BOOK_COLUMN_OWNER_ID = "owner_id";
 
     private static final String BOOK_USER_TABLE_NAME = "book_user";
@@ -185,6 +187,7 @@ public class DBHandler extends SQLiteOpenHelper {
                         NOTIFICATION_BOOK_COLUMN_THUMBNAIL_URL + " TEXT NOT NULL, " +
                         NOTIFICATION_BOOK_COLUMN_AUTHOR + " TEXT NOT NULL, " +
                         NOTIFICATION_BOOK_COLUMN_STATE + " INTEGER NOT NULL, " +
+                        NOTIFICATION_BOOK_COLUMN_GENRE + " INTEGER NOT NULL, " +
                         NOTIFICATION_BOOK_COLUMN_OWNER_ID + " INTEGER NOT NULL)"
         );
 
@@ -221,8 +224,8 @@ public class DBHandler extends SQLiteOpenHelper {
      * @param name  User name and surname. Can access {@link User#getName() User.getName()}<br>
      * @param imageURL User profile image url. Can access {@link User#getImageUrl() User.getImageUrl()}<br>
      * @param thumbnailURL User profile image thumbnail. Can access {@link User#getThumbnailUrl() User.getThumbnailUrl()}<br>
-     * @param latitude User's location latitude. Can access {@link User#getLatitude() User.getLatitude()}<br>
-     * @param longitude User's location longitude. Can access {@link User#getLongitude() User.getLongitude()}<br>
+     * @param latitude User's location latitude. Can access {@link User#getLocation()} () User.getLatitude()}<br>
+     * @param longitude User's location longitude. Can access {@link User#getLocation()} () User.getLongitude()}<br>
      * @param password User password in md5 format. Can access {@link User.Details#getPassword() User.Details.getPassword()}<br>
      * @param email User email. Can access {@link User.Details#getEmail() User.Details.getEmail()}<br>
      * @param verified Defines user verification state. Can access {@link User.Details#isVerified() User.Details.isVerified()}<br>
@@ -292,8 +295,8 @@ public class DBHandler extends SQLiteOpenHelper {
             contentValues.put(USER_COLUMN_NAME, user.getUser().getName());
             contentValues.put(USER_COLUMN_IMAGE_URL, user.getUser().getImageUrl());
             contentValues.put(USER_COLUMN_THUMBNAIL_URL, user.getUser().getThumbnailUrl());
-            contentValues.put(USER_COLUMN_LATITUDE, user.getUser().getLatitude());
-            contentValues.put(USER_COLUMN_LONGITUDE, user.getUser().getLongitude());
+            contentValues.put(USER_COLUMN_LATITUDE, (user.getUser().getLocation() != null) ? user.getUser().getLocation().latitude : null);
+            contentValues.put(USER_COLUMN_LONGITUDE, (user.getUser().getLocation() != null) ? user.getUser().getLocation().longitude : null);
             contentValues.put(USER_COLUMN_PASSWORD, user.getPassword());
             contentValues.put(USER_COLUMN_EMAIL, user.getEmail());
             contentValues.put(USER_COLUMN_VERIFIED, user.isVerified());
@@ -334,12 +337,20 @@ public class DBHandler extends SQLiteOpenHelper {
             db.beginTransaction();
             res = db.rawQuery("SELECT * FROM " + USER_TABLE_NAME, null);
             res.moveToFirst();
-            user = new User(res.getInt(res.getColumnIndex(USER_COLUMN_ID)),
-                    res.getString(res.getColumnIndex(USER_COLUMN_NAME)),
-                    res.getString(res.getColumnIndex(USER_COLUMN_IMAGE_URL)),
-                    res.getString(res.getColumnIndex(USER_COLUMN_THUMBNAIL_URL)),
-                    res.getDouble(res.getColumnIndex(USER_COLUMN_LATITUDE)),
-                    res.getDouble(res.getColumnIndex(USER_COLUMN_LONGITUDE)));
+            if (res.isNull(res.getColumnIndex(USER_COLUMN_LATITUDE)) || res.isNull(res.getColumnIndex(USER_COLUMN_LONGITUDE))){
+                user = new User(res.getInt(res.getColumnIndex(USER_COLUMN_ID)),
+                        res.getString(res.getColumnIndex(USER_COLUMN_NAME)),
+                        res.getString(res.getColumnIndex(USER_COLUMN_IMAGE_URL)),
+                        res.getString(res.getColumnIndex(USER_COLUMN_THUMBNAIL_URL)),
+                        null);
+            }else {
+                user = new User(res.getInt(res.getColumnIndex(USER_COLUMN_ID)),
+                        res.getString(res.getColumnIndex(USER_COLUMN_NAME)),
+                        res.getString(res.getColumnIndex(USER_COLUMN_IMAGE_URL)),
+                        res.getString(res.getColumnIndex(USER_COLUMN_THUMBNAIL_URL)),
+                        new LatLng(res.getDouble(res.getColumnIndex(USER_COLUMN_LATITUDE)), res.getDouble(res.getColumnIndex(USER_COLUMN_LONGITUDE))));
+            }
+
         }finally {
             if (res != null){
                 res.close();
@@ -370,13 +381,21 @@ public class DBHandler extends SQLiteOpenHelper {
             db.beginTransaction();
             res = db.rawQuery("SELECT * FROM " + USER_TABLE_NAME, null);
             res.moveToFirst();
-            User user = new User(res.getInt(res.getColumnIndex(USER_COLUMN_ID)),
-                    res.getString(res.getColumnIndex(USER_COLUMN_NAME)),
-                    res.getString(res.getColumnIndex(USER_COLUMN_IMAGE_URL)),
-                    res.getString(res.getColumnIndex(USER_COLUMN_THUMBNAIL_URL)),
-                    res.getDouble(res.getColumnIndex(USER_COLUMN_LATITUDE)),
-                    res.getDouble(res.getColumnIndex(USER_COLUMN_LONGITUDE)));
+            User user;
 
+            if (res.isNull(res.getColumnIndex(USER_COLUMN_LATITUDE)) || res.isNull(res.getColumnIndex(USER_COLUMN_LONGITUDE))){
+                user = new User(res.getInt(res.getColumnIndex(USER_COLUMN_ID)),
+                        res.getString(res.getColumnIndex(USER_COLUMN_NAME)),
+                        res.getString(res.getColumnIndex(USER_COLUMN_IMAGE_URL)),
+                        res.getString(res.getColumnIndex(USER_COLUMN_THUMBNAIL_URL)),
+                        null);
+            }else {
+                user = new User(res.getInt(res.getColumnIndex(USER_COLUMN_ID)),
+                        res.getString(res.getColumnIndex(USER_COLUMN_NAME)),
+                        res.getString(res.getColumnIndex(USER_COLUMN_IMAGE_URL)),
+                        res.getString(res.getColumnIndex(USER_COLUMN_THUMBNAIL_URL)),
+                        new LatLng(res.getDouble(res.getColumnIndex(USER_COLUMN_LATITUDE)), res.getDouble(res.getColumnIndex(USER_COLUMN_LONGITUDE))));
+            }
 
             details = user.new Details(res.getString(res.getColumnIndex(USER_COLUMN_PASSWORD)),
                     res.getString(res.getColumnIndex(USER_COLUMN_EMAIL)),
@@ -1066,8 +1085,8 @@ public class DBHandler extends SQLiteOpenHelper {
             contentValues.put(MESSAGE_USER_COLUMN_NAME, user.getName());
             contentValues.put(MESSAGE_USER_COLUMN_IMAGE_URL, user.getImageUrl());
             contentValues.put(MESSAGE_USER_COLUMN_THUMBNAIL_URL, user.getThumbnailUrl());
-            contentValues.put(MESSAGE_USER_COLUMN_LATITUDE, user.getLatitude());
-            contentValues.put(MESSAGE_USER_COLUMN_LONGITUDE, user.getLongitude());
+            contentValues.put(MESSAGE_USER_COLUMN_LATITUDE, (user.getLocation() != null) ? user.getLocation().latitude : null);
+            contentValues.put(MESSAGE_USER_COLUMN_LONGITUDE, (user.getLocation() != null) ? user.getLocation().longitude : null);
 
             result = db.insert(MESSAGE_USER_TABLE_NAME, null, contentValues) > 0;
         }finally {
@@ -1100,12 +1119,21 @@ public class DBHandler extends SQLiteOpenHelper {
 
             if (res.getCount() > 0) {
                 do {
-                    User user = new User(res.getInt(res.getColumnIndex(MESSAGE_USER_COLUMN_ID)),
-                                         res.getString(res.getColumnIndex(MESSAGE_USER_COLUMN_NAME)),
-                                         res.getString(res.getColumnIndex(MESSAGE_USER_COLUMN_IMAGE_URL)),
-                                         res.getString(res.getColumnIndex(MESSAGE_USER_COLUMN_THUMBNAIL_URL)),
-                                         res.getDouble(res.getColumnIndex(MESSAGE_USER_COLUMN_LATITUDE)),
-                                         res.getDouble(res.getColumnIndex(MESSAGE_USER_COLUMN_LONGITUDE)));
+                    User user;
+                    if (res.isNull(res.getColumnIndex(MESSAGE_USER_COLUMN_LATITUDE)) || res.isNull(res.getColumnIndex(MESSAGE_USER_COLUMN_LONGITUDE))){
+                        user = new User(res.getInt(res.getColumnIndex(MESSAGE_USER_COLUMN_ID)),
+                                res.getString(res.getColumnIndex(MESSAGE_USER_COLUMN_NAME)),
+                                res.getString(res.getColumnIndex(MESSAGE_USER_COLUMN_IMAGE_URL)),
+                                res.getString(res.getColumnIndex(MESSAGE_USER_COLUMN_THUMBNAIL_URL)),
+                                null);
+                    }else{
+                        user = new User(res.getInt(res.getColumnIndex(MESSAGE_USER_COLUMN_ID)),
+                                res.getString(res.getColumnIndex(MESSAGE_USER_COLUMN_NAME)),
+                                res.getString(res.getColumnIndex(MESSAGE_USER_COLUMN_IMAGE_URL)),
+                                res.getString(res.getColumnIndex(MESSAGE_USER_COLUMN_THUMBNAIL_URL)),
+                                new LatLng(res.getDouble(res.getColumnIndex(MESSAGE_USER_COLUMN_LATITUDE)), res.getDouble(res.getColumnIndex(MESSAGE_USER_COLUMN_LONGITUDE))));
+                    }
+
 
                     users.add(user);
                 } while (res.moveToNext());
@@ -1467,6 +1495,7 @@ public class DBHandler extends SQLiteOpenHelper {
             contentValues.put(NOTIFICATION_BOOK_COLUMN_THUMBNAIL_URL, book.getThumbnailURL());
             contentValues.put(NOTIFICATION_BOOK_COLUMN_AUTHOR, book.getAuthor());
             contentValues.put(NOTIFICATION_BOOK_COLUMN_STATE, book.getState().getStateCode());
+            contentValues.put(NOTIFICATION_BOOK_COLUMN_GENRE, book.getGenreCode());
             contentValues.put(NOTIFICATION_BOOK_COLUMN_OWNER_ID, book.getOwner().getID());
 
             result = db.insert(NOTIFICATION_BOOK_TABLE_NAME, null, contentValues) > 0;
@@ -1542,6 +1571,7 @@ public class DBHandler extends SQLiteOpenHelper {
                                     res.getString(res.getColumnIndex(NOTIFICATION_BOOK_COLUMN_THUMBNAIL_URL)),
                                     res.getString(res.getColumnIndex(NOTIFICATION_BOOK_COLUMN_AUTHOR)),
                                     Book.State.valueOf(res.getInt(res.getColumnIndex(NOTIFICATION_BOOK_COLUMN_STATE))),
+                                    res.getInt(res.getColumnIndex(NOTIFICATION_BOOK_COLUMN_GENRE)),
                                     user);
 
                             books.add(book);
@@ -1583,8 +1613,8 @@ public class DBHandler extends SQLiteOpenHelper {
             contentValues.put(NOTIFICATION_USER_COLUMN_NAME, user.getName());
             contentValues.put(NOTIFICATION_USER_COLUMN_IMAGE_URL, user.getImageUrl());
             contentValues.put(NOTIFICATION_USER_COLUMN_THUMBNAIL_URL, user.getThumbnailUrl());
-            contentValues.put(NOTIFICATION_USER_COLUMN_LATITUDE, user.getLatitude());
-            contentValues.put(NOTIFICATION_USER_COLUMN_LONGITUDE, user.getLongitude());
+            contentValues.put(NOTIFICATION_USER_COLUMN_LATITUDE, (user.getLocation() != null) ? user.getLocation().latitude : null);
+            contentValues.put(NOTIFICATION_USER_COLUMN_LONGITUDE, (user.getLocation() != null) ? user.getLocation().longitude : null);
 
             result = db.insert(NOTIFICATION_USER_TABLE_NAME, null, contentValues) > 0;
         }finally {
@@ -1650,12 +1680,22 @@ public class DBHandler extends SQLiteOpenHelper {
 
             if (res.getCount() > 0) {
                 do {
-                    User user = new User(res.getInt(res.getColumnIndex(NOTIFICATION_USER_COLUMN_ID)),
-                            res.getString(res.getColumnIndex(NOTIFICATION_USER_COLUMN_NAME)),
-                            res.getString(res.getColumnIndex(NOTIFICATION_USER_COLUMN_IMAGE_URL)),
-                            res.getString(res.getColumnIndex(NOTIFICATION_USER_COLUMN_THUMBNAIL_URL)),
-                            res.getDouble(res.getColumnIndex(NOTIFICATION_USER_COLUMN_LATITUDE)),
-                            res.getDouble(res.getColumnIndex(NOTIFICATION_USER_COLUMN_LONGITUDE)));
+                    User user;
+                    if (res.isNull(res.getColumnIndex(NOTIFICATION_USER_COLUMN_LATITUDE)) || res.isNull(res.getColumnIndex(NOTIFICATION_USER_COLUMN_LONGITUDE))){
+                        user = new User(res.getInt(res.getColumnIndex(NOTIFICATION_USER_COLUMN_ID)),
+                                res.getString(res.getColumnIndex(NOTIFICATION_USER_COLUMN_NAME)),
+                                res.getString(res.getColumnIndex(NOTIFICATION_USER_COLUMN_IMAGE_URL)),
+                                res.getString(res.getColumnIndex(NOTIFICATION_USER_COLUMN_THUMBNAIL_URL)),
+                                null);
+                    }else {
+                        user = new User(res.getInt(res.getColumnIndex(NOTIFICATION_USER_COLUMN_ID)),
+                                res.getString(res.getColumnIndex(NOTIFICATION_USER_COLUMN_NAME)),
+                                res.getString(res.getColumnIndex(NOTIFICATION_USER_COLUMN_IMAGE_URL)),
+                                res.getString(res.getColumnIndex(NOTIFICATION_USER_COLUMN_THUMBNAIL_URL)),
+                                new LatLng(res.getDouble(res.getColumnIndex(NOTIFICATION_USER_COLUMN_LATITUDE)), res.getDouble(res.getColumnIndex(NOTIFICATION_USER_COLUMN_LONGITUDE)))
+                                );
+                    }
+
 
                     users.add(user);
                 } while (res.moveToNext());
@@ -1694,8 +1734,8 @@ public class DBHandler extends SQLiteOpenHelper {
             contentValues.put(BOOK_USER_COLUMN_NAME, user.getName());
             contentValues.put(BOOK_USER_COLUMN_IMAGE_URL, user.getImageUrl());
             contentValues.put(BOOK_USER_COLUMN_THUMBNAIL_URL, user.getThumbnailUrl());
-            contentValues.put(BOOK_USER_COLUMN_LATITUDE, user.getLatitude());
-            contentValues.put(BOOK_USER_COLUMN_LONGITUDE, user.getLongitude());
+            contentValues.put(BOOK_USER_COLUMN_LATITUDE, (user.getLocation() != null) ? user.getLocation().latitude : null);
+            contentValues.put(BOOK_USER_COLUMN_LONGITUDE, (user.getLocation() != null) ? user.getLocation().longitude : null);
 
             result = db.insert(BOOK_USER_TABLE_NAME, null, contentValues) > 0;
         }finally {
@@ -1761,12 +1801,22 @@ public class DBHandler extends SQLiteOpenHelper {
 
             if (res.getCount() > 0) {
                 do {
-                    User user = new User(res.getInt(res.getColumnIndex(BOOK_USER_COLUMN_ID)),
-                            res.getString(res.getColumnIndex(BOOK_USER_COLUMN_NAME)),
-                            res.getString(res.getColumnIndex(BOOK_USER_COLUMN_IMAGE_URL)),
-                            res.getString(res.getColumnIndex(BOOK_USER_COLUMN_THUMBNAIL_URL)),
-                            res.getDouble(res.getColumnIndex(BOOK_USER_COLUMN_LATITUDE)),
-                            res.getDouble(res.getColumnIndex(BOOK_USER_COLUMN_LONGITUDE)));
+                    User user;
+                    if (res.isNull(res.getColumnIndex(BOOK_USER_COLUMN_LATITUDE)) || res.isNull(res.getColumnIndex(BOOK_USER_COLUMN_LONGITUDE))){
+                        user = new User(res.getInt(res.getColumnIndex(BOOK_USER_COLUMN_ID)),
+                                res.getString(res.getColumnIndex(BOOK_USER_COLUMN_NAME)),
+                                res.getString(res.getColumnIndex(BOOK_USER_COLUMN_IMAGE_URL)),
+                                res.getString(res.getColumnIndex(BOOK_USER_COLUMN_THUMBNAIL_URL)),
+                                null);
+                    }else {
+                        user = new User(res.getInt(res.getColumnIndex(BOOK_USER_COLUMN_ID)),
+                                res.getString(res.getColumnIndex(BOOK_USER_COLUMN_NAME)),
+                                res.getString(res.getColumnIndex(BOOK_USER_COLUMN_IMAGE_URL)),
+                                res.getString(res.getColumnIndex(BOOK_USER_COLUMN_THUMBNAIL_URL)),
+                                new LatLng(res.getDouble(res.getColumnIndex(BOOK_USER_COLUMN_LATITUDE)), res.getDouble(res.getColumnIndex(BOOK_USER_COLUMN_LONGITUDE)))
+                                );
+                    }
+
 
                     users.add(user);
                 } while (res.moveToNext());

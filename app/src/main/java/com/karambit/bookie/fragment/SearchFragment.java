@@ -7,6 +7,7 @@ import android.support.v4.app.Fragment;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.text.Editable;
+import android.text.TextUtils;
 import android.text.TextWatcher;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -18,6 +19,7 @@ import com.karambit.bookie.BookActivity;
 import com.karambit.bookie.LocationActivity;
 import com.karambit.bookie.ProfileActivity;
 import com.karambit.bookie.R;
+import com.karambit.bookie.adapter.HomeTimelineAdapter;
 import com.karambit.bookie.adapter.SearchAdapter;
 import com.karambit.bookie.helper.NetworkChecker;
 import com.karambit.bookie.helper.SearchPrefs;
@@ -26,6 +28,7 @@ import com.karambit.bookie.helper.string_similarity.JaroWinkler;
 import com.karambit.bookie.model.Book;
 import com.karambit.bookie.model.User;
 import com.karambit.bookie.rest_api.BookieClient;
+import com.karambit.bookie.rest_api.ErrorCodes;
 import com.karambit.bookie.rest_api.SearchApi;
 
 import org.json.JSONArray;
@@ -162,55 +165,77 @@ public class SearchFragment extends Fragment {
         final SearchApi searchApi = BookieClient.getClient().create(SearchApi.class);
         String email = SessionManager.getCurrentUserDetails(getContext()).getEmail();
         String password = SessionManager.getCurrentUserDetails(getContext()).getPassword();
-        Call<ResponseBody> register = searchApi.getSearchResults(email, password, searchString, mFetchGenreCode, mFetchSearchButtonPressed);
+        Call<ResponseBody> searchResults = searchApi.getSearchResults(email, password, searchString, mFetchGenreCode, mFetchSearchButtonPressed);
 
-        register.enqueue(new Callback<ResponseBody>() {
+        searchResults.enqueue(new Callback<ResponseBody>() {
             @Override
             public void onResponse(Call<ResponseBody> call, Response<ResponseBody> response) {
                 try {
-                    String json = response.body().string();
+                    if (response != null){
+                        if (response.body() != null){
+                            String json = response.body().string();
 
-                    JSONObject responseObject = new JSONObject(json);
-                    boolean error = responseObject.getBoolean("error");
+                            JSONObject responseObject = new JSONObject(json);
+                            boolean error = responseObject.getBoolean("error");
 
-                    if (!error) {
-                        mSearchAdapter.setError(SearchAdapter.ERROR_TYPE_NONE);
-                        mSearchAdapter.setWarning(SearchAdapter.WARNING_TYPE_NONE);
+                            if (!error) {
+                                mSearchAdapter.setError(SearchAdapter.ERROR_TYPE_NONE);
+                                mSearchAdapter.setWarning(SearchAdapter.WARNING_TYPE_NONE);
 
-                        mBooks.clear();
-                        mUsers.clear();
+                                mBooks.clear();
+                                mUsers.clear();
 
-                        if (!responseObject.isNull("books")){
-                            JSONArray booksArray = responseObject.getJSONArray("books");
-                            mBooks.addAll(Book.jsonArrayToBookList(booksArray));
-                        }
-                        if (!responseObject.isNull("users")){
-                            JSONArray usersArray = responseObject.getJSONArray("users");
-                            mUsers.addAll(User.jsonArrayToUserList(usersArray));
-                        }
+                                if (!responseObject.isNull("listBooks")){
+                                    JSONArray booksArray = responseObject.getJSONArray("listBooks");
+                                    mBooks.addAll(Book.jsonArrayToBookList(booksArray));
+                                }
+                                if (!responseObject.isNull("listUsers")){
+                                    JSONArray usersArray = responseObject.getJSONArray("listUsers");
+                                    mUsers.addAll(User.jsonArrayToUserList(usersArray));
+                                }
 
-                        if (mFetchGenreCode > -1){
-                            mSearchAdapter.setItems(new ArrayList<Integer>(), mBooks, mUsers);
-                        }else {
-                            mSearchAdapter.setItems(getMostSimilarGenreIndex(searchString), mBooks, mUsers);
-                        }
+                                if (mFetchGenreCode > -1){
+                                    mSearchAdapter.setItems(new ArrayList<Integer>(), mBooks, mUsers);
+                                }else {
+                                    mSearchAdapter.setItems(getMostSimilarGenreIndex(searchString), mBooks, mUsers);
+                                }
 
-                        if (mBooks.size() < 1 && mUsers.size() < 1){
-                            mSearchAdapter.setWarning(SearchAdapter.WARNING_TYPE_NO_RESULT_FOUND);
-                        }
+                                if (mBooks.size() < 1 && mUsers.size() < 1){
+                                    if (TextUtils.isEmpty(searchString)){
+                                        mSearchAdapter.setWarning(SearchAdapter.WARNING_TYPE_NOTHING_TO_SHOW);
+                                    }else {
+                                        mSearchAdapter.setWarning(SearchAdapter.WARNING_TYPE_NO_RESULT_FOUND);
+                                    }
+                                }
 
-                        mFetchGenreCode = -1;
-                    } else {
+                                mFetchGenreCode = -1;
+                                mFetchSearchButtonPressed = 0;
+                            } else {
 
-                        int errorCode = responseObject.getInt("error_code");
+                                int errorCode = responseObject.getInt("errorCode");
 
-                        if(NetworkChecker.isNetworkAvailable(getContext())){
-                            mSearchAdapter.setError(SearchAdapter.ERROR_TYPE_UNKNOWN_ERROR);
+                                if (errorCode == ErrorCodes.EMPTY_POST){
+                                    Log.e(TAG, "Post is empty. (Home Page Error)");
+                                }else if (errorCode == ErrorCodes.MISSING_POST_ELEMENT){
+                                    Log.e(TAG, "Post element missing. (Home Page Error)");
+                                }else if (errorCode == ErrorCodes.INVALID_REQUEST){
+                                    Log.e(TAG, "Invalid request. (Home Page Error)");
+                                }else if (errorCode == ErrorCodes.INVALID_EMAIL){
+                                    Log.e(TAG, "Invalid email. (Home Page Error)");
+                                }else if (errorCode == ErrorCodes.UNKNOWN){
+                                    Log.e(TAG, "onResponse: errorCode = " + errorCode);
+                                }
+
+                                mSearchAdapter.setError(SearchAdapter.ERROR_TYPE_UNKNOWN_ERROR);
+                            }
                         }else{
-                            mSearchAdapter.setError(SearchAdapter.ERROR_TYPE_NO_CONNECTION);
+                            Log.e(TAG, "Response body is null. (Search Page Error)");
+                            mSearchAdapter.setError(SearchAdapter.ERROR_TYPE_UNKNOWN_ERROR);
                         }
+                    }else {
+                        Log.e(TAG, "Response object is null. (Search Page Error)");
+                        mSearchAdapter.setError(SearchAdapter.ERROR_TYPE_UNKNOWN_ERROR);
                     }
-
                 } catch (IOException | JSONException e) {
                     e.printStackTrace();
 
@@ -240,7 +265,7 @@ public class SearchFragment extends Fragment {
         final HashMap<Integer, Double> searchGenreSimilarityMap = new HashMap<>();
         for (int i = 0; i < mAllGenres.length; i++){
             double similarity = getStringSimilarity(mAllGenres[i], searchString);
-            if (similarity > 0.5){
+            if (similarity > 0.7){
                 searchGenreSimilarityMap.put(i, similarity);
                 if (similarity > 0.9){
                     ArrayList<Integer> finalResult = new ArrayList<>();

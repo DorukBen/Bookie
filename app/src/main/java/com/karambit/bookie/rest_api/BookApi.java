@@ -4,7 +4,10 @@ import okhttp3.ResponseBody;
 import retrofit2.Call;
 import retrofit2.http.Field;
 import retrofit2.http.FormUrlEncoded;
+import retrofit2.http.GET;
+import retrofit2.http.Headers;
 import retrofit2.http.POST;
+import retrofit2.http.Query;
 
 /**
  * Created by orcan on 11/16/16.
@@ -12,29 +15,31 @@ import retrofit2.http.POST;
 
 public interface BookApi {
 
-    @FormUrlEncoded
-    @POST("insert_book.php")
-    Call<ResponseBody> insertBook(@Field("email") String email,
-                                  @Field("password") String password,
-                                  @Field("book_name") String bookName,
-                                  @Field("book_state") int bookState,
-                                  @Field("author") String author,
-                                  @Field("genre_code") int genreCode,
-                                  @Field("added_by") int addedBy,
-                                  @Field("book_picture_url") String bookPictureUrl,
-                                  @Field("book_picture_thumbnail_url") String thumbnailUrl);
-
-    @FormUrlEncoded
-    @POST("home_page_api.php")
+    @GET("HomePage")
     Call<ResponseBody> getHomePageBooks(
-                                  @Field("email") String email,
-                                  @Field("password") String password,
-                                  @Field("fetched_books[]") int[] fetchedBooks);
+                                  @Query("email") String email,
+                                  @Query("password") String password,
+                                  @Query("bookIDs") String fetchedBooks);
 
     @FormUrlEncoded
-    @POST("get_book_api.php")
+    @POST("BookDetails")
     Call<ResponseBody> getBookPageArguments(
             @Field("email") String email,
             @Field("password") String password,
-            @Field("book_id") int bookId);
+            @Field("bookID") int bookId);
+
+    @FormUrlEncoded
+    @POST("BookAddInteraction")
+    Call<ResponseBody> addBookInteraction(
+            @Field("email") String email,
+            @Field("password") String password,
+            @Field("bookID") int bookId,
+            @Field("interactionType") int interactionType);
+
+    @FormUrlEncoded
+    @POST("BookRequest")
+    Call<ResponseBody> getBookRequests(
+            @Field("email") String email,
+            @Field("password") String password,
+            @Field("bookID") int bookId);
 }

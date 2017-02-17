@@ -8,6 +8,7 @@ import android.support.v4.view.ViewCompat;
 import android.support.v7.widget.CardView;
 import android.support.v7.widget.RecyclerView;
 import android.text.TextUtils;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -67,6 +68,7 @@ public class ProfileTimelineAdapter extends RecyclerView.Adapter<RecyclerView.Vi
     private StartReadingClickListener mStartReadingClickListener;
 
     private boolean mProgressBarActive;
+    private HorizontalPagerAdapter mHorizontalPagerAdapter;
 
     public ProfileTimelineAdapter(Context context, User.Details userDetails) {
         mContext = context;
@@ -500,7 +502,7 @@ public class ProfileTimelineAdapter extends RecyclerView.Adapter<RecyclerView.Vi
                 //
 
                 String bio = mUserDetails.getBio();
-                if (!TextUtils.isEmpty(bio)) {
+                if (!TextUtils.isEmpty(bio) && bio != "null") {
                     headerViewHolder.mBio.setVisibility(View.VISIBLE);
                     headerViewHolder.mBio.setText(bio);
                 } else {
@@ -511,10 +513,10 @@ public class ProfileTimelineAdapter extends RecyclerView.Adapter<RecyclerView.Vi
                 // Location
                 //
 
-                double latitude = mUserDetails.getUser().getLatitude();
-                double longitude = mUserDetails.getUser().getLongitude();
+                if (mUserDetails.getUser().getLocation() != null) {
 
-                if (latitude != -1 && longitude != -1) {
+                    double latitude = mUserDetails.getUser().getLocation().latitude;
+                    double longitude = mUserDetails.getUser().getLocation().longitude;
 
                     try {
                         List<Address> addresses;
@@ -573,9 +575,22 @@ public class ProfileTimelineAdapter extends RecyclerView.Adapter<RecyclerView.Vi
 
                 CurrentlyReadingViewHolder currentlyReadingHolder = (CurrentlyReadingViewHolder) holder;
 
-                HorizontalPagerAdapter adapter = new HorizontalPagerAdapter(mContext, mUserDetails.getCurrentlyReading());
-                currentlyReadingHolder.mCycleViewPager.setAdapter(adapter);
+                if (mHorizontalPagerAdapter != null){
+                    mHorizontalPagerAdapter.setBooks(mUserDetails.getCurrentlyReading());
+                    currentlyReadingHolder.mCycleViewPager.notifyDataSetChanged();
+                    currentlyReadingHolder.mCycleViewPager.setInfiniteCyclerManagerPagerAdapter(mHorizontalPagerAdapter);
+                }else{
+                    mHorizontalPagerAdapter = new HorizontalPagerAdapter(mContext, mUserDetails.getCurrentlyReading());
+                    currentlyReadingHolder.mCycleViewPager.setAdapter(mHorizontalPagerAdapter);
+                }
 
+
+                mHorizontalPagerAdapter.setBookClickListener(new HorizontalPagerAdapter.BookClickListener() {
+                    @Override
+                    public void onBookClick(Book book) {
+                        mBookClickListener.onBookClick(book);
+                    }
+                });
                 break;
             }
 
@@ -769,6 +784,12 @@ public class ProfileTimelineAdapter extends RecyclerView.Adapter<RecyclerView.Vi
     public void setUserDetails(User.Details userDetails) {
         mUserDetails = userDetails;
         setProgressBarActive(false);
+        if (mHorizontalPagerAdapter != null){
+
+        }
+        if (mHorizontalPagerAdapter != null) {
+            mHorizontalPagerAdapter.notifyDataSetChanged();
+        }
         notifyDataSetChanged();
     }
 

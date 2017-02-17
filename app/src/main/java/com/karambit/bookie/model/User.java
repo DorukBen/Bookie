@@ -3,7 +3,9 @@ package com.karambit.bookie.model;
 import android.os.Parcel;
 import android.os.Parcelable;
 import android.support.annotation.Nullable;
+import android.util.Log;
 
+import com.google.android.gms.maps.model.LatLng;
 import com.karambit.bookie.helper.ImageLinkSource;
 
 import org.json.JSONArray;
@@ -24,16 +26,14 @@ public class User implements Parcelable {
     private String mName;
     private String mImageUrl;
     private String mThumbnailUrl;
-    private double mLatitude;
-    private double mLongitude;
+    private LatLng mLocation;
 
-    public User(int ID, String name, String imageUrl, String thumbnailUrl, double latitude, double longitude) {
+    public User(int ID, String name, String imageUrl, String thumbnailUrl, LatLng location) {
         mID = ID;
         mName = name;
         mImageUrl = imageUrl;
         mThumbnailUrl = thumbnailUrl;
-        mLatitude = latitude;
-        mLongitude = longitude;
+        mLocation = location;
     }
 
     protected User(Parcel in) {
@@ -41,8 +41,7 @@ public class User implements Parcelable {
         mName = in.readString();
         mImageUrl = in.readString();
         mThumbnailUrl = in.readString();
-        mLatitude = in.readDouble();
-        mLongitude = in.readDouble();
+        mLocation = in.readParcelable(LatLng.class.getClassLoader());
     }
 
     @Override
@@ -51,8 +50,7 @@ public class User implements Parcelable {
         dest.writeString(mName);
         dest.writeString(mImageUrl);
         dest.writeString(mThumbnailUrl);
-        dest.writeDouble(mLatitude);
-        dest.writeDouble(mLongitude);
+        dest.writeParcelable(mLocation, flags);
     }
 
     @Override
@@ -74,14 +72,24 @@ public class User implements Parcelable {
 
     public static User jsonObjectToUser(JSONObject userJsonObject) {
         try {
-            return new User(
-                    userJsonObject.getInt("user_id"),
-                    userJsonObject.getString("name_surname"),
-                    userJsonObject.getString("profile_picture_url"),
-                    userJsonObject.getString("profile_picture_thumbnail_url"),
-                    userJsonObject.isNull("latitude") ? -1 : userJsonObject.getDouble("latitude"),
-                    userJsonObject.isNull("longitude") ? -1 : userJsonObject.getDouble("longitude")
-            );
+            if (userJsonObject.isNull("latitude") || userJsonObject.isNull("longitude")){
+                return new User(
+                        userJsonObject.getInt("ID"),
+                        userJsonObject.getString("nameSurname"),
+                        userJsonObject.getString("profilePictureURL"),
+                        userJsonObject.getString("profilePictureThumbnailURL"),
+                        null
+                );
+            }else {
+                return new User(
+                        userJsonObject.getInt("ID"),
+                        userJsonObject.getString("nameSurname"),
+                        userJsonObject.getString("profilePictureURL"),
+                        userJsonObject.getString("profilePictureThumbnailURL"),
+                        new LatLng(userJsonObject.getDouble("latitude"), userJsonObject.getDouble("longitude"))
+                );
+            }
+
         } catch (JSONException e) {
             e.printStackTrace();
             return null;
@@ -91,21 +99,14 @@ public class User implements Parcelable {
     public static User.Details jsonObjectToUserDetails(JSONObject userJsonObject) {
 
         try {
-            User user = new User(
-                    userJsonObject.getInt("user_id"),
-                    userJsonObject.getString("name_surname"),
-                    userJsonObject.getString("profile_picture_url"),
-                    userJsonObject.getString("profile_picture_thumbnail_url"),
-                    userJsonObject.isNull("latitude") ? -1 : userJsonObject.getDouble("latitude"),
-                    userJsonObject.isNull("longitude") ? -1 : userJsonObject.getDouble("longitude")
-            );
+            User user = jsonObjectToUser(userJsonObject);
 
             return user.new Details(
                     userJsonObject.getString("password"),
                     userJsonObject.getString("email"),
-                    (userJsonObject.getInt("email_verified") != 0),
+                    userJsonObject.getBoolean("emailVerified"),
                     userJsonObject.getString("bio"),
-                    userJsonObject.getInt("book_counter"),
+                    userJsonObject.getInt("counter"),
                     userJsonObject.getInt("point")
             );
 
@@ -160,21 +161,14 @@ public class User implements Parcelable {
         mThumbnailUrl = thumbnailUrl;
     }
 
-    public double getLatitude() {
-        return mLatitude;
+    public LatLng getLocation() {
+        return mLocation;
     }
 
-    public void setLatitude(double latitude) {
-        mLatitude = latitude;
+    public void setLatitude(LatLng location) {
+        mLocation = location;
     }
 
-    public double getLongitude() {
-        return mLongitude;
-    }
-
-    public void setLongitude(double longitude) {
-        mLongitude = longitude;
-    }
 
     @Override
     public String toString() {
@@ -183,8 +177,7 @@ public class User implements Parcelable {
                 ", mName='" + mName + '\'' +
                 ", mImageUrl='" + mImageUrl + '\'' +
                 ", mThumbnailUrl='" + mThumbnailUrl + '\'' +
-                ", mLatitude=" + mLatitude +
-                ", mLongitude=" + mLongitude +
+                ", mLocation=" + mLocation.toString() +
                 '}';
     }
 
@@ -382,8 +375,8 @@ public class User implements Parcelable {
             String imageThumbnailUrl = ImageLinkSource.IMAGE_THUMBNAIL_URLS[randomIndex];
 
             return new User(random.nextInt(), name, imageUrl, imageThumbnailUrl,
-                    random.nextDouble() + random.nextInt(180) - 90,
-                    random.nextDouble() + random.nextInt(180));
+                    new LatLng(random.nextDouble() + random.nextInt(180) - 90,
+                            random.nextDouble() + random.nextInt(180)));
         }
 
         public static ArrayList<User> generateUserList(int count) {
