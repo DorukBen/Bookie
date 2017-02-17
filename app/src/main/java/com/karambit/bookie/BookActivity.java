@@ -38,7 +38,6 @@ import com.karambit.bookie.model.User;
 import com.karambit.bookie.rest_api.BookApi;
 import com.karambit.bookie.rest_api.BookieClient;
 import com.karambit.bookie.rest_api.ErrorCodes;
-import com.karambit.bookie.rest_api.UserApi;
 
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -198,8 +197,10 @@ public class BookActivity extends AppCompatActivity {
             }
 
             @Override
-            public void onRequestCountClick(Book.Details bookDetails) {
-                // TODO Request Count Click
+            public void onRequestButtonClick(Book.Details bookDetails) {
+                Intent intent = new Intent(BookActivity.this, RequestActivity.class);
+                intent.putExtra("book", mBook);
+                startActivity(intent);
             }
         });
 
@@ -219,6 +220,7 @@ public class BookActivity extends AppCompatActivity {
         bookRecyclerView.setAdapter(mBookTimelineAdapter);
 
         mPullRefreshLayout = (PullRefreshLayout) findViewById(R.id.swipeRefreshLayout);
+        mPullRefreshLayout.setRefreshing(true);
 
         // listen refresh event
         mPullRefreshLayout.setOnRefreshListener(new PullRefreshLayout.OnRefreshListener() {
@@ -521,8 +523,10 @@ public class BookActivity extends AppCompatActivity {
                                     JSONObject bookDetailsJson = responseObject.getJSONObject("bookDetails");
                                     mBookDetails = Book.jsonObjectToBookDetails(bookDetailsJson);
 
+                                    //TODO check problem
                                     mBookTimelineAdapter.setBookDetails(mBookDetails);
                                 }
+
 
                             } else {
                                 int errorCode = responseObject.getInt("errorCode");

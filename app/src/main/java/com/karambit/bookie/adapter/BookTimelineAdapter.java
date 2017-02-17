@@ -122,7 +122,6 @@ public class BookTimelineAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
         private TextView mStateText;
         private View mRequestClickArea;
         private TextView mRequestCount;
-        private TextView mRequestsText;
         private TextView mStateDuration;
 
         private StateSectionCurrentUserViewHolder(View stateSectionView) {
@@ -134,7 +133,6 @@ public class BookTimelineAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
             mRequestClickArea = stateSectionView.findViewById(R.id.requestsClickArea);
             mRequestCount = (TextView) stateSectionView.findViewById(R.id.requestCountTextView);
             mStateDuration = (TextView) stateSectionView.findViewById(R.id.stateDurationTextView);
-            mRequestsText = (TextView) stateSectionView.findViewById(R.id.requestsTextView);
         }
     }
 
@@ -461,7 +459,7 @@ public class BookTimelineAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
                             stateCurrentHolder.mRequestCount.setOnClickListener(new View.OnClickListener() {
                                 @Override
                                 public void onClick(View v) {
-                                    mCurrentUserClickListeners.onRequestCountClick(mBookDetails);
+                                    mCurrentUserClickListeners.onRequestButtonClick(mBookDetails);
                                 }
                             });
                         }
@@ -475,13 +473,11 @@ public class BookTimelineAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
                         case READING:
                             stateCurrentHolder.mStateText.setText(R.string.reading);
                             stateCurrentHolder.mStateIcon.setImageResource(R.drawable.ic_book_timeline_read_start_stop_36dp);
-                            stateCurrentHolder.mRequestCount.setVisibility(View.VISIBLE);
                             break;
 
                         case OPENED_TO_SHARE:
                             stateCurrentHolder.mStateText.setText(R.string.opened_to_share);
                             stateCurrentHolder.mStateIcon.setImageResource(R.drawable.ic_book_timeline_opened_to_share_36dp);
-                            stateCurrentHolder.mRequestCount.setVisibility(View.VISIBLE);
                             break;
 
                         case CLOSED_TO_SHARE:
@@ -511,6 +507,7 @@ public class BookTimelineAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
                     stateCurrentHolder.mStateDuration.setVisibility(View.GONE);
 
                     /////////////////////////////////////////////////////////////////////////////////////////////
+
 
                     stateCurrentHolder.mRequestCount.setVisibility(View.GONE);
 
@@ -1394,7 +1391,12 @@ public class BookTimelineAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
 
     public int getRequestCount() {
         final int[] requestCountFinal = {0};
-        for (Book.BookProcess process : mBookDetails.getBookProcesses()) {
+        ArrayList<Book.BookProcess> bookProcesses = mBookDetails.getBookProcesses();
+        int i = 0;
+        while
+            (i < bookProcesses.size() &&
+            ((bookProcesses.get(i) instanceof Book.Request) && ((Book.Request) bookProcesses.get(i)).getRequestType() == Book.RequestType.ACCEPT)) {
+            Book.BookProcess process = bookProcesses.get(i);
             process.accept(new Book.TimelineDisplayableVisitor() {
                 @Override
                 public void visit(Book.Interaction interaction) {}
@@ -1409,6 +1411,7 @@ public class BookTimelineAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
                     }
                 }
             });
+            i++;
         }
         return requestCountFinal[0];
     }
@@ -1476,7 +1479,7 @@ public class BookTimelineAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
     public interface StateCurrentUserClickListeners {
         void onStateClick(Book.Details bookDetails);
 
-        void onRequestCountClick(Book.Details bookDetails);
+        void onRequestButtonClick(Book.Details bookDetails);
     }
 
     public interface SpanTextClickListeners {

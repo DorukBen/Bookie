@@ -181,7 +181,6 @@
     <string name="nothing_to_show">Search for books, users and genres.</string>
     <string name="no_result_found">No result found.</string>
     <string name="nothing_to_show_book_and_profile">Nothing to show here.</string>
-
     <string name="delete_prompt_message_user">Delete chat with %s?</string>
     <string name="delete_prompt_conversation_message_single">Delete message from %s?</string>
     <string name="delete_prompt_conversation_message_multiple">Delete %1$d messages from %2$s?</string>
@@ -193,4 +192,10 @@
     <string name="long_password">Long Password</string>
     <string name="invalid_name_surname">Invalid Name Surname</string>
     <string name="uploading_image">Uploading Image</string>
+    <string name="x_point">%d point</string>
+    <string name="request_activity_title">Requests</string>
+    <string name="accept_request_prompt">Accept request from %s? All the other requests have been rejected!</string>
+    <string name="reject">Reject</string>
+    <string name="rejected_requests">Rejected requests</string>
+    <string name="reject_request_prompt">Reject request from %s?</string>
 </resources>
