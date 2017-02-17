@@ -513,10 +513,10 @@ public class ProfileTimelineAdapter extends RecyclerView.Adapter<RecyclerView.Vi
                 // Location
                 //
 
-                double latitude = mUserDetails.getUser().getLatitude();
-                double longitude = mUserDetails.getUser().getLongitude();
+                if (mUserDetails.getUser().getLocation() != null) {
 
-                if (latitude != -1 && longitude != -1) {
+                    double latitude = mUserDetails.getUser().getLocation().latitude;
+                    double longitude = mUserDetails.getUser().getLocation().longitude;
 
                     try {
                         List<Address> addresses;
@@ -785,6 +785,9 @@ public class ProfileTimelineAdapter extends RecyclerView.Adapter<RecyclerView.Vi
         mUserDetails = userDetails;
         setProgressBarActive(false);
         if (mHorizontalPagerAdapter != null){
+
+        }
+        if (mHorizontalPagerAdapter != null) {
             mHorizontalPagerAdapter.notifyDataSetChanged();
         }
         notifyDataSetChanged();

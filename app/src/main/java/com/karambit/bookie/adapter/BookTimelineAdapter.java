@@ -455,17 +455,17 @@ public class BookTimelineAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
                             stateCurrentHolder.mRequestCount.setText("9+");
                         }
 
-                        if (mCurrentUserClickListeners != null) {
-                            stateCurrentHolder.mRequestCount.setOnClickListener(new View.OnClickListener() {
-                                @Override
-                                public void onClick(View v) {
-                                    mCurrentUserClickListeners.onRequestButtonClick(mBookDetails);
-                                }
-                            });
-                        }
-
                     } else {
                         stateCurrentHolder.mRequestCount.setVisibility(View.GONE);
+                    }
+
+                    if (mCurrentUserClickListeners != null) {
+                        stateCurrentHolder.mRequestClickArea.setOnClickListener(new View.OnClickListener() {
+                            @Override
+                            public void onClick(View v) {
+                                mCurrentUserClickListeners.onRequestButtonClick(mBookDetails);
+                            }
+                        });
                     }
 
                     switch (mBookDetails.getBook().getState()) {

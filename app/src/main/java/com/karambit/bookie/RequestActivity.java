@@ -186,8 +186,6 @@ public class RequestActivity extends AppCompatActivity {
                     for (int i = 0; i < 10; i++) {
                         User currentUser = SessionManager.getCurrentUser(RequestActivity.this);
                         User fromUser = User.GENERATOR.generateUser();
-                        fromUser.setLatitude(40.999249);
-                        fromUser.setLongitude(28.851117);
 
                         Calendar calendar = Calendar.getInstance();
                         calendar.set(2016, 7, 4);
@@ -278,12 +276,10 @@ public class RequestActivity extends AppCompatActivity {
                     final Book.Request r = mRequests.get(i);
                     User fromUser = r.getFromUser();
 
-                    final double latitude = fromUser.getLatitude();
-                    final double longitude = fromUser.getLongitude();
+                    if (fromUser.getLocation() != null) {
 
-                    // TODO Null controls for lat long. This not valid
-
-                    if (latitude != -1 && longitude != -1) {
+                        final double latitude = fromUser.getLocation().latitude;
+                        final double longitude = fromUser.getLocation().longitude;
 
                         try {
                             List<Address> addresses;
