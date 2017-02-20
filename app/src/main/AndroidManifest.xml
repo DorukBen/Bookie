@@ -50,7 +50,7 @@
             android:name=".ProfileActivity"
             android:screenOrientation="portrait"></activity>
         <activity
-            android:name=".UserProfileSettingsActivity"
+            android:name=".OtherUserProfileSettingsActivity"
             android:screenOrientation="portrait"></activity>
         <activity
             android:name=".BookSettingsActivity"
