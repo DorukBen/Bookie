@@ -24,12 +24,14 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ScrollView;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.bumptech.glide.Glide;
 import com.google.android.gms.maps.model.LatLng;
 import com.karambit.bookie.helper.CircleImageView;
 import com.karambit.bookie.helper.ComfortableProgressDialog;
 import com.karambit.bookie.helper.ElevationScrollListener;
+import com.karambit.bookie.helper.NetworkChecker;
 import com.karambit.bookie.helper.SessionManager;
 import com.karambit.bookie.helper.TypefaceSpan;
 import com.karambit.bookie.model.User;
@@ -52,143 +54,158 @@ public class CurrentUserProfileSettingsActivity extends AppCompatActivity {
     private User.Details mCurrentUserDetails;
     private EditText mUsernameEditText;
     private EditText mBioEditText;
+    private ScrollView mScrollView;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_current_user_profile_settings);
 
-        final ActionBar actionBar = getSupportActionBar();
-        if (actionBar != null) {
-            actionBar.setElevation(0);
-            SpannableString s = new SpannableString(getString(R.string.settings));
-            s.setSpan(new TypefaceSpan(this, "montserrat_regular.ttf"), 0, s.length(),
-                      Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
-            actionBar.setTitle(s);
+        mScrollView = (ScrollView) findViewById(R.id.settingsScrollView);
 
+        if (NetworkChecker.isNetworkAvailable(this)) {
+
+            final ActionBar actionBar = getSupportActionBar();
+            if (actionBar != null) {
+                actionBar.setElevation(0);
+                SpannableString s = new SpannableString(getString(R.string.settings));
+                s.setSpan(new TypefaceSpan(this, "montserrat_regular.ttf"), 0, s.length(),
+                          Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+                actionBar.setTitle(s);
+
+                actionBar.setDisplayHomeAsUpEnabled(true);
+                actionBar.setHomeAsUpIndicator(R.drawable.ic_arrow_back_black_24dp);
+            }
+
+            mCurrentUserDetails = SessionManager.getCurrentUserDetails(this);
+
+            mScrollView.getViewTreeObserver().addOnScrollChangedListener(new ViewTreeObserver.OnScrollChangedListener() {
+                @Override
+                public void onScrollChanged() {
+                    int scrollY = mScrollView.getScrollY();
+                    if (actionBar != null) {
+                        actionBar.setElevation(ElevationScrollListener.getActionbarElevation(scrollY));
+                    }
+                }
+            });
+
+            mUsernameEditText = (EditText) findViewById(R.id.userNameEditText);
+            mUsernameEditText.setText(mCurrentUserDetails.getUser().getName());
+
+            mBioEditText = (EditText) findViewById(R.id.bioEditText);
+            String bio = mCurrentUserDetails.getBio();
+            if (!TextUtils.isEmpty(bio) && !bio.equals("null")) {
+                mBioEditText.setText(bio);
+            }
+
+            Button changePasswordButton = (Button) findViewById(R.id.changePasswordButton);
+            changePasswordButton.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    oldPasswordDialog();
+                }
+            });
+
+            CircleImageView circleImageView = (CircleImageView) findViewById(R.id.profilePictureImageView);
+
+            Glide.with(this)
+                 .load(mCurrentUserDetails.getUser().getThumbnailUrl())
+                 .asBitmap()
+                 .placeholder(R.drawable.placeholder_88dp)
+                 .error(R.drawable.error_88dp)
+                 .into(circleImageView);
+
+            findViewById(R.id.profilePictureContainer).setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    Intent intent = new Intent(CurrentUserProfileSettingsActivity.this, PhotoViewerActivity.class);
+                    intent.putExtra("user", mCurrentUserDetails.getUser());
+                    intent.putExtra("image", mCurrentUserDetails.getUser().getImageUrl());
+                    startActivityForResult(intent, UPDATE_PROFILE_PICTURE_REQUEST_CODE);
+                }
+            });
+
+            mLocationTextView = (TextView) findViewById(R.id.locationTextView);
+            mLocationTextView.setTextColor(ContextCompat.getColor(this, R.color.primaryTextColor));
+            mLocationTextView.setText(R.string.loading);
+
+            mChangeLocationButton = (Button) findViewById(R.id.changeLocationButton);
+            mChangeLocationButton.setVisibility(View.GONE);
+            mChangeLocationButton.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    Intent intent = new Intent(CurrentUserProfileSettingsActivity.this, LocationActivity.class);
+                    startActivity(intent);
+                }
+            });
+
+            fetchLocation();
+
+            final Button feedbackSendButton = (Button) findViewById(R.id.feedbackSendButton);
+            feedbackSendButton.setVisibility(View.GONE);
+
+            final EditText feedbackEditText = (EditText) findViewById(R.id.feedbackEditText);
+
+            feedbackEditText.addTextChangedListener(new TextWatcher() {
+                @Override
+                public void beforeTextChanged(CharSequence s, int start, int count, int after) {
+                }
+
+                @Override
+                public void onTextChanged(CharSequence s, int start, int before, int count) {
+                    mScrollView.fullScroll(View.FOCUS_DOWN);
+
+                    if (!TextUtils.isEmpty(s)) {
+                        feedbackSendButton.setVisibility(View.VISIBLE);
+                    } else {
+                        feedbackSendButton.setVisibility(View.GONE);
+                    }
+                }
+
+                @Override
+                public void afterTextChanged(Editable s) {}
+            });
+
+            feedbackSendButton.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View view) {
+                    sendFeedback();
+                    feedbackEditText.clearFocus();
+                    feedbackEditText.setText("");
+                    feedbackSendButton.setVisibility(View.GONE);
+                }
+            });
+
+            Button logoutButton = (Button) findViewById(R.id.logoutButton);
+            logoutButton.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View view) {
+                    new AlertDialog.Builder(CurrentUserProfileSettingsActivity.this)
+                        .setMessage(R.string.logout_message)
+                        .setPositiveButton(R.string.logout, new DialogInterface.OnClickListener() {
+                            @Override
+                            public void onClick(DialogInterface dialog, int which) {
+                                setResult(RESULT_USER_LOGOUT);
+                                finish();
+                            }
+                        })
+                        .setNegativeButton(android.R.string.no, null)
+                        .create()
+                        .show();
+                }
+            });
+        } else {
+
+            mScrollView.setVisibility(View.GONE);
+
+            View noConnectionView = findViewById(R.id.noConnectionView);
+            noConnectionView.setVisibility(View.VISIBLE);
+            ((TextView) noConnectionView.findViewById(R.id.emptyStateTextView)).setText(R.string.no_internet_connection);
+
+            ActionBar actionBar = getSupportActionBar();
             actionBar.setDisplayHomeAsUpEnabled(true);
             actionBar.setHomeAsUpIndicator(R.drawable.ic_arrow_back_black_24dp);
         }
-
-        mCurrentUserDetails = SessionManager.getCurrentUserDetails(this);
-
-        final ScrollView scrollView = (ScrollView) findViewById(R.id.settingsScrollView);
-
-        scrollView.getViewTreeObserver().addOnScrollChangedListener(new ViewTreeObserver.OnScrollChangedListener() {
-            @Override
-            public void onScrollChanged() {
-                int scrollY = scrollView.getScrollY();
-                if (actionBar != null) {
-                    actionBar.setElevation(ElevationScrollListener.getActionbarElevation(scrollY));
-                }
-            }
-        });
-
-        mUsernameEditText = (EditText) findViewById(R.id.userNameEditText);
-        mUsernameEditText.setText(mCurrentUserDetails.getUser().getName());
-
-        mBioEditText = (EditText) findViewById(R.id.bioEditText);
-        String bio = mCurrentUserDetails.getBio();
-        if (!TextUtils.isEmpty(bio) && !bio.equals("null")) {
-            mBioEditText.setText(bio);
-        }
-
-        Button changePasswordButton = (Button) findViewById(R.id.changePasswordButton);
-        changePasswordButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                oldPasswordDialog();
-            }
-        });
-
-        CircleImageView circleImageView = (CircleImageView) findViewById(R.id.profilePictureImageView);
-
-        Glide.with(this)
-             .load(mCurrentUserDetails.getUser().getThumbnailUrl())
-             .asBitmap()
-             .placeholder(R.drawable.placeholder_88dp)
-             .error(R.drawable.error_88dp)
-             .into(circleImageView);
-
-        findViewById(R.id.profilePictureContainer).setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                Intent intent = new Intent(CurrentUserProfileSettingsActivity.this, PhotoViewerActivity.class);
-                intent.putExtra("user", mCurrentUserDetails.getUser());
-                intent.putExtra("image", mCurrentUserDetails.getUser().getImageUrl());
-                startActivityForResult(intent, UPDATE_PROFILE_PICTURE_REQUEST_CODE);
-            }
-        });
-
-        mLocationTextView = (TextView) findViewById(R.id.locationTextView);
-        mLocationTextView.setTextColor(ContextCompat.getColor(this, R.color.primaryTextColor));
-        mLocationTextView.setText(R.string.loading);
-
-        mChangeLocationButton = (Button) findViewById(R.id.changeLocationButton);
-        mChangeLocationButton.setVisibility(View.GONE);
-        mChangeLocationButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                Intent intent = new Intent(CurrentUserProfileSettingsActivity.this, LocationActivity.class);
-                startActivity(intent);
-            }
-        });
-
-        fetchLocation();
-
-        final Button feedbackSendButton = (Button) findViewById(R.id.feedbackSendButton);
-        feedbackSendButton.setVisibility(View.GONE);
-
-        final EditText feedbackEditText = (EditText) findViewById(R.id.feedbackEditText);
-
-        feedbackEditText.addTextChangedListener(new TextWatcher() {
-            @Override
-            public void beforeTextChanged(CharSequence s, int start, int count, int after) {
-            }
-
-            @Override
-            public void onTextChanged(CharSequence s, int start, int before, int count) {
-                scrollView.fullScroll(View.FOCUS_DOWN);
-
-                if (!TextUtils.isEmpty(s)) {
-                    feedbackSendButton.setVisibility(View.VISIBLE);
-                } else {
-                    feedbackSendButton.setVisibility(View.GONE);
-                }
-            }
-
-            @Override
-            public void afterTextChanged(Editable s) {}
-        });
-
-        feedbackSendButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                sendFeedback();
-                feedbackEditText.clearFocus();
-                feedbackEditText.setText("");
-                feedbackSendButton.setVisibility(View.GONE);
-            }
-        });
-
-        Button logoutButton = (Button) findViewById(R.id.logoutButton);
-        logoutButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                new AlertDialog.Builder(CurrentUserProfileSettingsActivity.this)
-                    .setMessage(R.string.logout_message)
-                    .setPositiveButton(R.string.logout, new DialogInterface.OnClickListener() {
-                        @Override
-                        public void onClick(DialogInterface dialog, int which) {
-                            setResult(RESULT_USER_LOGOUT);
-                            finish();
-                        }
-                    })
-                    .setNegativeButton(android.R.string.no, null)
-                    .create()
-                    .show();
-            }
-        });
     }
 
     @Override
@@ -395,9 +412,13 @@ public class CurrentUserProfileSettingsActivity extends AppCompatActivity {
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
-        MenuInflater inflater = getMenuInflater();
-        inflater.inflate(R.menu.current_user_settings_menu, menu);
-        return super.onCreateOptionsMenu(menu);
+        if (NetworkChecker.isNetworkAvailable(this)) {
+            MenuInflater inflater = getMenuInflater();
+            inflater.inflate(R.menu.current_user_settings_menu, menu);
+            return super.onCreateOptionsMenu(menu);
+        } else {
+            return false;
+        }
     }
 
     @Override
@@ -410,7 +431,11 @@ public class CurrentUserProfileSettingsActivity extends AppCompatActivity {
             }
 
             case R.id.action_done: {
-                saveChanges();
+                if (NetworkChecker.isNetworkAvailable(this)) {
+                    saveChanges();
+                } else {
+                    Toast.makeText(this, R.string.no_internet_connection, Toast.LENGTH_SHORT).show();
+                }
                 return true;
             }
 

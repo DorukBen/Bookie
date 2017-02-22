@@ -7,19 +7,24 @@
     android:background="@color/colorPrimary"
     tools:context=".CurrentUserProfileSettingsActivity">
 
+    <include
+        android:id="@+id/noConnectionView"
+        layout="@layout/item_empty_state"
+        android:visibility="gone"/>
+
     <ScrollView
         android:id="@+id/settingsScrollView"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:scrollbars="none"
-        android:overScrollMode="never">
+        android:overScrollMode="never"
+        android:scrollbars="none">
 
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:animateLayoutChanges="true"
-            android:orientation="vertical"
             android:focusableInTouchMode="true"
+            android:orientation="vertical"
             android:paddingLeft="16dp"
             android:paddingRight="16dp">
 
@@ -27,37 +32,37 @@
                 android:id="@+id/profilePictureContainer"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:padding="8dp"
                 android:layout_gravity="center_horizontal"
-                android:gravity="center_horizontal">
+                android:gravity="center_horizontal"
+                android:orientation="vertical"
+                android:padding="8dp">
 
-            <com.karambit.bookie.helper.CircleImageView
-                android:id="@+id/profilePictureImageView"
-                android:layout_width="88dp"
-                android:layout_height="88dp"
-                android:src="@drawable/placeholder_88dp"/>
+                <com.karambit.bookie.helper.CircleImageView
+                    android:id="@+id/profilePictureImageView"
+                    android:layout_width="88dp"
+                    android:layout_height="88dp"
+                    android:src="@drawable/placeholder_88dp"/>
 
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:textSize="14sp"
-                android:layout_marginTop="8dp"
-                android:textColor="@color/secondaryTextColor"
-                android:text="@string/change_photo"/>
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:text="@string/change_photo"
+                    android:textColor="@color/secondaryTextColor"
+                    android:textSize="14sp"/>
 
             </LinearLayout>
 
-<!--
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="56dp"
-                android:gravity="center_vertical"
-                android:text="@string/profile"
-                android:textAllCaps="true"
-                android:textColor="@color/primaryTextColor"
-                android:textSize="14sp"/>
--->
+            <!--
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="56dp"
+                            android:gravity="center_vertical"
+                            android:text="@string/profile"
+                            android:textAllCaps="true"
+                            android:textColor="@color/primaryTextColor"
+                            android:textSize="14sp"/>
+            -->
 
             <LinearLayout
                 android:layout_width="match_parent"
@@ -96,8 +101,8 @@
                 android:layout_marginTop="8dp"
                 android:background="@color/colorPrimaryDark"
                 android:hint="Write about yourself..."
-                android:padding="8dp"
                 android:inputType="textMultiLine|textCapSentences"
+                android:padding="8dp"
                 android:textColor="@color/primaryTextColor"
                 android:textColorHint="@color/secondaryTextColor"
                 android:textSize="16sp"/>
