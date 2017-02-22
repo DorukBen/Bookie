@@ -63,19 +63,19 @@ public class CurrentUserProfileSettingsActivity extends AppCompatActivity {
 
         mScrollView = (ScrollView) findViewById(R.id.settingsScrollView);
 
+        final ActionBar actionBar = getSupportActionBar();
+        if (actionBar != null) {
+            actionBar.setElevation(0);
+            SpannableString s = new SpannableString(getString(R.string.settings));
+            s.setSpan(new TypefaceSpan(this, "montserrat_regular.ttf"), 0, s.length(),
+                      Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+            actionBar.setTitle(s);
+
+            actionBar.setDisplayHomeAsUpEnabled(true);
+            actionBar.setHomeAsUpIndicator(R.drawable.ic_arrow_back_black_24dp);
+        }
+
         if (NetworkChecker.isNetworkAvailable(this)) {
-
-            final ActionBar actionBar = getSupportActionBar();
-            if (actionBar != null) {
-                actionBar.setElevation(0);
-                SpannableString s = new SpannableString(getString(R.string.settings));
-                s.setSpan(new TypefaceSpan(this, "montserrat_regular.ttf"), 0, s.length(),
-                          Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
-                actionBar.setTitle(s);
-
-                actionBar.setDisplayHomeAsUpEnabled(true);
-                actionBar.setHomeAsUpIndicator(R.drawable.ic_arrow_back_black_24dp);
-            }
 
             mCurrentUserDetails = SessionManager.getCurrentUserDetails(this);
 
@@ -201,10 +201,6 @@ public class CurrentUserProfileSettingsActivity extends AppCompatActivity {
             View noConnectionView = findViewById(R.id.noConnectionView);
             noConnectionView.setVisibility(View.VISIBLE);
             ((TextView) noConnectionView.findViewById(R.id.emptyStateTextView)).setText(R.string.no_internet_connection);
-
-            ActionBar actionBar = getSupportActionBar();
-            actionBar.setDisplayHomeAsUpEnabled(true);
-            actionBar.setHomeAsUpIndicator(R.drawable.ic_arrow_back_black_24dp);
         }
     }
 
