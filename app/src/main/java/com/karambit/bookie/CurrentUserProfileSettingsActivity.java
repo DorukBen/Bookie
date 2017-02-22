@@ -28,6 +28,7 @@ import android.widget.TextView;
 import com.bumptech.glide.Glide;
 import com.google.android.gms.maps.model.LatLng;
 import com.karambit.bookie.helper.CircleImageView;
+import com.karambit.bookie.helper.ComfortableProgressDialog;
 import com.karambit.bookie.helper.ElevationScrollListener;
 import com.karambit.bookie.helper.SessionManager;
 import com.karambit.bookie.helper.TypefaceSpan;
@@ -41,13 +42,16 @@ public class CurrentUserProfileSettingsActivity extends AppCompatActivity {
 
     private static final String TAG = CurrentUserProfileSettingsActivity.class.getSimpleName();
 
+    private static final int UPDATE_PROFILE_PICTURE_REQUEST_CODE = 1;
+
     public static final int RESULT_USER_LOGOUT = 1;
     public static final int RESULT_USER_UPDATED = 2;
-    public static final int REQUEST_CODE_CHANGE_PROFILE_PICTURE_ACTIVITY = 0;
 
     private TextView mLocationTextView;
     private Button mChangeLocationButton;
     private User.Details mCurrentUserDetails;
+    private EditText mUsernameEditText;
+    private EditText mBioEditText;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -68,8 +72,6 @@ public class CurrentUserProfileSettingsActivity extends AppCompatActivity {
 
         mCurrentUserDetails = SessionManager.getCurrentUserDetails(this);
 
-        mCurrentUserDetails.getUser().setLatitude(new LatLng(37, 41));
-
         final ScrollView scrollView = (ScrollView) findViewById(R.id.settingsScrollView);
 
         scrollView.getViewTreeObserver().addOnScrollChangedListener(new ViewTreeObserver.OnScrollChangedListener() {
@@ -82,13 +84,13 @@ public class CurrentUserProfileSettingsActivity extends AppCompatActivity {
             }
         });
 
-        EditText usernameEditText = (EditText) findViewById(R.id.userNameEditText);
-        usernameEditText.setText(mCurrentUserDetails.getUser().getName());
+        mUsernameEditText = (EditText) findViewById(R.id.userNameEditText);
+        mUsernameEditText.setText(mCurrentUserDetails.getUser().getName());
 
-        EditText bioEditText = (EditText) findViewById(R.id.bioEditText);
+        mBioEditText = (EditText) findViewById(R.id.bioEditText);
         String bio = mCurrentUserDetails.getBio();
         if (!TextUtils.isEmpty(bio) && !bio.equals("null")) {
-            bioEditText.setText(bio);
+            mBioEditText.setText(bio);
         }
 
         Button changePasswordButton = (Button) findViewById(R.id.changePasswordButton);
@@ -112,7 +114,9 @@ public class CurrentUserProfileSettingsActivity extends AppCompatActivity {
             @Override
             public void onClick(View v) {
                 Intent intent = new Intent(CurrentUserProfileSettingsActivity.this, PhotoViewerActivity.class);
-                startActivity(intent);
+                intent.putExtra("user", mCurrentUserDetails.getUser());
+                intent.putExtra("image", mCurrentUserDetails.getUser().getImageUrl());
+                startActivityForResult(intent, UPDATE_PROFILE_PICTURE_REQUEST_CODE);
             }
         });
 
@@ -135,7 +139,7 @@ public class CurrentUserProfileSettingsActivity extends AppCompatActivity {
         final Button feedbackSendButton = (Button) findViewById(R.id.feedbackSendButton);
         feedbackSendButton.setVisibility(View.GONE);
 
-        EditText feedbackEditText = (EditText) findViewById(R.id.feedbackEditText);
+        final EditText feedbackEditText = (EditText) findViewById(R.id.feedbackEditText);
 
         feedbackEditText.addTextChangedListener(new TextWatcher() {
             @Override
@@ -155,6 +159,16 @@ public class CurrentUserProfileSettingsActivity extends AppCompatActivity {
 
             @Override
             public void afterTextChanged(Editable s) {}
+        });
+
+        feedbackSendButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                sendFeedback();
+                feedbackEditText.clearFocus();
+                feedbackEditText.setText("");
+                feedbackSendButton.setVisibility(View.GONE);
+            }
         });
 
         Button logoutButton = (Button) findViewById(R.id.logoutButton);
@@ -177,6 +191,17 @@ public class CurrentUserProfileSettingsActivity extends AppCompatActivity {
         });
     }
 
+    @Override
+    public void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if (requestCode == UPDATE_PROFILE_PICTURE_REQUEST_CODE) {
+            if (resultCode == PhotoViewerActivity.RESULT_PROFILE_PICTURE_UPDATED) {
+                setResult(RESULT_USER_UPDATED);
+                finish();
+            }
+        }
+    }
+
     private void oldPasswordDialog() {
 
         final AlertDialog oldPasswordDialog = new AlertDialog.Builder(this).create();
@@ -197,8 +222,12 @@ public class CurrentUserProfileSettingsActivity extends AppCompatActivity {
                     oldPasswordEditText.setError(getString(R.string.false_combination));
 
                 } else {
+                    ComfortableProgressDialog progressDialog = new ComfortableProgressDialog(CurrentUserProfileSettingsActivity.this);
+                    progressDialog.setMessage(R.string.please_wait);
+                    progressDialog.setCancelable(false);
+                    // TODO progressDialog.show();
 
-                    // TODO Server and Progress Dialog
+                    // TODO Server
 
                     oldPasswordDialog.dismiss();
                     newPasswordDialog();
@@ -242,8 +271,12 @@ public class CurrentUserProfileSettingsActivity extends AppCompatActivity {
                     passwordAgainEditText.setError(getString(R.string.passwords_must_be_same));
 
                 } else {
+                    ComfortableProgressDialog progressDialog = new ComfortableProgressDialog(CurrentUserProfileSettingsActivity.this);
+                    progressDialog.setMessage(R.string.please_wait);
+                    progressDialog.setCancelable(false);
+                    // TODO progressDialog.show();
 
-                    // TODO Server and Progress Dialog
+                    // TODO Server
 
                     newPasswordDialog.dismiss();
                 }
@@ -326,7 +359,6 @@ public class CurrentUserProfileSettingsActivity extends AppCompatActivity {
                                 }
                             );
                         }
-
                     } catch (IOException e) {
                         e.printStackTrace();
 
@@ -388,16 +420,37 @@ public class CurrentUserProfileSettingsActivity extends AppCompatActivity {
     }
 
     private void saveChanges() {
+        ComfortableProgressDialog progressDialog = new ComfortableProgressDialog(this);
+        progressDialog.setMessage(R.string.please_wait);
+        progressDialog.setCancelable(false);
+        // TODO progressDialog.show();
+
+        String bioLabel = trimNewLines(mBioEditText.getText().toString());
+        String nameLabel = mUsernameEditText.getText().toString();
+
+        if (TextUtils.isEmpty(nameLabel)) {
+            mUsernameEditText.setError(getString(R.string.empty_field_message));
+        } else {
+
+            // TODO Server
+
+            setResult(RESULT_USER_UPDATED);
+
+            finish();
+        }
+    }
+
+    private void sendFeedback() {
+        ComfortableProgressDialog progressDialog = new ComfortableProgressDialog(this);
+        progressDialog.setMessage(R.string.please_wait);
+        progressDialog.setCancelable(false);
+        // TODO progressDialog.show();
 
         // TODO Server
-
-        setResult(RESULT_USER_UPDATED);
-
-        finish();
     }
 
     /**
-     * @param messageText Input
+     * @param text Input
      * @return Modified Input
      * <p>
      * This method removes unnecessary new lines in string. For example:
@@ -428,9 +481,9 @@ public class CurrentUserProfileSettingsActivity extends AppCompatActivity {
      * 6
      * 7"
      */
-    private String trimNewLines(String messageText) {
+    private String trimNewLines(String text) {
 
-        StringBuilder stringBuilder = new StringBuilder(messageText);
+        StringBuilder stringBuilder = new StringBuilder(text);
 
         for (int i = 0; i < stringBuilder.length() - 1; i++) {
             char currentChar = stringBuilder.charAt(i);
@@ -442,6 +495,6 @@ public class CurrentUserProfileSettingsActivity extends AppCompatActivity {
             }
         }
 
-        return stringBuilder.toString();
+        return stringBuilder.toString().trim();
     }
 }

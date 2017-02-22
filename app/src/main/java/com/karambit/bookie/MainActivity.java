@@ -295,7 +295,11 @@ public class MainActivity extends AppCompatActivity implements TabHost.OnTabChan
                     //Using SessionManager here to use startActivityForResult() on MainActivity
                     SessionManager.logout(getApplicationContext());
                     startActivityForResult(new Intent(this, LoginRegisterActivity.class), REQUEST_CODE_LOGIN_REGISTER_ACTIVITY);
+
+                } else if (resultCode == CurrentUserProfileSettingsActivity.RESULT_USER_UPDATED) {
+                    mProfileFragment.refreshProfilePage();
                 }
+
                 break;
 
             case REQUEST_CODE_ADD_BOOK_ACTIVITY:

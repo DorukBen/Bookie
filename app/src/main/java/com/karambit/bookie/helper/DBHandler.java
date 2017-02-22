@@ -108,6 +108,9 @@ public class DBHandler extends SQLiteOpenHelper {
 
     private final Context mContext;
 
+    // TODO Draconian synchronization (Synchronized singleton) {@see http://stackoverflow.com/a/11165926}
+    // TODO getApplicationContext() in constructor
+
     public DBHandler(Context context) {
         super(context, DATABASE_NAME, null, 1);
         mContext = context;
@@ -444,6 +447,53 @@ public class DBHandler extends SQLiteOpenHelper {
             }
             Log.i(TAG, "Current user's location updated");
         }
+    }
+
+    /**
+     * Update current user to database.<br>
+     *
+     * Using SQLiteOpenHelper. Can't access database simultaneously.<br>
+     *
+     * @param userDetails User.Details which will be insert.<br>
+     *
+     * @return {@link Boolean Boolean} result from executed database query. If query successful returns true else returns false.
+     */
+    public boolean updateCurrentUser(User.Details userDetails) {
+        SQLiteDatabase db = null;
+        boolean result = false;
+        try {
+            db = this.getWritableDatabase();
+            db.beginTransaction();
+
+            ContentValues contentValues = new ContentValues();
+            contentValues.put(USER_COLUMN_ID, userDetails.getUser().getID());
+            contentValues.put(USER_COLUMN_NAME, userDetails.getUser().getName());
+            contentValues.put(USER_COLUMN_IMAGE_URL, userDetails.getUser().getImageUrl());
+            contentValues.put(USER_COLUMN_THUMBNAIL_URL, userDetails.getUser().getThumbnailUrl());
+            contentValues.put(USER_COLUMN_LATITUDE, (userDetails.getUser().getLocation() != null) ? userDetails.getUser().getLocation().latitude : null);
+            contentValues.put(USER_COLUMN_LONGITUDE, (userDetails.getUser().getLocation() != null) ? userDetails.getUser().getLocation().longitude : null);
+            contentValues.put(USER_COLUMN_PASSWORD, userDetails.getPassword());
+            contentValues.put(USER_COLUMN_EMAIL, userDetails.getEmail());
+            contentValues.put(USER_COLUMN_VERIFIED, userDetails.isVerified());
+            contentValues.put(USER_COLUMN_BIO, userDetails.getBio());
+            contentValues.put(USER_COLUMN_BOOK_COUNTER, userDetails.getBookCounter());
+            contentValues.put(USER_COLUMN_POINT, userDetails.getPoint());
+
+            result = db.update(USER_TABLE_NAME, contentValues, USER_COLUMN_ID + "=" + SessionManager.getCurrentUser(mContext).getID(), null) > 0;
+        }finally {
+            if (db != null && db.isOpen()) {
+                db.setTransactionSuccessful();
+                db.endTransaction();
+                db.close();
+            }
+
+            if (result){
+                Log.i(TAG,"Current user insertion successful");
+            }else{
+                Log.e(TAG,"Error occurred during user insertion");
+            }
+        }
+        return result;
     }
 
     /**

@@ -2,7 +2,6 @@ package com.karambit.bookie.fragment;
 
 
 import android.content.Intent;
-import android.icu.text.LocaleDisplayNames;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
 import android.support.v7.widget.LinearLayoutManager;
@@ -11,10 +10,8 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.Toast;
 
 import com.karambit.bookie.BookActivity;
-import com.karambit.bookie.LoginRegisterActivity;
 import com.karambit.bookie.MainActivity;
 import com.karambit.bookie.PhotoViewerActivity;
 import com.karambit.bookie.ProfileActivity;
@@ -39,8 +36,6 @@ import okhttp3.ResponseBody;
 import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
-
-import static com.karambit.bookie.model.Book.State.READING;
 
 /**
  * A simple {@link Fragment} subclass.
@@ -210,6 +205,17 @@ public class ProfileFragment extends Fragment {
                                             mUserDetails.setReadBooks(Book.jsonArrayToBookList(responseObject.getJSONArray("readBooks")));
                                         }
                                     }
+
+                                    // TODO Save new details to local DB
+                                    // TODO Make this section threaded to prevent lag.
+                                    // Change DbHandler with synchronized Singleton pattern {@see http://stackoverflow.com/a/11165926}
+
+                                    //DBHandler dbHandler = new DBHandler(getContext().getApplicationContext());
+                                    //dbHandler.updateCurrentUser(mUserDetails);
+                                    //SessionManager.updateCurrentUser(getContext());
+
+                                    ////////////////////////////////////////////////////////////////////////////////////////
+
                                     mProfileTimelineAdapter.setUserDetails(mUserDetails);
                                 }
 
