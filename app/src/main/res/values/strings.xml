@@ -226,4 +226,5 @@
     <string name="block">Block</string>
     <string name="send_report_prompt">Send this report for %s?</string>
     <string name="block_prompt">Block %s?</string>
+    <string name="feedback_prompt">Send feedback?</string>
 </resources>

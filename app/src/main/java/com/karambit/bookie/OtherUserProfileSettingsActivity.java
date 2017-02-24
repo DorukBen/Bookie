@@ -23,6 +23,7 @@ import android.widget.RadioGroup;
 import android.widget.ScrollView;
 import android.widget.TextView;
 
+import com.karambit.bookie.helper.ComfortableProgressDialog;
 import com.karambit.bookie.helper.ElevationScrollListener;
 import com.karambit.bookie.helper.NetworkChecker;
 import com.karambit.bookie.helper.TypefaceSpan;
@@ -262,6 +263,11 @@ public class OtherUserProfileSettingsActivity extends AppCompatActivity {
     }
 
     private void sendReport() {
+
+        ComfortableProgressDialog progressDialog = new ComfortableProgressDialog(this);
+        progressDialog.setMessage(R.string.please_wait);
+        progressDialog.setCancelable(false);
+        // TODO progressDialog.show();
 
         String reportInfo = mReportEditText.getText().toString();
 

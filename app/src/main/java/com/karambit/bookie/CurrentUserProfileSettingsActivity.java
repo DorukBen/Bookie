@@ -142,7 +142,8 @@ public class CurrentUserProfileSettingsActivity extends AppCompatActivity {
             fetchLocation();
 
             final Button feedbackSendButton = (Button) findViewById(R.id.feedbackSendButton);
-            feedbackSendButton.setVisibility(View.GONE);
+            feedbackSendButton.setClickable(false);
+            feedbackSendButton.setTextColor(ContextCompat.getColor(CurrentUserProfileSettingsActivity.this, R.color.secondaryTextColor));
 
             final EditText feedbackEditText = (EditText) findViewById(R.id.feedbackEditText);
 
@@ -156,9 +157,11 @@ public class CurrentUserProfileSettingsActivity extends AppCompatActivity {
                     mScrollView.fullScroll(View.FOCUS_DOWN);
 
                     if (!TextUtils.isEmpty(s)) {
-                        feedbackSendButton.setVisibility(View.VISIBLE);
+                        feedbackSendButton.setClickable(true);
+                        feedbackSendButton.setTextColor(ContextCompat.getColor(CurrentUserProfileSettingsActivity.this, R.color.colorAccent));
                     } else {
-                        feedbackSendButton.setVisibility(View.GONE);
+                        feedbackSendButton.setClickable(false);
+                        feedbackSendButton.setTextColor(ContextCompat.getColor(CurrentUserProfileSettingsActivity.this, R.color.secondaryTextColor));
                     }
                 }
 
@@ -169,10 +172,22 @@ public class CurrentUserProfileSettingsActivity extends AppCompatActivity {
             feedbackSendButton.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View view) {
-                    sendFeedback();
-                    feedbackEditText.clearFocus();
-                    feedbackEditText.setText("");
-                    feedbackSendButton.setVisibility(View.GONE);
+                    new AlertDialog.Builder(CurrentUserProfileSettingsActivity.this)
+                        .setMessage(R.string.feedback_prompt)
+                        .setPositiveButton(R.string.send, new DialogInterface.OnClickListener() {
+                            @Override
+                            public void onClick(DialogInterface dialogInterface, int i) {
+
+                                sendFeedback();
+
+                                feedbackEditText.clearFocus();
+                                feedbackEditText.setText("");
+                                feedbackSendButton.setVisibility(View.GONE);
+                            }
+                        })
+                        .setNegativeButton(android.R.string.cancel, null)
+                        .create()
+                        .show();
                 }
             });
 
