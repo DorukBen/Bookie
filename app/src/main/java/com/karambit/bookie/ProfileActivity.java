@@ -3,13 +3,15 @@ package com.karambit.bookie;
 import android.content.Context;
 import android.content.Intent;
 import android.content.res.Resources;
-import android.support.v4.app.FragmentTransaction;
-import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.support.v4.app.FragmentTransaction;
+import android.support.v7.app.ActionBar;
+import android.support.v7.app.AppCompatActivity;
 import android.text.Spannable;
 import android.text.SpannableString;
 import android.text.style.AbsoluteSizeSpan;
 import android.util.DisplayMetrics;
+import android.util.Log;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
@@ -20,15 +22,20 @@ import com.karambit.bookie.model.User;
 
 public class ProfileActivity extends AppCompatActivity {
 
+    private static final String TAG = ProfileActivity.class.getSimpleName();
+
     public final static String USER = "user";
-    private android.support.v7.app.ActionBar mAcitonBar;
+    private static final int REQUEST_OTHER_USER_SETTINGS = 111;
+
+    private ActionBar mActionBar;
+    private User mUser;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_profile);
 
-        mAcitonBar = getSupportActionBar();
+        mActionBar = getSupportActionBar();
 
         //Changes action bar font style by getting font.ttf from assets/fonts action bars font style doesn't
         // change from styles.xml
@@ -38,13 +45,14 @@ public class ProfileActivity extends AppCompatActivity {
         s.setSpan(new AbsoluteSizeSpan((int)convertDpToPixel(32, this)), 0, s.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
 
         // Update the action bar title with the TypefaceSpan instance
-        if(mAcitonBar != null){
-            mAcitonBar.setTitle(s);
-            mAcitonBar.setElevation(0);
+        if(mActionBar != null){
+            mActionBar.setTitle(s);
+            mActionBar.setElevation(0);
         }
 
         Bundle bundle = getIntent().getExtras();
-        ProfileFragment profileFragment = ProfileFragment.newInstance((User) bundle.getParcelable(USER));
+        mUser = bundle.getParcelable(USER);
+        ProfileFragment profileFragment = ProfileFragment.newInstance(mUser);
         FragmentTransaction transaction = getSupportFragmentManager().beginTransaction();
         transaction.add(R.id.profileFragmentFrame, profileFragment );
         transaction.commit();
@@ -63,18 +71,31 @@ public class ProfileActivity extends AppCompatActivity {
     public boolean onOptionsItemSelected(MenuItem item) {
         switch (item.getItemId()) {
             case R.id.action_more:
-                startActivity(new Intent(this,OtherUserProfileSettingsActivity.class));
+                Intent intent = new Intent(this, OtherUserProfileSettingsActivity.class);
+                intent.putExtra("user", mUser);
+                startActivityForResult(intent, REQUEST_OTHER_USER_SETTINGS);
                 return true;
 
             default:
-                startActivity(new Intent(this,OtherUserProfileSettingsActivity.class));
                 return super.onOptionsItemSelected(item);
+        }
+    }
 
+    @Override
+    public void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if (requestCode == REQUEST_OTHER_USER_SETTINGS) {
+            if (resultCode == OtherUserProfileSettingsActivity.RESULT_USER_BLOCKED) {
+
+                // TODO Block user
+                Log.i(TAG, mUser.getName() + " blocked");
+                finish();
+            }
         }
     }
 
     public void setActionBarElevation(float dp) {
-        mAcitonBar.setElevation(dp);
+        mActionBar.setElevation(dp);
     }
 
     /**

@@ -203,8 +203,8 @@
                 android:layout_gravity="right"
                 android:text="@string/send"
                 android:textAllCaps="true"
-                android:textColor="@color/colorAccent"
-                android:visibility="gone"/>
+                android:textColor="@color/secondaryTextColor"
+                android:visibility="visible"/>
 
             <View
                 android:layout_width="match_parent"

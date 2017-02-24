@@ -19,7 +19,6 @@ import okhttp3.logging.HttpLoggingInterceptor;
 import retrofit2.Retrofit;
 import retrofit2.converter.gson.GsonConverterFactory;
 
-import static okhttp3.logging.HttpLoggingInterceptor.Level.HEADERS;
 import static okhttp3.logging.HttpLoggingInterceptor.Level.NONE;
 
 /**
@@ -29,7 +28,7 @@ import static okhttp3.logging.HttpLoggingInterceptor.Level.NONE;
 public class BookieClient {
 
     public static final String TAG = BookieClient.class.getSimpleName();
-    public static final String BASE_URL = "http://82.165.97.141/api/";
+    public static final String BASE_URL = "http://82.165.97.141:4000/api/";
     public static final String CACHE_FILE_NAME = "http-cache";
     private static final String CACHE_CONTROL = "Cache-Control";
     private static final String PRAGMA_HEADER = "Pragma";

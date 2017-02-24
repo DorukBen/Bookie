@@ -52,7 +52,8 @@
             android:screenOrientation="portrait"></activity>
         <activity
             android:name=".OtherUserProfileSettingsActivity"
-            android:screenOrientation="portrait"></activity>
+            android:screenOrientation="portrait"
+            android:windowSoftInputMode="adjustResize"></activity>
         <activity
             android:name=".BookSettingsActivity"
             android:screenOrientation="portrait"></activity>
