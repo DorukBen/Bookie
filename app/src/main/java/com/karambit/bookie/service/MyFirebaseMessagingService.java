@@ -47,6 +47,7 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.IOException;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.Calendar;
 
@@ -160,7 +161,8 @@ public class MyFirebaseMessagingService extends com.google.firebase.messaging.Fi
      */
     private void sendMessageNotification(Message message) {
 
-        Bitmap bitmap = BitmapFactory.decodeResource(getResources(), R.mipmap.ic_launcher);
+
+        Bitmap bitmap;
         NotificationManager nManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
 
         Uri defaultSoundUri= RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION);
@@ -190,6 +192,8 @@ public class MyFirebaseMessagingService extends com.google.firebase.messaging.Fi
 
             PendingIntent pendingIntent = PendingIntent.getActivity(this, 0 /* Request code */, intent,
                     PendingIntent.FLAG_UPDATE_CURRENT);
+
+            bitmap = BitmapFactory.decodeResource(getResources(), R.mipmap.ic_launcher);
 
             builder = new NotificationCompat.Builder(this)
                     .setContentTitle(getString(R.string.app_name))
@@ -224,6 +228,14 @@ public class MyFirebaseMessagingService extends com.google.firebase.messaging.Fi
 
             PendingIntent pendingIntent = PendingIntent.getActivity(this, 0 /* Request code */, intent,
                     PendingIntent.FLAG_UPDATE_CURRENT);
+
+            try {
+                URL url = new URL(message.getSender().getThumbnailUrl());
+                bitmap = BitmapFactory.decodeStream(url.openConnection().getInputStream());
+            } catch(IOException e) {
+                System.out.println(e);
+                bitmap = BitmapFactory.decodeResource(getResources(), R.mipmap.ic_launcher);
+            }
 
             builder = new NotificationCompat.Builder(this)
                     .setContentTitle(message.getSender().getName())
