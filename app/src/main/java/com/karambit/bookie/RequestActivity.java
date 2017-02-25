@@ -310,6 +310,9 @@ public class RequestActivity extends AppCompatActivity {
                                     mRequestAdapter.notifyItemRemoved(index);
 
                                     for (Book.Request r : mRequests) {
+                                        User tmpUser = r.getToUser();
+                                        r.setToUser(r.getFromUser());
+                                        r.setFromUser(tmpUser);
                                         r.setRequestType(Book.RequestType.REJECT);
                                     }
 
@@ -321,6 +324,9 @@ public class RequestActivity extends AppCompatActivity {
                                 }else if (request.getRequestType() == Book.RequestType.REJECT){
                                     int indexBefore = mRequests.indexOf(oldRequest);
                                     oldRequest.setRequestType(Book.RequestType.REJECT);
+                                    User tmpUser = oldRequest.getToUser();
+                                    oldRequest.setToUser(oldRequest.getFromUser());
+                                    oldRequest.setFromUser(tmpUser);
                                     Collections.sort(mRequests);
                                     int indexAfter = mRequests.indexOf(oldRequest) + 1; // Subtitle
                                     mRequestAdapter.notifyItemMoved(indexBefore, indexAfter);
@@ -377,11 +383,12 @@ public class RequestActivity extends AppCompatActivity {
     private void setAcceptedRequestText(final Book.Request request) {
         mAcceptedRequestTextView.setVisibility(View.VISIBLE);
 
-        String toUserName = request.getToUser().getName();
-        String acceptRequestString = getString(R.string.you_accepted_request, toUserName);
+
+        String anotherUserName = (request.getToUser().getID() == SessionManager.getCurrentUser(getApplicationContext()).getID())?request.getFromUser().getName():request.getToUser().getName();
+        String acceptRequestString = getString(R.string.you_accepted_request, anotherUserName);
         SpannableString spanAcceptRequest = new SpannableString(acceptRequestString);
-        int startIndex = acceptRequestString.indexOf(toUserName);
-        int endIndex = startIndex + toUserName.length();
+        int startIndex = acceptRequestString.indexOf(anotherUserName);
+        int endIndex = startIndex + anotherUserName.length();
 
         spanAcceptRequest.setSpan(new ClickableSpan() {
             @Override
