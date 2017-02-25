@@ -1,13 +1,13 @@
 package com.karambit.bookie;
 
 import android.app.AlertDialog;
+import android.app.NotificationManager;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.os.Bundle;
-import android.support.v4.content.ContextCompat;
 import android.support.v7.app.ActionBar;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.LinearLayoutManager;
@@ -29,17 +29,15 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.karambit.bookie.adapter.ConversationAdapter;
-import com.karambit.bookie.helper.ComfortableProgressDialog;
 import com.karambit.bookie.helper.DBHandler;
 import com.karambit.bookie.helper.SessionManager;
 import com.karambit.bookie.helper.TypefaceSpan;
-import com.karambit.bookie.model.Book;
 import com.karambit.bookie.model.Message;
 import com.karambit.bookie.model.User;
-import com.karambit.bookie.rest_api.BookApi;
 import com.karambit.bookie.rest_api.BookieClient;
 import com.karambit.bookie.rest_api.ErrorCodes;
 import com.karambit.bookie.rest_api.FcmApi;
+import com.karambit.bookie.service.MyFirebaseMessagingService;
 
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -50,6 +48,7 @@ import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Collections;
 import java.util.Locale;
+import java.util.Objects;
 
 import okhttp3.ResponseBody;
 import retrofit2.Call;
@@ -62,6 +61,8 @@ public class ConversationActivity extends AppCompatActivity {
 
     public static final int MESSAGE_INSERTED = 1;
     public static final int ALL_MESSAGES_DELETED = 2;
+
+    public static Integer currentConversationUserId = -1;
 
     private User mOppositeUser;
     private DBHandler mDbHandler;
@@ -293,6 +294,20 @@ public class ConversationActivity extends AppCompatActivity {
     @Override
     protected void onResume() {
         super.onResume();
+        currentConversationUserId = mOppositeUser.getID();
+
+        for (Message message: MyFirebaseMessagingService.mNotificationMessages){
+            if (message.getSender().getID() == currentConversationUserId){
+                MyFirebaseMessagingService.mNotificationMessages.remove(message);
+            }
+        }
+
+        if (MyFirebaseMessagingService.mNotificationUserIds.contains(currentConversationUserId)){
+            MyFirebaseMessagingService.mNotificationUserIds.remove(currentConversationUserId);
+        }
+
+        NotificationManager notificationManager = (NotificationManager)getSystemService(Context.NOTIFICATION_SERVICE);
+        notificationManager.cancel(MyFirebaseMessagingService.MESSAGE_NOTIFICATION_ID);
 
         mMessageReceiver = new BroadcastReceiver() {
             @Override
@@ -344,6 +359,7 @@ public class ConversationActivity extends AppCompatActivity {
     protected void onPause() {
         super.onPause();
 
+        currentConversationUserId = -1;
         unregisterReceiver(mMessageReceiver);
     }
 

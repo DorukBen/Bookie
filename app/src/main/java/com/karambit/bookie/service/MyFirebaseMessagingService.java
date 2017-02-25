@@ -30,6 +30,7 @@ import android.util.Log;
 
 import com.google.firebase.messaging.FirebaseMessagingService;
 import com.google.firebase.messaging.RemoteMessage;
+import com.karambit.bookie.ConversationActivity;
 import com.karambit.bookie.MainActivity;
 import com.karambit.bookie.R;
 import com.karambit.bookie.helper.DBHandler;
@@ -48,19 +49,18 @@ import org.json.JSONObject;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Calendar;
-import java.util.Collections;
 
 import okhttp3.ResponseBody;
 import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
 
-public class MyFirebaseMessagingService extends FirebaseMessagingService {
+public class MyFirebaseMessagingService extends com.google.firebase.messaging.FirebaseMessagingService {
 
     private static final String TAG = "FirebaseMsgService";
-    private static final int MESSAGE_NOTIFICATION_ID = 3000;
-    private static ArrayList<Message> mNotificationMessages = new ArrayList<>();
-    private static ArrayList<Integer> mNotificationUserIds = new ArrayList<>();
+    public static final int MESSAGE_NOTIFICATION_ID = 3000;
+    public static ArrayList<Message> mNotificationMessages = new ArrayList<>();
+    public static ArrayList<Integer> mNotificationUserIds = new ArrayList<>();
 
     /**
      * Called when message is received.
@@ -100,7 +100,9 @@ public class MyFirebaseMessagingService extends FirebaseMessagingService {
                                     Calendar.getInstance(),
                                     Message.State.DELIVERED);
 
-                            sendMessageNotification(message);
+                            if (ConversationActivity.currentConversationUserId != message.getSender().getID()){
+                                sendMessageNotification(message);
+                            }
 
                             DBHandler dbHandler = new DBHandler(getApplicationContext());
                             dbHandler.saveMessageToDataBase(message);
@@ -197,7 +199,8 @@ public class MyFirebaseMessagingService extends FirebaseMessagingService {
                     .setSound(defaultSoundUri)
                     .setAutoCancel(true)
                     .setStyle(inboxStyle)
-                    .setPriority(10000)
+                    .setDefaults(android.app.Notification.DEFAULT_ALL)
+                    .setPriority(android.app.Notification.PRIORITY_MAX)
                     .setContentIntent(pendingIntent);
         } else {
             inboxStyle.setBigContentTitle(message.getSender().getName());
@@ -229,7 +232,8 @@ public class MyFirebaseMessagingService extends FirebaseMessagingService {
                     .setLargeIcon(bitmap)
                     .setSound(defaultSoundUri)
                     .setAutoCancel(true)
-                    .setPriority(10000)
+                    .setPriority(android.app.Notification.PRIORITY_MAX)
+                    .setDefaults(android.app.Notification.DEFAULT_ALL)
                     .setStyle(inboxStyle)
                     .setContentIntent(pendingIntent);
         }
