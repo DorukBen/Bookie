@@ -55,7 +55,7 @@ public class NotificationActivity extends AppCompatActivity {
             dbHandler.saveNotificationToDatabase(notification);
         }
 
-        NotificationAdapter notificationAdapter = new NotificationAdapter(this, dbHandler.getAllNotifications(dbHandler.getAllNotificationUsers(), dbHandler.getAllNotificationBooks(dbHandler.getAllBookUsers())));
+        NotificationAdapter notificationAdapter = new NotificationAdapter(this, dbHandler.getAllNotifications(dbHandler.getAllNotificationUsers(), dbHandler.getAllNotificationBooks(dbHandler.getAllNotificationBookUsers())));
 
         notificationAdapter.setSpanTextClickListeners(new NotificationAdapter.SpanTextClickListeners() {
             @Override

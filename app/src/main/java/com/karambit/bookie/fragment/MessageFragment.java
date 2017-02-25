@@ -270,8 +270,6 @@ public class MessageFragment extends Fragment {
      */
     public void fetchMessages() {
 
-        mPullRefreshLayout.setRefreshing(true);
-
         new Thread(new Runnable() {
             @Override
             public void run() {
