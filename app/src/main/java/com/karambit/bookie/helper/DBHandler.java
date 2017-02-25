@@ -661,7 +661,7 @@ public class DBHandler extends SQLiteOpenHelper {
             contentValues.put(MESSAGE_COLUMN_CREATED_AT, message.getCreatedAt().getTimeInMillis());
             contentValues.put(MESSAGE_COLUMN_STATE, message.getState().ordinal());
 
-            result = db.insert(MESSAGE_TABLE_NAME, null, contentValues) > 0;
+            result = db.insert(MESSAGE_TABLE_NAME, null, contentValues) < 0;
         }finally {
             if (db != null && db.isOpen()){
                 db.setTransactionSuccessful();
@@ -672,6 +672,24 @@ public class DBHandler extends SQLiteOpenHelper {
         }
 
         return result;
+    }
+
+    /**
+     * Saves massage to database if message user not exist inserts message user too.
+     *
+     * Use this method instead of {@link DBHandler#insertMessage(Message) insert message}.
+     *
+     * Using SQLiteOpenHelper. Can't access database simultaneously.<br>
+     *
+     * @param message New {@link Message message}<br>
+     *
+     * @return boolean value if insertion successful returns true else returns false.
+     */
+    public boolean saveMessageToDataBase(Message message){
+        if (!isMessageUserExists(message.getOppositeUser(SessionManager.getCurrentUser(mContext)))){
+            insertMessageUser(message.getOppositeUser(SessionManager.getCurrentUser(mContext)));
+        }
+        return insertMessage(message);
     }
 
     /**
@@ -901,26 +919,31 @@ public class DBHandler extends SQLiteOpenHelper {
                     + "LIMIT 1", null);
             res.moveToFirst();
 
-            Calendar calendar = Calendar.getInstance();
-            long time = res.getLong(res.getColumnIndex(MESSAGE_COLUMN_CREATED_AT)); //replace 4 with the column index
-            calendar.setTimeInMillis(time);
+            if (res.getCount() >  0){
+                Calendar calendar = Calendar.getInstance();
+                long time = res.getLong(res.getColumnIndex(MESSAGE_COLUMN_CREATED_AT)); //replace 4 with the column index
+                calendar.setTimeInMillis(time);
 
 
-            if (res.getInt(res.getColumnIndex(MESSAGE_COLUMN_FROM_USER_ID)) == SessionManager.getCurrentUser(mContext.getApplicationContext()).getID()){
-                message = new Message(res.getInt(res.getColumnIndex(MESSAGE_COLUMN_ID)),
-                        res.getString(res.getColumnIndex(MESSAGE_COLUMN_TEXT)),
-                        currentUser,
-                        anotherUser,
-                        calendar,
-                        Message.State.values()[res.getInt(res.getColumnIndex(MESSAGE_COLUMN_STATE))]);
-            }else{
-                message = new Message(res.getInt(res.getColumnIndex(MESSAGE_COLUMN_ID)),
-                        res.getString(res.getColumnIndex(MESSAGE_COLUMN_TEXT)),
-                        anotherUser,
-                        currentUser,
-                        calendar,
-                        Message.State.values()[res.getInt(res.getColumnIndex(MESSAGE_COLUMN_STATE))]);
+                if (res.getInt(res.getColumnIndex(MESSAGE_COLUMN_FROM_USER_ID)) == SessionManager.getCurrentUser(mContext.getApplicationContext()).getID()){
+                    message = new Message(res.getInt(res.getColumnIndex(MESSAGE_COLUMN_ID)),
+                            res.getString(res.getColumnIndex(MESSAGE_COLUMN_TEXT)),
+                            currentUser,
+                            anotherUser,
+                            calendar,
+                            Message.State.values()[res.getInt(res.getColumnIndex(MESSAGE_COLUMN_STATE))]);
+                }else{
+                    message = new Message(res.getInt(res.getColumnIndex(MESSAGE_COLUMN_ID)),
+                            res.getString(res.getColumnIndex(MESSAGE_COLUMN_TEXT)),
+                            anotherUser,
+                            currentUser,
+                            calendar,
+                            Message.State.values()[res.getInt(res.getColumnIndex(MESSAGE_COLUMN_STATE))]);
+                }
+            }else {
+                message = null;
             }
+
         }finally {
             if (res != null) {
                 res.close();
@@ -974,7 +997,12 @@ public class DBHandler extends SQLiteOpenHelper {
                     " LIMIT 1", null);
             res.moveToFirst();
 
-            lastMessageId = res.getInt(res.getColumnIndex(MESSAGE_COLUMN_ID));
+            if (res.getCount() > 0){
+                lastMessageId = res.getInt(res.getColumnIndex(MESSAGE_COLUMN_ID));
+            }else {
+                lastMessageId = -1;
+            }
+
 
         } finally {
             if (res != null){
@@ -1200,7 +1228,7 @@ public class DBHandler extends SQLiteOpenHelper {
         try {
             db = this.getReadableDatabase();
             db.beginTransaction();
-            res = db.rawQuery("SELECT * FROM " + MESSAGE_USER_TABLE_NAME + " WHERE " + USER_COLUMN_ID  + " = " + user.getID(), null);
+            res = db.rawQuery("SELECT * FROM " + MESSAGE_USER_TABLE_NAME + " WHERE " + MESSAGE_USER_COLUMN_ID  + " = " + user.getID(), null);
             res.moveToFirst();
 
             return res.getCount() > 0;
@@ -1336,6 +1364,27 @@ public class DBHandler extends SQLiteOpenHelper {
 
             db.delete(MESSAGE_USER_TABLE_NAME, null, null);
             db.delete(MESSAGE_TABLE_NAME, null, null);
+
+        } finally {
+            if (db != null && db.isOpen()){
+                db.setTransactionSuccessful();
+                db.endTransaction();
+                db.close();
+            }
+        }
+        Log.i(TAG, "All Message Users and Messages deleted from database");
+    }
+
+    public void deleteAllNotifications() {
+        SQLiteDatabase db = null;
+        try{
+            db = this.getWritableDatabase();
+            db.beginTransaction();
+
+            db.delete(NOTIFICATION_TABLE_NAME, null, null);
+            db.delete(NOTIFICATION_BOOK_TABLE_NAME, null, null);
+            db.delete(BOOK_USER_TABLE_NAME, null, null);
+            db.delete(NOTIFICATION_USER_TABLE_NAME, null, null);
 
         } finally {
             if (db != null && db.isOpen()){

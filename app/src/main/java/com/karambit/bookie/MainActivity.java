@@ -29,15 +29,30 @@ import com.karambit.bookie.fragment.HomeFragment;
 import com.karambit.bookie.fragment.MessageFragment;
 import com.karambit.bookie.fragment.ProfileFragment;
 import com.karambit.bookie.fragment.SearchFragment;
+import com.karambit.bookie.helper.DBHandler;
 import com.karambit.bookie.helper.SessionManager;
 import com.karambit.bookie.helper.TabFactory;
 import com.karambit.bookie.helper.TypefaceSpan;
 import com.karambit.bookie.helper.ViewPagerAdapter;
+import com.karambit.bookie.model.User;
+import com.karambit.bookie.rest_api.BookieClient;
+import com.karambit.bookie.rest_api.ErrorCodes;
+import com.karambit.bookie.rest_api.FcmApi;
+import com.karambit.bookie.service.FcmPrefManager;
 
+import org.json.JSONException;
+import org.json.JSONObject;
+
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
+
+import okhttp3.ResponseBody;
+import retrofit2.Call;
+import retrofit2.Callback;
+import retrofit2.Response;
 
 public class MainActivity extends AppCompatActivity implements TabHost.OnTabChangeListener {
 
@@ -45,6 +60,7 @@ public class MainActivity extends AppCompatActivity implements TabHost.OnTabChan
     private static final int REQUEST_CODE_LOGIN_REGISTER_ACTIVITY = 1;
     private static final int REQUEST_CODE_CURRENT_USER_PROFILE_SETTINGS_ACTIVITY = 2;
     private static final int REQUEST_CODE_ADD_BOOK_ACTIVITY = 3;
+    private static final int REQUEST_CODE_IS_ALL_MESSAGES_DELETED = 1007;
     private TabHost mTabHost;
     private ViewPager mViewPager;
     private int mOldPos = 0; //Specifys old position for tab view
@@ -273,6 +289,11 @@ public class MainActivity extends AppCompatActivity implements TabHost.OnTabChan
             case REQUEST_CODE_LOGIN_REGISTER_ACTIVITY:
                 if (resultCode == Activity.RESULT_OK){
 
+                    FcmPrefManager fcmPrefManager = new FcmPrefManager(MainActivity.this);
+                    if (!fcmPrefManager.isUploadedToServer()){
+                        sendRegistrationToServer(fcmPrefManager.getFcmToken());
+                    }
+
                     if (!SessionManager.isLovedGenresSelectedLocal(this)) {
                         startActivity(new Intent(this, LovedGenresActivity.class));
                     }
@@ -303,6 +324,14 @@ public class MainActivity extends AppCompatActivity implements TabHost.OnTabChan
                     mProfileFragment.refreshProfilePage();
                 }
                 break;
+
+            case REQUEST_CODE_IS_ALL_MESSAGES_DELETED:
+                if (resultCode == ConversationActivity.ALL_MESSAGES_DELETED){
+                    DBHandler dbHandler = new DBHandler(getApplicationContext());
+                    dbHandler.deleteMessageUser((User) data.getParcelableExtra("opposite_user"));
+                    dbHandler.deleteMessageUsersConversation((User) data.getParcelableExtra("opposite_user"));
+                }
+                break;
         }
     }
 
@@ -324,6 +353,24 @@ public class MainActivity extends AppCompatActivity implements TabHost.OnTabChan
         }
 
         return super.dispatchTouchEvent(ev);
+    }
+
+    @Override
+    protected void onNewIntent(Intent intent) {
+        super.onNewIntent(intent);
+
+        if (intent.getParcelableExtra("message_user") != null){
+            DBHandler dbHandler = new DBHandler(getApplicationContext());
+            if (dbHandler.isMessageUserExists((User)intent.getParcelableExtra("message_user"))){
+                Intent conversationIntent = new Intent(this, ConversationActivity.class);
+
+                conversationIntent.putExtra("user", intent.getParcelableExtra("message_user"));
+                startActivityForResult(conversationIntent, REQUEST_CODE_IS_ALL_MESSAGES_DELETED);
+            }
+        }
+
+        mViewPager.setCurrentItem(4, false);
+        mTabHost.setCurrentTab(4);
     }
 
     public void setActionBarElevation(float dp, int tabIndex) {
@@ -409,5 +456,62 @@ public class MainActivity extends AppCompatActivity implements TabHost.OnTabChan
         DisplayMetrics metrics = resources.getDisplayMetrics();
         float px = dp * ((float)metrics.densityDpi / DisplayMetrics.DENSITY_DEFAULT);
         return px;
+    }
+
+    private void sendRegistrationToServer(final String token) {
+        final FcmApi fcmApi = BookieClient.getClient().create(FcmApi.class);
+        String email = SessionManager.getCurrentUserDetails(getApplicationContext()).getEmail();
+        String password = SessionManager.getCurrentUserDetails(getApplicationContext()).getPassword();
+        Call<ResponseBody> sendTokenToServer = fcmApi.sendFcmTokenToServer(email, password, token);
+
+        sendTokenToServer.enqueue(new Callback<ResponseBody>() {
+            @Override
+            public void onResponse(Call<ResponseBody> call, Response<ResponseBody> response) {
+
+                try {
+                    if (response != null){
+                        if (response.body() != null){
+                            String json = response.body().string();
+
+                            JSONObject responseObject = new JSONObject(json);
+                            boolean error = responseObject.getBoolean("error");
+
+                            if (!error) {
+                                FcmPrefManager fcmPrefManager = new FcmPrefManager(MainActivity.this);
+                                fcmPrefManager.setUploadedToServer(true);
+
+                                Log.i(TAG, "Token sent completed successfuly");
+                            } else {
+                                int errorCode = responseObject.getInt("errorCode");
+
+                                if (errorCode == ErrorCodes.EMPTY_POST){
+                                    Log.e(TAG, "Post is empty. (Book Page Error)");
+                                }else if (errorCode == ErrorCodes.MISSING_POST_ELEMENT){
+                                    Log.e(TAG, "Post element missing. (Book Page Error)");
+                                }else if (errorCode == ErrorCodes.INVALID_REQUEST){
+                                    Log.e(TAG, "Invalid request. (Book Page Error)");
+                                }else if (errorCode == ErrorCodes.INVALID_EMAIL){
+                                    Log.e(TAG, "Invalid email. (Book Page Error)");
+                                }else if (errorCode == ErrorCodes.UNKNOWN){
+                                    Log.e(TAG, "onResponse: errorCode = " + errorCode);
+                                }
+                            }
+                        }else{
+                            Log.e(TAG, "Response body is null. (Book Page Error)");
+                        }
+                    }else {
+                        Log.e(TAG, "Response object is null. (Book Page Error)");
+                    }
+                } catch (IOException | JSONException e) {
+                    e.printStackTrace();
+                }
+            }
+
+            @Override
+            public void onFailure(Call<ResponseBody> call, Throwable t) {
+                Log.e(TAG, "Book Page onFailure: " + t.getMessage());
+                sendRegistrationToServer(token);
+            }
+        });
     }
 }

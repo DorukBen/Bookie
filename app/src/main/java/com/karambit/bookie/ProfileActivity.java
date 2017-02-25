@@ -15,12 +15,14 @@ import android.view.MenuInflater;
 import android.view.MenuItem;
 
 import com.karambit.bookie.fragment.ProfileFragment;
+import com.karambit.bookie.helper.DBHandler;
 import com.karambit.bookie.helper.TypefaceSpan;
 import com.karambit.bookie.model.User;
 
 public class ProfileActivity extends AppCompatActivity {
 
     public final static String USER = "user";
+    public final static int MESSAGE_PROCESS_REQUEST_CODE = 1006;
     private android.support.v7.app.ActionBar mAcitonBar;
 
     @Override
@@ -53,8 +55,7 @@ public class ProfileActivity extends AppCompatActivity {
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         MenuInflater inflater = getMenuInflater();
-        inflater.inflate(R.menu.main_menu, menu);
-        menu.findItem(R.id.action_more).setVisible(true);
+        inflater.inflate(R.menu.other_user_menu, menu);
 
         return super.onCreateOptionsMenu(menu);
     }
@@ -66,10 +67,30 @@ public class ProfileActivity extends AppCompatActivity {
                 startActivity(new Intent(this,UserProfileSettingsActivity.class));
                 return true;
 
+            case R.id.action_message:
+                Bundle bundle = getIntent().getExtras();
+
+                Intent intent = new Intent(this,ConversationActivity.class);
+                intent.putExtra(USER, bundle.getParcelable(USER));
+                startActivityForResult(intent, MESSAGE_PROCESS_REQUEST_CODE);
+                return true;
+
             default:
                 startActivity(new Intent(this,UserProfileSettingsActivity.class));
                 return super.onOptionsItemSelected(item);
 
+        }
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if (requestCode == MESSAGE_PROCESS_REQUEST_CODE){
+            if (resultCode == ConversationActivity.ALL_MESSAGES_DELETED){
+                DBHandler dbHandler = new DBHandler(getApplicationContext());
+                dbHandler.deleteMessageUser((User) data.getParcelableExtra("opposite_user"));
+                dbHandler.deleteMessageUsersConversation((User) data.getParcelableExtra("opposite_user"));
+            }
         }
     }
 

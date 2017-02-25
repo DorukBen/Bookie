@@ -31,6 +31,7 @@ import android.widget.Toast;
 
 import com.karambit.bookie.adapter.HomeTimelineAdapter;
 import com.karambit.bookie.adapter.RequestAdapter;
+import com.karambit.bookie.helper.ComfortableProgressDialog;
 import com.karambit.bookie.helper.ElevationScrollListener;
 import com.karambit.bookie.helper.LayoutUtils;
 import com.karambit.bookie.helper.NetworkChecker;
@@ -63,7 +64,7 @@ public class RequestActivity extends AppCompatActivity {
 
     private static final String TAG = RequestActivity.class.getSimpleName();
 
-    private static final int REQUESTS_MODIFIED = 0;
+    public static final int REQUESTS_MODIFIED = 1005;
 
     private Book mBook;
     private ArrayList<Book.Request> mRequests = new ArrayList<>();
@@ -133,32 +134,31 @@ public class RequestActivity extends AppCompatActivity {
 
             @Override
             public void onAcceptClick(final Book.Request request) {
-                new AlertDialog.Builder(RequestActivity.this)
-                    .setMessage(getString(R.string.accept_request_prompt, request.getFromUser().getName()))
-                    .setPositiveButton(R.string.accept, new DialogInterface.OnClickListener() {
-                        @Override
-                        public void onClick(DialogInterface dialog, int which) {
-
-                            // TODO Server
-
-                            int index = mRequests.indexOf(request);
-                            mRequests.remove(index);
-                            mRequestAdapter.notifyItemRemoved(index);
-
-                            for (Book.Request r : mRequests) {
-                                r.setRequestType(Book.RequestType.REJECT);
-                            }
-
-                            mRequestAdapter.notifyDataSetChanged();
-
-                            setAcceptedRequestText(request);
-
-                            setResult(REQUESTS_MODIFIED); // for refreshing previous page
-                        }
-                    })
-                    .setNegativeButton(android.R.string.no, null)
-                    .create()
-                    .show();
+                if (mBook.getState() == Book.State.READING){
+                    new AlertDialog.Builder(RequestActivity.this)
+                            .setMessage(getString(R.string.accept_request_prompt_when_state_reading, request.getFromUser().getName()))
+                            .setPositiveButton(R.string.accept, new DialogInterface.OnClickListener() {
+                                @Override
+                                public void onClick(DialogInterface dialog, int which) {
+                                    addBookRequestToServer(request.getBook().new Request(Book.RequestType.ACCEPT, request.getFromUser(), request.getToUser(),request.getCreatedAt()), request);
+                                }
+                            })
+                            .setNegativeButton(android.R.string.no, null)
+                            .create()
+                            .show();
+                }else {
+                    new AlertDialog.Builder(RequestActivity.this)
+                            .setMessage(getString(R.string.accept_request_prompt, request.getFromUser().getName()))
+                            .setPositiveButton(R.string.accept, new DialogInterface.OnClickListener() {
+                                @Override
+                                public void onClick(DialogInterface dialog, int which) {
+                                    addBookRequestToServer(request.getBook().new Request(Book.RequestType.ACCEPT, request.getFromUser(), request.getToUser(),request.getCreatedAt()), request);
+                                }
+                            })
+                            .setNegativeButton(android.R.string.no, null)
+                            .create()
+                            .show();
+                }
             }
 
             @Override
@@ -168,17 +168,7 @@ public class RequestActivity extends AppCompatActivity {
                     .setPositiveButton(R.string.reject, new DialogInterface.OnClickListener() {
                         @Override
                         public void onClick(DialogInterface dialog, int which) {
-
-                            // TODO Server
-
-                            int indexBefore = mRequests.indexOf(request);
-                            request.setRequestType(Book.RequestType.REJECT);
-                            Collections.sort(mRequests);
-                            int indexAfter = mRequests.indexOf(request) + 1; // Subtitle
-                            mRequestAdapter.notifyItemMoved(indexBefore, indexAfter);
-                            mRequestAdapter.notifyItemChanged(mRequestAdapter.getSentRequestCount() - 1);
-
-                            setResult(REQUESTS_MODIFIED); // for refreshing previous page
+                            addBookRequestToServer(request.getBook().new Request(Book.RequestType.REJECT, request.getFromUser(), request.getToUser(),request.getCreatedAt()), request);
                         }
                     })
                     .setNegativeButton(android.R.string.no, null)
@@ -223,6 +213,12 @@ public class RequestActivity extends AppCompatActivity {
                                     mPullRefreshLayout.setRefreshing(false);
 
                                     fetchLocations();
+
+                                    for (Book.Request r : mRequests) {
+                                        if (r.getRequestType() == Book.RequestType.ACCEPT) {
+                                            setAcceptedRequestText(r);
+                                        }
+                                    }
 
                                     Log.i(TAG, "Book requests fetched");
                                 }else {
@@ -284,14 +280,108 @@ public class RequestActivity extends AppCompatActivity {
         });
     }
 
+    private void addBookRequestToServer(final Book.Request request, final Book.Request oldRequest) {
+
+        final ComfortableProgressDialog comfortableProgressDialog = new ComfortableProgressDialog(RequestActivity.this);
+        comfortableProgressDialog.setMessage(getString(R.string.updating_process));
+        comfortableProgressDialog.show();
+
+        final BookApi bookApi = BookieClient.getClient().create(BookApi.class);
+        String email = SessionManager.getCurrentUserDetails(this).getEmail();
+        String password = SessionManager.getCurrentUserDetails(this).getPassword();
+        Call<ResponseBody> addBookRequest = bookApi.addBookRequests(email, password, request.getBook().getID(), request.getFromUser().getID(), request.getToUser().getID(), request.getRequestType().getRequestCode());
+
+        addBookRequest.enqueue(new Callback<ResponseBody>() {
+            @Override
+            public void onResponse(Call<ResponseBody> call, Response<ResponseBody> response) {
+
+                try {
+                    if (response != null){
+                        if (response.body() != null){
+                            String json = response.body().string();
+
+                            JSONObject responseObject = new JSONObject(json);
+                            boolean error = responseObject.getBoolean("error");
+
+                            if (!error) {
+                                if (request.getRequestType() == Book.RequestType.ACCEPT){
+                                    int index = mRequests.indexOf(oldRequest);
+                                    mRequests.remove(index);
+                                    mRequestAdapter.notifyItemRemoved(index);
+
+                                    for (Book.Request r : mRequests) {
+                                        r.setRequestType(Book.RequestType.REJECT);
+                                    }
+
+                                    mRequestAdapter.notifyDataSetChanged();
+
+                                    setAcceptedRequestText(oldRequest);
+
+                                    setResult(REQUESTS_MODIFIED); // for refreshing previous page
+                                }else if (request.getRequestType() == Book.RequestType.REJECT){
+                                    int indexBefore = mRequests.indexOf(oldRequest);
+                                    oldRequest.setRequestType(Book.RequestType.REJECT);
+                                    Collections.sort(mRequests);
+                                    int indexAfter = mRequests.indexOf(oldRequest) + 1; // Subtitle
+                                    mRequestAdapter.notifyItemMoved(indexBefore, indexAfter);
+                                    mRequestAdapter.notifyItemChanged(mRequestAdapter.getSentRequestCount() - 1);
+
+                                    setResult(REQUESTS_MODIFIED); // for refreshing previous page
+                                }
+
+                                comfortableProgressDialog.dismiss();
+                            } else {
+                                int errorCode = responseObject.getInt("errorCode");
+
+                                if (errorCode == ErrorCodes.EMPTY_POST){
+                                    Log.e(TAG, "Post is empty. (Book Page Error)");
+                                }else if (errorCode == ErrorCodes.MISSING_POST_ELEMENT){
+                                    Log.e(TAG, "Post element missing. (Book Page Error)");
+                                }else if (errorCode == ErrorCodes.INVALID_REQUEST){
+                                    Log.e(TAG, "Invalid request. (Book Page Error)");
+                                }else if (errorCode == ErrorCodes.INVALID_EMAIL){
+                                    Log.e(TAG, "Invalid email. (Book Page Error)");
+                                }else if (errorCode == ErrorCodes.UNKNOWN){
+                                    Log.e(TAG, "onResponse: errorCode = " + errorCode);
+                                }
+
+                                comfortableProgressDialog.dismiss();
+                                Toast.makeText(RequestActivity.this, getString(R.string.unknown_error), Toast.LENGTH_SHORT).show();
+                            }
+                        }else{
+                            Log.e(TAG, "Response body is null. (Book Page Error)");
+                            comfortableProgressDialog.dismiss();
+                            Toast.makeText(RequestActivity.this, getString(R.string.unknown_error), Toast.LENGTH_SHORT).show();
+                        }
+                    }else {
+                        Log.e(TAG, "Response object is null. (Book Page Error)");
+                        comfortableProgressDialog.dismiss();
+                        Toast.makeText(RequestActivity.this, getString(R.string.unknown_error), Toast.LENGTH_SHORT).show();
+                    }
+                } catch (IOException | JSONException e) {
+                    e.printStackTrace();
+                    comfortableProgressDialog.dismiss();
+                    Toast.makeText(RequestActivity.this, getString(R.string.unknown_error), Toast.LENGTH_SHORT).show();
+                }
+            }
+
+            @Override
+            public void onFailure(Call<ResponseBody> call, Throwable t) {
+                Log.e(TAG, "Book Page onFailure: " + t.getMessage());
+                comfortableProgressDialog.dismiss();
+                Toast.makeText(RequestActivity.this, getString(R.string.unknown_error), Toast.LENGTH_SHORT).show();
+            }
+        });
+    }
+
     private void setAcceptedRequestText(final Book.Request request) {
         mAcceptedRequestTextView.setVisibility(View.VISIBLE);
 
-        String fromUserName = request.getFromUser().getName();
-        String acceptRequestString = getString(R.string.you_accepted_request, fromUserName);
+        String toUserName = request.getToUser().getName();
+        String acceptRequestString = getString(R.string.you_accepted_request, toUserName);
         SpannableString spanAcceptRequest = new SpannableString(acceptRequestString);
-        int startIndex = acceptRequestString.indexOf(fromUserName);
-        int endIndex = startIndex + fromUserName.length();
+        int startIndex = acceptRequestString.indexOf(toUserName);
+        int endIndex = startIndex + toUserName.length();
 
         spanAcceptRequest.setSpan(new ClickableSpan() {
             @Override

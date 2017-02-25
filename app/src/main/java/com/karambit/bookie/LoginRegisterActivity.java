@@ -283,7 +283,7 @@ public class LoginRegisterActivity extends AppCompatActivity {
 
 
                 }
-
+                progressDialog.dismiss();
             }
 
             @Override

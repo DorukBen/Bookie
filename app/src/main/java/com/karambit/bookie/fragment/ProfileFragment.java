@@ -210,6 +210,11 @@ public class ProfileFragment extends Fragment {
                                             mUserDetails.setReadBooks(Book.jsonArrayToBookList(responseObject.getJSONArray("readBooks")));
                                         }
                                     }
+                                    if (!responseObject.isNull("onRoadBooks")){
+                                        if (mUserDetails != null) {
+                                            mUserDetails.setOnRoadBooks(Book.jsonArrayToBookList(responseObject.getJSONArray("onRoadBooks")));
+                                        }
+                                    }
                                     mProfileTimelineAdapter.setUserDetails(mUserDetails);
                                 }
 
@@ -325,9 +330,31 @@ public class ProfileFragment extends Fragment {
                                 }
                             }
                         }
+                    }else if (mUserDetails.getOnRoadBooks().contains(book)){
+                        if (book != null) {
+                            switch (book.getState()){
+                                case READING:{
+                                    mUserDetails.getOnRoadBooks().remove(book);
+                                    mUserDetails.getCurrentlyReading().add(book);
+                                    break;
+                                }
+
+                                case OPENED_TO_SHARE:{
+                                    mUserDetails.getOnRoadBooks().remove(book);
+                                    mUserDetails.getBooksOnHand().add(book);
+                                    break;
+                                }
+
+                                case CLOSED_TO_SHARE:{
+                                    mUserDetails.getOnRoadBooks().remove(book);
+                                    mUserDetails.getBooksOnHand().add(book);
+                                    break;
+                                }
+                            }
+                        }
                     }
 
-                    mProfileTimelineAdapter.setUserDetails(mUserDetails);
+                    mProfileTimelineAdapter.notifyDataSetChanged();
                 }
             }
         }
