@@ -1,0 +1,232 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/colorPrimary"
+    tools:context=".CurrentUserProfileSettingsActivity">
+
+    <include
+        android:id="@+id/noConnectionView"
+        layout="@layout/item_empty_state"
+        android:visibility="gone"/>
+
+    <ScrollView
+        android:id="@+id/settingsScrollView"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:overScrollMode="never"
+        android:scrollbars="none">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:animateLayoutChanges="true"
+            android:focusableInTouchMode="true"
+            android:orientation="vertical"
+            android:paddingLeft="16dp"
+            android:paddingRight="16dp">
+
+            <LinearLayout
+                android:id="@+id/profilePictureContainer"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center_horizontal"
+                android:gravity="center_horizontal"
+                android:orientation="vertical"
+                android:padding="8dp">
+
+                <com.karambit.bookie.helper.CircleImageView
+                    android:id="@+id/profilePictureImageView"
+                    android:layout_width="88dp"
+                    android:layout_height="88dp"
+                    android:src="@drawable/placeholder_88dp"/>
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:text="@string/change_photo"
+                    android:textColor="@color/secondaryTextColor"
+                    android:textSize="14sp"/>
+
+            </LinearLayout>
+
+            <!--
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="56dp"
+                            android:gravity="center_vertical"
+                            android:text="@string/profile"
+                            android:textAllCaps="true"
+                            android:textColor="@color/primaryTextColor"
+                            android:textSize="14sp"/>
+            -->
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="4dp"
+                android:layout_marginTop="16dp"
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
+
+                <ImageView
+                    android:layout_width="24dp"
+                    android:layout_height="24dp"
+                    android:src="@drawable/ic_person_outline_black_24dp"
+                    android:tint="@color/secondaryTextColor"/>
+
+                <EditText
+                    android:id="@+id/userNameEditText"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginLeft="16dp"
+                    android:background="@color/colorPrimaryDark"
+                    android:hint="@string/your_name_hint"
+                    android:padding="12dp"
+                    android:textColor="@color/primaryTextColor"
+                    android:textColorHint="@color/secondaryTextColor"
+                    android:textSize="16sp"/>
+
+            </LinearLayout>
+
+            <EditText
+                android:id="@+id/bioEditText"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="4dp"
+                android:layout_marginLeft="40dp"
+                android:layout_marginTop="4dp"
+                android:background="@color/colorPrimaryDark"
+                android:hint="@string/bio_hint"
+                android:inputType="textMultiLine|textCapSentences"
+                android:padding="12dp"
+                android:textColor="@color/primaryTextColor"
+                android:textColorHint="@color/secondaryTextColor"
+                android:textSize="16sp"/>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
+
+                <ImageView
+                    android:layout_width="24dp"
+                    android:layout_height="24dp"
+                    android:src="@drawable/ic_lock_outline_white_24dp"
+                    android:tint="@color/secondaryTextColor"/>
+
+                <Button
+                    android:id="@+id/changePasswordButton"
+                    style="@style/Widget.AppCompat.ActionButton"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginLeft="8dp"
+                    android:gravity="left|center_vertical"
+                    android:text="@string/change_password"
+                    android:textAllCaps="true"
+                    android:textColor="@color/primaryTextColor"
+                    android:textSize="14sp"/>
+
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
+
+                <ImageView
+                    android:layout_width="24dp"
+                    android:layout_height="24dp"
+                    android:src="@drawable/ic_location_outline"
+                    android:tint="@color/secondaryTextColor"/>
+
+                <TextView
+                    android:id="@+id/locationTextView"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginLeft="8dp"
+                    android:padding="12dp"
+                    android:text="@string/loading"
+                    android:textColor="@color/secondaryTextColor"
+                    android:textSize="16sp"/>
+
+            </LinearLayout>
+
+            <Button
+                android:id="@+id/changeLocationButton"
+                style="@style/Widget.AppCompat.ActionButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginLeft="32dp"
+                android:gravity="left|center_vertical"
+                android:text="@string/change_location"
+                android:textAllCaps="true"
+                android:textColor="@color/primaryTextColor"
+                android:textSize="14sp"
+                android:visibility="gone"/>
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="56dp"
+                android:gravity="center_vertical"
+                android:text="@string/feedback"
+                android:textAllCaps="true"
+                android:textColor="@color/primaryTextColor"
+                android:textSize="14sp"/>
+
+            <EditText
+                android:id="@+id/feedbackEditText"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:background="@color/colorPrimaryDark"
+                android:gravity="top"
+                android:hint="@string/feedback_hint"
+                android:inputType="textCapSentences|textMultiLine"
+                android:minLines="3"
+                android:padding="12dp"
+                android:textColor="@color/primaryTextColor"
+                android:textColorHint="@color/secondaryTextColor"
+                android:textSize="16sp"/>
+
+            <Button
+                android:id="@+id/feedbackSendButton"
+                style="@style/Widget.AppCompat.ActionButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="right"
+                android:text="@string/send"
+                android:textAllCaps="true"
+                android:textColor="@color/secondaryTextColor"
+                android:visibility="visible"/>
+
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="1dp"
+                android:alpha="0.13"
+                android:background="@color/primaryTextColor"/>
+
+            <Button
+                android:id="@+id/logoutButton"
+                style="@style/Widget.AppCompat.ActionButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:padding="24dp"
+                android:text="@string/logout"
+                android:textAllCaps="true"
+                android:textColor="@color/error_red"
+                android:textSize="16sp"/>
+
+
+        </LinearLayout>
+
+    </ScrollView>
+
+</RelativeLayout>

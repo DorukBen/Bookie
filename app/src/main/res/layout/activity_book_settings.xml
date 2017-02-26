@@ -1,13 +1,263 @@
 <?xml version="1.0" encoding="utf-8"?>
 <RelativeLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:paddingBottom="@dimen/activity_vertical_margin"
-    android:paddingLeft="@dimen/activity_horizontal_margin"
-    android:paddingRight="@dimen/activity_horizontal_margin"
-    android:paddingTop="@dimen/activity_vertical_margin"
-    tools:context="com.karambit.bookie.BookSettingsActivity">
+    android:background="@color/colorPrimary"
+    tools:context=".CurrentUserProfileSettingsActivity">
+
+    <include
+        android:id="@+id/noConnectionView"
+        layout="@layout/item_empty_state"
+        android:visibility="gone"/>
+
+    <ScrollView
+        android:id="@+id/settingsScrollView"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:overScrollMode="never"
+        android:scrollbars="none">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:animateLayoutChanges="true"
+            android:focusableInTouchMode="true"
+            android:orientation="vertical"
+            android:paddingLeft="16dp"
+            android:paddingRight="16dp">
+
+            <LinearLayout
+                android:id="@+id/bookEditContainer"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:visibility="visible">
+
+                <LinearLayout
+                    android:id="@+id/profilePictureContainer"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="center_horizontal"
+                    android:gravity="center_horizontal"
+                    android:orientation="vertical"
+                    android:padding="8dp">
+
+                    <com.karambit.bookie.helper.CircleImageView
+                        android:id="@+id/bookPictureImageView"
+                        android:layout_width="88dp"
+                        android:layout_height="88dp"
+                        android:src="@drawable/placeholder_88dp"/>
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp"
+                        android:text="@string/change_photo"
+                        android:textColor="@color/secondaryTextColor"
+                        android:textSize="14sp"/>
+
+                </LinearLayout>
+
+                <!--
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="56dp"
+                                android:gravity="center_vertical"
+                                android:text="@string/profile"
+                                android:textAllCaps="true"
+                                android:textColor="@color/primaryTextColor"
+                                android:textSize="14sp"/>
+                -->
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="8dp"
+                    android:layout_marginTop="16dp"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal">
+
+                    <ImageView
+                        android:layout_width="24dp"
+                        android:layout_height="24dp"
+                        android:src="@drawable/ic_book_timeline_add_book_outline_36dp"
+                        android:tint="@color/secondaryTextColor"/>
+
+                    <EditText
+                        android:id="@+id/bookNameEditText"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginLeft="16dp"
+                        android:background="@color/colorPrimaryDark"
+                        android:hint="@string/book_name_hint"
+                        android:padding="12dp"
+                        android:textColor="@color/primaryTextColor"
+                        android:textColorHint="@color/secondaryTextColor"
+                        android:textSize="16sp"/>
+
+                </LinearLayout>
+
+                <EditText
+                    android:id="@+id/bookAuthorEditText"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginLeft="40dp"
+                    android:background="@color/colorPrimaryDark"
+                    android:hint="@string/author_hint"
+                    android:padding="12dp"
+                    android:textColor="@color/primaryTextColor"
+                    android:textColorHint="@color/secondaryTextColor"
+                    android:textSize="16sp"/>
+
+                <Button
+                    android:id="@+id/bookGenreButton"
+                    style="@style/Widget.AppCompat.ActionButton"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginLeft="40dp"
+                    android:layout_marginTop="8dp"
+                    android:gravity="left|center_vertical"
+                    android:text="@string/genre"
+                    android:textAllCaps="true"
+                    android:textColor="@color/primaryTextColor"
+                    android:textSize="14sp"/>
+
+            </LinearLayout>
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="56dp"
+                android:gravity="center_vertical"
+                android:text="@string/report"
+                android:textAllCaps="true"
+                android:textColor="@color/primaryTextColor"
+                android:textSize="14sp"/>
+
+            <RadioGroup
+                android:id="@+id/reportBookRadioGroup"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content">
+
+                <RadioButton
+                    android:id="@+id/reportBookWrongName"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:buttonTint="@color/secondaryTextColor"
+                    android:padding="8dp"
+                    android:text="@string/report_book_wrong_name"
+                    android:textColor="@color/primaryTextColor"
+                    android:textSize="16sp"/>
+
+                <RadioButton
+                    android:id="@+id/reportBookWrongAuthor"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:buttonTint="@color/secondaryTextColor"
+                    android:padding="8dp"
+                    android:text="@string/report_book_wrong_author"
+                    android:textColor="@color/primaryTextColor"
+                    android:textSize="16sp"/>
+
+                <RadioButton
+                    android:id="@+id/reportBookWrongGenre"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:buttonTint="@color/secondaryTextColor"
+                    android:padding="8dp"
+                    android:text="@string/report_book_wrong_genre"
+                    android:textColor="@color/primaryTextColor"
+                    android:textSize="16sp"/>
+
+                <RadioButton
+                    android:id="@+id/reportBookWrongPhoto"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:buttonTint="@color/secondaryTextColor"
+                    android:padding="8dp"
+                    android:text="@string/report_book_wrong_photo"
+                    android:textColor="@color/primaryTextColor"
+                    android:textSize="16sp"/>
+
+                <RadioButton
+                    android:id="@+id/reportBookTooDamaged"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:buttonTint="@color/secondaryTextColor"
+                    android:padding="8dp"
+                    android:text="@string/report_book_too_damaged"
+                    android:textColor="@color/primaryTextColor"
+                    android:textSize="16sp"/>
+
+                <RadioButton
+                    android:id="@+id/reportBookOther"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:buttonTint="@color/secondaryTextColor"
+                    android:padding="8dp"
+                    android:text="@string/not_any_of_above"
+                    android:textColor="@color/primaryTextColor"
+                    android:textSize="16sp"/>
+
+                <EditText
+                    android:id="@+id/reportBookEditText"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:background="@color/colorPrimaryDark"
+                    android:gravity="top"
+                    android:hint="@string/report_hint_book_additional_info"
+                    android:inputType="textCapSentences|textMultiLine"
+                    android:minLines="3"
+                    android:padding="12dp"
+                    android:textColor="@color/primaryTextColor"
+                    android:textColorHint="@color/secondaryTextColor"
+                    android:textSize="16sp"/>
+
+                <Button
+                    android:id="@+id/reportSendButton"
+                    style="@style/Widget.AppCompat.ActionButton"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="right"
+                    android:clickable="false"
+                    android:text="@string/send"
+                    android:textAllCaps="true"
+                    android:textColor="@color/secondaryTextColor"
+                    android:visibility="visible"/>
+
+            </RadioGroup>
+
+            <LinearLayout
+                android:id="@+id/lostContainer"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical">
+
+                <View
+                    android:layout_width="match_parent"
+                    android:layout_height="1dp"
+                    android:alpha="0.13"
+                    android:background="@color/primaryTextColor"/>
+
+                <Button
+                    android:id="@+id/lostButton"
+                    style="@style/Widget.AppCompat.ActionButton"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="center"
+                    android:padding="24dp"
+                    android:text="@string/lost"
+                    android:textAllCaps="true"
+                    android:textColor="@color/error_red"
+                    android:textSize="16sp"/>
+
+            </LinearLayout>
+
+        </LinearLayout>
+
+    </ScrollView>
 
 </RelativeLayout>

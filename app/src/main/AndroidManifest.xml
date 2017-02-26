@@ -39,7 +39,8 @@
             android:screenOrientation="portrait"></activity>
         <activity
             android:name=".CurrentUserProfileSettingsActivity"
-            android:screenOrientation="portrait"></activity>
+            android:screenOrientation="portrait"
+            android:windowSoftInputMode="adjustResize"></activity>
         <activity
             android:name=".introduction.IntroductionActivity"
             android:screenOrientation="portrait"></activity>
@@ -50,8 +51,9 @@
             android:name=".ProfileActivity"
             android:screenOrientation="portrait"></activity>
         <activity
-            android:name=".UserProfileSettingsActivity"
-            android:screenOrientation="portrait"></activity>
+            android:name=".OtherUserProfileSettingsActivity"
+            android:screenOrientation="portrait"
+            android:windowSoftInputMode="adjustResize"></activity>
         <activity
             android:name=".BookSettingsActivity"
             android:screenOrientation="portrait"></activity>
