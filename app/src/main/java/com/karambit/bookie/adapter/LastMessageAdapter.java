@@ -29,6 +29,7 @@ public class LastMessageAdapter extends RecyclerView.Adapter<RecyclerView.ViewHo
 
     public static final int VIEW_TYPE_UNSELECTED = 0;
     public static final int VIEW_TYPE_SELECTED = 1;
+    private static final int VIEW_TYPE_EMPTY_STATE = 2;
 
     private Context mContext;
 
@@ -84,6 +85,19 @@ public class LastMessageAdapter extends RecyclerView.Adapter<RecyclerView.ViewHo
         }
     }
 
+    private static class ExceptionalSituationViewHolder extends RecyclerView.ViewHolder {
+
+        private ImageView mImageView;
+        private TextView mTextView;
+
+        private ExceptionalSituationViewHolder(View noConnectionView) {
+            super(noConnectionView);
+
+            mImageView = (ImageView) noConnectionView.findViewById(R.id.emptyStateImageView);
+            mTextView = (TextView) noConnectionView.findViewById(R.id.emptyStateTextView);
+        }
+    }
+
     @Override
     public long getItemId(int position) {
         return position;
@@ -91,16 +105,21 @@ public class LastMessageAdapter extends RecyclerView.Adapter<RecyclerView.ViewHo
 
     @Override
     public int getItemViewType(int position) {
-        if (position == mSelectedPosition) {
-            return VIEW_TYPE_SELECTED;
+        if (mLastMessages.size() > 0){
+            if (position == mSelectedPosition) {
+                return VIEW_TYPE_SELECTED;
+            } else {
+                return VIEW_TYPE_UNSELECTED;
+            }
         } else {
-            return VIEW_TYPE_UNSELECTED;
+            return VIEW_TYPE_EMPTY_STATE;
         }
+
     }
 
     @Override
     public int getItemCount() {
-        return mLastMessages.size();
+        return (mLastMessages.size() != 0)? mLastMessages.size(): 1;
     }
 
     @Override
@@ -114,6 +133,10 @@ public class LastMessageAdapter extends RecyclerView.Adapter<RecyclerView.ViewHo
                 View selectedView = LayoutInflater.from(parent.getContext()).inflate(R.layout.item_last_message_selected, parent, false);
                 return new SelectedViewHolder(selectedView);
 
+            case VIEW_TYPE_EMPTY_STATE:
+                View exceptionalView = LayoutInflater.from(mContext).inflate(R.layout.item_empty_state, parent, false);
+                return new ExceptionalSituationViewHolder(exceptionalView);
+
             default:
                 throw new IllegalArgumentException("Invalid view type: " + viewType);
         }
@@ -124,7 +147,7 @@ public class LastMessageAdapter extends RecyclerView.Adapter<RecyclerView.ViewHo
 
         final int finalPosition = position;
 
-        final Message message = mLastMessages.get(position);
+        final Message message = (mLastMessages.size() > 0)? mLastMessages.get(position): null;
 
         switch (getItemViewType(position)) {
 
@@ -250,6 +273,12 @@ public class LastMessageAdapter extends RecyclerView.Adapter<RecyclerView.ViewHo
 
                 break;
             }
+
+            case VIEW_TYPE_EMPTY_STATE:
+                ExceptionalSituationViewHolder exceptionalHolder = (ExceptionalSituationViewHolder) holder;
+
+                exceptionalHolder.mTextView.setText(R.string.no_messages_yet);
+                break;
 
             default:
                 throw new IllegalArgumentException("Invalid view type at position: " + position);

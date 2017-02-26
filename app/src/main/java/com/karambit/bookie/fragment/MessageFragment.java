@@ -2,12 +2,16 @@ package com.karambit.bookie.fragment;
 
 
 import android.app.AlertDialog;
+import android.content.BroadcastReceiver;
+import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
+import android.util.Log;
 import android.util.SparseIntArray;
 import android.view.LayoutInflater;
 import android.view.MotionEvent;
@@ -44,13 +48,14 @@ public class MessageFragment extends Fragment {
     private LastMessageAdapter mLastMessageAdapter;
     private PullRefreshLayout mPullRefreshLayout;
     private SparseIntArray mUnseenCounts;
+    private BroadcastReceiver mMessageReceiver;
 
     public MessageFragment() {
         // Required empty public constructor
     }
 
     @Override
-    public View onCreateView(LayoutInflater inflater, ViewGroup container,
+    public View onCreateView(final LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
         // Inflate the pullRefreshLayout for this fragment
         View rootView = inflater.inflate(R.layout.fragment_message, container, false);
@@ -220,22 +225,54 @@ public class MessageFragment extends Fragment {
         recyclerView.setDrawingCacheQuality(View.DRAWING_CACHE_QUALITY_HIGH);
 
         recyclerView.setHasFixedSize(true);
-
         return rootView;
+    }
+
+    @Override
+    public void onResume() {
+        super.onResume();
+
+        fetchMessages();
+
+        mMessageReceiver = new BroadcastReceiver() {
+            @Override
+            public void onReceive(Context context, Intent intent) {
+                if (intent.getAction().equalsIgnoreCase("com.karambit.bookie.MESSAGE_RECEIVED")){
+                    if (intent.getParcelableExtra("message") != null){
+                        insertLastMessage((Message) intent.getParcelableExtra("message"));
+                    }
+                } else if (intent.getAction().equalsIgnoreCase("com.karambit.bookie.MESSAGE_DELIVERED")){
+                    if (intent.getIntExtra("message_id",-1) > 0){
+                        changeMessageState(intent.getIntExtra("message_id",-1), Message.State.DELIVERED);
+                    }
+                } else if (intent.getAction().equalsIgnoreCase("com.karambit.bookie.MESSAGE_SEEN")){
+                    if (intent.getIntExtra("message_id",-1) > 0){
+                        changeMessageState(intent.getIntExtra("message_id",-1), Message.State.SEEN);
+                    }
+                }
+            }
+        };
+
+        getContext().registerReceiver(mMessageReceiver, new IntentFilter("com.karambit.bookie.MESSAGE_RECEIVED"));
+        getContext().registerReceiver(mMessageReceiver, new IntentFilter("com.karambit.bookie.MESSAGE_DELIVERED"));
+        getContext().registerReceiver(mMessageReceiver, new IntentFilter("com.karambit.bookie.MESSAGE_SEEN"));
+    }
+
+    @Override
+    public void onPause() {
+        super.onPause();
+
+        getContext().unregisterReceiver(mMessageReceiver);
     }
 
     /**
      * TODO Firstly fetch from internet. This is just a demo method...
      */
-    private void fetchMessages() {
-
-        mPullRefreshLayout.setRefreshing(true);
+    public void fetchMessages() {
 
         new Thread(new Runnable() {
             @Override
             public void run() {
-
-                generateMessages(); // TODO REMOVE
 
                 final User currentUser = SessionManager.getCurrentUser(getContext());
                 ArrayList<User> users = mDbHandler.getAllMessageUsers();
@@ -294,9 +331,9 @@ public class MessageFragment extends Fragment {
                     if (message.getOppositeUser(currentUser).getID() == oppositeUser.getID()) {
                         mLastMessages.remove(i);
                         mLastMessageAdapter.notifyItemRemoved(i);
-                        mDbHandler.deleteMessageUser(oppositeUser);
                     }
                 }
+                mDbHandler.deleteMessageUser(oppositeUser);
             }
 
             fetchUnseenCounts();
@@ -359,24 +396,5 @@ public class MessageFragment extends Fragment {
         int tempIndex = mLastMessageAdapter.getSelectedPosition();
         mLastMessageAdapter.setSelectedPosition(-1);
         mLastMessageAdapter.notifyItemChanged(tempIndex);
-    }
-
-    private void generateMessages() {
-
-        mDbHandler.deleteAllMessages();
-
-        if (mDbHandler.getAllMessageUsers().isEmpty()) {
-
-            User currentUser = SessionManager.getCurrentUser(getContext());
-
-            for (int i = 0; i < 6; i++) {
-                User messageUser = User.GENERATOR.generateUser();
-                mDbHandler.insertMessageUser(messageUser);
-
-                for (Message message : Message.GENERATOR.generateMessageList(currentUser, messageUser, 50)) {
-                    mDbHandler.insertMessage(message);
-                }
-            }
-        }
     }
 }

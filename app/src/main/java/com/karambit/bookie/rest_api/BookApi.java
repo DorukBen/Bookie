@@ -37,6 +37,16 @@ public interface BookApi {
             @Field("interactionType") int interactionType);
 
     @FormUrlEncoded
+    @POST("BookAddRequest")
+    Call<ResponseBody> addBookRequests(
+            @Field("email") String email,
+            @Field("password") String password,
+            @Field("bookID") int bookId,
+            @Field("fromUserID") int fromUserId,
+            @Field("toUserID") int toUserId,
+            @Field("requestType") int requestType);
+
+    @FormUrlEncoded
     @POST("BookRequest")
     Call<ResponseBody> getBookRequests(
             @Field("email") String email,

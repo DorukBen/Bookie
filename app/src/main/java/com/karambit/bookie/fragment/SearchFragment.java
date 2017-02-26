@@ -16,13 +16,11 @@ import android.view.ViewGroup;
 import android.widget.EditText;
 
 import com.karambit.bookie.BookActivity;
-import com.karambit.bookie.LocationActivity;
 import com.karambit.bookie.ProfileActivity;
 import com.karambit.bookie.R;
-import com.karambit.bookie.adapter.HomeTimelineAdapter;
 import com.karambit.bookie.adapter.SearchAdapter;
+import com.karambit.bookie.helper.DBHandler;
 import com.karambit.bookie.helper.NetworkChecker;
-import com.karambit.bookie.helper.SearchPrefs;
 import com.karambit.bookie.helper.SessionManager;
 import com.karambit.bookie.helper.string_similarity.JaroWinkler;
 import com.karambit.bookie.model.Book;
@@ -62,6 +60,7 @@ public class SearchFragment extends Fragment {
     private int mFetchGenreCode = -1;
     private int mFetchSearchButtonPressed = 0;
     private SearchAdapter mSearchAdapter;
+    private DBHandler mDbHandler;
 
     public SearchFragment() {
         // Required empty public constructor
@@ -77,6 +76,7 @@ public class SearchFragment extends Fragment {
         RecyclerView recyclerView = (RecyclerView) rootView.findViewById(R.id.searchResultsRecyclerView);
         recyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
         final EditText searchEditText = (EditText)rootView.findViewById(R.id.searchEditText);
+        mDbHandler = new DBHandler(getContext().getApplicationContext());
 
         mAllGenres  = getContext().getResources().getStringArray(R.array.genre_types);
 
@@ -86,12 +86,13 @@ public class SearchFragment extends Fragment {
             public void onGenreClick(int genreCode) {
                 mFetchGenreCode = genreCode;
                 searchEditText.setText(mAllGenres[genreCode]);
-                SearchPrefs.changeLastSearch(getContext(), genreCode);
                 getSearchResults("");
             }
 
             @Override
             public void onBookClick(Book book) {
+                addBookToSearchHistory(book);
+
                 Intent intent = new Intent(getContext(), BookActivity.class);
                 intent.putExtra("book", book);
                 getContext().startActivity(intent);
@@ -99,11 +100,19 @@ public class SearchFragment extends Fragment {
 
             @Override
             public void onUserClick(User user) {
+                addUserToSearchHistory(user);
+
                 Intent intent = new Intent(getContext(), ProfileActivity.class);
                 Bundle bundle = new Bundle();
                 bundle.putParcelable(ProfileActivity.USER, user);
                 intent.putExtras(bundle);
                 startActivity(intent);
+            }
+
+            @Override
+            public void onClearHistoryClick() {
+                mDbHandler.clearSearchHistory();
+                mSearchAdapter.setWarning(SearchAdapter.WARNING_TYPE_NOTHING_TO_SHOW);
             }
         });
 
@@ -123,7 +132,6 @@ public class SearchFragment extends Fragment {
             public void onClick(View view) {
             mFetchSearchButtonPressed = 1;
             getSearchResults(searchEditText.getText().toString());
-            SearchPrefs.changeLastSearch(getContext(),searchEditText.getText().toString());
             }
         });
 
@@ -146,18 +154,7 @@ public class SearchFragment extends Fragment {
             }
         });
 
-        if (!SearchPrefs.isSearchedBefore(getContext())){
-            mSearchAdapter.setWarning(SearchAdapter.WARNING_TYPE_NOTHING_TO_SHOW);
-        }else {
-            if (SearchPrefs.isLastSearchGenreCode(getContext())){
-                mFetchGenreCode = SearchPrefs.getLastSearchedGenre(getContext());
-                searchEditText.setText(mAllGenres[mFetchGenreCode]);
-                getSearchResults("");
-            }else {
-                searchEditText.setText(SearchPrefs.getLastSearchedString(getContext()));
-                getSearchResults(SearchPrefs.getLastSearchedString(getContext()));
-            }
-        }
+        showSearchHistory();
         return rootView;
     }
 
@@ -194,7 +191,7 @@ public class SearchFragment extends Fragment {
                                     mUsers.addAll(User.jsonArrayToUserList(usersArray));
                                 }
 
-                                if (mFetchGenreCode > -1){
+                                if (mFetchGenreCode > -1 && !TextUtils.isEmpty(searchString)){
                                     mSearchAdapter.setItems(new ArrayList<Integer>(), mBooks, mUsers);
                                 }else {
                                     mSearchAdapter.setItems(getMostSimilarGenreIndex(searchString), mBooks, mUsers);
@@ -202,7 +199,7 @@ public class SearchFragment extends Fragment {
 
                                 if (mBooks.size() < 1 && mUsers.size() < 1){
                                     if (TextUtils.isEmpty(searchString)){
-                                        mSearchAdapter.setWarning(SearchAdapter.WARNING_TYPE_NOTHING_TO_SHOW);
+                                        showSearchHistory();
                                     }else {
                                         mSearchAdapter.setWarning(SearchAdapter.WARNING_TYPE_NO_RESULT_FOUND);
                                     }
@@ -304,5 +301,57 @@ public class SearchFragment extends Fragment {
         JaroWinkler jaroWinkler = new JaroWinkler();
 
         return jaroWinkler.similarity(string1, string2);
+    }
+
+    private void showSearchHistory(){
+        ArrayList<Book> historyBooks = mDbHandler.getAllSearchBooks(mDbHandler.getAllSearchBookUsers());
+        ArrayList<User> historyUsers = mDbHandler.getAllSearchUsers();
+
+        if (historyBooks.size() + historyUsers.size() > 0){
+            mSearchAdapter.setItems(new ArrayList<Integer>(), historyBooks, historyUsers);
+            mSearchAdapter.setShowHistory(true);
+        } else {
+            mSearchAdapter.setWarning(SearchAdapter.WARNING_TYPE_NOTHING_TO_SHOW);
+        }
+    }
+
+    private void addBookToSearchHistory(Book book) {
+        ArrayList<Book> historyBooks = mDbHandler.getAllSearchBooks(mDbHandler.getAllSearchBookUsers());
+
+        if (historyBooks.size() > 2){
+            mDbHandler.deleteAllSearchBooks();
+
+            historyBooks.remove(0);
+
+            for (Book historyBook: historyBooks){
+                mDbHandler.insertSearchBookUser(historyBook.getOwner());
+                mDbHandler.insertSearchBook(historyBook);
+            }
+        }
+
+        if (!mDbHandler.isSearchBookUserExists(book.getOwner())){
+            mDbHandler.insertSearchBookUser(book.getOwner());
+        }
+        if (!mDbHandler.isSearchBookExists(book)){
+            mDbHandler.insertSearchBook(book);
+        }
+    }
+
+    private void addUserToSearchHistory(User user) {
+        ArrayList<User> historyUsers = mDbHandler.getAllSearchUsers();
+
+        if (historyUsers.size() > 2){
+            mDbHandler.deleteAllSearchUsers();
+
+            historyUsers.remove(0);
+
+            for (User historyUser: historyUsers){
+                mDbHandler.insertSearchUser(historyUser);
+            }
+        }
+
+        if (!mDbHandler.isSearchUserExists(user)){
+            mDbHandler.insertSearchUser(user);
+        }
     }
 }

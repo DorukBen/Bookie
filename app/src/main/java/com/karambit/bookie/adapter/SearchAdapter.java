@@ -10,6 +10,7 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.ProgressBar;
 import android.widget.TextView;
@@ -52,6 +53,8 @@ public class SearchAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder>
     private static final int TYPE_NOTHING_TO_SHOW = 8;
     private static final int TYPE_NO_RESULT_FOUND = 9;
     public static final int TYPE_FOOTER = 10;
+    public static final int TYPE_HISTORY = 11;
+
 
     public static final int ERROR_TYPE_NONE = 0;
     public static final int ERROR_TYPE_NO_CONNECTION = 1;
@@ -68,6 +71,7 @@ public class SearchAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder>
     private Context mContext;
 
     private boolean mProgressBarActive;
+    private boolean mShowHistory;
 
     private SearchItemClickListener mSearchItemClickListener;
 
@@ -78,6 +82,7 @@ public class SearchAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder>
         mUsers = users;
 
         mProgressBarActive = false;
+        mShowHistory = false;
     }
 
     private static class GenreSubtitleViewHolder extends RecyclerView.ViewHolder {
@@ -228,6 +233,19 @@ public class SearchAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder>
         }
     }
 
+    private static class HistoryViewHolder extends RecyclerView.ViewHolder {
+
+        private ImageButton mClearHistory;
+        private TextView mHistoryTextView;
+
+        private HistoryViewHolder(View noResultFoundView) {
+            super(noResultFoundView);
+
+            mClearHistory = (ImageButton) noResultFoundView.findViewById(R.id.clearHistory);
+            mHistoryTextView = (TextView) noResultFoundView.findViewById(R.id.historyTextView);
+        }
+    }
+
     @Override
     public long getItemId(int position) {
         return position;
@@ -244,7 +262,6 @@ public class SearchAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder>
     */
     @Override
     public int getItemViewType(int position) {
-
         
         if (mErrorType != ERROR_TYPE_NONE) {
             if (mErrorType == ERROR_TYPE_NO_CONNECTION && position == 0) {
@@ -326,18 +343,36 @@ public class SearchAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder>
                     throw new IllegalArgumentException("Invalid view type at position " + position);
                 }
             } else if (mGenreCodes.size() < 1 && mBooks.size() > 0 && mUsers.size() > 0) {
-                bookPosition = 1;
-                userPosition = mBooks.size() + 2;
-                if (position == 0) {
-                    return TYPE_BOOK_SUBTITLE;
-                } else if (position < mBooks.size() + 1) {
-                    return TYPE_BOOK;
-                } else if (position == mBooks.size() + 1) {
-                    return TYPE_USER_SUBTITLE;
-                } else if (position < mBooks.size() + mUsers.size() + 2) {
-                    return TYPE_USER;
-                } else {
-                    throw new IllegalArgumentException("Invalid view type at position " + position);
+                if (mShowHistory){
+                    bookPosition = 2;
+                    userPosition = mBooks.size() + 3;
+                    if (position == 0){
+                        return TYPE_HISTORY;
+                    }else if (position == 1) {
+                        return TYPE_BOOK_SUBTITLE;
+                    } else if (position < mBooks.size() + 2) {
+                        return TYPE_BOOK;
+                    } else if (position == mBooks.size() + 2) {
+                        return TYPE_USER_SUBTITLE;
+                    } else if (position < mBooks.size() + mUsers.size() + 3) {
+                        return TYPE_USER;
+                    } else {
+                        throw new IllegalArgumentException("Invalid view type at position " + position);
+                    }
+                }else {
+                    bookPosition = 1;
+                    userPosition = mBooks.size() + 2;
+                    if (position == 0) {
+                        return TYPE_BOOK_SUBTITLE;
+                    } else if (position < mBooks.size() + 1) {
+                        return TYPE_BOOK;
+                    } else if (position == mBooks.size() + 1) {
+                        return TYPE_USER_SUBTITLE;
+                    } else if (position < mBooks.size() + mUsers.size() + 2) {
+                        return TYPE_USER;
+                    } else {
+                        throw new IllegalArgumentException("Invalid view type at position " + position);
+                    }
                 }
             } else if (mGenreCodes.size() > 0 && mBooks.size() < 1 && mUsers.size() < 1) {
                 genrePosition = 1;
@@ -351,22 +386,48 @@ public class SearchAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder>
                     throw new IllegalArgumentException("Invalid view type at position " + position);
                 }
             } else if (mGenreCodes.size() < 1 && mBooks.size() < 1 && mUsers.size() > 0) {
-                userPosition = 1;
-                if (position == 0) {
-                    return TYPE_USER_SUBTITLE;
-                } else if (position < mUsers.size() + 1) {
-                    return TYPE_USER;
-                } else {
-                    throw new IllegalArgumentException("Invalid view type at position " + position);
+                if (mShowHistory){
+                    userPosition = 2;
+                    if (position == 0){
+                        return TYPE_HISTORY;
+                    } else if (position == 1) {
+                        return TYPE_USER_SUBTITLE;
+                    } else if (position < mUsers.size() + 2) {
+                        return TYPE_USER;
+                    } else {
+                        throw new IllegalArgumentException("Invalid view type at position " + position);
+                    }
+                }else {
+                    userPosition = 1;
+                    if (position == 0) {
+                        return TYPE_USER_SUBTITLE;
+                    } else if (position < mUsers.size() + 1) {
+                        return TYPE_USER;
+                    } else {
+                        throw new IllegalArgumentException("Invalid view type at position " + position);
+                    }
                 }
             } else if (mGenreCodes.size() < 1 && mBooks.size() > 0 && mUsers.size() < 1) {
-                bookPosition = 1;
-                if (position == 0) {
-                    return TYPE_BOOK_SUBTITLE;
-                } else if (position < mBooks.size() + 1) {
-                    return TYPE_BOOK;
+                if (mShowHistory){
+                    bookPosition = 2;
+                    if (position == 0){
+                        return TYPE_HISTORY;
+                    }else if (position == 1) {
+                        return TYPE_BOOK_SUBTITLE;
+                    } else if (position < mBooks.size() + 2) {
+                        return TYPE_BOOK;
+                    } else {
+                        throw new IllegalArgumentException("Invalid view type at position " + position);
+                    }
                 } else {
-                    throw new IllegalArgumentException("Invalid view type at position " + position);
+                    bookPosition = 1;
+                    if (position == 0) {
+                        return TYPE_BOOK_SUBTITLE;
+                    } else if (position < mBooks.size() + 1) {
+                        return TYPE_BOOK;
+                    } else {
+                        throw new IllegalArgumentException("Invalid view type at position " + position);
+                    }
                 }
             } else {
                 throw new IllegalArgumentException("Invalid view type at position " + position);
@@ -420,6 +481,10 @@ public class SearchAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder>
             case TYPE_NO_RESULT_FOUND:
                 View noResultFoundView = LayoutInflater.from(parent.getContext()).inflate(R.layout.item_no_result_found, parent, false);
                 return new NoResultFoundViewHolder(noResultFoundView);
+
+            case TYPE_HISTORY:
+                View historyView = LayoutInflater.from(parent.getContext()).inflate(R.layout.item_search_history, parent, false);
+                return new HistoryViewHolder(historyView);
 
             case TYPE_FOOTER:
                 View footerView = LayoutInflater.from(parent.getContext()).inflate(R.layout.item_footer, parent, false);
@@ -567,6 +632,20 @@ public class SearchAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder>
                 break;
             }
 
+            case TYPE_HISTORY: {
+
+                HistoryViewHolder historyViewHolder = (HistoryViewHolder) holder;
+                historyViewHolder.mHistoryTextView.setText(mContext.getString(R.string.search_history));
+                historyViewHolder.mClearHistory.setOnClickListener(new View.OnClickListener() {
+                    @Override
+                    public void onClick(View v) {
+                        mSearchItemClickListener.onClearHistoryClick();
+                    }
+                });
+
+                break;
+            }
+
             case TYPE_FOOTER: {
 
                 FooterViewHolder footerHolder = (FooterViewHolder) holder;
@@ -585,6 +664,11 @@ public class SearchAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder>
 
     private int calculateItemCount() {
         int totalSize = mGenreCodes.size();
+
+        if (mShowHistory){
+            totalSize++;
+        }
+
         if (mGenreCodes.size() > 0) {
             totalSize++; //GenreSubtitle
         }
@@ -629,6 +713,8 @@ public class SearchAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder>
         void onBookClick(Book book);
 
         void onUserClick(User user);
+
+        void onClearHistoryClick();
     }
 
     public void setBookClickListener(SearchItemClickListener searchItemClickListener) {
@@ -640,6 +726,7 @@ public class SearchAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder>
         mBooks = books;
         mUsers = users;
 
+        mShowHistory = false;
         notifyDataSetChanged();
     }
 
@@ -664,6 +751,13 @@ public class SearchAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder>
 
             setProgressBarActive(false);
         }
+        notifyDataSetChanged();
+    }
+
+    public void setShowHistory(boolean showHistory){
+        mShowHistory = showHistory;
+        setProgressBarActive(false);
+
         notifyDataSetChanged();
     }
 

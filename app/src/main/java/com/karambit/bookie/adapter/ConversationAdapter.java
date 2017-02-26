@@ -44,12 +44,12 @@ public class ConversationAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
 
     private ArrayList<Integer> mSelectedIndexes = new ArrayList<>();
 
-    public ConversationAdapter(Context context, ArrayList<Message> messages) {
+    public ConversationAdapter(Context context, ArrayList<Message> messages, User oppositeUser) {
         mContext = context;
         mMessages = messages;
 
         mCurrentUser = SessionManager.getCurrentUser(mContext);
-        mOppositeUser = messages.get(0).getOppositeUser(mCurrentUser);
+        mOppositeUser = oppositeUser;
     }
 
     private static class CurrentUserMessageViewHolder extends RecyclerView.ViewHolder {
@@ -194,6 +194,13 @@ public class ConversationAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
                         currentUserHolder.mState.setImageResource(R.drawable.ic_messaging_pending_18dp);
                         currentUserHolder.mState.setColorFilter(ContextCompat.getColor(mContext, R.color.secondaryTextColor));
                         currentUserHolder.mError.setVisibility(View.VISIBLE);
+                        currentUserHolder.mError.setOnClickListener(new View.OnClickListener() {
+                            @Override
+                            public void onClick(View v) {
+                                mOnMessageClickListener.onMessageErrorClick(message, finalPosition);
+                                v.setVisibility(View.GONE);
+                            }
+                        });
                         break;
                 }
 
@@ -295,6 +302,7 @@ public class ConversationAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
     public interface OnMessageClickListener {
         void onMessageClick(Message message, int position);
         boolean onMessageLongClick(Message message, int position);
+        void onMessageErrorClick(Message message, int position);
     }
 
     public OnMessageClickListener getOnMessageClickListener() {

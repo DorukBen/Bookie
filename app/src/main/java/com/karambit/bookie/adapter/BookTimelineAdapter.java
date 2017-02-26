@@ -33,6 +33,9 @@ import com.karambit.bookie.model.User;
 
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.Random;
 
 /**
@@ -571,16 +574,14 @@ public class BookTimelineAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
                             }
                         });
 
-
                         // If book is on road state and book has sent to me. The button changes to arrive button
                         if (state == Book.State.ON_ROAD) {
                             ArrayList<Book.BookProcess> bookProcesses = mBookDetails.getBookProcesses();
-                            Book.BookProcess lastProcess = bookProcesses.get(bookProcesses.size() - 1);
-
+                            Book.BookProcess lastProcess = bookProcesses.get(bookProcesses.size() -1);
                             if (lastProcess instanceof Book.Transaction) {
                                 Book.Transaction sentTransaction = (Book.Transaction) lastProcess;
 
-                                if (sentTransaction.getToUser() == SessionManager.getCurrentUser(mContext)) {
+                                if (sentTransaction.getToUser().getID() == SessionManager.getCurrentUser(mContext.getApplicationContext()).getID()) {
                                     stateOtherHolder.mRequest.setText(R.string.arrived);
                                     stateOtherHolder.mRequest.setEnabled(true);
                                     stateOtherHolder.mRequest.setTextColor(ContextCompat.getColor(mContext, R.color.colorAccent));
@@ -594,17 +595,40 @@ public class BookTimelineAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
 
                                 } else {
                                     stateOtherHolder.mRequest.setText(R.string.request_button);
-                                    stateOtherHolder.mRequest.setEnabled(true);
-                                    stateOtherHolder.mRequest.setTextColor(ContextCompat.getColor(mContext, R.color.colorAccent));
-                                    stateOtherHolder.mRequest.setAlpha(1f);
+                                    stateOtherHolder.mRequest.setEnabled(false);
+                                    stateOtherHolder.mRequest.setTextColor(ContextCompat.getColor(mContext, R.color.secondaryTextColor));
+                                    stateOtherHolder.mRequest.setAlpha(0.5f);
                                 }
                             }
 
                         } else if (state == Book.State.OPENED_TO_SHARE || state == Book.State.READING) {
-                            stateOtherHolder.mRequest.setText(R.string.request_button);
-                            stateOtherHolder.mRequest.setEnabled(true);
-                            stateOtherHolder.mRequest.setTextColor(ContextCompat.getColor(mContext, R.color.colorAccent));
-                            stateOtherHolder.mRequest.setAlpha(1f);
+                            int canSendRequest = 0;
+                            for (Book.BookProcess process: mBookDetails.getBookProcesses()){
+                                if (process instanceof Book.Request){
+                                    if (((Book.Request)process).getFromUser().getID() == SessionManager.getCurrentUser(mContext).getID() && ((Book.Request)process).getToUser().getID() == mBookDetails.getBook().getOwner().getID()){
+                                        if (((Book.Request)process).getRequestType() == Book.RequestType.SEND){
+                                            canSendRequest--;
+                                        }
+                                    }
+                                    if (((Book.Request)process).getFromUser().getID() == mBookDetails.getBook().getOwner().getID() && ((Book.Request)process).getToUser().getID() == SessionManager.getCurrentUser(mContext).getID()){
+                                        if (((Book.Request)process).getRequestType() == Book.RequestType.REJECT || ((Book.Request)process).getRequestType() == Book.RequestType.ACCEPT){
+                                            canSendRequest++;
+                                        }
+                                    }
+                                }
+                            }
+                            if (canSendRequest < 0){
+                                stateOtherHolder.mRequest.setText(R.string.requested_button);
+                                stateOtherHolder.mRequest.setEnabled(false);
+                                stateOtherHolder.mRequest.setTextColor(ContextCompat.getColor(mContext, R.color.secondaryTextColor));
+                                stateOtherHolder.mRequest.setAlpha(0.5f);
+                            }else {
+                                stateOtherHolder.mRequest.setText(R.string.request_button);
+                                stateOtherHolder.mRequest.setEnabled(true);
+                                stateOtherHolder.mRequest.setTextColor(ContextCompat.getColor(mContext, R.color.colorAccent));
+                                stateOtherHolder.mRequest.setAlpha(1f);
+                            }
+
                         } else {
                             stateOtherHolder.mRequest.setText(R.string.request_button);
                             stateOtherHolder.mRequest.setEnabled(false);
@@ -644,40 +668,8 @@ public class BookTimelineAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
                             }
                         });
 
-                        // If book is on road state and book has sent to me. The button changes to arrive button
-                        if (state == Book.State.ON_ROAD) {
-                            ArrayList<Book.BookProcess> bookProcesses = mBookDetails.getBookProcesses();
-                            Book.BookProcess lastProcess = bookProcesses.get(bookProcesses.size() - 1);
+                        if (state == Book.State.CLOSED_TO_SHARE || state == Book.State.LOST || state == Book.State.ON_ROAD) {
 
-                            if (lastProcess instanceof Book.Transaction) {
-                                Book.Transaction sentTransaction = (Book.Transaction) lastProcess;
-
-                                if (sentTransaction.getToUser() == SessionManager.getCurrentUser(mContext)) {
-                                    stateOtherHolder.mRequest.setText(R.string.arrived);
-                                    stateOtherHolder.mRequest.setEnabled(true);
-                                    stateOtherHolder.mRequest.setTextColor(ContextCompat.getColor(mContext, R.color.colorAccent));
-                                    stateOtherHolder.mRequest.setAlpha(1f);
-                                    stateOtherHolder.mRequest.setOnClickListener(new View.OnClickListener() {
-                                        @Override
-                                        public void onClick(View v) {
-                                            mOtherUserClickListeners.onArrivedButtonClick(mBookDetails);
-                                        }
-                                    });
-
-                                } else {
-                                    stateOtherHolder.mRequest.setText(R.string.request_button);
-                                    stateOtherHolder.mRequest.setEnabled(true);
-                                    stateOtherHolder.mRequest.setTextColor(ContextCompat.getColor(mContext, R.color.colorAccent));
-                                    stateOtherHolder.mRequest.setAlpha(1f);
-                                }
-                            }
-
-                        } else if (state == Book.State.OPENED_TO_SHARE || state == Book.State.READING) {
-                            stateOtherHolder.mRequest.setText(R.string.request_button);
-                            stateOtherHolder.mRequest.setEnabled(true);
-                            stateOtherHolder.mRequest.setTextColor(ContextCompat.getColor(mContext, R.color.colorAccent));
-                            stateOtherHolder.mRequest.setAlpha(1f);
-                        } else {
                             stateOtherHolder.mRequest.setText(R.string.request_button);
                             stateOtherHolder.mRequest.setEnabled(false);
                             stateOtherHolder.mRequest.setTextColor(ContextCompat.getColor(mContext, R.color.secondaryTextColor));
@@ -1393,8 +1385,13 @@ public class BookTimelineAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
         ArrayList<Book.BookProcess> bookProcesses = mBookDetails.getBookProcesses();
         for (Book.BookProcess process : bookProcesses){
             if (process instanceof Book.Request && ((Book.Request) process).getToUser().getID() == SessionManager.getCurrentUser(mContext).getID()){
-                requestCount++;
-
+                if (((Book.Request)process).getRequestType() == Book.RequestType.SEND){
+                    requestCount++;
+                }
+            }else if (process instanceof Book.Request && ((Book.Request) process).getFromUser().getID() == SessionManager.getCurrentUser(mContext).getID()){
+                if (((Book.Request)process).getRequestType() != Book.RequestType.SEND){
+                    requestCount--;
+                }
             }
         }
         return requestCount;
@@ -1471,6 +1468,31 @@ public class BookTimelineAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
     }
 
     public void setBookDetails(Book.Details bookDetails) {
+        Collections.sort(bookDetails.getBookProcesses(), new Comparator<Book.BookProcess>() {
+            @Override
+            public int compare(Book.BookProcess o1, Book.BookProcess o2) {
+                Calendar c1 = null;
+                if (o1 instanceof Book.Interaction){
+                    c1 = ((Book.Interaction) o1).getCreatedAt();
+                } else if (o1 instanceof Book.Request){
+                    c1 = ((Book.Request) o1).getCreatedAt();
+                }else if (o1 instanceof Book.Transaction){
+                    c1 = ((Book.Transaction) o1).getCreatedAt();
+                }
+
+                Calendar c2 = null;
+                if (o2 instanceof Book.Interaction){
+                    c2 = ((Book.Interaction) o2).getCreatedAt();
+                } else if (o2 instanceof Book.Request){
+                    c2 = ((Book.Request) o2).getCreatedAt();
+                }else if (o2 instanceof Book.Transaction){
+                    c2 = ((Book.Transaction) o2).getCreatedAt();
+                }
+
+                return c1.compareTo(c2);
+            }
+        });
+
         mBookDetails = bookDetails;
         mProgressBarActive = false;
         notifyDataSetChanged();

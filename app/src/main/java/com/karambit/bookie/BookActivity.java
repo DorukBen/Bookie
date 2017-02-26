@@ -1,9 +1,11 @@
 package com.karambit.bookie;
 
 import android.app.Dialog;
+import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.res.Resources;
 import android.os.Bundle;
 import android.support.v7.app.ActionBar;
@@ -34,6 +36,7 @@ import com.karambit.bookie.helper.SessionManager;
 import com.karambit.bookie.helper.TypefaceSpan;
 import com.karambit.bookie.helper.pull_refresh_layout.PullRefreshLayout;
 import com.karambit.bookie.model.Book;
+import com.karambit.bookie.model.Notification;
 import com.karambit.bookie.model.User;
 import com.karambit.bookie.rest_api.BookApi;
 import com.karambit.bookie.rest_api.BookieClient;
@@ -44,6 +47,7 @@ import org.json.JSONObject;
 
 import java.io.IOException;
 import java.util.Calendar;
+import java.util.GregorianCalendar;
 
 import okhttp3.ResponseBody;
 import retrofit2.Call;
@@ -53,6 +57,7 @@ import retrofit2.Response;
 public class BookActivity extends AppCompatActivity {
 
     public static final int BOOK_PROCESS_CHANGED_RESULT_CODE = 1003;
+    private static final int REQUEST_CHANGED_REQUEST_CODE = 1004;
 
     private static final String TAG = BookActivity.class.getSimpleName();
 
@@ -62,6 +67,7 @@ public class BookActivity extends AppCompatActivity {
     private BookTimelineAdapter mBookTimelineAdapter;
     private Book.Details mBookDetails;
     private PullRefreshLayout mPullRefreshLayout;
+    private BroadcastReceiver mMessageReceiver;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -71,9 +77,9 @@ public class BookActivity extends AppCompatActivity {
         //Changes action bar font style by getting font.ttf from assets/fonts action bars font style doesn't
         // change from styles.xml
         SpannableString s = new SpannableString(getResources().getString(R.string.app_name));
-        s.setSpan(new TypefaceSpan(this, "autograf.ttf"), 0, s.length(),
+        s.setSpan(new TypefaceSpan(this, "comfortaa.ttf"), 0, s.length(),
                   Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
-        s.setSpan(new AbsoluteSizeSpan((int)convertDpToPixel(32, this)), 0, s.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+        s.setSpan(new AbsoluteSizeSpan((int)convertDpToPixel(18, this)), 0, s.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
 
         // Update the action bar title with the TypefaceSpan instance
         if (getSupportActionBar() != null) {
@@ -102,7 +108,17 @@ public class BookActivity extends AppCompatActivity {
         mBookTimelineAdapter.setOtherUserClickListeners(new BookTimelineAdapter.StateOtherUserClickListeners() {
             @Override
             public void onRequestButtonClick(Book.Details details) {
-                // TODO Request button
+                new android.app.AlertDialog.Builder(BookActivity.this)
+                        .setMessage(getString(R.string.send_request_to_x, mBook.getOwner().getName()))
+                        .setPositiveButton(R.string.accept, new DialogInterface.OnClickListener() {
+                            @Override
+                            public void onClick(DialogInterface dialog, int which) {
+                                bookProcessToServer(mBookDetails.getBook().new Request(Book.RequestType.SEND, mBookDetails.getBook().getOwner(), SessionManager.getCurrentUser(getApplicationContext()), new GregorianCalendar()));
+                            }
+                        })
+                        .setNegativeButton(android.R.string.no, null)
+                        .create()
+                        .show();
             }
 
             @Override
@@ -148,6 +164,12 @@ public class BookActivity extends AppCompatActivity {
                                         mBookTimelineAdapter.notifyItemChanged(1);
 
                                         bookProcessToServer(startReading);
+
+                                        Intent data = new Intent();
+                                        Bundle bundle = new Bundle();
+                                        bundle.putParcelable("book",mBookDetails.getBook());
+                                        data.putExtras(bundle);
+                                        setResult(BOOK_PROCESS_CHANGED_RESULT_CODE, data);
                                     }
                                 })
                                 .setNegativeButton(R.string.no, new DialogInterface.OnClickListener() {
@@ -202,7 +224,7 @@ public class BookActivity extends AppCompatActivity {
             public void onRequestButtonClick(Book.Details bookDetails) {
                 Intent intent = new Intent(BookActivity.this, RequestActivity.class);
                 intent.putExtra("book", mBook);
-                startActivity(intent);
+                startActivityForResult(intent, REQUEST_CHANGED_REQUEST_CODE);
             }
         });
 
@@ -257,6 +279,88 @@ public class BookActivity extends AppCompatActivity {
     }
 
     @Override
+    public void onResume() {
+        super.onResume();
+
+
+        mMessageReceiver = new BroadcastReceiver() {
+            @Override
+            public void onReceive(Context context, Intent intent) {
+                if (intent.getAction().equalsIgnoreCase("com.karambit.bookie.SENT_REQUEST_RECEIVED")){
+                    if (intent.getParcelableExtra("notification") != null){
+                        Notification notification = intent.getParcelableExtra("notification");
+                        if (mBookDetails != null){
+                            if (notification.getBook().getID() == mBookDetails.getBook().getID()){
+                                mBookDetails.getBookProcesses().add(mBookDetails.getBook().new Request(
+                                        Book.RequestType.SEND,
+                                        mBookDetails.getBook().getOwner(),
+                                        notification.getOppositeUser(),
+                                        notification.getCreatedAt()));
+                                mBookTimelineAdapter.notifyDataSetChanged();
+                            }
+                        }
+                    }
+                } else if (intent.getAction().equalsIgnoreCase("com.karambit.bookie.REJECTED_REQUEST_RECEIVED")){
+                    if (intent.getParcelableExtra("notification") != null){
+                        Notification notification = intent.getParcelableExtra("notification");
+                        if (mBookDetails != null){
+                            if (notification.getBook().getID() == mBookDetails.getBook().getID()){
+                                mBookDetails.getBookProcesses().add(mBookDetails.getBook().new Request(
+                                        Book.RequestType.REJECT,
+                                        notification.getOppositeUser(),
+                                        mBookDetails.getBook().getOwner(),
+                                        notification.getCreatedAt()));
+                                mBookTimelineAdapter.notifyDataSetChanged();
+                            }
+                        }
+                    }
+                } else if (intent.getAction().equalsIgnoreCase("com.karambit.bookie.ACCEPTED_REQUEST_RECEIVED")){
+                    if (intent.getParcelableExtra("notification") != null){
+                        Notification notification = intent.getParcelableExtra("notification");
+                        if (mBookDetails != null){
+                            if (notification.getBook().getID() == mBookDetails.getBook().getID()){
+                                mBookDetails.getBookProcesses().add(mBookDetails.getBook().new Request(
+                                        Book.RequestType.ACCEPT,
+                                        notification.getOppositeUser(),
+                                        mBookDetails.getBook().getOwner(),
+                                        notification.getCreatedAt()));
+
+                                mBookDetails.getBookProcesses().add(mBookDetails.getBook().new Transaction(
+                                        mBookDetails.getBook().getOwner(),
+                                        Book.TransactionType.DISPACTH,
+                                        SessionManager.getCurrentUser(getApplicationContext()),
+                                        notification.getCreatedAt()));
+
+                                mBookDetails.getBook().setState(Book.State.ON_ROAD);
+                                mBook.setState(Book.State.ON_ROAD);
+                                mBookTimelineAdapter.notifyDataSetChanged();
+                            }
+                        }
+                    }
+                } else if (intent.getAction().equalsIgnoreCase("com.karambit.bookie.BOOK_OWNER_CHANGED_DATA_RECEIVED")){
+                    if (intent.getParcelableExtra("notification") != null){
+                        if (mBookDetails != null){
+                            fetchBookPageArguments();
+                        }
+                    }
+                }
+            }
+        };
+
+        registerReceiver(mMessageReceiver, new IntentFilter("com.karambit.bookie.SENT_REQUEST_RECEIVED"));
+        registerReceiver(mMessageReceiver, new IntentFilter("com.karambit.bookie.REJECTED_REQUEST_RECEIVED"));
+        registerReceiver(mMessageReceiver, new IntentFilter("com.karambit.bookie.ACCEPTED_REQUEST_RECEIVED"));
+        registerReceiver(mMessageReceiver, new IntentFilter("com.karambit.bookie.BOOK_OWNER_CHANGED_DATA_RECEIVED"));
+    }
+
+    @Override
+    public void onPause() {
+        super.onPause();
+
+        unregisterReceiver(mMessageReceiver);
+    }
+
+    @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         MenuInflater inflater = getMenuInflater();
         inflater.inflate(R.menu.main_menu, menu);
@@ -290,7 +394,23 @@ public class BookActivity extends AppCompatActivity {
 
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-        if (requestCode == REQUEST_EDIT_BOOK) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if(requestCode == REQUEST_CHANGED_REQUEST_CODE){
+            if (resultCode == RequestActivity.REQUESTS_MODIFIED){
+                fetchBookPageArguments();
+
+            } else if (resultCode == RequestActivity.REQUEST_ACCEPTED){
+                fetchBookPageArguments();
+
+                Intent intent = new Intent();
+                Bundle bundle = new Bundle();
+                Book book = mBookDetails.getBook();
+                book.setState(Book.State.ON_ROAD);
+                bundle.putParcelable("book",book);
+                intent.putExtras(bundle);
+                setResult(BOOK_PROCESS_CHANGED_RESULT_CODE, intent);
+            }
+        } else if (requestCode == REQUEST_EDIT_BOOK) {
             if (resultCode == BookSettingsActivity.RESULT_BOOK_UPDATED) {
                 fetchBookPageArguments();
             }
@@ -329,20 +449,17 @@ public class BookActivity extends AppCompatActivity {
             View.OnClickListener openToShareListener = new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
-
-                    if (mBook.getState() == Book.State.READING) {
-                        Book.Interaction stopReading = mBook.new Interaction(Book.InteractionType.READ_STOP,
-                                                                             SessionManager.getCurrentUser(BookActivity.this),
-                                                                             Calendar.getInstance());
-                        mBookDetails.getBookProcesses().add(stopReading);
-                        mBookTimelineAdapter.notifyItemRangeChanged(3, mBookDetails.getBookProcesses().size());
-
-                        bookProcessToServer(stopReading);
-                    }
-
                     Book.Interaction openToShare = mBook.new Interaction(Book.InteractionType.OPEN_TO_SHARE,
                                                                           SessionManager.getCurrentUser(BookActivity.this),
                                                                           Calendar.getInstance());
+
+                    if (mBook.getState() == Book.State.READING) {
+                        Book.Interaction stopReading = mBook.new Interaction(Book.InteractionType.READ_STOP,
+                                SessionManager.getCurrentUser(BookActivity.this),
+                                Calendar.getInstance());
+                        mBookDetails.getBookProcesses().add(stopReading);
+                    }
+
                     mBookDetails.getBookProcesses().add(openToShare);
                     mBookTimelineAdapter.notifyItemRangeChanged(3, mBookDetails.getBookProcesses().size());
 
@@ -353,6 +470,12 @@ public class BookActivity extends AppCompatActivity {
                     dismiss();
 
                     bookProcessToServer(openToShare);
+
+                    Intent data = new Intent();
+                    Bundle bundle = new Bundle();
+                    bundle.putParcelable("book",mBookDetails.getBook());
+                    data.putExtras(bundle);
+                    setResult(BOOK_PROCESS_CHANGED_RESULT_CODE, data);
                 }
             };
 
@@ -367,20 +490,16 @@ public class BookActivity extends AppCompatActivity {
                             .setPositiveButton(R.string.reject_all, new OnClickListener() {
                                 @Override
                                 public void onClick(DialogInterface dialog, int which) {
-
-                                    if (mBook.getState() == Book.State.READING) {
-                                        Book.Interaction stopReading = mBook.new Interaction(Book.InteractionType.READ_STOP,
-                                                                                             SessionManager.getCurrentUser(BookActivity.this),
-                                                                                             Calendar.getInstance());
-                                        mBookDetails.getBookProcesses().add(stopReading);
-                                        mBookTimelineAdapter.notifyItemRangeChanged(3, mBookDetails.getBookProcesses().size());
-
-                                        bookProcessToServer(stopReading);
-                                    }
-
                                     Book.Interaction closeToShare = mBook.new Interaction(Book.InteractionType.CLOSE_TO_SHARE,
                                                                                           SessionManager.getCurrentUser(BookActivity.this),
                                                                                           Calendar.getInstance());
+                                    if (mBook.getState() == Book.State.READING) {
+                                        Book.Interaction stopReading = mBook.new Interaction(Book.InteractionType.READ_STOP,
+                                                SessionManager.getCurrentUser(BookActivity.this),
+                                                Calendar.getInstance());
+                                        mBookDetails.getBookProcesses().add(stopReading);
+                                    }
+
                                     mBookDetails.getBookProcesses().add(closeToShare);
                                     mBookTimelineAdapter.notifyItemRangeChanged(3, mBookDetails.getBookProcesses().size());
 
@@ -389,24 +508,29 @@ public class BookActivity extends AppCompatActivity {
                                     mBookTimelineAdapter.notifyItemChanged(1);
 
                                     bookProcessToServer(closeToShare);
+
+                                    Intent data = new Intent();
+                                    Bundle bundle = new Bundle();
+                                    bundle.putParcelable("book",mBookDetails.getBook());
+                                    data.putExtras(bundle);
+                                    setResult(BOOK_PROCESS_CHANGED_RESULT_CODE, data);
                                 }
                             })
                             .setNegativeButton(android.R.string.no, null)
                             .create().show();
 
                     } else {
-                        if (mBook.getState() == Book.State.READING) {
-                            Book.Interaction stopReading = mBook.new Interaction(Book.InteractionType.READ_STOP,
-                                                                                 SessionManager.getCurrentUser(BookActivity.this),
-                                                                                 Calendar.getInstance());
-                            mBookDetails.getBookProcesses().add(stopReading);
-
-                            bookProcessToServer(stopReading);
-                        }
-
                         Book.Interaction closeToShare = mBook.new Interaction(Book.InteractionType.CLOSE_TO_SHARE,
                                                                               SessionManager.getCurrentUser(BookActivity.this),
                                                                               Calendar.getInstance());
+
+                        if (mBook.getState() == Book.State.READING) {
+                            Book.Interaction stopReading = mBook.new Interaction(Book.InteractionType.READ_STOP,
+                                    SessionManager.getCurrentUser(BookActivity.this),
+                                    Calendar.getInstance());
+                            mBookDetails.getBookProcesses().add(stopReading);
+                        }
+
                         mBookDetails.getBookProcesses().add(closeToShare);
                         mBookTimelineAdapter.notifyItemRangeChanged(3, mBookDetails.getBookProcesses().size());
 
@@ -415,6 +539,12 @@ public class BookActivity extends AppCompatActivity {
                         mBookTimelineAdapter.notifyItemChanged(1);
 
                         bookProcessToServer(closeToShare);
+
+                        Intent data = new Intent();
+                        Bundle bundle = new Bundle();
+                        bundle.putParcelable("book",mBookDetails.getBook());
+                        data.putExtras(bundle);
+                        setResult(BOOK_PROCESS_CHANGED_RESULT_CODE, data);
                     }
 
                     dismiss();
@@ -435,6 +565,11 @@ public class BookActivity extends AppCompatActivity {
                     dismiss();
 
                     bookProcessToServer(startReading);
+                    Intent data = new Intent();
+                    Bundle bundle = new Bundle();
+                    bundle.putParcelable("book",mBookDetails.getBook());
+                    data.putExtras(bundle);
+                    setResult(BOOK_PROCESS_CHANGED_RESULT_CODE, data);
                 }
             };
 
@@ -492,23 +627,18 @@ public class BookActivity extends AppCompatActivity {
         }
     }
 
-    // TODO
     private void bookProcessToServer(Book.BookProcess bookProcess) {
 
         bookProcess.accept(new Book.TimelineDisplayableVisitor() {
             @Override
-            public void visit(Book.Interaction interaction) {
-                addBookInteractionToServer(interaction);
-            }
+            public void visit(Book.Interaction interaction) {addBookInteractionToServer(interaction);}
 
             @Override
-            public void visit(Book.Transaction transaction) {
-
-            }
+            public void visit(Book.Transaction transaction) {}
 
             @Override
             public void visit(Book.Request request) {
-
+                addBookRequestToServer(request);
             }
         });
     }
@@ -537,7 +667,9 @@ public class BookActivity extends AppCompatActivity {
                                     JSONObject bookDetailsJson = responseObject.getJSONObject("bookDetails");
                                     mBookDetails = Book.jsonObjectToBookDetails(bookDetailsJson);
 
-                                    //TODO check problem
+                                    if (mBookDetails != null) {
+                                        mBook = mBookDetails.getBook();
+                                    }
                                     mBookTimelineAdapter.setBookDetails(mBookDetails);
                                 }
 
@@ -595,15 +727,15 @@ public class BookActivity extends AppCompatActivity {
         });
     }
 
-    private void addBookInteractionToServer(Book.Interaction interaction) {
+    private void addBookInteractionToServer(final Book.Interaction interaction) {
 
         final ComfortableProgressDialog comfortableProgressDialog = new ComfortableProgressDialog(BookActivity.this);
         comfortableProgressDialog.setMessage(getString(R.string.updating_process));
         comfortableProgressDialog.show();
 
         final BookApi bookApi = BookieClient.getClient().create(BookApi.class);
-        String email = SessionManager.getCurrentUserDetails(this).getEmail();
-        String password = SessionManager.getCurrentUserDetails(this).getPassword();
+        String email = SessionManager.getCurrentUserDetails(getApplicationContext()).getEmail();
+        String password = SessionManager.getCurrentUserDetails(getApplicationContext()).getPassword();
         Call<ResponseBody> addBookInteraction = bookApi.addBookInteraction(email, password, interaction.getBook().getID(), interaction.getInteractionType().getInteractionCode());
 
         addBookInteraction.enqueue(new Callback<ResponseBody>() {
@@ -625,6 +757,94 @@ public class BookActivity extends AppCompatActivity {
                                 data.putExtras(bundle);
                                 setResult(BOOK_PROCESS_CHANGED_RESULT_CODE, data);
 
+                                if (SessionManager.getCurrentUser(getApplicationContext()).getID() == interaction.getBook().getOwner().getID()){
+                                    mBookDetails.getBook().setOwner(SessionManager.getCurrentUser(getApplicationContext()));
+                                    if (interaction.getInteractionType() == Book.InteractionType.CLOSE_TO_SHARE){
+                                        mBook.setState(Book.State.CLOSED_TO_SHARE);
+                                        mBookDetails.getBook().setState(Book.State.CLOSED_TO_SHARE);
+                                    }else if (interaction.getInteractionType() == Book.InteractionType.OPEN_TO_SHARE){
+                                        mBook.setState(Book.State.OPENED_TO_SHARE);
+                                        mBookDetails.getBook().setState(Book.State.OPENED_TO_SHARE);
+                                    }else if (interaction.getInteractionType() == Book.InteractionType.READ_START){
+                                        mBook.setState(Book.State.READING);
+                                        mBookDetails.getBook().setState(Book.State.READING);
+                                    }
+                                    mBookTimelineAdapter.notifyDataSetChanged();
+                                }
+
+                                comfortableProgressDialog.dismiss();
+                            } else {
+                                int errorCode = responseObject.getInt("errorCode");
+
+                                if (errorCode == ErrorCodes.EMPTY_POST){
+                                    Log.e(TAG, "Post is empty. (Book Page Error)");
+                                }else if (errorCode == ErrorCodes.MISSING_POST_ELEMENT){
+                                    Log.e(TAG, "Post element missing. (Book Page Error)");
+                                }else if (errorCode == ErrorCodes.INVALID_REQUEST){
+                                    Log.e(TAG, "Invalid request. (Book Page Error)");
+                                }else if (errorCode == ErrorCodes.INVALID_EMAIL){
+                                    Log.e(TAG, "Invalid email. (Book Page Error)");
+                                }else if (errorCode == ErrorCodes.UNKNOWN){
+                                    Log.e(TAG, "onResponse: errorCode = " + errorCode);
+                                }
+
+                                comfortableProgressDialog.dismiss();
+                                Toast.makeText(BookActivity.this, getString(R.string.unknown_error), Toast.LENGTH_SHORT).show();
+                            }
+                        }else{
+                            Log.e(TAG, "Response body is null. (Book Page Error)");
+                            comfortableProgressDialog.dismiss();
+                            Toast.makeText(BookActivity.this, getString(R.string.unknown_error), Toast.LENGTH_SHORT).show();
+                        }
+                    }else {
+                        Log.e(TAG, "Response object is null. (Book Page Error)");
+                        comfortableProgressDialog.dismiss();
+                        Toast.makeText(BookActivity.this, getString(R.string.unknown_error), Toast.LENGTH_SHORT).show();
+                    }
+                } catch (IOException | JSONException e) {
+                    e.printStackTrace();
+                    comfortableProgressDialog.dismiss();
+                    Toast.makeText(BookActivity.this, getString(R.string.unknown_error), Toast.LENGTH_SHORT).show();
+                }
+            }
+
+            @Override
+            public void onFailure(Call<ResponseBody> call, Throwable t) {
+                Log.e(TAG, "Book Page onFailure: " + t.getMessage());
+                comfortableProgressDialog.dismiss();
+                Toast.makeText(BookActivity.this, getString(R.string.unknown_error), Toast.LENGTH_SHORT).show();
+            }
+        });
+    }
+
+    private void addBookRequestToServer(final Book.Request request) {
+
+        final ComfortableProgressDialog comfortableProgressDialog = new ComfortableProgressDialog(BookActivity.this);
+        comfortableProgressDialog.setMessage(getString(R.string.updating_process));
+        comfortableProgressDialog.show();
+
+        final BookApi bookApi = BookieClient.getClient().create(BookApi.class);
+        String email = SessionManager.getCurrentUserDetails(this).getEmail();
+        String password = SessionManager.getCurrentUserDetails(this).getPassword();
+        Call<ResponseBody> addBookRequest = bookApi.addBookRequests(email, password, request.getBook().getID(), request.getFromUser().getID(), request.getToUser().getID(), request.getRequestType().getRequestCode());
+
+        addBookRequest.enqueue(new Callback<ResponseBody>() {
+            @Override
+            public void onResponse(Call<ResponseBody> call, Response<ResponseBody> response) {
+
+                try {
+                    if (response != null){
+                        if (response.body() != null){
+                            String json = response.body().string();
+
+                            JSONObject responseObject = new JSONObject(json);
+                            boolean error = responseObject.getBoolean("error");
+
+                            if (!error) {
+                                if (mBookDetails != null){
+                                    mBookDetails.getBookProcesses().add(request);
+                                    mBookTimelineAdapter.notifyDataSetChanged();
+                                }
                                 comfortableProgressDialog.dismiss();
                             } else {
                                 int errorCode = responseObject.getInt("errorCode");

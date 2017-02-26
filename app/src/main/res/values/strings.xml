@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">Bookie</string>
+    <string name="app_name">Mantreads</string>
 
     <!-- TODO: Remove or change this placeholder text -->
     <string name="hello_blank_fragment">Hello blank fragment</string>
@@ -195,6 +195,7 @@
     <string name="x_point">%d point</string>
     <string name="request_activity_title">Requests</string>
     <string name="accept_request_prompt">Accept request from %s? All the other requests have been rejected!</string>
+    <string name="accept_request_prompt_when_state_reading">Stop reading this book and accept request from %s? All the other requests have been rejected!</string>
     <string name="reject">Reject</string>
     <string name="rejected_requests">Rejected requests</string>
     <string name="reject_request_prompt">Reject request from %s?</string>
@@ -240,4 +241,10 @@
     <string name="report_hint_book_additional_info">Tell us anything about your problem…</string>
     <string name="report_hint_book_other">Tell us what\'s wrong with %s…</string>
     <string name="lost_prompt">%s lost?</string>
+    <string name="send_request_to_x">Are you sure? You are sending request to %s.</string>
+    <string name="requested_button">Requested</string>
+    <string name="on_road_books">On Road Books</string>
+    <string name="action_message">Message</string>
+    <string name="no_messages_yet">No messages yet. Start talking now!</string>
+    <string name="search_history">Search History</string>
 </resources>

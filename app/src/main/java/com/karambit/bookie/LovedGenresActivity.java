@@ -49,7 +49,7 @@ public class LovedGenresActivity extends AppCompatActivity {
         setContentView(R.layout.activity_loved_genres);
 
         SpannableString s = new SpannableString(getResources().getString(R.string.loved_genres_title));
-        s.setSpan(new TypefaceSpan(this, "montserrat_regular.ttf"), 0, s.length(),
+        s.setSpan(new TypefaceSpan(this, "comfortaa.ttf"), 0, s.length(),
                   Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
         setTitle(s);
 

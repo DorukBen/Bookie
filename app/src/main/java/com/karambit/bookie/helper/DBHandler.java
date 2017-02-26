@@ -49,6 +49,7 @@ public class DBHandler extends SQLiteOpenHelper {
     private static final String USER_COLUMN_BIO = "bio";
     private static final String USER_COLUMN_BOOK_COUNTER = "book_counter";
     private static final String USER_COLUMN_POINT = "point";
+    private static final String USER_COLUMN_SHARED_POINT = "shared_point";
 
     private static final String LG_TABLE_NAME = "loved_genre";
     private static final String LG_COLUMN_ID = "loved_genre_id";
@@ -98,13 +99,39 @@ public class DBHandler extends SQLiteOpenHelper {
     private static final String NOTIFICATION_BOOK_COLUMN_GENRE = "genre";
     private static final String NOTIFICATION_BOOK_COLUMN_OWNER_ID = "owner_id";
 
-    private static final String BOOK_USER_TABLE_NAME = "book_user";
-    private static final String BOOK_USER_COLUMN_ID = "user_id";
-    private static final String BOOK_USER_COLUMN_NAME = "name";
-    private static final String BOOK_USER_COLUMN_IMAGE_URL = "image_url";
-    private static final String BOOK_USER_COLUMN_THUMBNAIL_URL = "thumbnail_url";
-    private static final String BOOK_USER_COLUMN_LATITUDE = "latitude";
-    private static final String BOOK_USER_COLUMN_LONGITUDE = "longitude";
+    private static final String NOTIFICATION_BOOK_USER_TABLE_NAME = "notification_book_user";
+    private static final String NOTIFICATION_BOOK_USER_COLUMN_ID = "user_id";
+    private static final String NOTIFICATION_BOOK_USER_COLUMN_NAME = "name";
+    private static final String NOTIFICATION_BOOK_USER_COLUMN_IMAGE_URL = "image_url";
+    private static final String NOTIFICATION_BOOK_USER_COLUMN_THUMBNAIL_URL = "thumbnail_url";
+    private static final String NOTIFICATION_BOOK_USER_COLUMN_LATITUDE = "latitude";
+    private static final String NOTIFICATION_BOOK_USER_COLUMN_LONGITUDE = "longitude";
+
+    private static final String SEARCH_USER_TABLE_NAME = "search_user";
+    private static final String SEARCH_USER_COLUMN_ID = "user_id";
+    private static final String SEARCH_USER_COLUMN_NAME = "name";
+    private static final String SEARCH_USER_COLUMN_IMAGE_URL = "image_url";
+    private static final String SEARCH_USER_COLUMN_THUMBNAIL_URL = "thumbnail_url";
+    private static final String SEARCH_USER_COLUMN_LATITUDE = "latitude";
+    private static final String SEARCH_USER_COLUMN_LONGITUDE = "longitude";
+
+    private static final String SEARCH_BOOK_TABLE_NAME = "search_book";
+    private static final String SEARCH_BOOK_COLUMN_ID = "book_id";
+    private static final String SEARCH_BOOK_COLUMN_NAME = "name";
+    private static final String SEARCH_BOOK_COLUMN_IMAGE_URL = "image_url";
+    private static final String SEARCH_BOOK_COLUMN_THUMBNAIL_URL = "thumbnail_url";
+    private static final String SEARCH_BOOK_COLUMN_AUTHOR = "author";
+    private static final String SEARCH_BOOK_COLUMN_STATE = "state";
+    private static final String SEARCH_BOOK_COLUMN_GENRE = "genre";
+    private static final String SEARCH_BOOK_COLUMN_OWNER_ID = "owner_id";
+
+    private static final String SEARCH_BOOK_USER_TABLE_NAME = "search_book_user";
+    private static final String SEARCH_BOOK_USER_COLUMN_ID = "user_id";
+    private static final String SEARCH_BOOK_USER_COLUMN_NAME = "name";
+    private static final String SEARCH_BOOK_USER_COLUMN_IMAGE_URL = "image_url";
+    private static final String SEARCH_BOOK_USER_COLUMN_THUMBNAIL_URL = "thumbnail_url";
+    private static final String SEARCH_BOOK_USER_COLUMN_LATITUDE = "latitude";
+    private static final String SEARCH_BOOK_USER_COLUMN_LONGITUDE = "longitude";
 
     private final Context mContext;
 
@@ -131,7 +158,8 @@ public class DBHandler extends SQLiteOpenHelper {
                         USER_COLUMN_VERIFIED + " BIT NOT NULL, " +
                         USER_COLUMN_BIO + " TEXT, " +
                         USER_COLUMN_BOOK_COUNTER + " INTEGER NOT NULL, " +
-                        USER_COLUMN_POINT + " INTEGER NOT NULL)"
+                        USER_COLUMN_POINT + " INTEGER NOT NULL, " +
+                        USER_COLUMN_SHARED_POINT + " INTEGER NOT NULL)"
         );
 
         db.execSQL(
@@ -195,13 +223,45 @@ public class DBHandler extends SQLiteOpenHelper {
         );
 
         db.execSQL(
-                "CREATE TABLE " + BOOK_USER_TABLE_NAME + " (" +
-                        BOOK_USER_COLUMN_ID + " INTEGER PRIMARY KEY NOT NULL, " +
-                        BOOK_USER_COLUMN_NAME + " TEXT NOT NULL, " +
-                        BOOK_USER_COLUMN_IMAGE_URL + " TEXT NOT NULL, " +
-                        BOOK_USER_COLUMN_THUMBNAIL_URL + " TEXT NOT NULL, " +
-                        BOOK_USER_COLUMN_LATITUDE + " DOUBLE, " +
-                        BOOK_USER_COLUMN_LONGITUDE + " DOUBLE)"
+                "CREATE TABLE " + NOTIFICATION_BOOK_USER_TABLE_NAME + " (" +
+                        NOTIFICATION_BOOK_USER_COLUMN_ID + " INTEGER PRIMARY KEY NOT NULL, " +
+                        NOTIFICATION_BOOK_USER_COLUMN_NAME + " TEXT NOT NULL, " +
+                        NOTIFICATION_BOOK_USER_COLUMN_IMAGE_URL + " TEXT NOT NULL, " +
+                        NOTIFICATION_BOOK_USER_COLUMN_THUMBNAIL_URL + " TEXT NOT NULL, " +
+                        NOTIFICATION_BOOK_USER_COLUMN_LATITUDE + " DOUBLE, " +
+                        NOTIFICATION_BOOK_USER_COLUMN_LONGITUDE + " DOUBLE)"
+        );
+
+        db.execSQL(
+                "CREATE TABLE " + SEARCH_USER_TABLE_NAME + " (" +
+                        SEARCH_USER_COLUMN_ID + " INTEGER PRIMARY KEY NOT NULL, " +
+                        SEARCH_USER_COLUMN_NAME + " TEXT NOT NULL, " +
+                        SEARCH_USER_COLUMN_IMAGE_URL + " TEXT NOT NULL, " +
+                        SEARCH_USER_COLUMN_THUMBNAIL_URL + " TEXT NOT NULL, " +
+                        SEARCH_USER_COLUMN_LATITUDE + " DOUBLE, " +
+                        SEARCH_USER_COLUMN_LONGITUDE + " DOUBLE)"
+        );
+
+        db.execSQL(
+                "CREATE TABLE " + SEARCH_BOOK_TABLE_NAME + " (" +
+                        SEARCH_BOOK_COLUMN_ID + " INTEGER PRIMARY KEY NOT NULL, " +
+                        SEARCH_BOOK_COLUMN_NAME + " TEXT NOT NULL, " +
+                        SEARCH_BOOK_COLUMN_IMAGE_URL + " TEXT NOT NULL, " +
+                        SEARCH_BOOK_COLUMN_THUMBNAIL_URL + " TEXT NOT NULL, " +
+                        SEARCH_BOOK_COLUMN_AUTHOR + " TEXT NOT NULL, " +
+                        SEARCH_BOOK_COLUMN_STATE + " INTEGER NOT NULL, " +
+                        SEARCH_BOOK_COLUMN_GENRE + " INTEGER NOT NULL, " +
+                        SEARCH_BOOK_COLUMN_OWNER_ID + " INTEGER NOT NULL)"
+        );
+
+        db.execSQL(
+                "CREATE TABLE " + SEARCH_BOOK_USER_TABLE_NAME + " (" +
+                        SEARCH_BOOK_USER_COLUMN_ID + " INTEGER PRIMARY KEY NOT NULL, " +
+                        SEARCH_BOOK_USER_COLUMN_NAME + " TEXT NOT NULL, " +
+                        SEARCH_BOOK_USER_COLUMN_IMAGE_URL + " TEXT NOT NULL, " +
+                        SEARCH_BOOK_USER_COLUMN_THUMBNAIL_URL + " TEXT NOT NULL, " +
+                        SEARCH_BOOK_USER_COLUMN_LATITUDE + " DOUBLE, " +
+                        SEARCH_BOOK_USER_COLUMN_LONGITUDE + " DOUBLE)"
         );
     }
 
@@ -214,7 +274,10 @@ public class DBHandler extends SQLiteOpenHelper {
         db.execSQL("DROP TABLE IF EXISTS " + NOTIFICATION_TABLE_NAME);
         db.execSQL("DROP TABLE IF EXISTS " + NOTIFICATION_USER_TABLE_NAME);
         db.execSQL("DROP TABLE IF EXISTS " + NOTIFICATION_BOOK_TABLE_NAME);
-        db.execSQL("DROP TABLE IF EXISTS " + BOOK_USER_TABLE_NAME);
+        db.execSQL("DROP TABLE IF EXISTS " + NOTIFICATION_BOOK_USER_TABLE_NAME);
+        db.execSQL("DROP TABLE IF EXISTS " + SEARCH_USER_TABLE_NAME);
+        db.execSQL("DROP TABLE IF EXISTS " + SEARCH_BOOK_TABLE_NAME);
+        db.execSQL("DROP TABLE IF EXISTS " + SEARCH_BOOK_USER_TABLE_NAME);
         onCreate(db);
     }
 
@@ -239,7 +302,7 @@ public class DBHandler extends SQLiteOpenHelper {
      * @return {@link Boolean Boolean} result from executed database query. If query successful returns true else returns false.
      */
     public boolean insertCurrentUser(int id, String name, String imageURL, String thumbnailURL, double latitude, double longitude,
-                                     String password, String email, boolean verified, String bio, int bookCounter, int point) {
+                                     String password, String email, boolean verified, String bio, int bookCounter, int point, int sharedPoint) {
         SQLiteDatabase db = null;
         boolean result = false;
         try {
@@ -259,6 +322,7 @@ public class DBHandler extends SQLiteOpenHelper {
             contentValues.put(USER_COLUMN_BIO, bio);
             contentValues.put(USER_COLUMN_BOOK_COUNTER, bookCounter);
             contentValues.put(USER_COLUMN_POINT, point);
+            contentValues.put(USER_COLUMN_SHARED_POINT, sharedPoint);
 
             result = db.insert(USER_TABLE_NAME, null, contentValues) > 0;
         }finally {
@@ -306,6 +370,7 @@ public class DBHandler extends SQLiteOpenHelper {
             contentValues.put(USER_COLUMN_BIO, user.getBio());
             contentValues.put(USER_COLUMN_BOOK_COUNTER, user.getBookCounter());
             contentValues.put(USER_COLUMN_POINT, user.getPoint());
+            contentValues.put(USER_COLUMN_SHARED_POINT, user.getSharedPoint());
 
             result = db.insert(USER_TABLE_NAME, null, contentValues) > 0;
         }finally {
@@ -340,20 +405,23 @@ public class DBHandler extends SQLiteOpenHelper {
             db.beginTransaction();
             res = db.rawQuery("SELECT * FROM " + USER_TABLE_NAME, null);
             res.moveToFirst();
-            if (res.isNull(res.getColumnIndex(USER_COLUMN_LATITUDE)) || res.isNull(res.getColumnIndex(USER_COLUMN_LONGITUDE))){
-                user = new User(res.getInt(res.getColumnIndex(USER_COLUMN_ID)),
-                        res.getString(res.getColumnIndex(USER_COLUMN_NAME)),
-                        res.getString(res.getColumnIndex(USER_COLUMN_IMAGE_URL)),
-                        res.getString(res.getColumnIndex(USER_COLUMN_THUMBNAIL_URL)),
-                        null);
+            if (res.getCount() > 0){
+                if (res.isNull(res.getColumnIndex(USER_COLUMN_LATITUDE)) || res.isNull(res.getColumnIndex(USER_COLUMN_LONGITUDE))){
+                    user = new User(res.getInt(res.getColumnIndex(USER_COLUMN_ID)),
+                            res.getString(res.getColumnIndex(USER_COLUMN_NAME)),
+                            res.getString(res.getColumnIndex(USER_COLUMN_IMAGE_URL)),
+                            res.getString(res.getColumnIndex(USER_COLUMN_THUMBNAIL_URL)),
+                            null);
+                }else {
+                    user = new User(res.getInt(res.getColumnIndex(USER_COLUMN_ID)),
+                            res.getString(res.getColumnIndex(USER_COLUMN_NAME)),
+                            res.getString(res.getColumnIndex(USER_COLUMN_IMAGE_URL)),
+                            res.getString(res.getColumnIndex(USER_COLUMN_THUMBNAIL_URL)),
+                            new LatLng(res.getDouble(res.getColumnIndex(USER_COLUMN_LATITUDE)), res.getDouble(res.getColumnIndex(USER_COLUMN_LONGITUDE))));
+                }
             }else {
-                user = new User(res.getInt(res.getColumnIndex(USER_COLUMN_ID)),
-                        res.getString(res.getColumnIndex(USER_COLUMN_NAME)),
-                        res.getString(res.getColumnIndex(USER_COLUMN_IMAGE_URL)),
-                        res.getString(res.getColumnIndex(USER_COLUMN_THUMBNAIL_URL)),
-                        new LatLng(res.getDouble(res.getColumnIndex(USER_COLUMN_LATITUDE)), res.getDouble(res.getColumnIndex(USER_COLUMN_LONGITUDE))));
+                return null;
             }
-
         }finally {
             if (res != null){
                 res.close();
@@ -405,7 +473,8 @@ public class DBHandler extends SQLiteOpenHelper {
                     res.getInt(res.getColumnIndex(USER_COLUMN_VERIFIED)) > 0,
                     res.getString(res.getColumnIndex(USER_COLUMN_BIO)),
                     res.getInt(res.getColumnIndex(USER_COLUMN_BOOK_COUNTER)),
-                    res.getInt(res.getColumnIndex(USER_COLUMN_POINT)));
+                    res.getInt(res.getColumnIndex(USER_COLUMN_POINT)),
+                    res.getInt(res.getColumnIndex(USER_COLUMN_SHARED_POINT)));
         }finally {
             if (res != null){
                 res.close();
@@ -711,7 +780,7 @@ public class DBHandler extends SQLiteOpenHelper {
             contentValues.put(MESSAGE_COLUMN_CREATED_AT, message.getCreatedAt().getTimeInMillis());
             contentValues.put(MESSAGE_COLUMN_STATE, message.getState().ordinal());
 
-            result = db.insert(MESSAGE_TABLE_NAME, null, contentValues) > 0;
+            result = db.insert(MESSAGE_TABLE_NAME, null, contentValues) < 0;
         }finally {
             if (db != null && db.isOpen()){
                 db.setTransactionSuccessful();
@@ -722,6 +791,24 @@ public class DBHandler extends SQLiteOpenHelper {
         }
 
         return result;
+    }
+
+    /**
+     * Saves massage to database if message user not exist inserts message user too.
+     *
+     * Use this method instead of {@link DBHandler#insertMessage(Message) insert message}.
+     *
+     * Using SQLiteOpenHelper. Can't access database simultaneously.<br>
+     *
+     * @param message New {@link Message message}<br>
+     *
+     * @return boolean value if insertion successful returns true else returns false.
+     */
+    public boolean saveMessageToDataBase(Message message){
+        if (!isMessageUserExists(message.getOppositeUser(SessionManager.getCurrentUser(mContext)))){
+            insertMessageUser(message.getOppositeUser(SessionManager.getCurrentUser(mContext)));
+        }
+        return insertMessage(message);
     }
 
     /**
@@ -951,26 +1038,31 @@ public class DBHandler extends SQLiteOpenHelper {
                     + "LIMIT 1", null);
             res.moveToFirst();
 
-            Calendar calendar = Calendar.getInstance();
-            long time = res.getLong(res.getColumnIndex(MESSAGE_COLUMN_CREATED_AT)); //replace 4 with the column index
-            calendar.setTimeInMillis(time);
+            if (res.getCount() >  0){
+                Calendar calendar = Calendar.getInstance();
+                long time = res.getLong(res.getColumnIndex(MESSAGE_COLUMN_CREATED_AT)); //replace 4 with the column index
+                calendar.setTimeInMillis(time);
 
 
-            if (res.getInt(res.getColumnIndex(MESSAGE_COLUMN_FROM_USER_ID)) == SessionManager.getCurrentUser(mContext.getApplicationContext()).getID()){
-                message = new Message(res.getInt(res.getColumnIndex(MESSAGE_COLUMN_ID)),
-                        res.getString(res.getColumnIndex(MESSAGE_COLUMN_TEXT)),
-                        currentUser,
-                        anotherUser,
-                        calendar,
-                        Message.State.values()[res.getInt(res.getColumnIndex(MESSAGE_COLUMN_STATE))]);
-            }else{
-                message = new Message(res.getInt(res.getColumnIndex(MESSAGE_COLUMN_ID)),
-                        res.getString(res.getColumnIndex(MESSAGE_COLUMN_TEXT)),
-                        anotherUser,
-                        currentUser,
-                        calendar,
-                        Message.State.values()[res.getInt(res.getColumnIndex(MESSAGE_COLUMN_STATE))]);
+                if (res.getInt(res.getColumnIndex(MESSAGE_COLUMN_FROM_USER_ID)) == SessionManager.getCurrentUser(mContext.getApplicationContext()).getID()){
+                    message = new Message(res.getInt(res.getColumnIndex(MESSAGE_COLUMN_ID)),
+                            res.getString(res.getColumnIndex(MESSAGE_COLUMN_TEXT)),
+                            currentUser,
+                            anotherUser,
+                            calendar,
+                            Message.State.values()[res.getInt(res.getColumnIndex(MESSAGE_COLUMN_STATE))]);
+                }else{
+                    message = new Message(res.getInt(res.getColumnIndex(MESSAGE_COLUMN_ID)),
+                            res.getString(res.getColumnIndex(MESSAGE_COLUMN_TEXT)),
+                            anotherUser,
+                            currentUser,
+                            calendar,
+                            Message.State.values()[res.getInt(res.getColumnIndex(MESSAGE_COLUMN_STATE))]);
+                }
+            }else {
+                message = null;
             }
+
         }finally {
             if (res != null) {
                 res.close();
@@ -1024,7 +1116,12 @@ public class DBHandler extends SQLiteOpenHelper {
                     " LIMIT 1", null);
             res.moveToFirst();
 
-            lastMessageId = res.getInt(res.getColumnIndex(MESSAGE_COLUMN_ID));
+            if (res.getCount() > 0){
+                lastMessageId = res.getInt(res.getColumnIndex(MESSAGE_COLUMN_ID));
+            }else {
+                lastMessageId = -1;
+            }
+
 
         } finally {
             if (res != null){
@@ -1250,7 +1347,7 @@ public class DBHandler extends SQLiteOpenHelper {
         try {
             db = this.getReadableDatabase();
             db.beginTransaction();
-            res = db.rawQuery("SELECT * FROM " + MESSAGE_USER_TABLE_NAME + " WHERE " + USER_COLUMN_ID  + " = " + user.getID(), null);
+            res = db.rawQuery("SELECT * FROM " + MESSAGE_USER_TABLE_NAME + " WHERE " + MESSAGE_USER_COLUMN_ID  + " = " + user.getID(), null);
             res.moveToFirst();
 
             return res.getCount() > 0;
@@ -1397,9 +1494,30 @@ public class DBHandler extends SQLiteOpenHelper {
         Log.i(TAG, "All Message Users and Messages deleted from database");
     }
 
+    public void deleteAllNotifications() {
+        SQLiteDatabase db = null;
+        try{
+            db = this.getWritableDatabase();
+            db.beginTransaction();
+
+            db.delete(NOTIFICATION_TABLE_NAME, null, null);
+            db.delete(NOTIFICATION_BOOK_TABLE_NAME, null, null);
+            db.delete(NOTIFICATION_BOOK_USER_TABLE_NAME, null, null);
+            db.delete(NOTIFICATION_USER_TABLE_NAME, null, null);
+
+        } finally {
+            if (db != null && db.isOpen()){
+                db.setTransactionSuccessful();
+                db.endTransaction();
+                db.close();
+            }
+        }
+        Log.i(TAG, "All Message Users and Messages deleted from database");
+    }
+
     public void saveNotificationToDatabase(Notification notification){
-        if (!isBookUserExists(notification.getBook().getOwner())){
-            insertBookUser(notification.getBook().getOwner());
+        if (!isNotificationBookUserExists(notification.getBook().getOwner())){
+            insertNotificationBookUser(notification.getBook().getOwner());
         }
         if (!isNotificationBookExists(notification.getBook())){
             insertNotificationBook(notification.getBook());
@@ -1448,6 +1566,69 @@ public class DBHandler extends SQLiteOpenHelper {
             Log.i(TAG, "New Notification insertion successful");
         }
         return result;
+    }
+
+    /**
+     * Updates all notifications seen value.<br>
+     *
+     * Using SQLiteOpenHelper. Can't access database simultaneously.<br>
+
+     */
+    public void updateAllNotificationsSeen(){
+        SQLiteDatabase db = null;
+
+        try{
+            db = this.getWritableDatabase();
+            db.beginTransaction();
+            ContentValues cv = new ContentValues();
+            cv.put(NOTIFICATION_COLUMN_SEEN, 1);
+
+            // getCurrentUser in this class fetch user from database. getCurrentUser in SessionManager fetch user from static User field
+            db.update(NOTIFICATION_TABLE_NAME, cv,null, null);
+        }finally {
+            if (db != null && db.isOpen()) {
+                db.setTransactionSuccessful();
+                db.endTransaction();
+                db.close();
+            }
+            Log.i(TAG, "Notifications seen updated updated");
+        }
+    }
+
+    /**
+     * Counts unseen notifications.<br>
+     *
+     * Using SQLiteOpenHelper. Can't access database simultaneously.<br>
+     *
+     * @return Total unseen notification count for given user
+     */
+    public int getUnseenNotificationCount(){
+        SQLiteDatabase db = null;
+        Cursor res = null;
+        String queryVariableString = "totalCount";
+        int unseenMessageCount = 0;
+
+        try {
+            db = this.getReadableDatabase();
+            db.beginTransaction();
+            res = db.rawQuery("SELECT COUNT(*) AS " + queryVariableString + " FROM " + NOTIFICATION_TABLE_NAME +
+                    " WHERE " + NOTIFICATION_COLUMN_SEEN + " = " + 0, null);
+            res.moveToFirst();
+
+            unseenMessageCount = res.getInt(res.getColumnIndex(queryVariableString));
+
+        } finally {
+            if (res != null){
+                res.close();
+            }
+            if (db != null && db.isOpen()){
+                db.setTransactionSuccessful();
+                db.endTransaction();
+                db.close();
+            }
+        }
+
+        return unseenMessageCount;
     }
 
     /**
@@ -1565,7 +1746,7 @@ public class DBHandler extends SQLiteOpenHelper {
      *
      * Using SQLiteOpenHelper. Can't access database simultaneously.<br>
      *
-     * @param book Message {@link Book book}
+     * @param book Notification {@link Book book}
      *
      * @return  boolean value. If message {@link Book book} exist returns true else returns false.
      */
@@ -1598,7 +1779,7 @@ public class DBHandler extends SQLiteOpenHelper {
      *
      * Using SQLiteOpenHelper. Can't access database simultaneously.<br>
      *
-     * @param bookUsers All book {@link User user's}. Use {@link DBHandler#getAllBookUsers()}
+     * @param bookUsers All book {@link User user's}. Use {@link DBHandler#getAllNotificationBookUsers()}
      * @return All notification {@link Book books's}
      */
     public ArrayList<Book> getAllNotificationBooks(ArrayList<User> bookUsers) {
@@ -1764,58 +1945,58 @@ public class DBHandler extends SQLiteOpenHelper {
     }
 
     /**
-     * Insert book user to database.<br>
+     * Insert notification book user to database.<br>
      *
-     *     Before any {@link User user} insertion use {@link DBHandler#isBookUserExists(User)}.<br>
+     *     Before any {@link User user} insertion use {@link DBHandler#isNotificationBookUserExists(User)}.<br>
      *
      * Using SQLiteOpenHelper. Can't access database simultaneously.<br>
      *
      * @param user {@link User} which will be inserted
      * @return Returns boolean value if insertion successful returns true else returns false
      */
-    public boolean insertBookUser(User user) {
+    public boolean insertNotificationBookUser(User user) {
         SQLiteDatabase db = null;
         boolean result = false;
         try{
             db = this.getWritableDatabase();
             db.beginTransaction();
             ContentValues contentValues = new ContentValues();
-            contentValues.put(BOOK_USER_COLUMN_ID, user.getID());
-            contentValues.put(BOOK_USER_COLUMN_NAME, user.getName());
-            contentValues.put(BOOK_USER_COLUMN_IMAGE_URL, user.getImageUrl());
-            contentValues.put(BOOK_USER_COLUMN_THUMBNAIL_URL, user.getThumbnailUrl());
-            contentValues.put(BOOK_USER_COLUMN_LATITUDE, (user.getLocation() != null) ? user.getLocation().latitude : null);
-            contentValues.put(BOOK_USER_COLUMN_LONGITUDE, (user.getLocation() != null) ? user.getLocation().longitude : null);
+            contentValues.put(NOTIFICATION_BOOK_USER_COLUMN_ID, user.getID());
+            contentValues.put(NOTIFICATION_BOOK_USER_COLUMN_NAME, user.getName());
+            contentValues.put(NOTIFICATION_BOOK_USER_COLUMN_IMAGE_URL, user.getImageUrl());
+            contentValues.put(NOTIFICATION_BOOK_USER_COLUMN_THUMBNAIL_URL, user.getThumbnailUrl());
+            contentValues.put(NOTIFICATION_BOOK_USER_COLUMN_LATITUDE, (user.getLocation() != null) ? user.getLocation().latitude : null);
+            contentValues.put(NOTIFICATION_BOOK_USER_COLUMN_LONGITUDE, (user.getLocation() != null) ? user.getLocation().longitude : null);
 
-            result = db.insert(BOOK_USER_TABLE_NAME, null, contentValues) > 0;
+            result = db.insert(NOTIFICATION_BOOK_USER_TABLE_NAME, null, contentValues) > 0;
         }finally {
             if (db != null && db.isOpen()){
                 db.setTransactionSuccessful();
                 db.endTransaction();
                 db.close();
             }
-            Log.i(TAG, "New Book User insertion successful");
+            Log.i(TAG, "New Notification Book User insertion successful");
         }
         return result;
     }
 
     /**
-     * Checks database for given user's existence. Use before all book user insertions.<br>
+     * Checks database for given user's existence. Use before all notification book user insertions.<br>
      *
      * Using SQLiteOpenHelper. Can't access database simultaneously.<br>
      *
-     * @param user Book {@link User user}
+     * @param user Notification book {@link User user}
      *
      * @return  boolean value. If message {@link User user} exist returns true else returns false.
      */
-    public boolean isBookUserExists(User user) {
+    public boolean isNotificationBookUserExists(User user) {
         SQLiteDatabase db = null;
         Cursor res = null;
 
         try {
             db = this.getReadableDatabase();
             db.beginTransaction();
-            res = db.rawQuery("SELECT * FROM " + BOOK_USER_TABLE_NAME + " WHERE " + BOOK_USER_COLUMN_ID  + " = " + user.getID(), null);
+            res = db.rawQuery("SELECT * FROM " + NOTIFICATION_BOOK_USER_TABLE_NAME + " WHERE " + NOTIFICATION_BOOK_USER_COLUMN_ID + " = " + user.getID(), null);
             res.moveToFirst();
 
             return res.getCount() > 0;
@@ -1839,31 +2020,31 @@ public class DBHandler extends SQLiteOpenHelper {
      *
      * @return All notification {@link User user's}
      */
-    public ArrayList<User> getAllBookUsers() {
+    public ArrayList<User> getAllNotificationBookUsers() {
         SQLiteDatabase db = null;
         Cursor res = null;
         ArrayList<User> users = new ArrayList<>();
         try {
             db = this.getReadableDatabase();
             db.beginTransaction();
-            res = db.rawQuery("SELECT * FROM " + BOOK_USER_TABLE_NAME, null);
+            res = db.rawQuery("SELECT * FROM " + NOTIFICATION_BOOK_USER_TABLE_NAME, null);
             res.moveToFirst();
 
             if (res.getCount() > 0) {
                 do {
                     User user;
-                    if (res.isNull(res.getColumnIndex(BOOK_USER_COLUMN_LATITUDE)) || res.isNull(res.getColumnIndex(BOOK_USER_COLUMN_LONGITUDE))){
-                        user = new User(res.getInt(res.getColumnIndex(BOOK_USER_COLUMN_ID)),
-                                res.getString(res.getColumnIndex(BOOK_USER_COLUMN_NAME)),
-                                res.getString(res.getColumnIndex(BOOK_USER_COLUMN_IMAGE_URL)),
-                                res.getString(res.getColumnIndex(BOOK_USER_COLUMN_THUMBNAIL_URL)),
+                    if (res.isNull(res.getColumnIndex(NOTIFICATION_BOOK_USER_COLUMN_LATITUDE)) || res.isNull(res.getColumnIndex(NOTIFICATION_BOOK_USER_COLUMN_LONGITUDE))){
+                        user = new User(res.getInt(res.getColumnIndex(NOTIFICATION_BOOK_USER_COLUMN_ID)),
+                                res.getString(res.getColumnIndex(NOTIFICATION_BOOK_USER_COLUMN_NAME)),
+                                res.getString(res.getColumnIndex(NOTIFICATION_BOOK_USER_COLUMN_IMAGE_URL)),
+                                res.getString(res.getColumnIndex(NOTIFICATION_BOOK_USER_COLUMN_THUMBNAIL_URL)),
                                 null);
                     }else {
-                        user = new User(res.getInt(res.getColumnIndex(BOOK_USER_COLUMN_ID)),
-                                res.getString(res.getColumnIndex(BOOK_USER_COLUMN_NAME)),
-                                res.getString(res.getColumnIndex(BOOK_USER_COLUMN_IMAGE_URL)),
-                                res.getString(res.getColumnIndex(BOOK_USER_COLUMN_THUMBNAIL_URL)),
-                                new LatLng(res.getDouble(res.getColumnIndex(BOOK_USER_COLUMN_LATITUDE)), res.getDouble(res.getColumnIndex(BOOK_USER_COLUMN_LONGITUDE)))
+                        user = new User(res.getInt(res.getColumnIndex(NOTIFICATION_BOOK_USER_COLUMN_ID)),
+                                res.getString(res.getColumnIndex(NOTIFICATION_BOOK_USER_COLUMN_NAME)),
+                                res.getString(res.getColumnIndex(NOTIFICATION_BOOK_USER_COLUMN_IMAGE_URL)),
+                                res.getString(res.getColumnIndex(NOTIFICATION_BOOK_USER_COLUMN_THUMBNAIL_URL)),
+                                new LatLng(res.getDouble(res.getColumnIndex(NOTIFICATION_BOOK_USER_COLUMN_LATITUDE)), res.getDouble(res.getColumnIndex(NOTIFICATION_BOOK_USER_COLUMN_LONGITUDE)))
                                 );
                     }
 
@@ -1882,5 +2063,436 @@ public class DBHandler extends SQLiteOpenHelper {
             }
         }
         return users;
+    }
+
+    /**
+     * Checks database for given book's existence. Use before all search book insertions.<br>
+     *
+     * Using SQLiteOpenHelper. Can't access database simultaneously.<br>
+     *
+     * @param book {@link Book book}
+     *
+     * @return  boolean value. If message {@link Book book} exist returns true else returns false.
+     */
+    public boolean isSearchBookExists(Book book) {
+        SQLiteDatabase db = null;
+        Cursor res = null;
+
+        try {
+            db = this.getReadableDatabase();
+            db.beginTransaction();
+            res = db.rawQuery("SELECT * FROM " + SEARCH_BOOK_TABLE_NAME + " WHERE " + SEARCH_BOOK_COLUMN_ID  + " = " + book.getID(), null);
+            res.moveToFirst();
+
+            return res.getCount() > 0;
+
+        }finally {
+            if (res != null) {
+                res.close();
+            }
+            if (db != null && db.isOpen()){
+                db.setTransactionSuccessful();
+                db.endTransaction();
+                db.close();
+            }
+        }
+    }
+
+    /**
+     * Insert search {@link Book book} to database.<br>
+     *
+     *     Before any {@link Book book} insertion use {@link DBHandler#isSearchBookExists(Book)}.<br>
+     *
+     * Using SQLiteOpenHelper. Can't access database simultaneously.<br>
+     *
+     * @param book {@link Book} which will be inserted
+     * @return Returns boolean value if insertion successful returns true else returns false
+     */
+    public boolean insertSearchBook(Book book) {
+        SQLiteDatabase db = null;
+        boolean result = false;
+        try{
+            db = this.getWritableDatabase();
+            db.beginTransaction();
+            ContentValues contentValues = new ContentValues();
+            contentValues.put(SEARCH_BOOK_COLUMN_ID, book.getID());
+            contentValues.put(SEARCH_BOOK_COLUMN_NAME, book.getName());
+            contentValues.put(SEARCH_BOOK_COLUMN_IMAGE_URL, book.getImageURL());
+            contentValues.put(SEARCH_BOOK_COLUMN_THUMBNAIL_URL, book.getThumbnailURL());
+            contentValues.put(SEARCH_BOOK_COLUMN_AUTHOR, book.getAuthor());
+            contentValues.put(SEARCH_BOOK_COLUMN_STATE, book.getState().getStateCode());
+            contentValues.put(SEARCH_BOOK_COLUMN_GENRE, book.getGenreCode());
+            contentValues.put(SEARCH_BOOK_COLUMN_OWNER_ID, book.getOwner().getID());
+
+            result = db.insert(SEARCH_BOOK_TABLE_NAME, null, contentValues) > 0;
+        }finally {
+            if (db != null && db.isOpen()){
+                db.setTransactionSuccessful();
+                db.endTransaction();
+                db.close();
+            }
+            Log.i(TAG, "New Search Book insertion successful");
+        }
+        return result;
+    }
+
+    /**
+     * Get all search {@link Book book's} from database.<br>
+     *
+     * Using SQLiteOpenHelper. Can't access database simultaneously.<br>
+     *
+     * @param bookUsers All book {@link User user's}. Use {@link DBHandler#getAllSearchBookUsers()}
+     * @return All notification {@link Book books's}
+     */
+    public ArrayList<Book> getAllSearchBooks(ArrayList<User> bookUsers) {
+        SQLiteDatabase db = null;
+        Cursor res = null;
+        ArrayList<Book> books = new ArrayList<>();
+        try {
+            db = this.getReadableDatabase();
+            db.beginTransaction();
+            res = db.rawQuery("SELECT * FROM " + SEARCH_BOOK_TABLE_NAME, null);
+            res.moveToFirst();
+
+            if (res.getCount() > 0) {
+                do {
+                    for (User user: bookUsers){
+                        if (user.getID() == res.getInt(res.getColumnIndex(SEARCH_BOOK_COLUMN_OWNER_ID))){
+                            Book book = new Book(res.getInt(res.getColumnIndex(SEARCH_BOOK_COLUMN_ID)),
+                                    res.getString(res.getColumnIndex(SEARCH_BOOK_COLUMN_NAME)),
+                                    res.getString(res.getColumnIndex(SEARCH_BOOK_COLUMN_IMAGE_URL)),
+                                    res.getString(res.getColumnIndex(SEARCH_BOOK_COLUMN_THUMBNAIL_URL)),
+                                    res.getString(res.getColumnIndex(SEARCH_BOOK_COLUMN_AUTHOR)),
+                                    Book.State.valueOf(res.getInt(res.getColumnIndex(SEARCH_BOOK_COLUMN_STATE))),
+                                    res.getInt(res.getColumnIndex(SEARCH_BOOK_COLUMN_GENRE)),
+                                    user);
+
+                            books.add(book);
+                        }
+                    }
+                } while (res.moveToNext());
+            }
+        }finally {
+            if (res != null) {
+                res.close();
+            }
+            if (db != null && db.isOpen()){
+                db.setTransactionSuccessful();
+                db.endTransaction();
+                db.close();
+            }
+        }
+        return books;
+    }
+
+    /**
+     * Checks database for given user's existence. Use before all search book user insertions.<br>
+     *
+     * Using SQLiteOpenHelper. Can't access database simultaneously.<br>
+     *
+     * @param user Search book {@link User user}
+     *
+     * @return  boolean value. If message {@link User user} exist returns true else returns false.
+     */
+    public boolean isSearchBookUserExists(User user) {
+        SQLiteDatabase db = null;
+        Cursor res = null;
+
+        try {
+            db = this.getReadableDatabase();
+            db.beginTransaction();
+            res = db.rawQuery("SELECT * FROM " + SEARCH_BOOK_USER_TABLE_NAME + " WHERE " + SEARCH_BOOK_USER_COLUMN_ID + " = " + user.getID(), null);
+            res.moveToFirst();
+
+            return res.getCount() > 0;
+
+        }finally {
+            if (res != null) {
+                res.close();
+            }
+            if (db != null && db.isOpen()){
+                db.setTransactionSuccessful();
+                db.endTransaction();
+                db.close();
+            }
+        }
+    }
+
+    /**
+     * Insert book user to database.<br>
+     *
+     *     Before any {@link User user} insertion use {@link DBHandler#isSearchBookUserExists(User)}.<br>
+     *
+     * Using SQLiteOpenHelper. Can't access database simultaneously.<br>
+     *
+     * @param user {@link User} which will be inserted
+     * @return Returns boolean value if insertion successful returns true else returns false
+     */
+    public boolean insertSearchBookUser(User user) {
+        SQLiteDatabase db = null;
+        boolean result = false;
+        try{
+            db = this.getWritableDatabase();
+            db.beginTransaction();
+            ContentValues contentValues = new ContentValues();
+            contentValues.put(SEARCH_BOOK_USER_COLUMN_ID, user.getID());
+            contentValues.put(SEARCH_BOOK_USER_COLUMN_NAME, user.getName());
+            contentValues.put(SEARCH_BOOK_USER_COLUMN_IMAGE_URL, user.getImageUrl());
+            contentValues.put(SEARCH_BOOK_USER_COLUMN_THUMBNAIL_URL, user.getThumbnailUrl());
+            contentValues.put(SEARCH_BOOK_USER_COLUMN_LATITUDE, (user.getLocation() != null) ? user.getLocation().latitude : null);
+            contentValues.put(SEARCH_BOOK_USER_COLUMN_LONGITUDE, (user.getLocation() != null) ? user.getLocation().longitude : null);
+
+            result = db.insert(SEARCH_BOOK_USER_TABLE_NAME, null, contentValues) > 0;
+        }finally {
+            if (db != null && db.isOpen()){
+                db.setTransactionSuccessful();
+                db.endTransaction();
+                db.close();
+            }
+            Log.i(TAG, "New Search Book User insertion successful");
+        }
+        return result;
+    }
+
+    /**
+     * Get all search book {@link User user's} from database.<br>
+     *
+     * Using SQLiteOpenHelper. Can't access database simultaneously.<br>
+     *
+     * @return All search book {@link User user's}
+     */
+    public ArrayList<User> getAllSearchBookUsers() {
+        SQLiteDatabase db = null;
+        Cursor res = null;
+        ArrayList<User> users = new ArrayList<>();
+        try {
+            db = this.getReadableDatabase();
+            db.beginTransaction();
+            res = db.rawQuery("SELECT * FROM " + SEARCH_BOOK_USER_TABLE_NAME, null);
+            res.moveToFirst();
+
+            if (res.getCount() > 0) {
+                do {
+                    User user;
+                    if (res.isNull(res.getColumnIndex(SEARCH_BOOK_USER_COLUMN_LATITUDE)) || res.isNull(res.getColumnIndex(SEARCH_BOOK_USER_COLUMN_LONGITUDE))){
+                        user = new User(res.getInt(res.getColumnIndex(SEARCH_BOOK_USER_COLUMN_ID)),
+                                res.getString(res.getColumnIndex(SEARCH_BOOK_USER_COLUMN_NAME)),
+                                res.getString(res.getColumnIndex(SEARCH_BOOK_USER_COLUMN_IMAGE_URL)),
+                                res.getString(res.getColumnIndex(SEARCH_BOOK_USER_COLUMN_THUMBNAIL_URL)),
+                                null);
+                    }else {
+                        user = new User(res.getInt(res.getColumnIndex(SEARCH_BOOK_USER_COLUMN_ID)),
+                                res.getString(res.getColumnIndex(SEARCH_BOOK_USER_COLUMN_NAME)),
+                                res.getString(res.getColumnIndex(SEARCH_BOOK_USER_COLUMN_IMAGE_URL)),
+                                res.getString(res.getColumnIndex(SEARCH_BOOK_USER_COLUMN_THUMBNAIL_URL)),
+                                new LatLng(res.getDouble(res.getColumnIndex(SEARCH_BOOK_USER_COLUMN_LATITUDE)), res.getDouble(res.getColumnIndex(SEARCH_BOOK_USER_COLUMN_LONGITUDE)))
+                        );
+                    }
+                    users.add(user);
+                } while (res.moveToNext());
+            }
+        }finally {
+            if (res != null) {
+                res.close();
+            }
+            if (db != null && db.isOpen()){
+                db.setTransactionSuccessful();
+                db.endTransaction();
+                db.close();
+            }
+        }
+        return users;
+    }
+
+    /**
+     * Checks database for given user's existence. Use before all search user insertions.<br>
+     *
+     * Using SQLiteOpenHelper. Can't access database simultaneously.<br>
+     *
+     * @param user Search {@link User user}
+     *
+     * @return  boolean value. If message {@link User user} exist returns true else returns false.
+     */
+    public boolean isSearchUserExists(User user) {
+        SQLiteDatabase db = null;
+        Cursor res = null;
+
+        try {
+            db = this.getReadableDatabase();
+            db.beginTransaction();
+            res = db.rawQuery("SELECT * FROM " + SEARCH_USER_TABLE_NAME + " WHERE " + SEARCH_USER_COLUMN_ID  + " = " + user.getID(), null);
+            res.moveToFirst();
+
+            return res.getCount() > 0;
+
+        }finally {
+            if (res != null) {
+                res.close();
+            }
+            if (db != null && db.isOpen()){
+                db.setTransactionSuccessful();
+                db.endTransaction();
+                db.close();
+            }
+        }
+    }
+
+    /**
+     * Insert search user to database.<br>
+     *
+     *     Before any {@link User user} insertion use {@link DBHandler#isSearchUserExists(User)}.<br>
+     *
+     * Using SQLiteOpenHelper. Can't access database simultaneously.<br>
+     *
+     * @param user {@link User} which will be inserted
+     * @return Returns boolean value if insertion successful returns true else returns false
+     */
+    public boolean insertSearchUser(User user) {
+        SQLiteDatabase db = null;
+        boolean result = false;
+        try{
+            db = this.getWritableDatabase();
+            db.beginTransaction();
+            ContentValues contentValues = new ContentValues();
+            contentValues.put(SEARCH_USER_COLUMN_ID, user.getID());
+            contentValues.put(SEARCH_USER_COLUMN_NAME, user.getName());
+            contentValues.put(SEARCH_USER_COLUMN_IMAGE_URL, user.getImageUrl());
+            contentValues.put(SEARCH_USER_COLUMN_THUMBNAIL_URL, user.getThumbnailUrl());
+            contentValues.put(SEARCH_USER_COLUMN_LATITUDE, (user.getLocation() != null) ? user.getLocation().latitude : null);
+            contentValues.put(SEARCH_USER_COLUMN_LONGITUDE, (user.getLocation() != null) ? user.getLocation().longitude : null);
+
+            result = db.insert(SEARCH_USER_TABLE_NAME, null, contentValues) > 0;
+        }finally {
+            if (db != null && db.isOpen()){
+                db.setTransactionSuccessful();
+                db.endTransaction();
+                db.close();
+            }
+            Log.i(TAG, "New Search User insertion successful");
+        }
+        return result;
+    }
+
+    /**
+     * Get all search {@link User user's} from database.<br>
+     *
+     * Using SQLiteOpenHelper. Can't access database simultaneously.<br>
+     *
+     * @return All search {@link User user's}
+     */
+    public ArrayList<User> getAllSearchUsers() {
+        SQLiteDatabase db = null;
+        Cursor res = null;
+        ArrayList<User> users = new ArrayList<>();
+        try {
+            db = this.getReadableDatabase();
+            db.beginTransaction();
+            res = db.rawQuery("SELECT * FROM " + SEARCH_USER_TABLE_NAME, null);
+            res.moveToFirst();
+
+            if (res.getCount() > 0) {
+                do {
+                    User user;
+                    if (res.isNull(res.getColumnIndex(SEARCH_USER_COLUMN_LATITUDE)) || res.isNull(res.getColumnIndex(SEARCH_USER_COLUMN_LONGITUDE))){
+                        user = new User(res.getInt(res.getColumnIndex(SEARCH_USER_COLUMN_ID)),
+                                res.getString(res.getColumnIndex(SEARCH_USER_COLUMN_NAME)),
+                                res.getString(res.getColumnIndex(SEARCH_USER_COLUMN_IMAGE_URL)),
+                                res.getString(res.getColumnIndex(SEARCH_USER_COLUMN_THUMBNAIL_URL)),
+                                null);
+                    }else {
+                        user = new User(res.getInt(res.getColumnIndex(SEARCH_USER_COLUMN_ID)),
+                                res.getString(res.getColumnIndex(SEARCH_USER_COLUMN_NAME)),
+                                res.getString(res.getColumnIndex(SEARCH_USER_COLUMN_IMAGE_URL)),
+                                res.getString(res.getColumnIndex(SEARCH_USER_COLUMN_THUMBNAIL_URL)),
+                                new LatLng(res.getDouble(res.getColumnIndex(SEARCH_USER_COLUMN_LATITUDE)), res.getDouble(res.getColumnIndex(SEARCH_USER_COLUMN_LONGITUDE)))
+                        );
+                    }
+
+                    users.add(user);
+                } while (res.moveToNext());
+            }
+        }finally {
+            if (res != null) {
+                res.close();
+            }
+            if (db != null && db.isOpen()){
+                db.setTransactionSuccessful();
+                db.endTransaction();
+                db.close();
+            }
+        }
+        return users;
+    }
+
+    /**
+     * Deletes all Search {@link Book books}, Search book {@link User users}, Search {@link User users}  from database.<br>
+     *
+     * Using SQLiteOpenHelper. Can't access database simultaneously.<br>
+     */
+    public void clearSearchHistory() {
+        SQLiteDatabase db = null;
+        int result;
+        try{
+            db = this.getWritableDatabase();
+            db.beginTransaction();
+
+            db.delete(SEARCH_BOOK_TABLE_NAME, null, null);
+            db.delete(SEARCH_BOOK_USER_TABLE_NAME, null, null);
+            db.delete(SEARCH_USER_TABLE_NAME, null, null);
+        }finally {
+            if (db != null && db.isOpen()){
+                db.setTransactionSuccessful();
+                db.endTransaction();
+                db.close();
+            }
+            Log.i(TAG, "Search Books, Search Book Users and Search Users deleted from database");
+        }
+    }
+
+    /**
+     * Deletes all Search {@link Book books}, Search book {@link User users} from database.<br>
+     *
+     * Using SQLiteOpenHelper. Can't access database simultaneously.<br>
+     */
+    public void deleteAllSearchBooks() {
+        SQLiteDatabase db = null;
+        int result;
+        try{
+            db = this.getWritableDatabase();
+            db.beginTransaction();
+
+            db.delete(SEARCH_BOOK_TABLE_NAME, null, null);
+            db.delete(SEARCH_BOOK_USER_TABLE_NAME, null, null);
+        }finally {
+            if (db != null && db.isOpen()){
+                db.setTransactionSuccessful();
+                db.endTransaction();
+                db.close();
+            }
+            Log.i(TAG, " Search Books and Search Book Users deleted from database");
+        }
+    }
+
+    /**
+     * Deletes all Search {@link User users} from database.<br>
+     *
+     * Using SQLiteOpenHelper. Can't access database simultaneously.<br>
+     */
+    public void deleteAllSearchUsers() {
+        SQLiteDatabase db = null;
+        int result;
+        try{
+            db = this.getWritableDatabase();
+            db.beginTransaction();
+
+            db.delete(SEARCH_USER_TABLE_NAME, null, null);
+        }finally {
+            if (db != null && db.isOpen()){
+                db.setTransactionSuccessful();
+                db.endTransaction();
+                db.close();
+            }
+            Log.i(TAG, "Search Users deleted from database");
+        }
     }
 }

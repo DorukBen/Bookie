@@ -1,0 +1,63 @@
+{
+  "project_info": {
+    "project_number": "37900064771",
+    "firebase_url": "https://bookie-1483540663908.firebaseio.com",
+    "project_id": "bookie-1483540663908",
+    "storage_bucket": "bookie-1483540663908.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:37900064771:android:094fb38997096a38",
+        "android_client_info": {
+          "package_name": "com.karambit.bookie"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "37900064771-0h16tvmm9mivq3tukt1ldot0cs40k5qq.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.karambit.bookie",
+            "certificate_hash": "b58ce3219f703b96ff6e77434ed3d3c1fae179bc"
+          }
+        },
+        {
+          "client_id": "37900064771-42e7mm0s3v72mr3bgnjhfdlfl955f742.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.karambit.bookie",
+            "certificate_hash": "0823bbbfa43cebbd6cdade9d42816b897a359dc9"
+          }
+        },
+        {
+          "client_id": "37900064771-hjn4nrv3g3p51r128e5od2puq0qfos16.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDm7ptqNsCEl7c4XgkxD1q2nbpfQlyVkEU"
+        }
+      ],
+      "services": {
+        "analytics_service": {
+          "status": 1
+        },
+        "appinvite_service": {
+          "status": 2,
+          "other_platform_oauth_client": [
+            {
+              "client_id": "37900064771-hjn4nrv3g3p51r128e5od2puq0qfos16.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        },
+        "ads_service": {
+          "status": 2
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

@@ -1,9 +1,7 @@
 package com.karambit.bookie.adapter;
 
 import android.content.Context;
-import android.content.Intent;
 import android.database.DataSetObserver;
-import android.os.Bundle;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -12,9 +10,7 @@ import android.widget.ImageView;
 import android.widget.TextView;
 
 import com.bumptech.glide.Glide;
-import com.karambit.bookie.BookActivity;
 import com.karambit.bookie.R;
-import com.karambit.bookie.helper.infinite_viewpager.HorizontalInfiniteCycleViewPager;
 import com.karambit.bookie.helper.infinite_viewpager.InfiniteCyclePagerAdapter;
 import com.karambit.bookie.model.Book;
 
@@ -43,7 +39,7 @@ public class HorizontalPagerAdapter extends InfiniteCyclePagerAdapter {
     }
 
     @Override
-    public int getItemPosition(final Object object) {
+    public int getItemPosition(Object object) {
         return mBooks.indexOf(object);
     }
 
@@ -94,7 +90,7 @@ public class HorizontalPagerAdapter extends InfiniteCyclePagerAdapter {
         }
     }
 
-    public void setBooks(ArrayList<Book> books){
+    void setBooks(ArrayList<Book> books){
         mBooks.clear();
         mBooks.addAll(books);
     }

@@ -17,6 +17,7 @@ import android.view.MenuInflater;
 import android.view.MenuItem;
 
 import com.karambit.bookie.fragment.ProfileFragment;
+import com.karambit.bookie.helper.DBHandler;
 import com.karambit.bookie.helper.TypefaceSpan;
 import com.karambit.bookie.model.User;
 
@@ -26,9 +27,11 @@ public class ProfileActivity extends AppCompatActivity {
 
     public final static String USER = "user";
     private static final int REQUEST_OTHER_USER_SETTINGS = 111;
+    public final static int MESSAGE_PROCESS_REQUEST_CODE = 1006;
 
     private ActionBar mActionBar;
     private User mUser;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -40,9 +43,9 @@ public class ProfileActivity extends AppCompatActivity {
         //Changes action bar font style by getting font.ttf from assets/fonts action bars font style doesn't
         // change from styles.xml
         SpannableString s = new SpannableString(getResources().getString(R.string.app_name));
-        s.setSpan(new TypefaceSpan(this, "autograf.ttf"), 0, s.length(),
+        s.setSpan(new TypefaceSpan(this, "comfortaa.ttf"), 0, s.length(),
                 Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
-        s.setSpan(new AbsoluteSizeSpan((int)convertDpToPixel(32, this)), 0, s.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+        s.setSpan(new AbsoluteSizeSpan((int)convertDpToPixel(18, this)), 0, s.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
 
         // Update the action bar title with the TypefaceSpan instance
         if(mActionBar != null){
@@ -61,8 +64,7 @@ public class ProfileActivity extends AppCompatActivity {
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         MenuInflater inflater = getMenuInflater();
-        inflater.inflate(R.menu.main_menu, menu);
-        menu.findItem(R.id.action_more).setVisible(true);
+        inflater.inflate(R.menu.other_user_menu, menu);
 
         return super.onCreateOptionsMenu(menu);
     }
@@ -71,9 +73,17 @@ public class ProfileActivity extends AppCompatActivity {
     public boolean onOptionsItemSelected(MenuItem item) {
         switch (item.getItemId()) {
             case R.id.action_more:
-                Intent intent = new Intent(this, OtherUserProfileSettingsActivity.class);
-                intent.putExtra("user", mUser);
-                startActivityForResult(intent, REQUEST_OTHER_USER_SETTINGS);
+                Intent data = new Intent(this, OtherUserProfileSettingsActivity.class);
+                data.putExtra("user", mUser);
+                startActivityForResult(data, REQUEST_OTHER_USER_SETTINGS);
+                return true;
+
+            case R.id.action_message:
+                Bundle bundle = getIntent().getExtras();
+
+                Intent intent = new Intent(this,ConversationActivity.class);
+                intent.putExtra(USER, bundle.getParcelable(USER));
+                startActivityForResult(intent, MESSAGE_PROCESS_REQUEST_CODE);
                 return true;
 
             default:
@@ -90,6 +100,12 @@ public class ProfileActivity extends AppCompatActivity {
                 // TODO Block user
                 Log.i(TAG, mUser.getName() + " blocked");
                 finish();
+            }
+        }else if (requestCode == MESSAGE_PROCESS_REQUEST_CODE){
+            if (resultCode == ConversationActivity.ALL_MESSAGES_DELETED){
+                DBHandler dbHandler = new DBHandler(getApplicationContext());
+                dbHandler.deleteMessageUser((User) data.getParcelableExtra("opposite_user"));
+                dbHandler.deleteMessageUsersConversation((User) data.getParcelableExtra("opposite_user"));
             }
         }
     }

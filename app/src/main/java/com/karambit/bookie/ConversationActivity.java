@@ -1,7 +1,12 @@
 package com.karambit.bookie;
 
 import android.app.AlertDialog;
+import android.app.NotificationManager;
+import android.content.BroadcastReceiver;
+import android.content.Context;
 import android.content.DialogInterface;
+import android.content.Intent;
+import android.content.IntentFilter;
 import android.os.Bundle;
 import android.support.v7.app.ActionBar;
 import android.support.v7.app.AppCompatActivity;
@@ -21,6 +26,7 @@ import android.view.View;
 import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.karambit.bookie.adapter.ConversationAdapter;
 import com.karambit.bookie.helper.DBHandler;
@@ -28,12 +34,28 @@ import com.karambit.bookie.helper.SessionManager;
 import com.karambit.bookie.helper.TypefaceSpan;
 import com.karambit.bookie.model.Message;
 import com.karambit.bookie.model.User;
+import com.karambit.bookie.rest_api.BookieClient;
+import com.karambit.bookie.rest_api.ErrorCodes;
+import com.karambit.bookie.rest_api.FcmApi;
+import com.karambit.bookie.service.MyFirebaseMessagingService;
 
+import org.json.JSONException;
+import org.json.JSONObject;
+
+import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Collections;
 import java.util.Locale;
+import java.util.Objects;
+
+import okhttp3.ResponseBody;
+import retrofit2.Call;
+import retrofit2.Callback;
+import retrofit2.Response;
+
+import static com.karambit.bookie.MainActivity.convertDpToPixel;
 
 public class ConversationActivity extends AppCompatActivity {
 
@@ -41,6 +63,8 @@ public class ConversationActivity extends AppCompatActivity {
 
     public static final int MESSAGE_INSERTED = 1;
     public static final int ALL_MESSAGES_DELETED = 2;
+
+    public static Integer currentConversationUserId = -1;
 
     private User mOppositeUser;
     private DBHandler mDbHandler;
@@ -50,6 +74,7 @@ public class ConversationActivity extends AppCompatActivity {
     private ArrayList<Message> mMessages;
     private RecyclerView mRecyclerView;
     private MenuItem mDeleteMenuItem;
+    private BroadcastReceiver mMessageReceiver;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -58,13 +83,15 @@ public class ConversationActivity extends AppCompatActivity {
 
         mOppositeUser = getIntent().getExtras().getParcelable("user");
 
-        setActionBarTitle(mOppositeUser.getName());
+        SpannableString s = new SpannableString(mOppositeUser.getName());
+        s.setSpan(new TypefaceSpan(this, "comfortaa.ttf"), 0, s.length(),
+                Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+        s.setSpan(new AbsoluteSizeSpan((int) convertDpToPixel(18, this)), 0, s.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+        getSupportActionBar().setTitle(s);
 
         final User currentUser = SessionManager.getCurrentUser(this);
         mDbHandler = new DBHandler(getApplicationContext());
         mMessages = mDbHandler.getConversationMessages(mOppositeUser, currentUser);
-
-        // TODO Broadcast Manager for messages
 
         mMessageEditText = (EditText) findViewById(R.id.messageEditText);
         mSendMessageButton = (ImageButton) findViewById(R.id.messageSendButton);
@@ -89,7 +116,7 @@ public class ConversationActivity extends AppCompatActivity {
 
                 int currentPosition = layoutManager.findLastVisibleItemPosition();
 
-                if (currentPosition != mStoredPosition) {
+                if (currentPosition != mStoredPosition && mMessages.size() > 0) {
 
                     mStoredPosition = currentPosition;
 
@@ -129,7 +156,7 @@ public class ConversationActivity extends AppCompatActivity {
             }
         });
 
-        mConversationAdapter = new ConversationAdapter(this, mMessages);
+        mConversationAdapter = new ConversationAdapter(this, mMessages, mOppositeUser);
 
         mConversationAdapter.setOnMessageClickListener(new ConversationAdapter.OnMessageClickListener() {
             @Override
@@ -195,6 +222,11 @@ public class ConversationActivity extends AppCompatActivity {
                 mConversationAdapter.notifyItemChanged(position);
                 return true;
             }
+
+            @Override
+            public void onMessageErrorClick(Message message, int position) {
+                sendMessageToServer(message);
+            }
         });
 
         mRecyclerView.setAdapter(mConversationAdapter);
@@ -205,15 +237,15 @@ public class ConversationActivity extends AppCompatActivity {
         mRecyclerView.setDrawingCacheQuality(View.DRAWING_CACHE_QUALITY_HIGH);
 
         // Seen for opposite user messages
-        for (Message message : mMessages) {
-            if (message.getSender().getID() != currentUser.getID()) {
-                if (message.getState() != Message.State.SEEN) {
-                    message.setState(Message.State.SEEN);
-                    mConversationAdapter.notifyItemChanged(mMessages.indexOf(message));
-
-                    mDbHandler.updateMessageState(message.getID(), Message.State.SEEN);
-                }
+        int unSeenMessageCount = mDbHandler.getUnseenMessageCount(mOppositeUser);
+        if (unSeenMessageCount > 0){
+            for (int i = mMessages.size()-1; i >= 0; i--){
+                mMessages.get(i).setState(Message.State.SEEN);
+                mConversationAdapter.notifyItemChanged(mMessages.indexOf(mMessages.get(i)));
+                mDbHandler.updateMessageState(mMessages.get(i).getID(), Message.State.SEEN);
+                uploadMessageStateToServer(mMessages.get(i));
             }
+
         }
 
         mMessageEditText.addTextChangedListener(new TextWatcher() {
@@ -250,16 +282,91 @@ public class ConversationActivity extends AppCompatActivity {
                     int id = createTemporaryMessageID();
                     Message message = new Message(id, messageText, currentUser,
                                                   mOppositeUser, Calendar.getInstance(), Message.State.PENDING);
-                    insertMessage(message);
 
-                    mMessageEditText.setText("");
-
-                    toggleSendButton(false);
-
-                    mDbHandler.insertMessage(message);
+                    if (mDbHandler.saveMessageToDataBase(message)){
+                        mMessageEditText.setText("");
+                        toggleSendButton(false);
+                        sendMessageToServer(message);
+                        insertMessage(message);
+                    }else {
+                        Log.e(TAG, "Message Insertion Failed!");
+                        Toast.makeText(ConversationActivity.this, getString(R.string.unknown_error), Toast.LENGTH_SHORT).show();
+                    }
                 }
             }
         });
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        currentConversationUserId = mOppositeUser.getID();
+
+        for (Message message: MyFirebaseMessagingService.mNotificationMessages){
+            if (message.getSender().getID() == currentConversationUserId){
+                MyFirebaseMessagingService.mNotificationMessages.remove(message);
+            }
+        }
+
+        if (MyFirebaseMessagingService.mNotificationUserIds.contains(currentConversationUserId)){
+            MyFirebaseMessagingService.mNotificationUserIds.remove(currentConversationUserId);
+        }
+
+        NotificationManager notificationManager = (NotificationManager)getSystemService(Context.NOTIFICATION_SERVICE);
+        notificationManager.cancel(MyFirebaseMessagingService.MESSAGE_NOTIFICATION_ID);
+
+        mMessageReceiver = new BroadcastReceiver() {
+            @Override
+            public void onReceive(Context context, Intent intent) {
+                if (intent.getAction().equalsIgnoreCase("com.karambit.bookie.MESSAGE_RECEIVED")){
+                    if (intent.getParcelableExtra("message") != null){
+                        Message message = intent.getParcelableExtra("message");
+                        if(message.getOppositeUser(SessionManager.getCurrentUser(getApplicationContext())).getID() == mOppositeUser.getID()){
+                            insertMessage(message);
+                            message.setState(Message.State.SEEN);
+                            changeMessageState(message.getID(), Message.State.SEEN);
+
+                            uploadMessageStateToServer(message);
+                        }
+                    }
+                } else if (intent.getAction().equalsIgnoreCase("com.karambit.bookie.MESSAGE_DELIVERED")){
+                    if (intent.getIntExtra("message_id",-1) > 0){
+                        changeMessageState(intent.getIntExtra("message_id",-1), Message.State.DELIVERED);
+                    }
+                } else if (intent.getAction().equalsIgnoreCase("com.karambit.bookie.MESSAGE_SEEN")){
+                    if (intent.getIntExtra("message_id",-1) > 0){
+                        Message changedMessage = changeMessageState(intent.getIntExtra("message_id",-1), Message.State.SEEN);
+                        if (changedMessage != null){
+                            for (Message message: mMessages){
+                                if (message.getSender().getID() == SessionManager.getCurrentUser(getApplicationContext()).getID() && message.getCreatedAt().getTimeInMillis() <= changedMessage.getCreatedAt().getTimeInMillis()){
+                                    changeMessageState(message.getID(), Message.State.SEEN);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        };
+
+        registerReceiver(mMessageReceiver, new IntentFilter("com.karambit.bookie.MESSAGE_RECEIVED"));
+        registerReceiver(mMessageReceiver, new IntentFilter("com.karambit.bookie.MESSAGE_DELIVERED"));
+        registerReceiver(mMessageReceiver, new IntentFilter("com.karambit.bookie.MESSAGE_SEEN"));
+
+        for (Message message: mMessages){
+            if (message.getReceiver().getID() == SessionManager.getCurrentUser(getApplicationContext()).getID() && message.getState() != Message.State.SEEN){
+                message.setState(Message.State.SEEN);
+                changeMessageState(message.getID(), Message.State.SEEN);
+                uploadMessageStateToServer(message);
+            }
+        }
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+
+        currentConversationUserId = -1;
+        unregisterReceiver(mMessageReceiver);
     }
 
     public int createTemporaryMessageID() {
@@ -299,21 +406,23 @@ public class ConversationActivity extends AppCompatActivity {
         setResult(MESSAGE_INSERTED, getIntent().putExtra("last_message", mMessages.get(0)));
     }
 
-    public boolean changeMessageState(int messageID, Message.State state) {
+    public Message changeMessageState(int messageID, Message.State state) {
         for (Message message : mMessages) {
-            if (message.getID() == messageID) {
+            if (message.getID() == messageID && message.getState() != state) {
                 message.setState(state);
                 mConversationAdapter.notifyItemChanged(mMessages.indexOf(message));
-                return true;
+                mDbHandler.updateMessageState(message, state);
+                return message;
             }
         }
-        return false;
+        return null;
     }
 
     public boolean changeMessageID(int oldMessageID, int newMessageID) {
         for (Message message : mMessages) {
             if (message.getID() == oldMessageID) {
                 message.setID(newMessageID);
+                mDbHandler.updateMessageId(oldMessageID, newMessageID);
                 return true;
             }
         }
@@ -502,5 +611,122 @@ public class ConversationActivity extends AppCompatActivity {
         }
 
         return stringBuilder.toString();
+    }
+
+    private void sendMessageToServer(final Message message) {
+        final FcmApi fcmApi = BookieClient.getClient().create(FcmApi.class);
+        String email = SessionManager.getCurrentUserDetails(getApplicationContext()).getEmail();
+        String password = SessionManager.getCurrentUserDetails(getApplicationContext()).getPassword();
+        Call<ResponseBody> sendMessage = fcmApi.sendMessage(email, password, message.getText(), message.getReceiver().getID(), message.getID());
+
+        sendMessage.enqueue(new Callback<ResponseBody>() {
+            @Override
+            public void onResponse(Call<ResponseBody> call, Response<ResponseBody> response) {
+
+                try {
+                    if (response != null){
+                        if (response.body() != null){
+                            String json = response.body().string();
+
+                            JSONObject responseObject = new JSONObject(json);
+                            boolean error = responseObject.getBoolean("error");
+
+                            if (!error) {
+                                if (!responseObject.isNull("oldMessageID") && !responseObject.isNull("newMessageID")){
+                                    changeMessageID(responseObject.getInt("oldMessageID"), responseObject.getInt("newMessageID"));
+                                    changeMessageState(responseObject.getInt("newMessageID"), Message.State.SENT);
+                                }
+
+                            } else {
+                                int errorCode = responseObject.getInt("errorCode");
+
+                                if (errorCode == ErrorCodes.EMPTY_POST){
+                                    Log.e(TAG, "Post is empty. (Send Message Error)");
+                                }else if (errorCode == ErrorCodes.MISSING_POST_ELEMENT){
+                                    Log.e(TAG, "Post element missing. (Send Message Error)");
+                                }else if (errorCode == ErrorCodes.INVALID_REQUEST){
+                                    Log.e(TAG, "Invalid request. (Send Message Error)");
+                                }else if (errorCode == ErrorCodes.INVALID_EMAIL){
+                                    Log.e(TAG, "Invalid email. (Send Message Error)");
+                                }else if (errorCode == ErrorCodes.UNKNOWN){
+                                    Log.e(TAG, "onResponse: errorCode = " + errorCode);
+                                }
+
+                                changeMessageState(message.getID(), Message.State.ERROR);
+                            }
+                        }else{
+                            Log.e(TAG, "Response body is null. (Send Message Error)");
+                            changeMessageState(message.getID(), Message.State.ERROR);
+                        }
+                    }else {
+                        Log.e(TAG, "Response object is null. (Send Message Error)");
+                        changeMessageState(message.getID(), Message.State.ERROR);
+                    }
+                } catch (IOException | JSONException e) {
+                    e.printStackTrace();
+                    changeMessageState(message.getID(), Message.State.ERROR);
+                }
+            }
+
+            @Override
+            public void onFailure(Call<ResponseBody> call, Throwable t) {
+                Log.e(TAG, "Send Message onFailure: " + t.getMessage());
+                changeMessageState(message.getID(), Message.State.ERROR);
+            }
+        });
+    }
+
+    private void uploadMessageStateToServer(final Message message) {
+        final FcmApi fcmApi = BookieClient.getClient().create(FcmApi.class);
+        String email = SessionManager.getCurrentUserDetails(getApplicationContext()).getEmail();
+        String password = SessionManager.getCurrentUserDetails(getApplicationContext()).getPassword();
+        final Call<ResponseBody> uploadMessageState = fcmApi.uploadMessageState(email, password, message.getID(), message.getState().ordinal());
+
+        uploadMessageState.enqueue(new Callback<ResponseBody>() {
+            @Override
+            public void onResponse(Call<ResponseBody> call, Response<ResponseBody> response) {
+
+                try {
+                    if (response != null){
+                        if (response.body() != null){
+                            String json = response.body().string();
+
+                            JSONObject responseObject = new JSONObject(json);
+                            boolean error = responseObject.getBoolean("error");
+
+                            if (!error) {
+
+                            } else {
+                                int errorCode = responseObject.getInt("errorCode");
+
+                                if (errorCode == ErrorCodes.EMPTY_POST){
+                                    Log.e(TAG, "Post is empty. (Upload Message State Error)");
+                                }else if (errorCode == ErrorCodes.MISSING_POST_ELEMENT){
+                                    Log.e(TAG, "Post element missing. (Upload Message State Error)");
+                                }else if (errorCode == ErrorCodes.INVALID_REQUEST){
+                                    Log.e(TAG, "Invalid request. (Upload Message State Error)");
+                                }else if (errorCode == ErrorCodes.INVALID_EMAIL){
+                                    Log.e(TAG, "Invalid email. (Upload Message State Error)");
+                                }else if (errorCode == ErrorCodes.UNKNOWN){
+                                    Log.e(TAG, "onResponse: errorCode = " + errorCode);
+                                }
+                            }
+                        }else{
+                            Log.e(TAG, "Response body is null. (Upload Message State Error)");
+                        }
+                    }else {
+                        Log.e(TAG, "Response object is null. (Upload Message State Error)");
+                    }
+                } catch (IOException | JSONException e) {
+                    e.printStackTrace();
+                }
+            }
+
+            @Override
+            public void onFailure(Call<ResponseBody> call, Throwable t) {
+                Log.e(TAG, "Upload Message State onFailure: " + t.getMessage());
+                uploadMessageStateToServer(message);
+            }
+        });
     }
 }

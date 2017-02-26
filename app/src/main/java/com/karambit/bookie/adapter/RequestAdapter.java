@@ -193,7 +193,7 @@ public class RequestAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
 
                 int exactRequestPosition = position <= getSentRequestCount() ? position : position - 1; /*SUBTITLE*/
                 final Book.Request request = mRequests.get(exactRequestPosition);
-                final User fromUser = request.getFromUser();
+                final User anotherUser = (getItemViewType(position) == TYPE_SENT_REQUEST)?request.getFromUser():request.getToUser();
 
                 if (getItemViewType(position) == TYPE_SENT_REQUEST) {
                     requestViewHolder.mButtonClickContainer.setVisibility(View.VISIBLE);
@@ -222,19 +222,19 @@ public class RequestAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
                     @Override
                     public void onClick(View v) {
                         if (mRequestClickListeners != null) {
-                            mRequestClickListeners.onUserClick(fromUser);
+                            mRequestClickListeners.onUserClick(anotherUser);
                         }
                     }
                 });
 
                 Glide.with(mContext)
-                     .load(fromUser.getThumbnailUrl())
+                     .load(anotherUser.getThumbnailUrl())
                      .asBitmap()
                      .placeholder(R.drawable.placeholder_88dp)
                      .error(R.drawable.error_88dp)
                      .into(requestViewHolder.mProfilePicture);
 
-                requestViewHolder.mUserName.setText(fromUser.getName());
+                requestViewHolder.mUserName.setText(anotherUser.getName());
 
                 requestViewHolder.mCreatedAt.setText(CreatedAtHelper.createdAtToSimpleString(mContext, request.getCreatedAt()));
 
@@ -348,6 +348,12 @@ public class RequestAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
 
     public void setRequests(ArrayList<Book.Request> requests) {
         mRequests = requests;
+        for (Book.Request r : requests) {
+            if (r.getRequestType() == Book.RequestType.ACCEPT) {
+                mIsRequestAccepted = true;
+            }
+        }
+        notifyDataSetChanged();
     }
 
     public void setError(int errorType){
