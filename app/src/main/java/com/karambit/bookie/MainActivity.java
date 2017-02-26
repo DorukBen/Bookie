@@ -5,6 +5,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.res.Resources;
 import android.os.Bundle;
+import android.os.Handler;
 import android.support.v4.app.Fragment;
 import android.support.v4.content.ContextCompat;
 import android.support.v4.view.ViewCompat;
@@ -80,6 +81,7 @@ public class MainActivity extends AppCompatActivity implements TabHost.OnTabChan
     private DoubleTapHomeButtonListener mDoubleTapHomeButtonListener;
     private ArrayList<TouchEventListener> mTouchEventListeners = new ArrayList<>();
     private ArrayList<Integer> mIndexOfListenersWillBeDeleted = new ArrayList<>();
+    private boolean mIsBackPressed = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -513,5 +515,25 @@ public class MainActivity extends AppCompatActivity implements TabHost.OnTabChan
                 sendRegistrationToServer(token);
             }
         });
+    }
+
+    @Override
+    public void onBackPressed() {
+        if(!mIsBackPressed){
+            if (mTabHost.getCurrentTab() != 0){
+                mViewPager.setCurrentItem(0, true);
+                mTabHost.setCurrentTab(0);
+            }else {
+                mIsBackPressed = true;
+                new Handler().postDelayed(new Runnable() {
+                    @Override
+                    public void run() {
+                        mIsBackPressed = false;
+                    }
+                }, 500);
+            }
+        }else {
+            super.onBackPressed();
+        }
     }
 }

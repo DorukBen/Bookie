@@ -241,6 +241,8 @@ public class ProfileTimelineAdapter extends RecyclerView.Adapter<RecyclerView.Vi
                 increment++;
             }
 
+            Log.d("hele", "profile adapter: " + mUserDetails.getCurrentlyReadingCount() + "");
+
             // Currently reading
             if (mUserDetails.getUser().getID() == SessionManager.getCurrentUser(mContext).getID() ||
                 mUserDetails.getCurrentlyReadingCount() != 0 ||
@@ -754,7 +756,6 @@ public class ProfileTimelineAdapter extends RecyclerView.Adapter<RecyclerView.Vi
                 CurrentlyReadingViewHolder currentlyReadingHolder = (CurrentlyReadingViewHolder) holder;
 
                 if (mHorizontalPagerAdapter != null){
-                    mHorizontalPagerAdapter.setBooks(mUserDetails.getCurrentlyReading());
                     currentlyReadingHolder.mCycleViewPager.notifyDataSetChanged();
                     currentlyReadingHolder.mCycleViewPager.setInfiniteCyclerManagerPagerAdapter(mHorizontalPagerAdapter);
                 }else{
@@ -1032,12 +1033,6 @@ public class ProfileTimelineAdapter extends RecyclerView.Adapter<RecyclerView.Vi
     public void setUserDetails(User.Details userDetails) {
         mUserDetails = userDetails;
         setProgressBarActive(false);
-        if (mHorizontalPagerAdapter != null){
-
-        }
-        if (mHorizontalPagerAdapter != null) {
-            mHorizontalPagerAdapter.notifyDataSetChanged();
-        }
         notifyDataSetChanged();
     }
 

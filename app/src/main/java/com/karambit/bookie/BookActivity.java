@@ -170,8 +170,8 @@ public class BookActivity extends AppCompatActivity {
                                 .setNegativeButton(R.string.no, new DialogInterface.OnClickListener() {
                                     @Override
                                     public void onClick(DialogInterface dialog, int which) {
-                                        mBookDetails.getBook().setState(null);
-                                        mBook.setState(null);
+                                        mBookDetails.getBook().setState(Book.State.CLOSED_TO_SHARE);
+                                        mBook.setState(Book.State.CLOSED_TO_SHARE);
                                         new StateSelectorDialog().show();
                                     }
                                 })
@@ -520,14 +520,10 @@ public class BookActivity extends AppCompatActivity {
 
         bookProcess.accept(new Book.TimelineDisplayableVisitor() {
             @Override
-            public void visit(Book.Interaction interaction) {
-                addBookInteractionToServer(interaction);
-            }
+            public void visit(Book.Interaction interaction) {addBookInteractionToServer(interaction);}
 
             @Override
-            public void visit(Book.Transaction transaction) {
-
-            }
+            public void visit(Book.Transaction transaction) {}
 
             @Override
             public void visit(Book.Request request) {
@@ -560,7 +556,9 @@ public class BookActivity extends AppCompatActivity {
                                     JSONObject bookDetailsJson = responseObject.getJSONObject("bookDetails");
                                     mBookDetails = Book.jsonObjectToBookDetails(bookDetailsJson);
 
-                                    //TODO check problem
+                                    if (mBookDetails != null) {
+                                        mBook = mBookDetails.getBook();
+                                    }
                                     mBookTimelineAdapter.setBookDetails(mBookDetails);
                                 }
 
@@ -651,10 +649,13 @@ public class BookActivity extends AppCompatActivity {
                                 if (SessionManager.getCurrentUser(getApplicationContext()).getID() == interaction.getBook().getOwner().getID()){
                                     mBookDetails.getBook().setOwner(SessionManager.getCurrentUser(getApplicationContext()));
                                     if (interaction.getInteractionType() == Book.InteractionType.CLOSE_TO_SHARE){
+                                        mBook.setState(Book.State.CLOSED_TO_SHARE);
                                         mBookDetails.getBook().setState(Book.State.CLOSED_TO_SHARE);
                                     }else if (interaction.getInteractionType() == Book.InteractionType.OPEN_TO_SHARE){
+                                        mBook.setState(Book.State.OPENED_TO_SHARE);
                                         mBookDetails.getBook().setState(Book.State.OPENED_TO_SHARE);
                                     }else if (interaction.getInteractionType() == Book.InteractionType.READ_START){
+                                        mBook.setState(Book.State.READING);
                                         mBookDetails.getBook().setState(Book.State.READING);
                                     }
                                     mBookTimelineAdapter.notifyDataSetChanged();

@@ -40,6 +40,8 @@ import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
 
+import static com.karambit.bookie.model.Book.State.CLOSED_TO_SHARE;
+import static com.karambit.bookie.model.Book.State.OPENED_TO_SHARE;
 import static com.karambit.bookie.model.Book.State.READING;
 
 /**
@@ -215,6 +217,7 @@ public class ProfileFragment extends Fragment {
                                             mUserDetails.setOnRoadBooks(Book.jsonArrayToBookList(responseObject.getJSONArray("onRoadBooks")));
                                         }
                                     }
+
                                     mProfileTimelineAdapter.setUserDetails(mUserDetails);
                                 }
 
@@ -286,6 +289,7 @@ public class ProfileFragment extends Fragment {
             if (resultCode == BookActivity.BOOK_PROCESS_CHANGED_RESULT_CODE){
                 if (mUserDetails != null){
                     Book book = data.getExtras().getParcelable("book");
+                    Log.d("hele", mUserDetails.getCurrentlyReadingCount() + "");
                     if (mUserDetails.getBooksOnHand().contains(book)){
                         if (book != null) {
                             switch (book.getState()){
@@ -296,10 +300,12 @@ public class ProfileFragment extends Fragment {
                                 }
 
                                 case OPENED_TO_SHARE:{
+                                    mUserDetails.getBooksOnHand().get(mUserDetails.getBooksOnHand().indexOf(book)).setState(OPENED_TO_SHARE);
                                     break;
                                 }
 
                                 case CLOSED_TO_SHARE:{
+                                    mUserDetails.getBooksOnHand().get(mUserDetails.getBooksOnHand().indexOf(book)).setState(CLOSED_TO_SHARE);
                                     break;
                                 }
                             }
@@ -307,9 +313,6 @@ public class ProfileFragment extends Fragment {
                     }else if (mUserDetails.getCurrentlyReading().contains(book)){
                         if (book != null) {
                             switch (book.getState()){
-                                case READING:{
-                                    break;
-                                }
 
                                 case OPENED_TO_SHARE:{
                                     mUserDetails.getCurrentlyReading().remove(book);
@@ -353,8 +356,8 @@ public class ProfileFragment extends Fragment {
                             }
                         }
                     }
-
-                    mProfileTimelineAdapter.notifyDataSetChanged();
+                    Log.d("hele", mUserDetails.getCurrentlyReadingCount() + "");
+                    mProfileTimelineAdapter.setUserDetails(mUserDetails);
                 }
             }
         }
