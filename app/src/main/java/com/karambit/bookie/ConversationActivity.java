@@ -55,6 +55,8 @@ import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
 
+import static com.karambit.bookie.MainActivity.convertDpToPixel;
+
 public class ConversationActivity extends AppCompatActivity {
 
     private static final String TAG = ConversationActivity.class.getSimpleName();
@@ -81,7 +83,11 @@ public class ConversationActivity extends AppCompatActivity {
 
         mOppositeUser = getIntent().getExtras().getParcelable("user");
 
-        setActionBarTitle(mOppositeUser.getName());
+        SpannableString s = new SpannableString(mOppositeUser.getName());
+        s.setSpan(new TypefaceSpan(this, "comfortaa.ttf"), 0, s.length(),
+                Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+        s.setSpan(new AbsoluteSizeSpan((int) convertDpToPixel(18, this)), 0, s.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+        getSupportActionBar().setTitle(s);
 
         final User currentUser = SessionManager.getCurrentUser(this);
         mDbHandler = new DBHandler(getApplicationContext());

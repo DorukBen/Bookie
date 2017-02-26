@@ -3,6 +3,7 @@ package com.karambit.bookie.model;
 import android.os.Parcel;
 import android.os.Parcelable;
 import android.support.annotation.NonNull;
+import android.text.TextUtils;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -243,14 +244,18 @@ public class Book implements Parcelable {
 
     public static Book jsonObjectToBook(JSONObject bookObject) {
         try {
-            return new Book(bookObject.getInt("ID"),
-                    bookObject.getString("bookName"),
-                    bookObject.getString("bookPictureURL"),
-                    bookObject.getString("bookPictureThumbnailURL"),
-                    bookObject.getString("author"),
-                    State.valueOf(bookObject.getInt("bookState")),
-                    bookObject.getInt("genreCode"),
-                    User.jsonObjectToUser(bookObject.getJSONObject("owner")));
+            if (bookObject != null){
+                return new Book(bookObject.isNull("ID")? -1: bookObject.getInt("ID"),
+                        bookObject.isNull("bookName")|| TextUtils.isEmpty(bookObject.getString("bookName"))? null: bookObject.getString("bookName"),
+                        bookObject.isNull("bookPictureURL")|| TextUtils.isEmpty(bookObject.getString("bookPictureURL"))? null: bookObject.getString("bookPictureURL"),
+                        bookObject.isNull("bookPictureThumbnailURL")|| TextUtils.isEmpty(bookObject.getString("bookPictureThumbnailURL"))? null: bookObject.getString("bookPictureThumbnailURL"),
+                        bookObject.isNull("author")|| TextUtils.isEmpty(bookObject.getString("author"))? null: bookObject.getString("author"),
+                        State.valueOf(bookObject.isNull("bookState")? 2: bookObject.getInt("bookState")),
+                        bookObject.isNull("genreCode")? 0: bookObject.getInt("genreCode"),
+                        User.jsonObjectToUser(bookObject.isNull("owner")? null: bookObject.getJSONObject("owner")));
+            }else {
+                return null;
+            }
         } catch (JSONException e) {
             e.printStackTrace();
             return null;
@@ -259,43 +264,47 @@ public class Book implements Parcelable {
 
     public static Book.Details jsonObjectToBookDetails(JSONObject bookDetailsObject) {
         try {
-            Book book = jsonObjectToBook(bookDetailsObject);
-            User added_by = User.jsonObjectToUser(bookDetailsObject.getJSONObject("addedBy"));
+            if (bookDetailsObject != null){
+                Book book = jsonObjectToBook(bookDetailsObject);
+                User added_by = User.jsonObjectToUser(bookDetailsObject.isNull("addedBy")? null: bookDetailsObject.getJSONObject("addedBy"));
 
-            ArrayList<Book.BookProcess> bookProcesses = new ArrayList<>();
+                ArrayList<Book.BookProcess> bookProcesses = new ArrayList<>();
 
-            if (!bookDetailsObject.isNull("bookInteractions")){
-                JSONArray jsonArray = bookDetailsObject.getJSONArray("bookInteractions");
-                for (int i = 0; i < jsonArray.length(); i++){
-                    bookProcesses.add(book.new Interaction(InteractionType.values()[jsonArray.getJSONObject(i).getInt("interactionType") - Book.InteractionType.values()[0].getInteractionCode()],
-                            User.jsonObjectToUser(jsonArray.getJSONObject(i).getJSONObject("user")),
-                            jsonArray.getJSONObject(i).getString("createdAt")));
+                if (!bookDetailsObject.isNull("bookInteractions")){
+                    JSONArray jsonArray = bookDetailsObject.getJSONArray("bookInteractions");
+                    for (int i = 0; i < jsonArray.length(); i++){
+                        bookProcesses.add(book.new Interaction(InteractionType.values()[jsonArray.getJSONObject(i).getInt("interactionType") - Book.InteractionType.values()[0].getInteractionCode()],
+                                User.jsonObjectToUser(jsonArray.getJSONObject(i).getJSONObject("user")),
+                                jsonArray.getJSONObject(i).getString("createdAt")));
+                    }
                 }
-            }
 
-            if (!bookDetailsObject.isNull("bookTransactions")){
-                JSONArray jsonArray = bookDetailsObject.getJSONArray("bookTransactions");
-                for (int i = 0; i < jsonArray.length(); i++){
-                    bookProcesses.add(book.new Transaction(User.jsonObjectToUser(jsonArray.getJSONObject(i).getJSONObject("fromUser")),
-                            Book.TransactionType.values()[jsonArray.getJSONObject(i).getInt("transactionType") - Book.TransactionType.values()[0].getTransactionCode()],
-                            User.jsonObjectToUser(jsonArray.getJSONObject(i).getJSONObject("toUser")),
-                            jsonArray.getJSONObject(i).getString("createdAt")));
+                if (!bookDetailsObject.isNull("bookTransactions")){
+                    JSONArray jsonArray = bookDetailsObject.getJSONArray("bookTransactions");
+                    for (int i = 0; i < jsonArray.length(); i++){
+                        bookProcesses.add(book.new Transaction(User.jsonObjectToUser(jsonArray.getJSONObject(i).getJSONObject("fromUser")),
+                                Book.TransactionType.values()[jsonArray.getJSONObject(i).getInt("transactionType") - Book.TransactionType.values()[0].getTransactionCode()],
+                                User.jsonObjectToUser(jsonArray.getJSONObject(i).getJSONObject("toUser")),
+                                jsonArray.getJSONObject(i).getString("createdAt")));
+                    }
                 }
-            }
 
-            if (!bookDetailsObject.isNull("bookRequests")){
-                JSONArray jsonArray = bookDetailsObject.getJSONArray("bookRequests");
-                for (int i = 0; i < jsonArray.length(); i++){
-                    bookProcesses.add(book.new Request(Book.RequestType.values()[jsonArray.getJSONObject(i).getInt("requestType") - Book.RequestType.values()[0].getRequestCode()],
-                            User.jsonObjectToUser(jsonArray.getJSONObject(i).getJSONObject("toUser")),
-                            User.jsonObjectToUser(jsonArray.getJSONObject(i).getJSONObject("fromUser")),
-                            jsonArray.getJSONObject(i).getString("createdAt")));
+                if (!bookDetailsObject.isNull("bookRequests")){
+                    JSONArray jsonArray = bookDetailsObject.getJSONArray("bookRequests");
+                    for (int i = 0; i < jsonArray.length(); i++){
+                        bookProcesses.add(book.new Request(Book.RequestType.values()[jsonArray.getJSONObject(i).getInt("requestType") - Book.RequestType.values()[0].getRequestCode()],
+                                User.jsonObjectToUser(jsonArray.getJSONObject(i).getJSONObject("toUser")),
+                                User.jsonObjectToUser(jsonArray.getJSONObject(i).getJSONObject("fromUser")),
+                                jsonArray.getJSONObject(i).getString("createdAt")));
+                    }
                 }
-            }
 
-            return book.new Details(
-                    added_by,
-                    bookProcesses);
+                return book.new Details(
+                        added_by,
+                        bookProcesses);
+            }else {
+                return null;
+            }
         } catch (JSONException e) {
             e.printStackTrace();
             return null;

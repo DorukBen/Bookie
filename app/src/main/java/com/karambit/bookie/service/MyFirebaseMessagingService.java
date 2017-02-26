@@ -35,6 +35,7 @@ import com.karambit.bookie.MainActivity;
 import com.karambit.bookie.R;
 import com.karambit.bookie.helper.DBHandler;
 import com.karambit.bookie.helper.SessionManager;
+import com.karambit.bookie.model.Book;
 import com.karambit.bookie.model.Message;
 import com.karambit.bookie.model.Notification;
 import com.karambit.bookie.model.User;
@@ -139,6 +140,118 @@ public class MyFirebaseMessagingService extends com.google.firebase.messaging.Fi
                     bundle.putInt("message_id", Integer.parseInt(remoteMessage.getData().get("messageID")));
                     intent.putExtras(bundle);
                     sendBroadcast(intent);
+                } else if (Integer.parseInt(remoteMessage.getData().get("fcmDataType")) == FcmDataTypes.FCM_DATA_TYPE_REQUEST_SENT){
+                    if (remoteMessage.getData().containsKey("book") && remoteMessage.getData().containsKey("sender")){
+                        try {
+                            JSONObject userJsonObject = new JSONObject(remoteMessage.getData().get("sender"));
+                            User sender = User.jsonObjectToUser(userJsonObject);
+
+                            JSONObject bookJsonObject = new JSONObject(remoteMessage.getData().get("book"));
+                            Book book = Book.jsonObjectToBook(bookJsonObject);
+
+
+                            Notification notification = new Notification(Notification.Type.REQUESTED,
+                                                    Calendar.getInstance(),
+                                                    book,
+                                                    sender,
+                                                    false);
+
+                            DBHandler dbHandler = new DBHandler(getApplicationContext());
+                            dbHandler.saveNotificationToDatabase(notification);
+
+                            Intent intent = new Intent("com.karambit.bookie.SENT_REQUEST_RECEIVED");
+                            Bundle bundle = new Bundle();
+                            bundle.putParcelable("notification", notification);
+                            intent.putExtras(bundle);
+                            sendBroadcast(intent);
+                        } catch (JSONException e) {
+                            e.printStackTrace();
+                        }
+                    }
+                } else if (Integer.parseInt(remoteMessage.getData().get("fcmDataType")) == FcmDataTypes.FCM_DATA_TYPE_REQUEST_REJECTED){
+                    if (remoteMessage.getData().containsKey("book") && remoteMessage.getData().containsKey("sender")){
+                        try {
+                            JSONObject userJsonObject = new JSONObject(remoteMessage.getData().get("sender"));
+                            User sender = User.jsonObjectToUser(userJsonObject);
+
+                            JSONObject bookJsonObject = new JSONObject(remoteMessage.getData().get("book"));
+                            Book book = Book.jsonObjectToBook(bookJsonObject);
+
+
+                            Notification notification = new Notification(Notification.Type.REQUEST_REJECTED,
+                                    Calendar.getInstance(),
+                                    book,
+                                    sender,
+                                    false);
+
+                            DBHandler dbHandler = new DBHandler(getApplicationContext());
+                            dbHandler.saveNotificationToDatabase(notification);
+
+                            Intent intent = new Intent("com.karambit.bookie.REJECTED_REQUEST_RECEIVED");
+                            Bundle bundle = new Bundle();
+                            bundle.putParcelable("notification", notification);
+                            intent.putExtras(bundle);
+                            sendBroadcast(intent);
+                        } catch (JSONException e) {
+                            e.printStackTrace();
+                        }
+                    }
+                } else if (Integer.parseInt(remoteMessage.getData().get("fcmDataType")) == FcmDataTypes.FCM_DATA_TYPE_REQUEST_ACCEPTED){
+                    if (remoteMessage.getData().containsKey("book") && remoteMessage.getData().containsKey("sender")){
+                        try {
+                            JSONObject userJsonObject = new JSONObject(remoteMessage.getData().get("sender"));
+                            User sender = User.jsonObjectToUser(userJsonObject);
+
+                            JSONObject bookJsonObject = new JSONObject(remoteMessage.getData().get("book"));
+                            Book book = Book.jsonObjectToBook(bookJsonObject);
+
+
+                            Notification notification = new Notification(Notification.Type.REQUEST_ACCEPTED,
+                                    Calendar.getInstance(),
+                                    book,
+                                    sender,
+                                    false);
+
+                            DBHandler dbHandler = new DBHandler(getApplicationContext());
+                            dbHandler.saveNotificationToDatabase(notification);
+
+                            Intent intent = new Intent("com.karambit.bookie.ACCEPTED_REQUEST_RECEIVED");
+                            Bundle bundle = new Bundle();
+                            bundle.putParcelable("notification", notification);
+                            intent.putExtras(bundle);
+                            sendBroadcast(intent);
+                        } catch (JSONException e) {
+                            e.printStackTrace();
+                        }
+                    }
+                } else if (Integer.parseInt(remoteMessage.getData().get("fcmDataType")) == FcmDataTypes.FCM_DATA_TYPE_TRANSACTION_COME_TO_HAND){
+                    if (remoteMessage.getData().containsKey("book") && remoteMessage.getData().containsKey("sender")){
+                        try {
+                            JSONObject userJsonObject = new JSONObject(remoteMessage.getData().get("sender"));
+                            User sender = User.jsonObjectToUser(userJsonObject);
+
+                            JSONObject bookJsonObject = new JSONObject(remoteMessage.getData().get("book"));
+                            Book book = Book.jsonObjectToBook(bookJsonObject);
+
+
+                            Notification notification = new Notification(Notification.Type.BOOK_OWNER_CHANGED,
+                                    Calendar.getInstance(),
+                                    book,
+                                    sender,
+                                    false);
+
+                            DBHandler dbHandler = new DBHandler(getApplicationContext());
+                            dbHandler.saveNotificationToDatabase(notification);
+
+                            Intent intent = new Intent("com.karambit.bookie.BOOK_OWNER_CHANGED_DATA_RECEIVED");
+                            Bundle bundle = new Bundle();
+                            bundle.putParcelable("notification", notification);
+                            intent.putExtras(bundle);
+                            sendBroadcast(intent);
+                        } catch (JSONException e) {
+                            e.printStackTrace();
+                        }
+                    }
                 }
             }
 

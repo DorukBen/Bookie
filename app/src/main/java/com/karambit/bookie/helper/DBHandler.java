@@ -49,6 +49,7 @@ public class DBHandler extends SQLiteOpenHelper {
     private static final String USER_COLUMN_BIO = "bio";
     private static final String USER_COLUMN_BOOK_COUNTER = "book_counter";
     private static final String USER_COLUMN_POINT = "point";
+    private static final String USER_COLUMN_SHARED_POINT = "shared_point";
 
     private static final String LG_TABLE_NAME = "loved_genre";
     private static final String LG_COLUMN_ID = "loved_genre_id";
@@ -154,7 +155,8 @@ public class DBHandler extends SQLiteOpenHelper {
                         USER_COLUMN_VERIFIED + " BIT NOT NULL, " +
                         USER_COLUMN_BIO + " TEXT, " +
                         USER_COLUMN_BOOK_COUNTER + " INTEGER NOT NULL, " +
-                        USER_COLUMN_POINT + " INTEGER NOT NULL)"
+                        USER_COLUMN_POINT + " INTEGER NOT NULL, " +
+                        USER_COLUMN_SHARED_POINT + " INTEGER NOT NULL)"
         );
 
         db.execSQL(
@@ -297,7 +299,7 @@ public class DBHandler extends SQLiteOpenHelper {
      * @return {@link Boolean Boolean} result from executed database query. If query successful returns true else returns false.
      */
     public boolean insertCurrentUser(int id, String name, String imageURL, String thumbnailURL, double latitude, double longitude,
-                                     String password, String email, boolean verified, String bio, int bookCounter, int point) {
+                                     String password, String email, boolean verified, String bio, int bookCounter, int point, int sharedPoint) {
         SQLiteDatabase db = null;
         boolean result = false;
         try {
@@ -317,6 +319,7 @@ public class DBHandler extends SQLiteOpenHelper {
             contentValues.put(USER_COLUMN_BIO, bio);
             contentValues.put(USER_COLUMN_BOOK_COUNTER, bookCounter);
             contentValues.put(USER_COLUMN_POINT, point);
+            contentValues.put(USER_COLUMN_SHARED_POINT, sharedPoint);
 
             result = db.insert(USER_TABLE_NAME, null, contentValues) > 0;
         }finally {
@@ -364,6 +367,7 @@ public class DBHandler extends SQLiteOpenHelper {
             contentValues.put(USER_COLUMN_BIO, user.getBio());
             contentValues.put(USER_COLUMN_BOOK_COUNTER, user.getBookCounter());
             contentValues.put(USER_COLUMN_POINT, user.getPoint());
+            contentValues.put(USER_COLUMN_SHARED_POINT, user.getSharedPoint());
 
             result = db.insert(USER_TABLE_NAME, null, contentValues) > 0;
         }finally {
@@ -398,20 +402,23 @@ public class DBHandler extends SQLiteOpenHelper {
             db.beginTransaction();
             res = db.rawQuery("SELECT * FROM " + USER_TABLE_NAME, null);
             res.moveToFirst();
-            if (res.isNull(res.getColumnIndex(USER_COLUMN_LATITUDE)) || res.isNull(res.getColumnIndex(USER_COLUMN_LONGITUDE))){
-                user = new User(res.getInt(res.getColumnIndex(USER_COLUMN_ID)),
-                        res.getString(res.getColumnIndex(USER_COLUMN_NAME)),
-                        res.getString(res.getColumnIndex(USER_COLUMN_IMAGE_URL)),
-                        res.getString(res.getColumnIndex(USER_COLUMN_THUMBNAIL_URL)),
-                        null);
+            if (res.getCount() > 0){
+                if (res.isNull(res.getColumnIndex(USER_COLUMN_LATITUDE)) || res.isNull(res.getColumnIndex(USER_COLUMN_LONGITUDE))){
+                    user = new User(res.getInt(res.getColumnIndex(USER_COLUMN_ID)),
+                            res.getString(res.getColumnIndex(USER_COLUMN_NAME)),
+                            res.getString(res.getColumnIndex(USER_COLUMN_IMAGE_URL)),
+                            res.getString(res.getColumnIndex(USER_COLUMN_THUMBNAIL_URL)),
+                            null);
+                }else {
+                    user = new User(res.getInt(res.getColumnIndex(USER_COLUMN_ID)),
+                            res.getString(res.getColumnIndex(USER_COLUMN_NAME)),
+                            res.getString(res.getColumnIndex(USER_COLUMN_IMAGE_URL)),
+                            res.getString(res.getColumnIndex(USER_COLUMN_THUMBNAIL_URL)),
+                            new LatLng(res.getDouble(res.getColumnIndex(USER_COLUMN_LATITUDE)), res.getDouble(res.getColumnIndex(USER_COLUMN_LONGITUDE))));
+                }
             }else {
-                user = new User(res.getInt(res.getColumnIndex(USER_COLUMN_ID)),
-                        res.getString(res.getColumnIndex(USER_COLUMN_NAME)),
-                        res.getString(res.getColumnIndex(USER_COLUMN_IMAGE_URL)),
-                        res.getString(res.getColumnIndex(USER_COLUMN_THUMBNAIL_URL)),
-                        new LatLng(res.getDouble(res.getColumnIndex(USER_COLUMN_LATITUDE)), res.getDouble(res.getColumnIndex(USER_COLUMN_LONGITUDE))));
+                return null;
             }
-
         }finally {
             if (res != null){
                 res.close();
@@ -463,7 +470,8 @@ public class DBHandler extends SQLiteOpenHelper {
                     res.getInt(res.getColumnIndex(USER_COLUMN_VERIFIED)) > 0,
                     res.getString(res.getColumnIndex(USER_COLUMN_BIO)),
                     res.getInt(res.getColumnIndex(USER_COLUMN_BOOK_COUNTER)),
-                    res.getInt(res.getColumnIndex(USER_COLUMN_POINT)));
+                    res.getInt(res.getColumnIndex(USER_COLUMN_POINT)),
+                    res.getInt(res.getColumnIndex(USER_COLUMN_SHARED_POINT)));
         }finally {
             if (res != null){
                 res.close();
@@ -1508,6 +1516,69 @@ public class DBHandler extends SQLiteOpenHelper {
             Log.i(TAG, "New Notification insertion successful");
         }
         return result;
+    }
+
+    /**
+     * Updates all notifications seen value.<br>
+     *
+     * Using SQLiteOpenHelper. Can't access database simultaneously.<br>
+
+     */
+    public void updateAllNotificationsSeen(){
+        SQLiteDatabase db = null;
+
+        try{
+            db = this.getWritableDatabase();
+            db.beginTransaction();
+            ContentValues cv = new ContentValues();
+            cv.put(NOTIFICATION_COLUMN_SEEN, 1);
+
+            // getCurrentUser in this class fetch user from database. getCurrentUser in SessionManager fetch user from static User field
+            db.update(NOTIFICATION_TABLE_NAME, cv,null, null);
+        }finally {
+            if (db != null && db.isOpen()) {
+                db.setTransactionSuccessful();
+                db.endTransaction();
+                db.close();
+            }
+            Log.i(TAG, "Notifications seen updated updated");
+        }
+    }
+
+    /**
+     * Counts unseen notifications.<br>
+     *
+     * Using SQLiteOpenHelper. Can't access database simultaneously.<br>
+     *
+     * @return Total unseen notification count for given user
+     */
+    public int getUnseenNotificationCount(){
+        SQLiteDatabase db = null;
+        Cursor res = null;
+        String queryVariableString = "totalCount";
+        int unseenMessageCount = 0;
+
+        try {
+            db = this.getReadableDatabase();
+            db.beginTransaction();
+            res = db.rawQuery("SELECT COUNT(*) AS " + queryVariableString + " FROM " + NOTIFICATION_TABLE_NAME +
+                    " WHERE " + NOTIFICATION_COLUMN_SEEN + " = " + 0, null);
+            res.moveToFirst();
+
+            unseenMessageCount = res.getInt(res.getColumnIndex(queryVariableString));
+
+        } finally {
+            if (res != null){
+                res.close();
+            }
+            if (db != null && db.isOpen()){
+                db.setTransactionSuccessful();
+                db.endTransaction();
+                db.close();
+            }
+        }
+
+        return unseenMessageCount;
     }
 
     /**

@@ -79,7 +79,7 @@ public class LoginRegisterActivity extends AppCompatActivity {
 
         // Bookie font
         SpannableString s = new SpannableString(getResources().getString(R.string.app_name));
-        s.setSpan(new TypefaceSpan(this, "autograf.ttf"), 0, s.length(),
+        s.setSpan(new TypefaceSpan(this, "comfortaa.ttf"), 0, s.length(),
                 Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
 
         ((TextView) findViewById(R.id.app_name)).setText(s);

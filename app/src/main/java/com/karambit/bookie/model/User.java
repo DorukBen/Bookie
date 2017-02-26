@@ -3,6 +3,7 @@ package com.karambit.bookie.model;
 import android.os.Parcel;
 import android.os.Parcelable;
 import android.support.annotation.Nullable;
+import android.text.TextUtils;
 import android.util.Log;
 
 import com.google.android.gms.maps.model.LatLng;
@@ -72,24 +73,27 @@ public class User implements Parcelable {
 
     public static User jsonObjectToUser(JSONObject userJsonObject) {
         try {
-            if (userJsonObject.isNull("latitude") || userJsonObject.isNull("longitude")){
-                return new User(
-                        userJsonObject.getInt("ID"),
-                        userJsonObject.getString("nameSurname"),
-                        userJsonObject.getString("profilePictureURL"),
-                        userJsonObject.getString("profilePictureThumbnailURL"),
-                        null
-                );
+            if (userJsonObject != null){
+                if (userJsonObject.isNull("latitude") || userJsonObject.isNull("longitude")){
+                    return new User(
+                            userJsonObject.isNull("ID")? -1: userJsonObject.getInt("ID"),
+                            userJsonObject.isNull("nameSurname")|| TextUtils.isEmpty(userJsonObject.getString("nameSurname"))? null: userJsonObject.getString("nameSurname"),
+                            userJsonObject.isNull("profilePictureURL")|| TextUtils.isEmpty(userJsonObject.getString("profilePictureURL"))? null: userJsonObject.getString("profilePictureURL"),
+                            userJsonObject.isNull("profilePictureThumbnailURL")|| TextUtils.isEmpty(userJsonObject.getString("profilePictureThumbnailURL"))? null: userJsonObject.getString("profilePictureThumbnailURL"),
+                            null
+                    );
+                }else {
+                    return new User(
+                            userJsonObject.isNull("ID")? -1: userJsonObject.getInt("ID"),
+                            userJsonObject.isNull("nameSurname")|| TextUtils.isEmpty(userJsonObject.getString("nameSurname"))? null: userJsonObject.getString("nameSurname"),
+                            userJsonObject.isNull("profilePictureURL")|| TextUtils.isEmpty(userJsonObject.getString("profilePictureURL"))? null: userJsonObject.getString("profilePictureURL"),
+                            userJsonObject.isNull("profilePictureThumbnailURL")|| TextUtils.isEmpty(userJsonObject.getString("profilePictureThumbnailURL"))? null: userJsonObject.getString("profilePictureThumbnailURL"),
+                            new LatLng(userJsonObject.getDouble("latitude"), userJsonObject.getDouble("longitude"))
+                    );
+                }
             }else {
-                return new User(
-                        userJsonObject.getInt("ID"),
-                        userJsonObject.getString("nameSurname"),
-                        userJsonObject.getString("profilePictureURL"),
-                        userJsonObject.getString("profilePictureThumbnailURL"),
-                        new LatLng(userJsonObject.getDouble("latitude"), userJsonObject.getDouble("longitude"))
-                );
+                return null;
             }
-
         } catch (JSONException e) {
             e.printStackTrace();
             return null;
@@ -99,17 +103,21 @@ public class User implements Parcelable {
     public static User.Details jsonObjectToUserDetails(JSONObject userJsonObject) {
 
         try {
-            User user = jsonObjectToUser(userJsonObject);
+            if (userJsonObject != null){
+                User user = jsonObjectToUser(userJsonObject);
 
-            return user.new Details(
-                    userJsonObject.getString("password"),
-                    userJsonObject.getString("email"),
-                    userJsonObject.getBoolean("emailVerified"),
-                    userJsonObject.getString("bio"),
-                    userJsonObject.getInt("counter"),
-                    userJsonObject.getInt("point")
-            );
-
+                return user.new Details(
+                        userJsonObject.isNull("password")|| TextUtils.isEmpty(userJsonObject.getString("password"))? null: userJsonObject.getString("password"),
+                        userJsonObject.isNull("email")|| TextUtils.isEmpty(userJsonObject.getString("email"))? null: userJsonObject.getString("email"),
+                        !userJsonObject.isNull("emailVerified") && userJsonObject.getBoolean("emailVerified"),
+                        userJsonObject.isNull("bio")|| TextUtils.isEmpty(userJsonObject.getString("bio"))? null: userJsonObject.getString("bio"),
+                        userJsonObject.isNull("counter")? -1: userJsonObject.getInt("counter"),
+                        userJsonObject.isNull("point")? 0: userJsonObject.getInt("point"),
+                        userJsonObject.isNull("shared")? 0: userJsonObject.getInt("shared")
+                );
+            }else {
+                return null;
+            }
         } catch (JSONException e) {
             e.printStackTrace();
             return null;
@@ -188,6 +196,7 @@ public class User implements Parcelable {
         private String mBio;
         private int mBookCounter;
         private int mPoint;
+        private int mSharedPoint;
         private ArrayList<Book> mCurrentlyReading;
         private ArrayList<Book> mOnRoadBooks;
         private ArrayList<Book> mReadBooks;
@@ -195,7 +204,7 @@ public class User implements Parcelable {
         private ArrayList<Book> mSharedBooks;
 
         public Details(String password, String email, boolean verified, @Nullable String bio, int bookCounter,
-                       int point, ArrayList<Book> currentlyReading, @Nullable ArrayList<Book> onRoadBooks, @Nullable ArrayList<Book> readBooks,
+                       int point, int sharedPoint, ArrayList<Book> currentlyReading, @Nullable ArrayList<Book> onRoadBooks, @Nullable ArrayList<Book> readBooks,
                        @Nullable ArrayList<Book> booksOnHand, @Nullable ArrayList<Book> sharedBooks) {
             mPassword = password;
             mEmail = email;
@@ -203,6 +212,7 @@ public class User implements Parcelable {
             mBio = bio != null ? bio : "";
             mBookCounter = bookCounter;
             mPoint = point;
+            mSharedPoint = sharedPoint;
             mCurrentlyReading = currentlyReading;
             mOnRoadBooks = onRoadBooks;
             mReadBooks = readBooks;
@@ -210,13 +220,14 @@ public class User implements Parcelable {
             mSharedBooks = sharedBooks;
         }
 
-        public Details(String password, String email, boolean verified, String bio, int bookCounter, int point) {
+        public Details(String password, String email, boolean verified, String bio, int bookCounter, int point, int sharedPoint) {
             mPassword = password;
             mEmail = email;
             mVerified = verified;
             mBio = bio;
             mBookCounter = bookCounter;
             mPoint = point;
+            mSharedPoint = sharedPoint;
         }
 
         public String getPassword() {
@@ -265,6 +276,14 @@ public class User implements Parcelable {
 
         public void setPoint(int point) {
             mPoint = point;
+        }
+
+        public int getSharedPoint() {
+            return mSharedPoint;
+        }
+
+        public void setSharedPoint(int point) {
+            mSharedPoint = point;
         }
 
         public ArrayList<Book> getCurrentlyReading() {
@@ -422,7 +441,7 @@ public class User implements Parcelable {
 
 
             return user.new Details("********", name2Email(user.mName), true, BIO, random.nextInt(5),
-                    random.nextInt(300), currentlyReading, booksOnRoad, booksRead, booksOnHand, booksShared);
+                    random.nextInt(300), random.nextInt(300), currentlyReading, booksOnRoad, booksRead, booksOnHand, booksShared);
         }
 
         private static String name2Email(String name) {

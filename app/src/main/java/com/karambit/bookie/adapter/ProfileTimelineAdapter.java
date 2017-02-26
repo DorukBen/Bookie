@@ -241,8 +241,6 @@ public class ProfileTimelineAdapter extends RecyclerView.Adapter<RecyclerView.Vi
                 increment++;
             }
 
-            Log.d("hele", "profile adapter: " + mUserDetails.getCurrentlyReadingCount() + "");
-
             // Currently reading
             if (mUserDetails.getUser().getID() == SessionManager.getCurrentUser(mContext).getID() ||
                 mUserDetails.getCurrentlyReadingCount() != 0 ||
@@ -746,7 +744,7 @@ public class ProfileTimelineAdapter extends RecyclerView.Adapter<RecyclerView.Vi
 
                 headerViewHolder.mReadBooks.setText(String.valueOf(mUserDetails.getReadBooksCount()));
                 headerViewHolder.mPoint.setText(String.valueOf(mUserDetails.getPoint()));
-                headerViewHolder.mSharedBooks.setText(String.valueOf(mUserDetails.getSharedBooksCount()));
+                headerViewHolder.mSharedBooks.setText(String.valueOf(mUserDetails.getSharedPoint()));
 
                 break;
             }

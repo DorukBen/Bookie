@@ -1,9 +1,11 @@
 package com.karambit.bookie;
 
 import android.app.Dialog;
+import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.res.Resources;
 import android.os.Bundle;
 import android.support.v7.app.ActionBar;
@@ -34,6 +36,7 @@ import com.karambit.bookie.helper.SessionManager;
 import com.karambit.bookie.helper.TypefaceSpan;
 import com.karambit.bookie.helper.pull_refresh_layout.PullRefreshLayout;
 import com.karambit.bookie.model.Book;
+import com.karambit.bookie.model.Notification;
 import com.karambit.bookie.model.User;
 import com.karambit.bookie.rest_api.BookApi;
 import com.karambit.bookie.rest_api.BookieClient;
@@ -63,6 +66,7 @@ public class BookActivity extends AppCompatActivity {
     private BookTimelineAdapter mBookTimelineAdapter;
     private Book.Details mBookDetails;
     private PullRefreshLayout mPullRefreshLayout;
+    private BroadcastReceiver mMessageReceiver;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -72,9 +76,9 @@ public class BookActivity extends AppCompatActivity {
         //Changes action bar font style by getting font.ttf from assets/fonts action bars font style doesn't
         // change from styles.xml
         SpannableString s = new SpannableString(getResources().getString(R.string.app_name));
-        s.setSpan(new TypefaceSpan(this, "autograf.ttf"), 0, s.length(),
+        s.setSpan(new TypefaceSpan(this, "comfortaa.ttf"), 0, s.length(),
                   Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
-        s.setSpan(new AbsoluteSizeSpan((int)convertDpToPixel(32, this)), 0, s.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+        s.setSpan(new AbsoluteSizeSpan((int)convertDpToPixel(18, this)), 0, s.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
 
         // Update the action bar title with the TypefaceSpan instance
         if (getSupportActionBar() != null) {
@@ -170,8 +174,8 @@ public class BookActivity extends AppCompatActivity {
                                 .setNegativeButton(R.string.no, new DialogInterface.OnClickListener() {
                                     @Override
                                     public void onClick(DialogInterface dialog, int which) {
-                                        mBookDetails.getBook().setState(Book.State.CLOSED_TO_SHARE);
-                                        mBook.setState(Book.State.CLOSED_TO_SHARE);
+                                        mBookDetails.getBook().setState(null);
+                                        mBook.setState(null);
                                         new StateSelectorDialog().show();
                                     }
                                 })
@@ -274,6 +278,88 @@ public class BookActivity extends AppCompatActivity {
     }
 
     @Override
+    public void onResume() {
+        super.onResume();
+
+
+        mMessageReceiver = new BroadcastReceiver() {
+            @Override
+            public void onReceive(Context context, Intent intent) {
+                if (intent.getAction().equalsIgnoreCase("com.karambit.bookie.SENT_REQUEST_RECEIVED")){
+                    if (intent.getParcelableExtra("notification") != null){
+                        Notification notification = intent.getParcelableExtra("notification");
+                        if (mBookDetails != null){
+                            if (notification.getBook().getID() == mBookDetails.getBook().getID()){
+                                mBookDetails.getBookProcesses().add(mBookDetails.getBook().new Request(
+                                        Book.RequestType.SEND,
+                                        mBookDetails.getBook().getOwner(),
+                                        notification.getOppositeUser(),
+                                        notification.getCreatedAt()));
+                                mBookTimelineAdapter.notifyDataSetChanged();
+                            }
+                        }
+                    }
+                } else if (intent.getAction().equalsIgnoreCase("com.karambit.bookie.REJECTED_REQUEST_RECEIVED")){
+                    if (intent.getParcelableExtra("notification") != null){
+                        Notification notification = intent.getParcelableExtra("notification");
+                        if (mBookDetails != null){
+                            if (notification.getBook().getID() == mBookDetails.getBook().getID()){
+                                mBookDetails.getBookProcesses().add(mBookDetails.getBook().new Request(
+                                        Book.RequestType.REJECT,
+                                        notification.getOppositeUser(),
+                                        mBookDetails.getBook().getOwner(),
+                                        notification.getCreatedAt()));
+                                mBookTimelineAdapter.notifyDataSetChanged();
+                            }
+                        }
+                    }
+                } else if (intent.getAction().equalsIgnoreCase("com.karambit.bookie.ACCEPTED_REQUEST_RECEIVED")){
+                    if (intent.getParcelableExtra("notification") != null){
+                        Notification notification = intent.getParcelableExtra("notification");
+                        if (mBookDetails != null){
+                            if (notification.getBook().getID() == mBookDetails.getBook().getID()){
+                                mBookDetails.getBookProcesses().add(mBookDetails.getBook().new Request(
+                                        Book.RequestType.ACCEPT,
+                                        notification.getOppositeUser(),
+                                        mBookDetails.getBook().getOwner(),
+                                        notification.getCreatedAt()));
+
+                                mBookDetails.getBookProcesses().add(mBookDetails.getBook().new Transaction(
+                                        mBookDetails.getBook().getOwner(),
+                                        Book.TransactionType.DISPACTH,
+                                        SessionManager.getCurrentUser(getApplicationContext()),
+                                        notification.getCreatedAt()));
+
+                                mBookDetails.getBook().setState(Book.State.ON_ROAD);
+                                mBookTimelineAdapter.notifyDataSetChanged();
+                            }
+                        }
+                    }
+                } else if (intent.getAction().equalsIgnoreCase("com.karambit.bookie.BOOK_OWNER_CHANGED_DATA_RECEIVED")){
+                    if (intent.getParcelableExtra("notification") != null){
+                        if (mBookDetails != null){
+
+                            fetchBookPageArguments();
+                        }
+                    }
+                }
+            }
+        };
+
+        registerReceiver(mMessageReceiver, new IntentFilter("com.karambit.bookie.SENT_REQUEST_RECEIVED"));
+        registerReceiver(mMessageReceiver, new IntentFilter("com.karambit.bookie.REJECTED_REQUEST_RECEIVED"));
+        registerReceiver(mMessageReceiver, new IntentFilter("com.karambit.bookie.ACCEPTED_REQUEST_RECEIVED"));
+        registerReceiver(mMessageReceiver, new IntentFilter("com.karambit.bookie.BOOK_OWNER_CHANGED_DATA_RECEIVED"));
+    }
+
+    @Override
+    public void onPause() {
+        super.onPause();
+
+        unregisterReceiver(mMessageReceiver);
+    }
+
+    @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         MenuInflater inflater = getMenuInflater();
         inflater.inflate(R.menu.main_menu, menu);
@@ -301,6 +387,17 @@ public class BookActivity extends AppCompatActivity {
         if(requestCode == REQUEST_CHANGED_REQUEST_CODE){
             if (resultCode == RequestActivity.REQUESTS_MODIFIED){
                 fetchBookPageArguments();
+
+            } else if (resultCode == RequestActivity.REQUEST_ACCEPTED){
+                fetchBookPageArguments();
+
+                Intent intent = new Intent();
+                Bundle bundle = new Bundle();
+                Book book = mBookDetails.getBook();
+                book.setState(Book.State.ON_ROAD);
+                bundle.putParcelable("book",book);
+                intent.putExtras(bundle);
+                setResult(BOOK_PROCESS_CHANGED_RESULT_CODE, intent);
             }
         }
     }

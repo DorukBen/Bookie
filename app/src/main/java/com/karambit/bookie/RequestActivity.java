@@ -65,6 +65,7 @@ public class RequestActivity extends AppCompatActivity {
     private static final String TAG = RequestActivity.class.getSimpleName();
 
     public static final int REQUESTS_MODIFIED = 1005;
+    public static int REQUEST_ACCEPTED = 1007;
 
     private Book mBook;
     private ArrayList<Book.Request> mRequests = new ArrayList<>();
@@ -320,7 +321,7 @@ public class RequestActivity extends AppCompatActivity {
 
                                     setAcceptedRequestText(oldRequest);
 
-                                    setResult(REQUESTS_MODIFIED); // for refreshing previous page
+                                    setResult(REQUEST_ACCEPTED); // for refreshing previous page
                                 }else if (request.getRequestType() == Book.RequestType.REJECT){
                                     int indexBefore = mRequests.indexOf(oldRequest);
                                     oldRequest.setRequestType(Book.RequestType.REJECT);

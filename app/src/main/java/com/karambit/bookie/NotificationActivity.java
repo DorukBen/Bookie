@@ -1,7 +1,9 @@
 package com.karambit.bookie;
 
+import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.res.Resources;
 import android.support.v7.app.ActionBar;
 import android.support.v7.app.AppCompatActivity;
@@ -12,6 +14,7 @@ import android.text.Spannable;
 import android.text.SpannableString;
 import android.text.style.AbsoluteSizeSpan;
 import android.util.DisplayMetrics;
+import android.util.Log;
 import android.view.View;
 
 import com.karambit.bookie.adapter.NotificationAdapter;
@@ -27,6 +30,11 @@ import java.util.ArrayList;
 
 public class NotificationActivity extends AppCompatActivity {
 
+    public static final int RESULT_CODE_ALL_NOTIFICATION_SEENS_DELETED = 1009;
+    private BroadcastReceiver mMessageReceiver;
+    private NotificationAdapter mNotificationAdapter;
+    private ArrayList<Notification> mNotifications = new ArrayList<>();
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -35,9 +43,9 @@ public class NotificationActivity extends AppCompatActivity {
         //Changes action bar font style by getting font.ttf from assets/fonts action bars font style doesn't
         // change from styles.xml
         SpannableString s = new SpannableString(getResources().getString(R.string.app_name));
-        s.setSpan(new TypefaceSpan(this, "autograf.ttf"), 0, s.length(),
+        s.setSpan(new TypefaceSpan(this, "comfortaa.ttf"), 0, s.length(),
                 Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
-        s.setSpan(new AbsoluteSizeSpan((int)convertDpToPixel(32, this)), 0, s.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+        s.setSpan(new AbsoluteSizeSpan((int)convertDpToPixel(18, this)), 0, s.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
 
         // Update the action bar title with the TypefaceSpan instance
         if(getSupportActionBar() != null){
@@ -50,14 +58,11 @@ public class NotificationActivity extends AppCompatActivity {
 
 
         DBHandler dbHandler = new DBHandler(getApplicationContext());
-        ArrayList<Notification> notifications = Notification.GENERATOR.generateNotificationList(15);
-        for (Notification notification: notifications){
-            dbHandler.saveNotificationToDatabase(notification);
-        }
 
-        NotificationAdapter notificationAdapter = new NotificationAdapter(this, dbHandler.getAllNotifications(dbHandler.getAllNotificationUsers(), dbHandler.getAllNotificationBooks(dbHandler.getAllNotificationBookUsers())));
+        mNotifications = dbHandler.getAllNotifications(dbHandler.getAllNotificationUsers(), dbHandler.getAllNotificationBooks(dbHandler.getAllNotificationBookUsers()));
+        mNotificationAdapter = new NotificationAdapter(this, mNotifications);
 
-        notificationAdapter.setSpanTextClickListeners(new NotificationAdapter.SpanTextClickListeners() {
+        mNotificationAdapter.setSpanTextClickListeners(new NotificationAdapter.SpanTextClickListeners() {
             @Override
             public void onUserNameClick(User user) {
                 Intent intent = new Intent(NotificationActivity.this, ProfileActivity.class);
@@ -95,9 +100,9 @@ public class NotificationActivity extends AppCompatActivity {
             }
         });
 
-        notificationAdapter.setHasStableIds(true);
+        mNotificationAdapter.setHasStableIds(true);
 
-        recyclerView.setAdapter(notificationAdapter);
+        recyclerView.setAdapter(mNotificationAdapter);
 
         recyclerView.setOnScrollListener(new RecyclerView.OnScrollListener() {
 
@@ -131,6 +136,59 @@ public class NotificationActivity extends AppCompatActivity {
         recyclerView.setDrawingCacheEnabled(true);
         recyclerView.setDrawingCacheQuality(View.DRAWING_CACHE_QUALITY_HIGH);
 
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+
+
+        mMessageReceiver = new BroadcastReceiver() {
+            @Override
+            public void onReceive(Context context, Intent intent) {
+                if (intent.getAction().equalsIgnoreCase("com.karambit.bookie.SENT_REQUEST_RECEIVED")){
+                    if (intent.getParcelableExtra("notification") != null){
+                        Notification notification = intent.getParcelableExtra("notification");
+                        mNotifications.add(notification);
+                        mNotificationAdapter.setNotifications(mNotifications);
+                    }
+                } else if (intent.getAction().equalsIgnoreCase("com.karambit.bookie.REJECTED_REQUEST_RECEIVED")){
+                    if (intent.getParcelableExtra("notification") != null){
+                        Notification notification = intent.getParcelableExtra("notification");
+                        mNotifications.add(notification);
+                        mNotificationAdapter.setNotifications(mNotifications);
+                    }
+                } else if (intent.getAction().equalsIgnoreCase("com.karambit.bookie.ACCEPTED_REQUEST_RECEIVED")){
+                    if (intent.getParcelableExtra("notification") != null){
+                        Notification notification = intent.getParcelableExtra("notification");
+                        mNotifications.add(notification);
+                        mNotificationAdapter.setNotifications(mNotifications);
+                    }
+                } else if (intent.getAction().equalsIgnoreCase("com.karambit.bookie.BOOK_OWNER_CHANGED_DATA_RECEIVED")){
+                    if (intent.getParcelableExtra("notification") != null){
+                        Notification notification = intent.getParcelableExtra("notification");
+                        mNotifications.add(notification);
+                        mNotificationAdapter.setNotifications(mNotifications);
+                    }
+                }
+            }
+        };
+
+        registerReceiver(mMessageReceiver, new IntentFilter("com.karambit.bookie.SENT_REQUEST_RECEIVED"));
+        registerReceiver(mMessageReceiver, new IntentFilter("com.karambit.bookie.REJECTED_REQUEST_RECEIVED"));
+        registerReceiver(mMessageReceiver, new IntentFilter("com.karambit.bookie.ACCEPTED_REQUEST_RECEIVED"));
+        registerReceiver(mMessageReceiver, new IntentFilter("com.karambit.bookie.BOOK_OWNER_CHANGED_DATA_RECEIVED"));
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+
+        unregisterReceiver(mMessageReceiver);
+
+        DBHandler dbHandler = new DBHandler(getApplicationContext());
+        dbHandler.updateAllNotificationsSeen();
+        setResult(NotificationActivity.RESULT_CODE_ALL_NOTIFICATION_SEENS_DELETED);
     }
 
     /**

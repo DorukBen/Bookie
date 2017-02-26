@@ -1,13 +1,17 @@
 package com.karambit.bookie.model;
 
+import android.os.Parcel;
+import android.os.Parcelable;
+
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.GregorianCalendar;
 import java.util.Random;
 
 /**
  * Created by doruk on 24.12.2016.
  */
-public class Notification {
+public class Notification implements Parcelable {
 
     public enum Type {
         REQUESTED(0),
@@ -56,6 +60,16 @@ public class Notification {
         mBook = book;
         mOppositeUser = oppositeUser;
         mSeen = seen;
+    }
+
+    protected Notification(Parcel in) {
+        mType = Notification.Type.values()[in.readInt()];
+        Calendar cal = GregorianCalendar.getInstance();
+        cal.setTimeInMillis(in.readLong());
+        mCreatedAt = cal;
+        mBook = in.readParcelable(Book.class.getClassLoader());
+        mOppositeUser = in.readParcelable(User.class.getClassLoader());
+        mSeen = in.readByte() != 0;
     }
 
     public Type getType() {
@@ -112,4 +126,32 @@ public class Notification {
             return notifications;
         }
     }
+
+    public static final Parcelable.Creator<Notification> CREATOR = new Parcelable.Creator<Notification>() {
+        @Override
+        public Notification createFromParcel(Parcel in) {
+            return new Notification(in);
+        }
+
+        @Override
+        public Notification[] newArray(int size) {
+            return new Notification[size];
+        }
+    };
+
+    @Override
+    public int describeContents() {
+        return 0;
+    }
+
+    @Override
+    public void writeToParcel(Parcel dest, int flags) {
+        dest.writeInt(mType.getTypeCode());
+        dest.writeLong(mCreatedAt.getTimeInMillis());
+        dest.writeParcelable(mBook, flags);
+        dest.writeParcelable(mOppositeUser, flags);
+        dest.writeByte((byte) (mSeen ? 1 : 0));
+    }
+
+
 }
