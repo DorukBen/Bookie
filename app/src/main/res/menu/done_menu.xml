@@ -4,7 +4,7 @@
 
     <item
         android:id="@+id/action_done"
-        android:icon="@drawable/ic_genre_select_done"
+        android:icon="@drawable/ic_action_done"
         app:showAsAction="ifRoom"
         android:title="@string/ok"/>
 

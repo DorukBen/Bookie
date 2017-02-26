@@ -26,7 +26,6 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.karambit.bookie.adapter.BookTimelineAdapter;
-import com.karambit.bookie.adapter.HomeTimelineAdapter;
 import com.karambit.bookie.adapter.ProfileTimelineAdapter;
 import com.karambit.bookie.helper.ComfortableProgressDialog;
 import com.karambit.bookie.helper.ElevationScrollListener;
@@ -56,6 +55,8 @@ public class BookActivity extends AppCompatActivity {
     public static final int BOOK_PROCESS_CHANGED_RESULT_CODE = 1003;
 
     private static final String TAG = BookActivity.class.getSimpleName();
+
+    private static final int REQUEST_EDIT_BOOK = 111;
 
     private Book mBook;
     private BookTimelineAdapter mBookTimelineAdapter;
@@ -268,12 +269,31 @@ public class BookActivity extends AppCompatActivity {
     public boolean onOptionsItemSelected(MenuItem item) {
         switch (item.getItemId()) {
             case R.id.action_more:
-                startActivity(new Intent(this, BookSettingsActivity.class));
-                return true;
+
+                if (mBookDetails != null) {
+                    Intent intent = new Intent(this, BookSettingsActivity.class);
+                    intent.putExtra("book", mBook);
+                    boolean isAdder = mBookDetails.getAddedBy().getID() == SessionManager.getCurrentUser(this).getID();
+                    intent.putExtra("is_adder", isAdder);
+                    startActivityForResult(intent, REQUEST_EDIT_BOOK);
+                    return true;
+
+                } else {
+                    return false;
+                }
 
             default:
                 startActivity(new Intent(this, BookSettingsActivity.class));
                 return super.onOptionsItemSelected(item);
+        }
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        if (requestCode == REQUEST_EDIT_BOOK) {
+            if (resultCode == BookSettingsActivity.RESULT_BOOK_UPDATED) {
+                fetchBookPageArguments();
+            }
         }
     }
 

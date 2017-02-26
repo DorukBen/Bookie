@@ -10,15 +10,14 @@ import android.support.v7.app.AppCompatActivity;
 import android.text.Editable;
 import android.text.Spannable;
 import android.text.SpannableString;
+import android.text.TextUtils;
 import android.text.TextWatcher;
-import android.util.Log;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewTreeObserver;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.Button;
 import android.widget.EditText;
-import android.widget.RadioButton;
 import android.widget.RadioGroup;
 import android.widget.ScrollView;
 import android.widget.TextView;
@@ -271,16 +270,15 @@ public class OtherUserProfileSettingsActivity extends AppCompatActivity {
 
         String reportInfo = mReportEditText.getText().toString();
 
-        Log.d(TAG, ((RadioButton) findViewById(mReportRadioGroup.getCheckedRadioButtonId())).getText().toString());
+        int checkedRadioButtonId = mReportRadioGroup.getCheckedRadioButtonId();
+        int reportCode = getCheckedReportCode(checkedRadioButtonId);
 
-//        int reportCode = getCheckedReportCode(checkedRadioButtonId);
-
-        /* TODO reportInfo can be empty
 
         if (!TextUtils.isEmpty(reportInfo)) {
 
+            // TODO reportInfo can be empty
+
         }
-        */
 
         // TODO Server
 

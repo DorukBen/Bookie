@@ -1,8 +1,6 @@
 package com.karambit.bookie;
 
-import android.app.Activity;
 import android.app.ProgressDialog;
-import android.content.Intent;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.GridLayoutManager;
@@ -71,7 +69,7 @@ public class LovedGenresActivity extends AppCompatActivity {
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         switch (item.getItemId()) {
-            case R.id.action_genres_selected:
+            case R.id.action_done:
                 commitSelectedGenres();
                 return true;
 
@@ -82,7 +80,7 @@ public class LovedGenresActivity extends AppCompatActivity {
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
-        getMenuInflater().inflate(R.menu.loved_genres_menu, menu);
+        getMenuInflater().inflate(R.menu.done_menu, menu);
         return super.onCreateOptionsMenu(menu);
     }
 

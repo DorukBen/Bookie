@@ -2,31 +2,27 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
               android:layout_width="match_parent"
               android:layout_height="match_parent"
+              android:background="@color/colorPrimary"
+              android:gravity="center"
               android:orientation="vertical">
 
-    <RelativeLayout
+    <NumberPicker
+        android:id="@+id/numberPicker"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:layout_margin="16dp">
+        android:layout_height="wrap_content"
+        android:layout_marginLeft="16dp"
+        android:layout_marginRight="16dp"
+        android:layout_marginTop="16dp"
+        android:descendantFocusability="blocksDescendants"
+        android:contextClickable="true"/>
 
+    <Button
+        android:id="@+id/selectGenreButton"
+        style="@style/Base.Widget.AppCompat.ActionButton"
+        android:layout_width="wrap_content"
+        android:textColor="@color/primaryTextColor"
+        android:layout_height="wrap_content"
+        android:layout_margin="8dp"
+        android:text="@android:string/ok"/>
 
-        <NumberPicker
-            android:id="@+id/numberPicker"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_centerInParent="true"
-            android:contextClickable="true"
-            android:layout_margin="16dp"/>
-
-        <Button
-            android:id="@+id/selectGenreButton"
-            style="@style/Base.Widget.AppCompat.ActionButton"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_below="@id/numberPicker"
-            android:layout_centerHorizontal="true"
-            android:layout_marginTop="8dp"
-            android:text="OK"/>
-
-    </RelativeLayout>
 </LinearLayout>

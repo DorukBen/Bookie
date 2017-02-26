@@ -425,7 +425,7 @@ public class CurrentUserProfileSettingsActivity extends AppCompatActivity {
     public boolean onCreateOptionsMenu(Menu menu) {
         if (NetworkChecker.isNetworkAvailable(this)) {
             MenuInflater inflater = getMenuInflater();
-            inflater.inflate(R.menu.current_user_settings_menu, menu);
+            inflater.inflate(R.menu.done_menu, menu);
             return super.onCreateOptionsMenu(menu);
         } else {
             return false;

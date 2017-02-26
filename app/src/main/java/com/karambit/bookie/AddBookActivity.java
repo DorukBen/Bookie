@@ -28,10 +28,10 @@ import android.view.WindowManager;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageView;
-import android.widget.NumberPicker;
 import android.widget.Toast;
 
 import com.karambit.bookie.helper.FileNameGenerator;
+import com.karambit.bookie.helper.GenrePickerDialog;
 import com.karambit.bookie.helper.ImagePicker;
 import com.karambit.bookie.helper.ImageScaler;
 import com.karambit.bookie.helper.SessionManager;
@@ -190,30 +190,59 @@ public class AddBookActivity extends AppCompatActivity {
         findViewById(R.id.genreButton).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                final Dialog genrePicker = new Dialog(AddBookActivity.this);
-                genrePicker.setContentView(R.layout.genre_picker_dialog);
-                genrePicker.setTitle("");
 
-                final NumberPicker numberPicker = (NumberPicker) genrePicker.findViewById(R.id.numberPicker);
-                numberPicker.setMinValue(0);
-                numberPicker.setMaxValue(mGenreTypes.length - 1);
-                numberPicker.setDisplayedValues(mGenreTypes);
-                if (mSelectedGenre > 0) {
-                    numberPicker.setValue(mSelectedGenre);
-                }
+                final GenrePickerDialog genrePickerDialog = new GenrePickerDialog(AddBookActivity.this, mGenreTypes, mSelectedGenre);
 
-                Button selectGenre = (Button) genrePicker.findViewById(R.id.selectGenreButton);
-
-                selectGenre.setOnClickListener(new View.OnClickListener() {
+                genrePickerDialog.setOkClickListener(new GenrePickerDialog.OnOkClickListener() {
                     @Override
-                    public void onClick(View view) {
-                        mSelectedGenre = numberPicker.getValue();
-                        ((Button) findViewById(R.id.genreButton)).setText(mGenreTypes[numberPicker.getValue()]);
-                        genrePicker.dismiss();
+                    public void onOkClicked(int selectedGenre) {
+
+                        mSelectedGenre = selectedGenre;
+                        ((Button) findViewById(R.id.genreButton)).setText(mGenreTypes[selectedGenre]);
+                        genrePickerDialog.dismiss();
                     }
                 });
 
-                genrePicker.show();
+                genrePickerDialog.show();
+//
+//                View dialogView = LayoutInflater.from(AddBookActivity.this).inflate(R.layout.genre_picker_dialog, null);
+//
+//                final NumberPicker numberPicker = (NumberPicker) dialogView.findViewById(R.id.numberPicker);
+//                numberPicker.setMinValue(0);
+//                numberPicker.setMaxValue(mGenreTypes.length - 1);
+//                numberPicker.setDisplayedValues(mGenreTypes);
+//                if (mSelectedGenre > 0) {
+//                    numberPicker.setValue(mSelectedGenre);
+//                }
+//
+//                new AlertDialog.Builder(AddBookActivity.this)
+//                    .setView(dialogView)
+//                    .create()
+//                    .show();
+//                final Dialog genrePicker = new Dialog(AddBookActivity.this);
+//                genrePicker.setContentView(R.layout.genre_picker_dialog);
+//                genrePicker.setTitle("");
+//
+//                final NumberPicker numberPicker = (NumberPicker) genrePicker.findViewById(R.id.numberPicker);
+//                numberPicker.setMinValue(0);
+//                numberPicker.setMaxValue(mGenreTypes.length - 1);
+//                numberPicker.setDisplayedValues(mGenreTypes);
+//                if (mSelectedGenre > 0) {
+//                    numberPicker.setValue(mSelectedGenre);
+//                }
+//
+//                Button selectGenre = (Button) genrePicker.findViewById(R.id.selectGenreButton);
+//
+//                selectGenre.setOnClickListener(new View.OnClickListener() {
+//                    @Override
+//                    public void onClick(View view) {
+//                        mSelectedGenre = numberPicker.getValue();
+//                        ((Button) findViewById(R.id.genreButton)).setText(mGenreTypes[numberPicker.getValue()]);
+//                        genrePicker.dismiss();
+//                    }
+//                });
+//
+//                genrePicker.show();
             }
         });
     }

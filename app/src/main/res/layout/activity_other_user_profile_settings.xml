@@ -79,7 +79,7 @@
                     android:layout_height="wrap_content"
                     android:buttonTint="@color/secondaryTextColor"
                     android:padding="8dp"
-                    android:text="@string/this_user_is_annoying_with_messages"
+                    android:text="@string/report_user_annoying_messages"
                     android:textColor="@color/primaryTextColor"
                     android:textSize="16sp"/>
 
