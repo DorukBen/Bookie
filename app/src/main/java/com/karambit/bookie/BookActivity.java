@@ -331,6 +331,7 @@ public class BookActivity extends AppCompatActivity {
                                         notification.getCreatedAt()));
 
                                 mBookDetails.getBook().setState(Book.State.ON_ROAD);
+                                mBook.setState(Book.State.ON_ROAD);
                                 mBookTimelineAdapter.notifyDataSetChanged();
                             }
                         }
@@ -338,7 +339,6 @@ public class BookActivity extends AppCompatActivity {
                 } else if (intent.getAction().equalsIgnoreCase("com.karambit.bookie.BOOK_OWNER_CHANGED_DATA_RECEIVED")){
                     if (intent.getParcelableExtra("notification") != null){
                         if (mBookDetails != null){
-
                             fetchBookPageArguments();
                         }
                     }
