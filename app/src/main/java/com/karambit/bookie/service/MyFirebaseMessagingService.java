@@ -28,7 +28,6 @@ import android.os.Bundle;
 import android.support.v4.app.NotificationCompat;
 import android.util.Log;
 
-import com.google.firebase.messaging.FirebaseMessagingService;
 import com.google.firebase.messaging.RemoteMessage;
 import com.karambit.bookie.ConversationActivity;
 import com.karambit.bookie.MainActivity;
@@ -106,7 +105,7 @@ public class MyFirebaseMessagingService extends com.google.firebase.messaging.Fi
                                 sendMessageNotification(message);
                             }
 
-                            DBHandler dbHandler = new DBHandler(getApplicationContext());
+                            DBHandler dbHandler = DBHandler.getInstance(this);
                             dbHandler.saveMessageToDataBase(message);
 
                             Intent intent = new Intent("com.karambit.bookie.MESSAGE_RECEIVED");
@@ -122,7 +121,7 @@ public class MyFirebaseMessagingService extends com.google.firebase.messaging.Fi
                     }
                 } else if (Integer.parseInt(remoteMessage.getData().get("fcmDataType")) == FcmDataTypes.FCM_DATA_TYPE_DELIVERED_MESSAGE){
                     if (remoteMessage.getData().containsKey("messageID")){
-                        DBHandler dbHandler = new DBHandler(getApplicationContext());
+                        DBHandler dbHandler = DBHandler.getInstance(this);
                         dbHandler.updateMessageState(Integer.parseInt(remoteMessage.getData().get("messageID")), Message.State.DELIVERED);
 
                         Intent intent = new Intent("com.karambit.bookie.MESSAGE_DELIVERED");
@@ -132,7 +131,7 @@ public class MyFirebaseMessagingService extends com.google.firebase.messaging.Fi
                         sendBroadcast(intent);
                     }
                 } else if (Integer.parseInt(remoteMessage.getData().get("fcmDataType")) == FcmDataTypes.FCM_DATA_TYPE_SEEN_MESSAGE){
-                    DBHandler dbHandler = new DBHandler(getApplicationContext());
+                    DBHandler dbHandler = DBHandler.getInstance(this);
                     dbHandler.updateMessageState(Integer.parseInt(remoteMessage.getData().get("messageID")), Message.State.SEEN);
 
                     Intent intent = new Intent("com.karambit.bookie.MESSAGE_SEEN");
@@ -156,7 +155,7 @@ public class MyFirebaseMessagingService extends com.google.firebase.messaging.Fi
                                                     sender,
                                                     false);
 
-                            DBHandler dbHandler = new DBHandler(getApplicationContext());
+                            DBHandler dbHandler = DBHandler.getInstance(this);
                             dbHandler.saveNotificationToDatabase(notification);
 
                             Intent intent = new Intent("com.karambit.bookie.SENT_REQUEST_RECEIVED");
@@ -184,7 +183,7 @@ public class MyFirebaseMessagingService extends com.google.firebase.messaging.Fi
                                     sender,
                                     false);
 
-                            DBHandler dbHandler = new DBHandler(getApplicationContext());
+                            DBHandler dbHandler = DBHandler.getInstance(this);
                             dbHandler.saveNotificationToDatabase(notification);
 
                             Intent intent = new Intent("com.karambit.bookie.REJECTED_REQUEST_RECEIVED");
@@ -212,7 +211,7 @@ public class MyFirebaseMessagingService extends com.google.firebase.messaging.Fi
                                     sender,
                                     false);
 
-                            DBHandler dbHandler = new DBHandler(getApplicationContext());
+                            DBHandler dbHandler = DBHandler.getInstance(this);
                             dbHandler.saveNotificationToDatabase(notification);
 
                             Intent intent = new Intent("com.karambit.bookie.ACCEPTED_REQUEST_RECEIVED");
@@ -240,7 +239,7 @@ public class MyFirebaseMessagingService extends com.google.firebase.messaging.Fi
                                     sender,
                                     false);
 
-                            DBHandler dbHandler = new DBHandler(getApplicationContext());
+                            DBHandler dbHandler = DBHandler.getInstance(this);
                             dbHandler.saveNotificationToDatabase(notification);
 
                             Intent intent = new Intent("com.karambit.bookie.BOOK_OWNER_CHANGED_DATA_RECEIVED");

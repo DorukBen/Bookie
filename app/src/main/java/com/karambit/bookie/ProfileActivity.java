@@ -103,7 +103,7 @@ public class ProfileActivity extends AppCompatActivity {
             }
         }else if (requestCode == MESSAGE_PROCESS_REQUEST_CODE){
             if (resultCode == ConversationActivity.ALL_MESSAGES_DELETED){
-                DBHandler dbHandler = new DBHandler(getApplicationContext());
+                DBHandler dbHandler = DBHandler.getInstance(this);
                 dbHandler.deleteMessageUser((User) data.getParcelableExtra("opposite_user"));
                 dbHandler.deleteMessageUsersConversation((User) data.getParcelableExtra("opposite_user"));
             }

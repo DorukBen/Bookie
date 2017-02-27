@@ -337,7 +337,7 @@ public class MainActivity extends AppCompatActivity implements TabHost.OnTabChan
 
             case REQUEST_CODE_IS_ALL_MESSAGES_DELETED:
                 if (resultCode == ConversationActivity.ALL_MESSAGES_DELETED){
-                    DBHandler dbHandler = new DBHandler(getApplicationContext());
+                    DBHandler dbHandler = DBHandler.getInstance(this);
                     dbHandler.deleteMessageUser((User) data.getParcelableExtra("opposite_user"));
                     dbHandler.deleteMessageUsersConversation((User) data.getParcelableExtra("opposite_user"));
                 }
@@ -376,7 +376,7 @@ public class MainActivity extends AppCompatActivity implements TabHost.OnTabChan
         super.onNewIntent(intent);
 
         if (intent.getParcelableExtra("message_user") != null){
-            DBHandler dbHandler = new DBHandler(getApplicationContext());
+            DBHandler dbHandler = DBHandler.getInstance(this);
             if (dbHandler.isMessageUserExists((User)intent.getParcelableExtra("message_user"))){
                 Intent conversationIntent = new Intent(this, ConversationActivity.class);
 
@@ -430,7 +430,7 @@ public class MainActivity extends AppCompatActivity implements TabHost.OnTabChan
     }
 
     private void setNotificationMenuItemValue() {
-        DBHandler dbHandler = new DBHandler(getApplicationContext());
+        DBHandler dbHandler = DBHandler.getInstance(this);
         int notificationCount = dbHandler.getUnseenNotificationCount();
         if (mNotificationMenuItem != null){
             switch (notificationCount){

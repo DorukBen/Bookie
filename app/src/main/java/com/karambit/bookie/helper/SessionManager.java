@@ -35,32 +35,32 @@ public class SessionManager {
     }
 
     public static void logout(Context context) {
-        new DBHandler(context.getApplicationContext()).resetLovedGenres(getCurrentUser(context.getApplicationContext()));
-        new DBHandler(context.getApplicationContext()).deleteAllMessages();
-        new DBHandler(context.getApplicationContext()).deleteAllNotifications();
-        new DBHandler(context.getApplicationContext()).deleteCurrentUser();
+        DBHandler dbHandler = DBHandler.getInstance(context);
+        dbHandler.resetLovedGenres(getCurrentUser(context));
+        dbHandler.deleteAllMessages();
+        dbHandler.deleteCurrentUser();
         changeLoginStatus(context, false);
         mUserDetails = null;
         mUser = null;
     }
 
     public static void login(Context context, User.Details userDetails) {
-        DBHandler dbHandler = new DBHandler(context.getApplicationContext());
+        DBHandler dbHandler = DBHandler.getInstance(context);
         dbHandler.insertCurrentUser(userDetails);
         changeLoginStatus(context, true);
-        mUserDetails = dbHandler.getCurrentUserDetails();
-        mUser = dbHandler.getCurrentUser();
+        mUserDetails = userDetails;
+        mUser = userDetails.getUser();
     }
 
-    public static void updateCurrentUser(Context context){
-        DBHandler dbHandler = new DBHandler(context.getApplicationContext());
+    public static void updateCurrentUserFromDB(Context context){
+        DBHandler dbHandler = DBHandler.getInstance(context);
         mUserDetails = dbHandler.getCurrentUserDetails();
         mUser = dbHandler.getCurrentUser();
     }
 
     public static User.Details getCurrentUserDetails(Context context) {
         if (mUserDetails == null){
-            mUserDetails = new DBHandler(context.getApplicationContext()).getCurrentUserDetails();
+            mUserDetails = DBHandler.getInstance(context).getCurrentUserDetails();
             return mUserDetails;
         }else {
             return mUserDetails;
@@ -69,7 +69,7 @@ public class SessionManager {
 
     public static User getCurrentUser(Context context) {
         if (mUser == null){
-            mUser = new DBHandler(context.getApplicationContext()).getCurrentUser();
+            mUser = DBHandler.getInstance(context).getCurrentUser();
             return mUser;
         }else {
             return mUser;
@@ -77,7 +77,7 @@ public class SessionManager {
     }
 
     public static boolean isLovedGenresSelectedLocal(Context context) {
-        DBHandler dbHandler = new DBHandler(context.getApplicationContext());
-        return dbHandler.isLovedGenresSelected(dbHandler.getCurrentUser());
+        DBHandler dbHandler = DBHandler.getInstance(context);
+        return dbHandler.isLovedGenresSelected(getCurrentUser(context));
     }
 }

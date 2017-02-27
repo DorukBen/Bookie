@@ -53,7 +53,7 @@ public class LovedGenresActivity extends AppCompatActivity {
                   Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
         setTitle(s);
 
-        mDBHandler = new DBHandler(getApplicationContext());
+        mDBHandler = DBHandler.getInstance(this);
         mCurrentUser = SessionManager.getCurrentUser(getApplicationContext());
 
         String[] genres = getResources().getStringArray(R.array.genre_types);

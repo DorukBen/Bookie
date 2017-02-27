@@ -80,9 +80,9 @@ public class LocationActivity extends AppCompatActivity {
         okButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                DBHandler dbHandler = new DBHandler(getApplicationContext());
+                DBHandler dbHandler = DBHandler.getInstance(LocationActivity.this);
                 dbHandler.updateCurrentUserLocation(mLatitude, mLongitude);
-                SessionManager.updateCurrentUser(LocationActivity.this);
+                SessionManager.updateCurrentUserFromDB(LocationActivity.this);
                 getIntent().putExtra("latitude", mLatitude);
                 getIntent().putExtra("longitude", mLongitude);
                 setResult(RESULT_LOCATION_UPDATED, getIntent());

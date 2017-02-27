@@ -339,7 +339,7 @@ public class LoginRegisterActivity extends AppCompatActivity {
                                             }
 
                                             if (userDetails != null) {
-                                                new DBHandler(getApplicationContext()).insertLovedGenres(userDetails.getUser(), lovedGenres);
+                                                DBHandler.getInstance(LoginRegisterActivity.this).insertLovedGenres(userDetails.getUser(), lovedGenres);
                                             }
                                         }
                                     } else {

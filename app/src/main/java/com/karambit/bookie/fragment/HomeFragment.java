@@ -1,12 +1,7 @@
 package com.karambit.bookie.fragment;
 
 
-import android.app.Activity;
-import android.app.ProgressDialog;
 import android.content.Intent;
-import android.icu.text.LocaleDisplayNames;
-import android.net.http.HttpResponseCache;
-import android.os.Build;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
 import android.support.v7.widget.LinearLayoutManager;
@@ -15,50 +10,32 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.LinearLayout;
 import android.widget.Toast;
 
-import com.bumptech.glide.load.engine.cache.DiskLruCacheFactory;
 import com.karambit.bookie.BookActivity;
-import com.karambit.bookie.Bookie;
-import com.karambit.bookie.LoginRegisterActivity;
 import com.karambit.bookie.MainActivity;
 import com.karambit.bookie.R;
 import com.karambit.bookie.adapter.HomeTimelineAdapter;
-import com.karambit.bookie.adapter.ProfileTimelineAdapter;
 import com.karambit.bookie.helper.ElevationScrollListener;
 import com.karambit.bookie.helper.NetworkChecker;
 import com.karambit.bookie.helper.SessionManager;
 import com.karambit.bookie.helper.pull_refresh_layout.PullRefreshLayout;
 import com.karambit.bookie.model.Book;
-import com.karambit.bookie.model.User;
 import com.karambit.bookie.rest_api.BookApi;
 import com.karambit.bookie.rest_api.BookieClient;
 import com.karambit.bookie.rest_api.ErrorCodes;
-import com.karambit.bookie.rest_api.UserApi;
 
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileReader;
 import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.net.CacheResponse;
-import java.sql.Time;
 import java.util.ArrayList;
-import java.util.Date;
-import java.util.Objects;
 
-import okhttp3.Cache;
 import okhttp3.ResponseBody;
 import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
-import retrofit2.Retrofit;
 
 /**
  * A simple {@link Fragment} subclass.

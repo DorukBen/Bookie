@@ -11,7 +11,6 @@ import android.os.Bundle;
 import android.support.v4.app.Fragment;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
-import android.util.Log;
 import android.util.SparseIntArray;
 import android.view.LayoutInflater;
 import android.view.MotionEvent;
@@ -64,7 +63,7 @@ public class MessageFragment extends Fragment {
 
         recyclerView.setLayoutManager(new LinearLayoutManager(getActivity()));
 
-        mDbHandler = new DBHandler(getContext().getApplicationContext());
+        mDbHandler = DBHandler.getInstance(getContext());
 
         final User currentUser = SessionManager.getCurrentUser(getContext());
 
