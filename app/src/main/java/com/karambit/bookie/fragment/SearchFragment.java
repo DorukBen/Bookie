@@ -76,7 +76,8 @@ public class SearchFragment extends Fragment {
         RecyclerView recyclerView = (RecyclerView) rootView.findViewById(R.id.searchResultsRecyclerView);
         recyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
         final EditText searchEditText = (EditText)rootView.findViewById(R.id.searchEditText);
-        mDbHandler = new DBHandler(getContext().getApplicationContext());
+
+        mDbHandler = DBHandler.getInstance(getContext());
 
         mAllGenres  = getContext().getResources().getStringArray(R.array.genre_types);
 

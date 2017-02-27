@@ -5,16 +5,15 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.res.Resources;
+import android.os.Bundle;
 import android.support.v7.app.ActionBar;
 import android.support.v7.app.AppCompatActivity;
-import android.os.Bundle;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.text.Spannable;
 import android.text.SpannableString;
 import android.text.style.AbsoluteSizeSpan;
 import android.util.DisplayMetrics;
-import android.util.Log;
 import android.view.View;
 
 import com.karambit.bookie.adapter.NotificationAdapter;
@@ -57,7 +56,7 @@ public class NotificationActivity extends AppCompatActivity {
         recyclerView.setLayoutManager(new LinearLayoutManager(NotificationActivity.this));
 
 
-        DBHandler dbHandler = new DBHandler(getApplicationContext());
+        DBHandler dbHandler = DBHandler.getInstance(this);
 
         mNotifications = dbHandler.getAllNotifications(dbHandler.getAllNotificationUsers(), dbHandler.getAllNotificationBooks(dbHandler.getAllNotificationBookUsers()));
         mNotificationAdapter = new NotificationAdapter(this, mNotifications);
@@ -186,7 +185,7 @@ public class NotificationActivity extends AppCompatActivity {
 
         unregisterReceiver(mMessageReceiver);
 
-        DBHandler dbHandler = new DBHandler(getApplicationContext());
+        DBHandler dbHandler = DBHandler.getInstance(this);
         dbHandler.updateAllNotificationsSeen();
         setResult(NotificationActivity.RESULT_CODE_ALL_NOTIFICATION_SEENS_DELETED);
     }

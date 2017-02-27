@@ -48,7 +48,6 @@ import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Collections;
 import java.util.Locale;
-import java.util.Objects;
 
 import okhttp3.ResponseBody;
 import retrofit2.Call;
@@ -90,7 +89,7 @@ public class ConversationActivity extends AppCompatActivity {
         getSupportActionBar().setTitle(s);
 
         final User currentUser = SessionManager.getCurrentUser(this);
-        mDbHandler = new DBHandler(getApplicationContext());
+        mDbHandler = DBHandler.getInstance(this);
         mMessages = mDbHandler.getConversationMessages(mOppositeUser, currentUser);
 
         mMessageEditText = (EditText) findViewById(R.id.messageEditText);

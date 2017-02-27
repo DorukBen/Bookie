@@ -133,14 +133,23 @@ public class DBHandler extends SQLiteOpenHelper {
     private static final String SEARCH_BOOK_USER_COLUMN_LATITUDE = "latitude";
     private static final String SEARCH_BOOK_USER_COLUMN_LONGITUDE = "longitude";
 
+    private static DBHandler sDBHandler;
+
     private final Context mContext;
 
     // TODO Draconian synchronization (Synchronized singleton) {@see http://stackoverflow.com/a/11165926}
     // TODO getApplicationContext() in constructor
 
-    public DBHandler(Context context) {
+    private DBHandler(Context context) {
         super(context, DATABASE_NAME, null, 1);
-        mContext = context;
+        mContext = context.getApplicationContext();
+    }
+
+    public static synchronized DBHandler getInstance(Context context) {
+        if (sDBHandler == null) {
+            sDBHandler = new DBHandler(context);
+        }
+        return sDBHandler;
     }
 
     @Override

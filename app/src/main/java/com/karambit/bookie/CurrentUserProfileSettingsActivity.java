@@ -232,8 +232,8 @@ public class CurrentUserProfileSettingsActivity extends AppCompatActivity {
         } else if (requestCode == REQUEST_LOCATION) {
             if (resultCode == LocationActivity.RESULT_LOCATION_UPDATED) {
                 LatLng previousLocation = mCurrentUserDetails.getUser().getLocation();
-                double newLatitude = data.getDoubleExtra("latitude", previousLocation.latitude);
-                double newLongitude = data.getDoubleExtra("longitude", previousLocation.longitude);
+                double newLatitude = data.getDoubleExtra("latitude", previousLocation != null ? previousLocation.latitude : Long.MIN_VALUE);
+                double newLongitude = data.getDoubleExtra("longitude", previousLocation != null ? previousLocation.longitude : Long.MIN_VALUE);
                 mCurrentUserDetails.getUser().setLatitude(new LatLng(newLatitude, newLongitude));
                 fetchLocation();
             }
