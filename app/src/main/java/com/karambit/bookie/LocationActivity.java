@@ -17,6 +17,9 @@ import com.karambit.bookie.helper.SessionManager;
 public class LocationActivity extends AppCompatActivity {
 
     public static final String TAG = LocationActivity.class.getSimpleName();
+
+    public static final int RESULT_LOCATION_UPDATED = 11;
+
     private double mLatitude;
     private double mLongitude;
 
@@ -80,6 +83,9 @@ public class LocationActivity extends AppCompatActivity {
                 DBHandler dbHandler = new DBHandler(getApplicationContext());
                 dbHandler.updateCurrentUserLocation(mLatitude, mLongitude);
                 SessionManager.updateCurrentUser(LocationActivity.this);
+                getIntent().putExtra("latitude", mLatitude);
+                getIntent().putExtra("longitude", mLongitude);
+                setResult(RESULT_LOCATION_UPDATED, getIntent());
                 finish();
             }
         });

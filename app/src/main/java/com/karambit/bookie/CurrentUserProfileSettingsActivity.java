@@ -45,6 +45,7 @@ public class CurrentUserProfileSettingsActivity extends AppCompatActivity {
     private static final String TAG = CurrentUserProfileSettingsActivity.class.getSimpleName();
 
     private static final int UPDATE_PROFILE_PICTURE_REQUEST_CODE = 1;
+    private static final int REQUEST_LOCATION = 2;
 
     public static final int RESULT_USER_LOGOUT = 1;
     public static final int RESULT_USER_UPDATED = 2;
@@ -135,7 +136,7 @@ public class CurrentUserProfileSettingsActivity extends AppCompatActivity {
                 @Override
                 public void onClick(View v) {
                     Intent intent = new Intent(CurrentUserProfileSettingsActivity.this, LocationActivity.class);
-                    startActivity(intent);
+                    startActivityForResult(intent, REQUEST_LOCATION);
                 }
             });
 
@@ -222,10 +223,19 @@ public class CurrentUserProfileSettingsActivity extends AppCompatActivity {
     @Override
     public void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
+
         if (requestCode == UPDATE_PROFILE_PICTURE_REQUEST_CODE) {
             if (resultCode == PhotoViewerActivity.RESULT_PROFILE_PICTURE_UPDATED) {
                 setResult(RESULT_USER_UPDATED);
                 finish();
+            }
+        } else if (requestCode == REQUEST_LOCATION) {
+            if (resultCode == LocationActivity.RESULT_LOCATION_UPDATED) {
+                LatLng previousLocation = mCurrentUserDetails.getUser().getLocation();
+                double newLatitude = data.getDoubleExtra("latitude", previousLocation.latitude);
+                double newLongitude = data.getDoubleExtra("longitude", previousLocation.longitude);
+                mCurrentUserDetails.getUser().setLatitude(new LatLng(newLatitude, newLongitude));
+                fetchLocation();
             }
         }
     }
