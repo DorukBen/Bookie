@@ -20,6 +20,7 @@ import com.karambit.bookie.PhotoViewerActivity;
 import com.karambit.bookie.ProfileActivity;
 import com.karambit.bookie.R;
 import com.karambit.bookie.adapter.ProfileTimelineAdapter;
+import com.karambit.bookie.helper.DBHandler;
 import com.karambit.bookie.helper.ElevationScrollListener;
 import com.karambit.bookie.helper.NetworkChecker;
 import com.karambit.bookie.helper.SessionManager;
@@ -259,15 +260,17 @@ public class ProfileFragment extends Fragment {
                                         }
                                     }
 
-                                    // TODO Save new details to local DB
-                                    // TODO Make this section threaded to prevent lag.
-                                    // Change DbHandler with synchronized Singleton pattern {@see http://stackoverflow.com/a/11165926}
-
-                                    //DBHandler dbHandler = new DBHandler(getContext().getApplicationContext());
-                                    //dbHandler.updateCurrentUser(mUserDetails);
-                                    //SessionManager.updateCurrentUser(getContext());
-
-                                    ////////////////////////////////////////////////////////////////////////////////////////
+                                    // Updating local database
+                                    new Thread(new Runnable() {
+                                        @Override
+                                        public void run() {
+                                            synchronized (DBHandler.class) { // REQUIRED
+                                                DBHandler dbHandler = DBHandler.getInstance(getContext());
+                                                dbHandler.updateCurrentUser(mUserDetails);
+                                                SessionManager.updateCurrentUserFromDB(getContext());
+                                            }
+                                        }
+                                    }).start();
 
                                     if (!responseObject.isNull("onRoadBooks")){
                                         if (mUserDetails != null) {
