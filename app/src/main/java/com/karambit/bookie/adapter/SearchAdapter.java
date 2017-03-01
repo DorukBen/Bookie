@@ -756,6 +756,8 @@ public class SearchAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder>
 
     public void setShowHistory(boolean showHistory){
         mShowHistory = showHistory;
+        setError(ERROR_TYPE_NONE);
+        setWarning(WARNING_TYPE_NONE);
         setProgressBarActive(false);
 
         notifyDataSetChanged();
