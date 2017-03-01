@@ -64,7 +64,7 @@ public class MainActivity extends AppCompatActivity implements TabHost.OnTabChan
     private static final int REQUEST_CODE_CURRENT_USER_PROFILE_SETTINGS_ACTIVITY = 2;
     private static final int REQUEST_CODE_ADD_BOOK_ACTIVITY = 3;
     private static final int REQUEST_CODE_IS_ALL_MESSAGES_DELETED = 1007;
-    private static final int REQUEST_CODE_DELETE_NOTIFICATION_SEENS = 1008;
+    private static final int REQUEST_CODE_DELETE_NOTIFICATION_SEENS = 1011;
     private TabHost mTabHost;
     private ViewPager mViewPager;
     private int mOldPos = 0; //Specifys old position for tab view
@@ -432,6 +432,7 @@ public class MainActivity extends AppCompatActivity implements TabHost.OnTabChan
     private void setNotificationMenuItemValue() {
         DBHandler dbHandler = new DBHandler(getApplicationContext());
         int notificationCount = dbHandler.getUnseenNotificationCount();
+        Log.d("hele"," " + notificationCount);
         if (mNotificationMenuItem != null){
             switch (notificationCount){
                 case 0:

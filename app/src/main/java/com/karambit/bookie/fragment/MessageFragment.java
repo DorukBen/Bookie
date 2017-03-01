@@ -239,7 +239,9 @@ public class MessageFragment extends Fragment {
             public void onReceive(Context context, Intent intent) {
                 if (intent.getAction().equalsIgnoreCase("com.karambit.bookie.MESSAGE_RECEIVED")){
                     if (intent.getParcelableExtra("message") != null){
-                        insertLastMessage((Message) intent.getParcelableExtra("message"));
+                        if (((Message) intent.getParcelableExtra("message")).getSender().getID() != ConversationActivity.currentConversationUserId){
+                            insertLastMessage((Message) intent.getParcelableExtra("message"));
+                        }
                     }
                 } else if (intent.getAction().equalsIgnoreCase("com.karambit.bookie.MESSAGE_DELIVERED")){
                     if (intent.getIntExtra("message_id",-1) > 0){
@@ -261,7 +263,6 @@ public class MessageFragment extends Fragment {
     @Override
     public void onPause() {
         super.onPause();
-
         getContext().unregisterReceiver(mMessageReceiver);
     }
 
@@ -335,8 +336,6 @@ public class MessageFragment extends Fragment {
                 }
                 mDbHandler.deleteMessageUser(oppositeUser);
             }
-
-            fetchUnseenCounts();
         }
     }
 
