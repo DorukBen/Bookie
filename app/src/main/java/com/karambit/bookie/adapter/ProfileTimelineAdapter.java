@@ -8,7 +8,6 @@ import android.support.v4.view.ViewCompat;
 import android.support.v7.widget.CardView;
 import android.support.v7.widget.RecyclerView;
 import android.text.TextUtils;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -242,7 +241,10 @@ public class ProfileTimelineAdapter extends RecyclerView.Adapter<RecyclerView.Vi
             }
 
             // Currently reading
-            if (mUserDetails.getUser().getID() == SessionManager.getCurrentUser(mContext).getID() ||
+
+            User currentUser = SessionManager.getCurrentUser(mContext);
+
+            if (mUserDetails.getUser().equals(currentUser) ||
                 mUserDetails.getCurrentlyReadingCount() != 0 ||
                 (mUserDetails.getOnRoadBooksCount() < 0 && mUserDetails.getBooksOnHandCount() < 0 && mUserDetails.getReadBooksCount() < 0)) {
 
@@ -370,199 +372,203 @@ public class ProfileTimelineAdapter extends RecyclerView.Adapter<RecyclerView.Vi
                     }
                 }
 
-            } else if (mUserDetails.getUser().getID() == SessionManager.getCurrentUser(mContext).getID()) { // Currently reading section
-
-                if (position == 1) {
-                    return TYPE_START_READING;
-
-                } else if (mUserDetails.getBooksOnHandCount() > 0 && mUserDetails.getReadBooksCount() > 0 && mUserDetails.getOnRoadBooksCount() > 0) {
-
-                    if (position == 2){
-                        return TYPE_SUBTITLE_ON_ROAD_BOOKS;
-
-                    }else if (position < mUserDetails.getOnRoadBooksCount() + 3){
-                        return TYPE_ON_ROAD_BOOKS;
-
-                    }else if (position == mUserDetails.getOnRoadBooksCount() + 3) {
-                        return TYPE_SUBTITLE_BOOKS_ON_HAND;
-
-                    } else if (position < mUserDetails.getOnRoadBooksCount() + mUserDetails.getBooksOnHandCount() + 4) {
-                        return TYPE_BOOKS_ON_HAND;
-
-                    } else if (position == mUserDetails.getOnRoadBooksCount() + mUserDetails.getBooksOnHandCount() + 4) {
-                        return TYPE_SUBTITLE_READ_BOOKS;
-
-                    } else if (position < mUserDetails.getOnRoadBooksCount() + mUserDetails.getBooksOnHandCount() + mUserDetails.getReadBooksCount() + 5) {
-                        return TYPE_READ_BOOKS;
-                    }
-
-                } else if (mUserDetails.getOnRoadBooksCount() > 0 && mUserDetails.getBooksOnHandCount() > 0){
-
-                    if (position == 2) {
-                        return TYPE_SUBTITLE_ON_ROAD_BOOKS;
-
-                    } else if (position < mUserDetails.getOnRoadBooksCount() + 3) {
-                        return TYPE_ON_ROAD_BOOKS;
-
-                    } else if (position == mUserDetails.getOnRoadBooksCount() + 3) {
-                        return TYPE_SUBTITLE_BOOKS_ON_HAND;
-
-                    } else if (position < mUserDetails.getOnRoadBooksCount() + mUserDetails.getBooksOnHandCount() + 4) {
-                        return TYPE_BOOKS_ON_HAND;
-                    }
-
-                } else if (mUserDetails.getOnRoadBooksCount() > 0 && mUserDetails.getReadBooksCount() > 0){
-
-                    if (position == 2) {
-                        return TYPE_SUBTITLE_ON_ROAD_BOOKS;
-
-                    } else if (position < mUserDetails.getOnRoadBooksCount() + 3) {
-                        return TYPE_ON_ROAD_BOOKS;
-
-                    } else if (position == mUserDetails.getOnRoadBooksCount() + 3) {
-                        return TYPE_SUBTITLE_READ_BOOKS;
-
-                    } else if (position < mUserDetails.getOnRoadBooksCount() + mUserDetails.getReadBooksCount() + 4) {
-                        return TYPE_READ_BOOKS;
-                    }
-
-                } else if (mUserDetails.getReadBooksCount() > 0 && mUserDetails.getBooksOnHandCount() > 0){
-
-                    if (position == 2) {
-                        return TYPE_SUBTITLE_BOOKS_ON_HAND;
-
-                    } else if (position < mUserDetails.getBooksOnHandCount() + 3) {
-                        return TYPE_BOOKS_ON_HAND;
-
-                    } else if (position == mUserDetails.getBooksOnHandCount() + 3) {
-                        return TYPE_SUBTITLE_READ_BOOKS;
-
-                    } else if (position < mUserDetails.getBooksOnHandCount() + mUserDetails.getReadBooksCount() + 4) {
-                        return TYPE_READ_BOOKS;
-                    }
-
-                } else if (mUserDetails.getOnRoadBooksCount() > 0){
-                    if (position == 2) {
-                        return TYPE_SUBTITLE_ON_ROAD_BOOKS;
-
-                    } else if (position < mUserDetails.getOnRoadBooksCount() + 3) {
-                        return TYPE_ON_ROAD_BOOKS;
-                    }
-                } else if (mUserDetails.getBooksOnHandCount() > 0) {
-
-                    if (position == 2) {
-                        return TYPE_SUBTITLE_BOOKS_ON_HAND;
-
-                    } else if (position < mUserDetails.getBooksOnHandCount() + 3) {
-                        return TYPE_BOOKS_ON_HAND;
-                    }
-
-                } else if (mUserDetails.getReadBooksCount() > 0) {
-
-                    if (position == 2) {
-                        return TYPE_SUBTITLE_READ_BOOKS;
-
-                    } else if (position < mUserDetails.getReadBooksCount() + 3) {
-                        return TYPE_READ_BOOKS;
-                    }
-                }
-
             } else {
+                User currentUser = SessionManager.getCurrentUser(mContext);
 
-                if (mUserDetails.getBooksOnHandCount() > 0 && mUserDetails.getReadBooksCount() > 0 && mUserDetails.getOnRoadBooksCount() > 0) {
-
-                    if (position == 1){
-                        return TYPE_SUBTITLE_ON_ROAD_BOOKS;
-
-                    }else if (position < mUserDetails.getOnRoadBooksCount() + 2){
-                        return TYPE_ON_ROAD_BOOKS;
-
-                    }else if (position == mUserDetails.getOnRoadBooksCount() + 2) {
-                        return TYPE_SUBTITLE_BOOKS_ON_HAND;
-
-                    } else if (position < mUserDetails.getOnRoadBooksCount() + mUserDetails.getBooksOnHandCount() + 3) {
-                        return TYPE_BOOKS_ON_HAND;
-
-                    } else if (position == mUserDetails.getOnRoadBooksCount() + mUserDetails.getBooksOnHandCount() + 3) {
-                        return TYPE_SUBTITLE_READ_BOOKS;
-
-                    } else if (position < mUserDetails.getOnRoadBooksCount() + mUserDetails.getBooksOnHandCount() + mUserDetails.getReadBooksCount() + 4) {
-                        return TYPE_READ_BOOKS;
-                    }
-
-                } else if (mUserDetails.getOnRoadBooksCount() > 0 && mUserDetails.getBooksOnHandCount() > 0){
+                if (mUserDetails.getUser().equals(currentUser)) { // Currently reading section
 
                     if (position == 1) {
-                        return TYPE_SUBTITLE_ON_ROAD_BOOKS;
+                        return TYPE_START_READING;
 
-                    } else if (position < mUserDetails.getOnRoadBooksCount() + 2) {
-                        return TYPE_ON_ROAD_BOOKS;
+                    } else if (mUserDetails.getBooksOnHandCount() > 0 && mUserDetails.getReadBooksCount() > 0 && mUserDetails.getOnRoadBooksCount() > 0) {
 
-                    } else if (position == mUserDetails.getOnRoadBooksCount() + 2) {
-                        return TYPE_SUBTITLE_BOOKS_ON_HAND;
+                        if (position == 2){
+                            return TYPE_SUBTITLE_ON_ROAD_BOOKS;
 
-                    } else if (position < mUserDetails.getOnRoadBooksCount() + mUserDetails.getBooksOnHandCount() + 3) {
-                        return TYPE_BOOKS_ON_HAND;
+                        }else if (position < mUserDetails.getOnRoadBooksCount() + 3){
+                            return TYPE_ON_ROAD_BOOKS;
+
+                        }else if (position == mUserDetails.getOnRoadBooksCount() + 3) {
+                            return TYPE_SUBTITLE_BOOKS_ON_HAND;
+
+                        } else if (position < mUserDetails.getOnRoadBooksCount() + mUserDetails.getBooksOnHandCount() + 4) {
+                            return TYPE_BOOKS_ON_HAND;
+
+                        } else if (position == mUserDetails.getOnRoadBooksCount() + mUserDetails.getBooksOnHandCount() + 4) {
+                            return TYPE_SUBTITLE_READ_BOOKS;
+
+                        } else if (position < mUserDetails.getOnRoadBooksCount() + mUserDetails.getBooksOnHandCount() + mUserDetails.getReadBooksCount() + 5) {
+                            return TYPE_READ_BOOKS;
+                        }
+
+                    } else if (mUserDetails.getOnRoadBooksCount() > 0 && mUserDetails.getBooksOnHandCount() > 0){
+
+                        if (position == 2) {
+                            return TYPE_SUBTITLE_ON_ROAD_BOOKS;
+
+                        } else if (position < mUserDetails.getOnRoadBooksCount() + 3) {
+                            return TYPE_ON_ROAD_BOOKS;
+
+                        } else if (position == mUserDetails.getOnRoadBooksCount() + 3) {
+                            return TYPE_SUBTITLE_BOOKS_ON_HAND;
+
+                        } else if (position < mUserDetails.getOnRoadBooksCount() + mUserDetails.getBooksOnHandCount() + 4) {
+                            return TYPE_BOOKS_ON_HAND;
+                        }
+
+                    } else if (mUserDetails.getOnRoadBooksCount() > 0 && mUserDetails.getReadBooksCount() > 0){
+
+                        if (position == 2) {
+                            return TYPE_SUBTITLE_ON_ROAD_BOOKS;
+
+                        } else if (position < mUserDetails.getOnRoadBooksCount() + 3) {
+                            return TYPE_ON_ROAD_BOOKS;
+
+                        } else if (position == mUserDetails.getOnRoadBooksCount() + 3) {
+                            return TYPE_SUBTITLE_READ_BOOKS;
+
+                        } else if (position < mUserDetails.getOnRoadBooksCount() + mUserDetails.getReadBooksCount() + 4) {
+                            return TYPE_READ_BOOKS;
+                        }
+
+                    } else if (mUserDetails.getReadBooksCount() > 0 && mUserDetails.getBooksOnHandCount() > 0){
+
+                        if (position == 2) {
+                            return TYPE_SUBTITLE_BOOKS_ON_HAND;
+
+                        } else if (position < mUserDetails.getBooksOnHandCount() + 3) {
+                            return TYPE_BOOKS_ON_HAND;
+
+                        } else if (position == mUserDetails.getBooksOnHandCount() + 3) {
+                            return TYPE_SUBTITLE_READ_BOOKS;
+
+                        } else if (position < mUserDetails.getBooksOnHandCount() + mUserDetails.getReadBooksCount() + 4) {
+                            return TYPE_READ_BOOKS;
+                        }
+
+                    } else if (mUserDetails.getOnRoadBooksCount() > 0){
+                        if (position == 2) {
+                            return TYPE_SUBTITLE_ON_ROAD_BOOKS;
+
+                        } else if (position < mUserDetails.getOnRoadBooksCount() + 3) {
+                            return TYPE_ON_ROAD_BOOKS;
+                        }
+                    } else if (mUserDetails.getBooksOnHandCount() > 0) {
+
+                        if (position == 2) {
+                            return TYPE_SUBTITLE_BOOKS_ON_HAND;
+
+                        } else if (position < mUserDetails.getBooksOnHandCount() + 3) {
+                            return TYPE_BOOKS_ON_HAND;
+                        }
+
+                    } else if (mUserDetails.getReadBooksCount() > 0) {
+
+                        if (position == 2) {
+                            return TYPE_SUBTITLE_READ_BOOKS;
+
+                        } else if (position < mUserDetails.getReadBooksCount() + 3) {
+                            return TYPE_READ_BOOKS;
+                        }
                     }
 
-                } else if (mUserDetails.getOnRoadBooksCount() > 0 && mUserDetails.getReadBooksCount() > 0){
-
-                    if (position == 1) {
-                        return TYPE_SUBTITLE_ON_ROAD_BOOKS;
-
-                    } else if (position < mUserDetails.getOnRoadBooksCount() + 2) {
-                        return TYPE_ON_ROAD_BOOKS;
-
-                    } else if (position == mUserDetails.getOnRoadBooksCount() + 2) {
-                        return TYPE_SUBTITLE_READ_BOOKS;
-
-                    } else if (position < mUserDetails.getOnRoadBooksCount() + mUserDetails.getReadBooksCount() + 3) {
-                        return TYPE_READ_BOOKS;
-                    }
-
-                } else if (mUserDetails.getReadBooksCount() > 0 && mUserDetails.getBooksOnHandCount() > 0){
-
-                    if (position == 1) {
-                        return TYPE_SUBTITLE_BOOKS_ON_HAND;
-
-                    } else if (position < mUserDetails.getBooksOnHandCount() + 2) {
-                        return TYPE_BOOKS_ON_HAND;
-
-                    } else if (position == mUserDetails.getBooksOnHandCount() + 2) {
-                        return TYPE_SUBTITLE_READ_BOOKS;
-
-                    } else if (position < mUserDetails.getBooksOnHandCount() + mUserDetails.getReadBooksCount() + 3) {
-                        return TYPE_READ_BOOKS;
-                    }
-
-                } else if (mUserDetails.getOnRoadBooksCount() > 0){
-                    if (position == 1) {
-                        return TYPE_SUBTITLE_ON_ROAD_BOOKS;
-
-                    } else if (position < mUserDetails.getOnRoadBooksCount() + 2) {
-                        return TYPE_ON_ROAD_BOOKS;
-                    }
-                } else if (mUserDetails.getBooksOnHandCount() > 0) {
-
-                    if (position == 1) {
-                        return TYPE_SUBTITLE_BOOKS_ON_HAND;
-
-                    } else if (position < mUserDetails.getBooksOnHandCount() + 2) {
-                        return TYPE_BOOKS_ON_HAND;
-                    }
-
-                } else if (mUserDetails.getReadBooksCount() > 0) {
-
-                    if (position == 1) {
-                        return TYPE_SUBTITLE_READ_BOOKS;
-
-                    } else if (position < mUserDetails.getReadBooksCount() + 2) {
-                        return TYPE_READ_BOOKS;
-                    }
                 } else {
 
-                    if (position == 1) {
-                        return TYPE_EMPTY_STATE;
+                    if (mUserDetails.getBooksOnHandCount() > 0 && mUserDetails.getReadBooksCount() > 0 && mUserDetails.getOnRoadBooksCount() > 0) {
+
+                        if (position == 1){
+                            return TYPE_SUBTITLE_ON_ROAD_BOOKS;
+
+                        }else if (position < mUserDetails.getOnRoadBooksCount() + 2){
+                            return TYPE_ON_ROAD_BOOKS;
+
+                        }else if (position == mUserDetails.getOnRoadBooksCount() + 2) {
+                            return TYPE_SUBTITLE_BOOKS_ON_HAND;
+
+                        } else if (position < mUserDetails.getOnRoadBooksCount() + mUserDetails.getBooksOnHandCount() + 3) {
+                            return TYPE_BOOKS_ON_HAND;
+
+                        } else if (position == mUserDetails.getOnRoadBooksCount() + mUserDetails.getBooksOnHandCount() + 3) {
+                            return TYPE_SUBTITLE_READ_BOOKS;
+
+                        } else if (position < mUserDetails.getOnRoadBooksCount() + mUserDetails.getBooksOnHandCount() + mUserDetails.getReadBooksCount() + 4) {
+                            return TYPE_READ_BOOKS;
+                        }
+
+                    } else if (mUserDetails.getOnRoadBooksCount() > 0 && mUserDetails.getBooksOnHandCount() > 0){
+
+                        if (position == 1) {
+                            return TYPE_SUBTITLE_ON_ROAD_BOOKS;
+
+                        } else if (position < mUserDetails.getOnRoadBooksCount() + 2) {
+                            return TYPE_ON_ROAD_BOOKS;
+
+                        } else if (position == mUserDetails.getOnRoadBooksCount() + 2) {
+                            return TYPE_SUBTITLE_BOOKS_ON_HAND;
+
+                        } else if (position < mUserDetails.getOnRoadBooksCount() + mUserDetails.getBooksOnHandCount() + 3) {
+                            return TYPE_BOOKS_ON_HAND;
+                        }
+
+                    } else if (mUserDetails.getOnRoadBooksCount() > 0 && mUserDetails.getReadBooksCount() > 0){
+
+                        if (position == 1) {
+                            return TYPE_SUBTITLE_ON_ROAD_BOOKS;
+
+                        } else if (position < mUserDetails.getOnRoadBooksCount() + 2) {
+                            return TYPE_ON_ROAD_BOOKS;
+
+                        } else if (position == mUserDetails.getOnRoadBooksCount() + 2) {
+                            return TYPE_SUBTITLE_READ_BOOKS;
+
+                        } else if (position < mUserDetails.getOnRoadBooksCount() + mUserDetails.getReadBooksCount() + 3) {
+                            return TYPE_READ_BOOKS;
+                        }
+
+                    } else if (mUserDetails.getReadBooksCount() > 0 && mUserDetails.getBooksOnHandCount() > 0){
+
+                        if (position == 1) {
+                            return TYPE_SUBTITLE_BOOKS_ON_HAND;
+
+                        } else if (position < mUserDetails.getBooksOnHandCount() + 2) {
+                            return TYPE_BOOKS_ON_HAND;
+
+                        } else if (position == mUserDetails.getBooksOnHandCount() + 2) {
+                            return TYPE_SUBTITLE_READ_BOOKS;
+
+                        } else if (position < mUserDetails.getBooksOnHandCount() + mUserDetails.getReadBooksCount() + 3) {
+                            return TYPE_READ_BOOKS;
+                        }
+
+                    } else if (mUserDetails.getOnRoadBooksCount() > 0){
+                        if (position == 1) {
+                            return TYPE_SUBTITLE_ON_ROAD_BOOKS;
+
+                        } else if (position < mUserDetails.getOnRoadBooksCount() + 2) {
+                            return TYPE_ON_ROAD_BOOKS;
+                        }
+                    } else if (mUserDetails.getBooksOnHandCount() > 0) {
+
+                        if (position == 1) {
+                            return TYPE_SUBTITLE_BOOKS_ON_HAND;
+
+                        } else if (position < mUserDetails.getBooksOnHandCount() + 2) {
+                            return TYPE_BOOKS_ON_HAND;
+                        }
+
+                    } else if (mUserDetails.getReadBooksCount() > 0) {
+
+                        if (position == 1) {
+                            return TYPE_SUBTITLE_READ_BOOKS;
+
+                        } else if (position < mUserDetails.getReadBooksCount() + 2) {
+                            return TYPE_READ_BOOKS;
+                        }
+                    } else {
+
+                        if (position == 1) {
+                            return TYPE_EMPTY_STATE;
+                        }
                     }
                 }
             }
@@ -962,7 +968,10 @@ public class ProfileTimelineAdapter extends RecyclerView.Adapter<RecyclerView.Vi
         int offset = 1; // Header
 
         // Currently reading
-        if (mUserDetails.getUser().getID() == SessionManager.getCurrentUser(mContext).getID() ||
+
+        User currentUser = SessionManager.getCurrentUser(mContext);
+
+        if (mUserDetails.getUser().equals(currentUser) ||
                 mUserDetails.getCurrentlyReadingCount() != 0 ||
                 (mUserDetails.getOnRoadBooksCount() < 0 && mUserDetails.getBooksOnHandCount() < 0 && mUserDetails.getReadBooksCount() < 0)) {
 
@@ -980,7 +989,10 @@ public class ProfileTimelineAdapter extends RecyclerView.Adapter<RecyclerView.Vi
         int offset = 1; // Header
 
         // Currently reading
-        if (mUserDetails.getUser().getID() == SessionManager.getCurrentUser(mContext).getID() ||
+
+        User currentUser = SessionManager.getCurrentUser(mContext);
+
+        if (mUserDetails.getUser().equals(currentUser) ||
             mUserDetails.getCurrentlyReadingCount() != 0 ||
             (mUserDetails.getOnRoadBooksCount() < 0 && mUserDetails.getBooksOnHandCount() < 0 && mUserDetails.getReadBooksCount() < 0)) {
 
@@ -1002,7 +1014,10 @@ public class ProfileTimelineAdapter extends RecyclerView.Adapter<RecyclerView.Vi
         int offset = 1; // Header
 
         // Currently reading
-        if (mUserDetails.getUser().getID() == SessionManager.getCurrentUser(mContext).getID() ||
+
+        User currentUser = SessionManager.getCurrentUser(mContext);
+
+        if (mUserDetails.getUser().equals(currentUser) ||
             mUserDetails.getCurrentlyReadingCount() != 0 ||
             (mUserDetails.getOnRoadBooksCount() < 0 && mUserDetails.getBooksOnHandCount() < 0 && mUserDetails.getReadBooksCount() < 0)) {
 

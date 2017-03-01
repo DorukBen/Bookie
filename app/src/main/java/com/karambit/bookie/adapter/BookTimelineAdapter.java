@@ -13,7 +13,6 @@ import android.text.method.LinkMovementMethod;
 import android.text.style.ClickableSpan;
 import android.text.style.ForegroundColorSpan;
 import android.text.style.StyleSpan;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -33,7 +32,6 @@ import com.karambit.bookie.model.User;
 
 import java.util.ArrayList;
 import java.util.Calendar;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Random;
@@ -242,6 +240,8 @@ public class BookTimelineAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
     @Override
     public int getItemViewType(int position) {
 
+        User currentUser = SessionManager.getCurrentUser(mContext);
+
         if (mBookDetails != null) {
 
             if (position == 0) {
@@ -249,7 +249,7 @@ public class BookTimelineAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
 
             } else if (position == 1) {
 
-                if (SessionManager.getCurrentUser(mContext).getID() == mBookDetails.getBook().getOwner().getID()) {
+                if (mBookDetails.getBook().getOwner().equals(currentUser)) {
                     return TYPE_STATE_SECTION_CURRENT_USER;
 
                 } else {
@@ -276,7 +276,7 @@ public class BookTimelineAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
 
             } else if (position == 1) {
 
-                if (SessionManager.getCurrentUser(mContext).getID() == mBook.getOwner().getID()) {
+                if (currentUser.equals(mBook.getOwner())) {
                     return TYPE_STATE_SECTION_CURRENT_USER;
 
                 } else {
@@ -348,6 +348,8 @@ public class BookTimelineAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
 
     @Override
     public void onBindViewHolder(RecyclerView.ViewHolder holder, int position) {
+
+        final User currentUser = SessionManager.getCurrentUser(mContext);
 
         switch (getItemViewType(position)) {
 
@@ -581,7 +583,7 @@ public class BookTimelineAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
                             if (lastProcess instanceof Book.Transaction) {
                                 Book.Transaction sentTransaction = (Book.Transaction) lastProcess;
 
-                                if (sentTransaction.getToUser().getID() == SessionManager.getCurrentUser(mContext.getApplicationContext()).getID()) {
+                                if (sentTransaction.getToUser().equals(currentUser)) {
                                     stateOtherHolder.mRequest.setText(R.string.arrived);
                                     stateOtherHolder.mRequest.setEnabled(true);
                                     stateOtherHolder.mRequest.setTextColor(ContextCompat.getColor(mContext, R.color.colorAccent));
@@ -604,13 +606,19 @@ public class BookTimelineAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
                         } else if (state == Book.State.OPENED_TO_SHARE || state == Book.State.READING) {
                             int canSendRequest = 0;
                             for (Book.BookProcess process: mBookDetails.getBookProcesses()){
+
                                 if (process instanceof Book.Request){
-                                    if (((Book.Request)process).getFromUser().getID() == SessionManager.getCurrentUser(mContext).getID() && ((Book.Request)process).getToUser().getID() == mBookDetails.getBook().getOwner().getID()){
+
+                                    if (((Book.Request)process).getFromUser().equals(currentUser) &&
+                                        ((Book.Request)process).getToUser().equals(mBookDetails.getBook().getOwner())){
+
                                         if (((Book.Request)process).getRequestType() == Book.RequestType.SEND){
                                             canSendRequest--;
                                         }
                                     }
-                                    if (((Book.Request)process).getFromUser().getID() == mBookDetails.getBook().getOwner().getID() && ((Book.Request)process).getToUser().getID() == SessionManager.getCurrentUser(mContext).getID()){
+                                    if (((Book.Request)process).getFromUser().equals(mBookDetails.getBook().getOwner()) &&
+                                        ((Book.Request)process).getToUser().equals(currentUser)){
+
                                         if (((Book.Request)process).getRequestType() == Book.RequestType.REJECT || ((Book.Request)process).getRequestType() == Book.RequestType.ACCEPT){
                                             canSendRequest++;
                                         }
@@ -739,7 +747,7 @@ public class BookTimelineAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
 
                         bookProcessHolder.mProcessImage.setVisibility(View.VISIBLE);
 
-                        if (interaction.getUser().getID() != SessionManager.getCurrentUser(mContext).getID()) {
+                        if (interaction.getUser().equals(currentUser)) {
 
                             String userName = interaction.getUser().getName();
 
@@ -920,7 +928,7 @@ public class BookTimelineAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
                             }
                         };
 
-                        if (transaction.getFromUser().getID() == SessionManager.getCurrentUser(mContext).getID()) {
+                        if (transaction.getFromUser().equals(currentUser)) {
 
                             switch (transaction.getTransactionType()) {
 
@@ -979,7 +987,7 @@ public class BookTimelineAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
                                     throw new IllegalArgumentException("Invalid transaction type:" + transaction.getTransactionType().name());
                             }
 
-                        } else if (transaction.getToUser().getID() == SessionManager.getCurrentUser(mContext).getID()) {
+                        } else if (transaction.getToUser().equals(currentUser)) {
 
                             switch (transaction.getTransactionType()) {
 
@@ -1144,7 +1152,7 @@ public class BookTimelineAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
                             }
                         };
 
-                        if (request.getFromUser().getID() == SessionManager.getCurrentUser(mContext).getID()) {
+                        if (request.getFromUser().equals(currentUser)) {
 
                             switch (request.getRequestType()) {
 
@@ -1201,7 +1209,7 @@ public class BookTimelineAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
                                     throw new IllegalArgumentException("Invalid request type:" + request.getRequestType().name());
                             }
 
-                        } else if (request.getToUser().getID() == SessionManager.getCurrentUser(mContext).getID()) {
+                        } else if (request.getToUser().equals(currentUser)) {
 
                             switch (request.getRequestType()) {
 
@@ -1384,11 +1392,14 @@ public class BookTimelineAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
         int requestCount = 0;
         ArrayList<Book.BookProcess> bookProcesses = mBookDetails.getBookProcesses();
         for (Book.BookProcess process : bookProcesses){
-            if (process instanceof Book.Request && ((Book.Request) process).getToUser().getID() == SessionManager.getCurrentUser(mContext).getID()){
+
+            User currentUser = SessionManager.getCurrentUser(mContext);
+
+            if (process instanceof Book.Request && ((Book.Request) process).getToUser().equals(currentUser)){
                 if (((Book.Request)process).getRequestType() == Book.RequestType.SEND){
                     requestCount++;
                 }
-            }else if (process instanceof Book.Request && ((Book.Request) process).getFromUser().getID() == SessionManager.getCurrentUser(mContext).getID()){
+            }else if (process instanceof Book.Request && ((Book.Request) process).getFromUser().equals(currentUser)){
                 if (((Book.Request)process).getRequestType() != Book.RequestType.SEND){
                     requestCount--;
                 }

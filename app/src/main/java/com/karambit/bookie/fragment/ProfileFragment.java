@@ -102,8 +102,10 @@ public class ProfileFragment extends Fragment {
         RecyclerView recyclerView = (RecyclerView) rootView.findViewById(R.id.profileRecyclerView);
         recyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
 
-        if (mUser.getID() == SessionManager.getCurrentUser(getContext()).getID()){
-            mProfileTimelineAdapter = new ProfileTimelineAdapter(getContext(), SessionManager.getCurrentUserDetails(getContext()));
+        User currentUser = SessionManager.getCurrentUser(getContext());
+
+        if (mUser.equals(currentUser)){
+            mProfileTimelineAdapter = new ProfileTimelineAdapter(getContext(),  SessionManager.getCurrentUserDetails(getContext()));
         }else {
             mProfileTimelineAdapter = new ProfileTimelineAdapter(getContext());
         }
@@ -145,7 +147,7 @@ public class ProfileFragment extends Fragment {
 
         recyclerView.setAdapter(mProfileTimelineAdapter);
 
-        if (mUser.getID() == SessionManager.getCurrentUser(getContext()).getID()){
+        if (mUser.equals(currentUser)){
             recyclerView.setOnScrollListener(new ElevationScrollListener((MainActivity) getActivity(), PROFILE_FRAGMENT_TAB_INEX));
         }else{
             recyclerView.setOnScrollListener(new ElevationScrollListener((ProfileActivity) getActivity()));
@@ -219,8 +221,11 @@ public class ProfileFragment extends Fragment {
 
     private void fetchProfilePageArguments() {
         final UserApi userApi = BookieClient.getClient().create(UserApi.class);
-        String email = SessionManager.getCurrentUserDetails(getContext()).getEmail();
-        String password = SessionManager.getCurrentUserDetails(getContext()).getPassword();
+
+        User.Details currentUserDetails = SessionManager.getCurrentUserDetails(getContext());
+
+        String email = currentUserDetails.getEmail();
+        String password = currentUserDetails.getPassword();
         Call<ResponseBody> getUserProfilePageComponents = userApi.getUserProfilePageComponents(email, password, mUser.getID());
 
         getUserProfilePageComponents.enqueue(new Callback<ResponseBody>() {
@@ -261,16 +266,19 @@ public class ProfileFragment extends Fragment {
                                     }
 
                                     // Updating local database
-                                    new Thread(new Runnable() {
-                                        @Override
-                                        public void run() {
-                                            synchronized (DBHandler.class) { // REQUIRED
-                                                DBHandler dbHandler = DBHandler.getInstance(getContext());
-                                                dbHandler.updateCurrentUser(mUserDetails);
-                                                SessionManager.updateCurrentUserFromDB(getContext());
+                                    User currentUser = SessionManager.getCurrentUser(getContext());
+                                    if (mUser.equals(currentUser)) {
+                                        new Thread(new Runnable() {
+                                            @Override
+                                            public void run() {
+                                                synchronized (DBHandler.class) { // REQUIRED
+                                                    DBHandler dbHandler = DBHandler.getInstance(getContext());
+                                                    dbHandler.updateCurrentUser(mUserDetails);
+                                                    SessionManager.updateCurrentUserFromDB(getContext());
+                                                }
                                             }
-                                        }
-                                    }).start();
+                                        }).start();
+                                    }
 
                                     if (!responseObject.isNull("onRoadBooks")){
                                         if (mUserDetails != null) {

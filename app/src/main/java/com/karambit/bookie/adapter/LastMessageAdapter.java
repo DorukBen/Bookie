@@ -172,7 +172,7 @@ public class LastMessageAdapter extends RecyclerView.Adapter<RecyclerView.ViewHo
 
                 messageHolder.mUserName.setText(oppositeUser.getName());
 
-                if (message.getSender().getID() == currentUser.getID()) {
+                if (message.getSender().equals(currentUser)) {
                     messageHolder.mState.setVisibility(View.VISIBLE);
 
                     switch (message.getState()) {

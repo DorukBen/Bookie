@@ -17,19 +17,12 @@
 
 package com.karambit.bookie.service;
 
-import android.content.Intent;
-import android.os.Bundle;
 import android.util.Log;
-import android.widget.Toast;
 
 import com.google.firebase.iid.FirebaseInstanceId;
 import com.google.firebase.iid.FirebaseInstanceIdService;
-import com.karambit.bookie.BookActivity;
-import com.karambit.bookie.R;
-import com.karambit.bookie.helper.ComfortableProgressDialog;
 import com.karambit.bookie.helper.SessionManager;
-import com.karambit.bookie.model.Book;
-import com.karambit.bookie.rest_api.BookApi;
+import com.karambit.bookie.model.User;
 import com.karambit.bookie.rest_api.BookieClient;
 import com.karambit.bookie.rest_api.ErrorCodes;
 import com.karambit.bookie.rest_api.FcmApi;
@@ -66,7 +59,7 @@ public class MyFirebaseInstanceIDService extends FirebaseInstanceIdService {
         // Instance ID token to your app server.
         FcmPrefManager fcmPrefManager = new FcmPrefManager(this);
         fcmPrefManager.setFcmToken(refreshedToken);
-        if (SessionManager.isLoggedIn(getApplicationContext())){
+        if (SessionManager.isLoggedIn(this)){
             sendRegistrationToServer(refreshedToken);
         }
 
@@ -83,8 +76,11 @@ public class MyFirebaseInstanceIDService extends FirebaseInstanceIdService {
      */
     private void sendRegistrationToServer(final String token) {
         final FcmApi fcmApi = BookieClient.getClient().create(FcmApi.class);
-        String email = SessionManager.getCurrentUserDetails(getApplicationContext()).getEmail();
-        String password = SessionManager.getCurrentUserDetails(getApplicationContext()).getPassword();
+
+        User.Details currentUserDetails = SessionManager.getCurrentUserDetails(this);
+
+        String email = currentUserDetails.getEmail();
+        String password = currentUserDetails.getPassword();
         final Call<ResponseBody> sendTokenToServer = fcmApi.sendFcmTokenToServer(email, password, token);
 
         sendTokenToServer.enqueue(new Callback<ResponseBody>() {

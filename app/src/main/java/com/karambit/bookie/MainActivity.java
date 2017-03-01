@@ -320,7 +320,7 @@ public class MainActivity extends AppCompatActivity implements TabHost.OnTabChan
             case REQUEST_CODE_CURRENT_USER_PROFILE_SETTINGS_ACTIVITY:
                 if (resultCode == CurrentUserProfileSettingsActivity.RESULT_USER_LOGOUT){
                     //Using SessionManager here to use startActivityForResult() on MainActivity
-                    SessionManager.logout(getApplicationContext());
+                    SessionManager.logout(this);
                     startActivityForResult(new Intent(this, LoginRegisterActivity.class), REQUEST_CODE_LOGIN_REGISTER_ACTIVITY);
 
                 } else if (resultCode == CurrentUserProfileSettingsActivity.RESULT_USER_UPDATED) {
@@ -511,8 +511,11 @@ public class MainActivity extends AppCompatActivity implements TabHost.OnTabChan
 
     private void sendRegistrationToServer(final String token) {
         final FcmApi fcmApi = BookieClient.getClient().create(FcmApi.class);
-        String email = SessionManager.getCurrentUserDetails(getApplicationContext()).getEmail();
-        String password = SessionManager.getCurrentUserDetails(getApplicationContext()).getPassword();
+
+        User.Details currentUserDetails = SessionManager.getCurrentUserDetails(this);
+
+        String email = currentUserDetails.getEmail();
+        String password = currentUserDetails.getPassword();
         Call<ResponseBody> sendTokenToServer = fcmApi.sendFcmTokenToServer(email, password, token);
 
         sendTokenToServer.enqueue(new Callback<ResponseBody>() {

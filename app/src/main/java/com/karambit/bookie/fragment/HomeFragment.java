@@ -21,6 +21,7 @@ import com.karambit.bookie.helper.NetworkChecker;
 import com.karambit.bookie.helper.SessionManager;
 import com.karambit.bookie.helper.pull_refresh_layout.PullRefreshLayout;
 import com.karambit.bookie.model.Book;
+import com.karambit.bookie.model.User;
 import com.karambit.bookie.rest_api.BookApi;
 import com.karambit.bookie.rest_api.BookieClient;
 import com.karambit.bookie.rest_api.ErrorCodes;
@@ -157,8 +158,10 @@ public class HomeFragment extends Fragment {
         }
 
 
-        String email = SessionManager.getCurrentUserDetails(getContext().getApplicationContext()).getEmail();
-        String password = SessionManager.getCurrentUserDetails(getContext().getApplicationContext()).getPassword();
+        User.Details currentUserDetails = SessionManager.getCurrentUserDetails(getContext());
+
+        String email = currentUserDetails.getEmail();
+        String password = currentUserDetails.getPassword();
         Call<ResponseBody> getHomePageBooks = bookApi.getHomePageBooks(email, password, fetchedBookIds);
 
         getHomePageBooks.enqueue(new Callback<ResponseBody>() {

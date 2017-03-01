@@ -29,7 +29,6 @@ import android.view.View;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import com.karambit.bookie.adapter.HomeTimelineAdapter;
 import com.karambit.bookie.adapter.RequestAdapter;
 import com.karambit.bookie.helper.ComfortableProgressDialog;
 import com.karambit.bookie.helper.ElevationScrollListener;
@@ -43,13 +42,11 @@ import com.karambit.bookie.rest_api.BookApi;
 import com.karambit.bookie.rest_api.BookieClient;
 import com.karambit.bookie.rest_api.ErrorCodes;
 
-import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Calendar;
 import java.util.Collections;
 import java.util.Hashtable;
 import java.util.List;
@@ -184,8 +181,10 @@ public class RequestActivity extends AppCompatActivity {
     private void fetchRequests() {
         BookApi bookApi = BookieClient.getClient().create(BookApi.class);
 
-        String email = SessionManager.getCurrentUserDetails(getApplicationContext()).getEmail();
-        String password = SessionManager.getCurrentUserDetails(getApplicationContext()).getPassword();
+        User.Details currentUserDetails = SessionManager.getCurrentUserDetails(this);
+
+        String email = currentUserDetails.getEmail();
+        String password = currentUserDetails.getPassword();
         final Call<ResponseBody> getBookRequests = bookApi.getBookRequests(email, password, mBook.getID());
 
         getBookRequests.enqueue(new Callback<ResponseBody>() {
@@ -288,8 +287,11 @@ public class RequestActivity extends AppCompatActivity {
         comfortableProgressDialog.show();
 
         final BookApi bookApi = BookieClient.getClient().create(BookApi.class);
-        String email = SessionManager.getCurrentUserDetails(this).getEmail();
-        String password = SessionManager.getCurrentUserDetails(this).getPassword();
+
+        User.Details currentUserDetails = SessionManager.getCurrentUserDetails(this);
+
+        String email = currentUserDetails.getEmail();
+        String password = currentUserDetails.getPassword();
         Call<ResponseBody> addBookRequest = bookApi.addBookRequests(email, password, request.getBook().getID(), request.getFromUser().getID(), request.getToUser().getID(), request.getRequestType().getRequestCode());
 
         addBookRequest.enqueue(new Callback<ResponseBody>() {
@@ -385,7 +387,8 @@ public class RequestActivity extends AppCompatActivity {
         mAcceptedRequestTextView.setVisibility(View.VISIBLE);
 
 
-        String anotherUserName = (request.getToUser().getID() == SessionManager.getCurrentUser(getApplicationContext()).getID())?request.getFromUser().getName():request.getToUser().getName();
+        User currentUser = SessionManager.getCurrentUser(this);
+        String anotherUserName = request.getToUser().equals(currentUser) ? request.getFromUser().getName() : request.getToUser().getName();
         String acceptRequestString = getString(R.string.you_accepted_request, anotherUserName);
         SpannableString spanAcceptRequest = new SpannableString(acceptRequestString);
         int startIndex = acceptRequestString.indexOf(anotherUserName);

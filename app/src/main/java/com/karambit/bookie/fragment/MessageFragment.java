@@ -67,14 +67,9 @@ public class MessageFragment extends Fragment {
 
         final User currentUser = SessionManager.getCurrentUser(getContext());
 
-        // TODO Setup Broadcast Listener for messages
-
         mLastMessageAdapter = new LastMessageAdapter(getActivity());
 
         mPullRefreshLayout = (PullRefreshLayout) rootView.findViewById(R.id.swipeRefreshLayout);
-
-        // TODO First fetch messages
-        // fetchMessages();
 
         mLastMessageAdapter.setOnMessageClickListener(new LastMessageAdapter.OnMessageClickListener() {
             @Override
@@ -240,13 +235,16 @@ public class MessageFragment extends Fragment {
                     if (intent.getParcelableExtra("message") != null){
                         insertLastMessage((Message) intent.getParcelableExtra("message"));
                     }
-                } else if (intent.getAction().equalsIgnoreCase("com.karambit.bookie.MESSAGE_DELIVERED")){
-                    if (intent.getIntExtra("message_id",-1) > 0){
-                        changeMessageState(intent.getIntExtra("message_id",-1), Message.State.DELIVERED);
-                    }
-                } else if (intent.getAction().equalsIgnoreCase("com.karambit.bookie.MESSAGE_SEEN")){
-                    if (intent.getIntExtra("message_id",-1) > 0){
-                        changeMessageState(intent.getIntExtra("message_id",-1), Message.State.SEEN);
+                } else {
+                    int messageID = intent.getIntExtra("message_id", -1);
+                    if (intent.getAction().equalsIgnoreCase("com.karambit.bookie.MESSAGE_DELIVERED")){
+                        if (messageID > 0){
+                            changeMessageState(messageID, Message.State.DELIVERED);
+                        }
+                    } else if (intent.getAction().equalsIgnoreCase("com.karambit.bookie.MESSAGE_SEEN")){
+                        if (messageID > 0){
+                            changeMessageState(messageID, Message.State.SEEN);
+                        }
                     }
                 }
             }
@@ -264,30 +262,28 @@ public class MessageFragment extends Fragment {
         getContext().unregisterReceiver(mMessageReceiver);
     }
 
-    /**
-     * TODO Firstly fetch from internet. This is just a demo method...
-     */
     public void fetchMessages() {
 
         new Thread(new Runnable() {
             @Override
             public void run() {
+                synchronized (DBHandler.class) {
+                    final User currentUser = SessionManager.getCurrentUser(getContext());
+                    ArrayList<User> users = mDbHandler.getAllMessageUsers();
+                    mLastMessages = mDbHandler.getLastMessages(users, currentUser);
+                    Collections.sort(mLastMessages);
 
-                final User currentUser = SessionManager.getCurrentUser(getContext());
-                ArrayList<User> users = mDbHandler.getAllMessageUsers();
-                mLastMessages = mDbHandler.getLastMessages(users, currentUser);
-                Collections.sort(mLastMessages);
+                    getActivity().runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            mLastMessageAdapter.setLastMessages(mLastMessages);
 
-                getActivity().runOnUiThread(new Runnable() {
-                    @Override
-                    public void run() {
-                        mLastMessageAdapter.setLastMessages(mLastMessages);
+                            mPullRefreshLayout.setRefreshing(false);
 
-                        mPullRefreshLayout.setRefreshing(false);
-
-                        fetchUnseenCounts();
-                    }
-                });
+                            fetchUnseenCounts();
+                        }
+                    });
+                }
             }
         }).start();
     }
@@ -327,7 +323,7 @@ public class MessageFragment extends Fragment {
 
                 for (int i = 0; i < mLastMessages.size(); i++) {
                     Message message = mLastMessages.get(i);
-                    if (message.getOppositeUser(currentUser).getID() == oppositeUser.getID()) {
+                    if (message.getOppositeUser(currentUser).equals(oppositeUser)) {
                         mLastMessages.remove(i);
                         mLastMessageAdapter.notifyItemRemoved(i);
                     }
@@ -347,7 +343,7 @@ public class MessageFragment extends Fragment {
 
         for (int i = 0; i < mLastMessages.size(); i++) {
             Message m = mLastMessages.get(i);
-            if (m.getOppositeUser(currentUser).getID() == newMessage.getOppositeUser(currentUser).getID()) {
+            if (m.getOppositeUser(currentUser).equals(newMessage.getOppositeUser(currentUser))) {
                 messageUserIndex = i;
             }
         }

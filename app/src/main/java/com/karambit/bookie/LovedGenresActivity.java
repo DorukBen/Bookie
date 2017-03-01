@@ -54,7 +54,7 @@ public class LovedGenresActivity extends AppCompatActivity {
         setTitle(s);
 
         mDBHandler = DBHandler.getInstance(this);
-        mCurrentUser = SessionManager.getCurrentUser(getApplicationContext());
+        mCurrentUser = SessionManager.getCurrentUser(this);
 
         String[] genres = getResources().getStringArray(R.array.genre_types);
 
@@ -124,8 +124,11 @@ public class LovedGenresActivity extends AppCompatActivity {
 
     private void postToServer(Integer[] selectedGenreCodes) {
         final UserApi userApi = BookieClient.getClient().create(UserApi.class);
-        String email = SessionManager.getCurrentUserDetails(this).getEmail();
-        String password = SessionManager.getCurrentUserDetails(this).getPassword();
+
+        User.Details currentUserDetails = SessionManager.getCurrentUserDetails(this);
+
+        String email = currentUserDetails.getEmail();
+        String password = currentUserDetails.getPassword();
 
         String lovedGenreCodes;
 
