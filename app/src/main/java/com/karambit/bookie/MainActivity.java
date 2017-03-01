@@ -101,6 +101,11 @@ public class MainActivity extends AppCompatActivity implements TabHost.OnTabChan
             startActivity(new Intent(this, LovedGenresActivity.class));
         }else{
             initializeViewPager(getFragments(), mViewPager);
+
+            FcmPrefManager fcmPrefManager = new FcmPrefManager(MainActivity.this);
+            if (!fcmPrefManager.isUploadedToServer()){
+                sendRegistrationToServer(fcmPrefManager.getFcmToken());
+            }
         }
 
             //Changes action bar font style by getting font.ttf from assets/fonts action bars font style doesn't
@@ -283,9 +288,8 @@ public class MainActivity extends AppCompatActivity implements TabHost.OnTabChan
                 if (resultCode == Activity.RESULT_OK){
 
                     FcmPrefManager fcmPrefManager = new FcmPrefManager(MainActivity.this);
-                    if (!fcmPrefManager.isUploadedToServer()){
-                        sendRegistrationToServer(fcmPrefManager.getFcmToken());
-                    }
+                    sendRegistrationToServer(fcmPrefManager.getFcmToken());
+
 
                     if (!SessionManager.isLovedGenresSelectedLocal(this)) {
                         startActivity(new Intent(this, LovedGenresActivity.class));
