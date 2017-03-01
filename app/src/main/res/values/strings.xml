@@ -247,4 +247,6 @@
     <string name="action_message">Message</string>
     <string name="no_messages_yet">No messages yet. Start talking now!</string>
     <string name="search_history">Search History</string>
+    <string name="message_notification">message_notification</string>
+    <string name="notification">notification</string>
 </resources>

@@ -304,7 +304,7 @@ public class ConversationActivity extends AppCompatActivity {
             MyFirebaseMessagingService.mNotificationUserIds.remove(currentConversationUserId);
 
             NotificationManager notificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
-            notificationManager.cancel(getString(R.string.app_name), MyFirebaseMessagingService.MESSAGE_NOTIFICATION_ID);
+            notificationManager.cancel(getString(R.string.message_notification), MyFirebaseMessagingService.MESSAGE_NOTIFICATION_ID);
         }
 
         final User currentUser = SessionManager.getCurrentUser(this);

@@ -374,10 +374,12 @@ public class MainActivity extends AppCompatActivity implements TabHost.OnTabChan
                 conversationIntent.putExtra("user", intent.getParcelableExtra("message_user"));
                 startActivityForResult(conversationIntent, REQUEST_CODE_IS_ALL_MESSAGES_DELETED);
             }
-        }
 
-        mViewPager.setCurrentItem(4, false);
-        mTabHost.setCurrentTab(4);
+            mViewPager.setCurrentItem(4, false);
+            mTabHost.setCurrentTab(4);
+        } else if (intent.getParcelableExtra("notification") != null){
+            startActivity(new Intent(this, NotificationActivity.class));
+        }
     }
 
     public void setActionBarElevation(float dp, int tabIndex) {

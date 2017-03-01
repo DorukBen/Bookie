@@ -177,6 +177,10 @@ public class NotificationActivity extends AppCompatActivity {
         registerReceiver(mMessageReceiver, new IntentFilter("com.karambit.bookie.REJECTED_REQUEST_RECEIVED"));
         registerReceiver(mMessageReceiver, new IntentFilter("com.karambit.bookie.ACCEPTED_REQUEST_RECEIVED"));
         registerReceiver(mMessageReceiver, new IntentFilter("com.karambit.bookie.BOOK_OWNER_CHANGED_DATA_RECEIVED"));
+
+        DBHandler dbHandler = DBHandler.getInstance(this);
+        dbHandler.updateAllNotificationsSeen();
+        setResult(NotificationActivity.RESULT_CODE_ALL_NOTIFICATION_SEENS_DELETED);
     }
 
     @Override

@@ -22,10 +22,17 @@ import android.content.Context;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.graphics.Typeface;
 import android.media.RingtoneManager;
 import android.net.Uri;
 import android.os.Bundle;
 import android.support.v4.app.NotificationCompat;
+import android.support.v4.content.ContextCompat;
+import android.text.Spannable;
+import android.text.SpannableString;
+import android.text.Spanned;
+import android.text.style.ForegroundColorSpan;
+import android.text.style.StyleSpan;
 import android.util.Log;
 
 import com.google.firebase.messaging.RemoteMessage;
@@ -56,12 +63,18 @@ import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
 
+import static com.karambit.bookie.model.Notification.Type.BOOK_OWNER_CHANGED;
+import static com.karambit.bookie.model.Notification.Type.REQUESTED;
+
 public class MyFirebaseMessagingService extends com.google.firebase.messaging.FirebaseMessagingService {
 
     private static final String TAG = "FirebaseMsgService";
     public static final int MESSAGE_NOTIFICATION_ID = 785;
     public static ArrayList<Message> mNotificationMessages = new ArrayList<>();
     public static ArrayList<Integer> mNotificationUserIds = new ArrayList<>();
+
+    public static final int NOTIFICATION_ID = 3785;
+    public static ArrayList<Notification> mNotifications = new ArrayList<>();
 
     /**
      * Called when message is received.
@@ -149,13 +162,16 @@ public class MyFirebaseMessagingService extends com.google.firebase.messaging.Fi
                             Book book = Book.jsonObjectToBook(bookJsonObject);
 
 
-                            Notification notification = new Notification(Notification.Type.REQUESTED,
+                            Notification notification = new Notification(REQUESTED,
                                                     Calendar.getInstance(),
                                                     book,
                                                     sender,
                                                     false);
 
+
                             DBHandler dbHandler = DBHandler.getInstance(this);
+                            sendNotification(notification);
+
                             dbHandler.saveNotificationToDatabase(notification);
 
                             Intent intent = new Intent("com.karambit.bookie.SENT_REQUEST_RECEIVED");
@@ -184,6 +200,8 @@ public class MyFirebaseMessagingService extends com.google.firebase.messaging.Fi
                                     false);
 
                             DBHandler dbHandler = DBHandler.getInstance(this);
+                            sendNotification(notification);
+
                             dbHandler.saveNotificationToDatabase(notification);
 
                             Intent intent = new Intent("com.karambit.bookie.REJECTED_REQUEST_RECEIVED");
@@ -212,6 +230,8 @@ public class MyFirebaseMessagingService extends com.google.firebase.messaging.Fi
                                     false);
 
                             DBHandler dbHandler = DBHandler.getInstance(this);
+                            sendNotification(notification);
+
                             dbHandler.saveNotificationToDatabase(notification);
 
                             Intent intent = new Intent("com.karambit.bookie.ACCEPTED_REQUEST_RECEIVED");
@@ -233,13 +253,14 @@ public class MyFirebaseMessagingService extends com.google.firebase.messaging.Fi
                             Book book = Book.jsonObjectToBook(bookJsonObject);
 
 
-                            Notification notification = new Notification(Notification.Type.BOOK_OWNER_CHANGED,
+                            Notification notification = new Notification(BOOK_OWNER_CHANGED,
                                     Calendar.getInstance(),
                                     book,
                                     sender,
                                     false);
 
                             DBHandler dbHandler = DBHandler.getInstance(this);
+                            sendNotification(notification);
                             dbHandler.saveNotificationToDatabase(notification);
 
                             Intent intent = new Intent("com.karambit.bookie.BOOK_OWNER_CHANGED_DATA_RECEIVED");
@@ -266,14 +287,7 @@ public class MyFirebaseMessagingService extends com.google.firebase.messaging.Fi
     }
     // [END receive_message]
 
-    /**
-     * Create and show a simple notification containing the received FCM message.
-     *
-     * @param message FCM message body received.
-     */
     private void sendMessageNotification(Message message) {
-
-
         Bitmap bitmap;
         NotificationManager nManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
 
@@ -302,7 +316,7 @@ public class MyFirebaseMessagingService extends com.google.firebase.messaging.Fi
             bundle.putParcelable("message_user", null);
             intent.putExtras(bundle);
 
-            PendingIntent pendingIntent = PendingIntent.getActivity(this, 0 /* Request code */, intent,
+            PendingIntent pendingIntent = PendingIntent.getActivity(this, 1000, intent,
                     PendingIntent.FLAG_UPDATE_CURRENT);
 
             bitmap = BitmapFactory.decodeResource(getResources(), R.mipmap.ic_launcher);
@@ -338,14 +352,13 @@ public class MyFirebaseMessagingService extends com.google.firebase.messaging.Fi
             bundle.putParcelable("message_user", message.getSender());
             intent.putExtras(bundle);
 
-            PendingIntent pendingIntent = PendingIntent.getActivity(this, 0 /* Request code */, intent,
+            PendingIntent pendingIntent = PendingIntent.getActivity(this, 1000, intent,
                     PendingIntent.FLAG_UPDATE_CURRENT);
 
             try {
                 URL url = new URL(message.getSender().getThumbnailUrl());
                 bitmap = BitmapFactory.decodeStream(url.openConnection().getInputStream());
             } catch(IOException e) {
-                System.out.println(e);
                 bitmap = BitmapFactory.decodeResource(getResources(), R.mipmap.ic_launcher);
             }
 
@@ -364,7 +377,111 @@ public class MyFirebaseMessagingService extends com.google.firebase.messaging.Fi
         android.app.Notification notification = builder.build();
         notification.flags |= android.app.Notification.FLAG_AUTO_CANCEL;;
 
-        nManager.notify(getString(R.string.app_name), MESSAGE_NOTIFICATION_ID, notification);
+        nManager.notify(getString(R.string.message_notification), MESSAGE_NOTIFICATION_ID, notification);
+    }
+
+    private void sendNotification(Notification notification) {
+        mNotifications.add(notification);
+
+        Bitmap bitmap;
+        NotificationManager nManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+
+        Uri defaultSoundUri= RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION);
+
+        NotificationCompat.Builder builder;
+
+        NotificationCompat.InboxStyle inboxStyle = new NotificationCompat.InboxStyle();
+        inboxStyle.setBigContentTitle(getString(R.string.app_name));
+
+        String summeryText;
+        if (mNotifications.size() > 1){
+            inboxStyle.setSummaryText(mNotifications.size() + " new notifications.");
+            summeryText = mNotifications.size() + " new notifications.";
+        }else {
+            inboxStyle.setSummaryText(mNotifications.size() + " new notifications.");
+            switch (notification.getType()) {
+                case REQUESTED:
+                    summeryText = getString(R.string.x_requested_for_y, notification.getOppositeUser().getName(), notification.getBook().getName());
+                    break;
+
+                case BOOK_OWNER_CHANGED:
+                    summeryText = getString(R.string.x_now_owned_by_y, notification.getBook().getName(), notification.getOppositeUser().getName());
+                    break;
+
+                case BOOK_LOST:
+                    summeryText = getString(R.string.x_lost_y, notification.getOppositeUser().getName(), notification.getBook().getName());
+                    break;
+
+                case REQUEST_ACCEPTED:
+                    summeryText = getString(R.string.x_accepted_your_request_for_y, notification.getOppositeUser().getName(), notification.getBook().getName());
+                    break;
+
+                case REQUEST_REJECTED:
+                    summeryText = getString(R.string.x_rejected_your_request_for_y, notification.getOppositeUser().getName(), notification.getBook().getName());
+                    break;
+
+                default:
+                    throw new IllegalArgumentException("Invalid notification type");
+            }
+        }
+
+        for (Notification tmpNotification: mNotifications){
+            switch (tmpNotification.getType()) {
+                case REQUESTED:
+                    String requestedString = getString(R.string.x_requested_for_y, tmpNotification.getOppositeUser().getName(), tmpNotification.getBook().getName());
+                    inboxStyle.addLine(requestedString);
+                    break;
+
+                case BOOK_OWNER_CHANGED:
+                    String bookOwnerChangedString = getString(R.string.x_now_owned_by_y, tmpNotification.getBook().getName(), tmpNotification.getOppositeUser().getName());
+                    inboxStyle.addLine(bookOwnerChangedString);
+                    break;
+
+                case BOOK_LOST:
+                    String bookLostString = getString(R.string.x_lost_y, tmpNotification.getOppositeUser().getName(), tmpNotification.getBook().getName());
+                    inboxStyle.addLine(bookLostString);
+                    break;
+
+                case REQUEST_ACCEPTED:
+                    String requestAcceptedString = getString(R.string.x_accepted_your_request_for_y, tmpNotification.getOppositeUser().getName(), tmpNotification.getBook().getName());
+                    inboxStyle.addLine(requestAcceptedString);
+                    break;
+
+                case REQUEST_REJECTED:
+                    String requestRejectedString = getString(R.string.x_rejected_your_request_for_y, tmpNotification.getOppositeUser().getName(), tmpNotification.getBook().getName());
+                    inboxStyle.addLine(requestRejectedString);
+                    break;
+
+                default:
+                    throw new IllegalArgumentException("Invalid notification type");
+            }
+        }
+
+        Intent intent = new Intent(this, MainActivity.class);
+        Bundle bundle = new Bundle();
+        bundle.putParcelable("notification", notification);
+        intent.putExtras(bundle);
+
+        PendingIntent pendingIntent = PendingIntent.getActivity(this, 500 /* Request code */, intent,
+                PendingIntent.FLAG_UPDATE_CURRENT);
+
+        bitmap = BitmapFactory.decodeResource(getResources(), R.mipmap.ic_launcher);
+
+        builder = new NotificationCompat.Builder(this)
+                .setContentTitle(getString(R.string.app_name))
+                .setContentText(summeryText)
+                .setSmallIcon(R.mipmap.ic_launcher)
+                .setLargeIcon(bitmap)
+                .setSound(defaultSoundUri)
+                .setAutoCancel(true)
+                .setStyle(inboxStyle)
+                .setPriority(android.app.Notification.PRIORITY_DEFAULT)
+                .setContentIntent(pendingIntent);
+
+        android.app.Notification appNotification = builder.build();
+        appNotification.flags |= android.app.Notification.FLAG_AUTO_CANCEL;;
+
+        nManager.notify(getString(R.string.notification), NOTIFICATION_ID, appNotification);
     }
 
     private void uploadMessageDeliveredStateToServer(final int messageId) {
