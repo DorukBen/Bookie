@@ -47,6 +47,7 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Collections;
+import java.util.Iterator;
 import java.util.Locale;
 
 import okhttp3.ResponseBody;
@@ -235,18 +236,6 @@ public class ConversationActivity extends AppCompatActivity {
         mRecyclerView.setDrawingCacheEnabled(true);
         mRecyclerView.setDrawingCacheQuality(View.DRAWING_CACHE_QUALITY_HIGH);
 
-        // Seen for opposite user messages
-        int unSeenMessageCount = mDbHandler.getUnseenMessageCount(mOppositeUser);
-        if (unSeenMessageCount > 0){
-            for (int i = mMessages.size()-1; i >= 0; i--){
-                mMessages.get(i).setState(Message.State.SEEN);
-                mConversationAdapter.notifyItemChanged(mMessages.indexOf(mMessages.get(i)));
-                mDbHandler.updateMessageState(mMessages.get(i).getID(), Message.State.SEEN);
-                uploadMessageStateToServer(mMessages.get(i));
-            }
-
-        }
-
         mMessageEditText.addTextChangedListener(new TextWatcher() {
             @Override
             public void beforeTextChanged(CharSequence s, int start, int count, int after) {
@@ -301,18 +290,22 @@ public class ConversationActivity extends AppCompatActivity {
         super.onResume();
         currentConversationUserId = mOppositeUser.getID();
 
-        for (Message message: MyFirebaseMessagingService.mNotificationMessages){
+        Iterator<Message> iterator = MyFirebaseMessagingService.mNotificationMessages.iterator();
+
+        while (iterator.hasNext()){
+            Message message = iterator.next();
             if (message.getSender().getID() == currentConversationUserId){
-                MyFirebaseMessagingService.mNotificationMessages.remove(message);
+                iterator.remove();
             }
         }
 
+
         if (MyFirebaseMessagingService.mNotificationUserIds.contains(currentConversationUserId)){
             MyFirebaseMessagingService.mNotificationUserIds.remove(currentConversationUserId);
-        }
 
-        NotificationManager notificationManager = (NotificationManager)getSystemService(Context.NOTIFICATION_SERVICE);
-        notificationManager.cancel(MyFirebaseMessagingService.MESSAGE_NOTIFICATION_ID);
+            NotificationManager notificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+            notificationManager.cancel(getString(R.string.app_name), MyFirebaseMessagingService.MESSAGE_NOTIFICATION_ID);
+        }
 
         mMessageReceiver = new BroadcastReceiver() {
             @Override
@@ -322,10 +315,8 @@ public class ConversationActivity extends AppCompatActivity {
                         Message message = intent.getParcelableExtra("message");
                         if(message.getOppositeUser(SessionManager.getCurrentUser(getApplicationContext())).getID() == mOppositeUser.getID()){
                             insertMessage(message);
-                            message.setState(Message.State.SEEN);
-                            changeMessageState(message.getID(), Message.State.SEEN);
 
-                            uploadMessageStateToServer(message);
+                            fetchSeenMessages();
                         }
                     }
                 } else if (intent.getAction().equalsIgnoreCase("com.karambit.bookie.MESSAGE_DELIVERED")){
@@ -337,7 +328,7 @@ public class ConversationActivity extends AppCompatActivity {
                         Message changedMessage = changeMessageState(intent.getIntExtra("message_id",-1), Message.State.SEEN);
                         if (changedMessage != null){
                             for (Message message: mMessages){
-                                if (message.getSender().getID() == SessionManager.getCurrentUser(getApplicationContext()).getID() && message.getCreatedAt().getTimeInMillis() <= changedMessage.getCreatedAt().getTimeInMillis()){
+                                if (message.getSender().getID() == SessionManager.getCurrentUser(getApplicationContext()).getID() && message.getState() == Message.State.DELIVERED && message.getCreatedAt().getTimeInMillis() <= changedMessage.getCreatedAt().getTimeInMillis()){
                                     changeMessageState(message.getID(), Message.State.SEEN);
                                 }
                             }
@@ -351,11 +342,13 @@ public class ConversationActivity extends AppCompatActivity {
         registerReceiver(mMessageReceiver, new IntentFilter("com.karambit.bookie.MESSAGE_DELIVERED"));
         registerReceiver(mMessageReceiver, new IntentFilter("com.karambit.bookie.MESSAGE_SEEN"));
 
+        fetchSeenMessages();
+    }
+
+    private void fetchSeenMessages() {
         for (Message message: mMessages){
             if (message.getReceiver().getID() == SessionManager.getCurrentUser(getApplicationContext()).getID() && message.getState() != Message.State.SEEN){
-                message.setState(Message.State.SEEN);
                 changeMessageState(message.getID(), Message.State.SEEN);
-                uploadMessageStateToServer(message);
             }
         }
     }
@@ -394,12 +387,7 @@ public class ConversationActivity extends AppCompatActivity {
         }
 
         if (newMessage.getSender().getID() != currentUser.getID()) {
-            for (Message message : mMessages) {
-                if (message.getState() != Message.State.SEEN) {
-                    message.setState(Message.State.SEEN);
-                    mConversationAdapter.notifyItemChanged(mMessages.indexOf(message));
-                }
-            }
+            changeMessageState(newMessage.getID(), Message.State.SEEN);
         }
 
         setResult(MESSAGE_INSERTED, getIntent().putExtra("last_message", mMessages.get(0)));
@@ -407,11 +395,30 @@ public class ConversationActivity extends AppCompatActivity {
 
     public Message changeMessageState(int messageID, Message.State state) {
         for (Message message : mMessages) {
-            if (message.getID() == messageID && message.getState() != state) {
-                message.setState(state);
-                mConversationAdapter.notifyItemChanged(mMessages.indexOf(message));
-                mDbHandler.updateMessageState(message, state);
-                return message;
+            if (message.getID() == messageID) {
+                if (message.getState() != Message.State.SEEN) {
+                    message.setState(state);
+                    mConversationAdapter.notifyItemChanged(mMessages.indexOf(message));
+                    mDbHandler.updateMessageState(message, state);
+
+                    if (message.getSender().getID() != SessionManager.getCurrentUser(getApplicationContext()).getID()){
+                        uploadMessageStateToServer(message);
+                    }
+                    return message;
+                } else {
+                    if (state == Message.State.SEEN){
+                        message.setState(state);
+                        mConversationAdapter.notifyItemChanged(mMessages.indexOf(message));
+                        mDbHandler.updateMessageState(message, state);
+
+                        if (message.getSender().getID() != SessionManager.getCurrentUser(getApplicationContext()).getID()){
+                            uploadMessageStateToServer(message);
+                        }
+                        return message;
+                    }else {
+                        return message;
+                    }
+                }
             }
         }
         return null;

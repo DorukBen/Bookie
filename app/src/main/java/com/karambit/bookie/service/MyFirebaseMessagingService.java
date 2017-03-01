@@ -59,7 +59,7 @@ import retrofit2.Response;
 public class MyFirebaseMessagingService extends com.google.firebase.messaging.FirebaseMessagingService {
 
     private static final String TAG = "FirebaseMsgService";
-    public static final int MESSAGE_NOTIFICATION_ID = 3000;
+    public static final int MESSAGE_NOTIFICATION_ID = 785;
     public static ArrayList<Message> mNotificationMessages = new ArrayList<>();
     public static ArrayList<Integer> mNotificationUserIds = new ArrayList<>();
 

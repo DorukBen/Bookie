@@ -680,7 +680,7 @@ public class ProfileTimelineAdapter extends RecyclerView.Adapter<RecyclerView.Vi
                 //
 
                 String bio = mUserDetails.getBio();
-                if (!TextUtils.isEmpty(bio) && bio != "null") {
+                if (bio != null && !TextUtils.isEmpty(bio)) {
                     headerViewHolder.mBio.setVisibility(View.VISIBLE);
                     headerViewHolder.mBio.setText(bio);
                 } else {
