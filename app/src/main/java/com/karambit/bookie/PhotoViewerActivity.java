@@ -120,41 +120,40 @@ public class PhotoViewerActivity extends AppCompatActivity implements View.OnTou
 
         bringFrontPhotoForGlide();
 
-        if (getIntent().getParcelableExtra("user") != null){
-            if (((User)getIntent().getParcelableExtra("user")).getID() == SessionManager.getCurrentUser(getApplicationContext()).getID()){
-                mEditPhotoButton.setVisibility(View.VISIBLE);
+        User photoUser = getIntent().getParcelableExtra("user");
+        User currentUser =  SessionManager.getCurrentUser(this);
 
-                mEditPhotoButton.setOnClickListener(new View.OnClickListener() {
-                    @Override
-                    public void onClick(View v) {
-                        if (checkPermissions()) {
-                            startActivityForResult(ImagePicker.getPickImageIntent(getBaseContext()), SELECT_IMAGE_REQUEST_CODE);
+        if (photoUser != null && photoUser.equals(currentUser)){
+            mEditPhotoButton.setVisibility(View.VISIBLE);
 
-                            Log.i(TAG, "Permissions OK!");
-                        } else {
-                            String[] permissions = {
-                                    android.Manifest.permission.WRITE_EXTERNAL_STORAGE,
-                                    android.Manifest.permission.READ_EXTERNAL_STORAGE,
-                                    Manifest.permission.CAMERA
-                            };
+            mEditPhotoButton.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    if (checkPermissions()) {
+                        startActivityForResult(ImagePicker.getPickImageIntent(getBaseContext()), SELECT_IMAGE_REQUEST_CODE);
 
-                            ActivityCompat.requestPermissions(PhotoViewerActivity.this, permissions, CUSTOM_PERMISSIONS_REQUEST_CODE);
+                        Log.i(TAG, "Permissions OK!");
+                    } else {
+                        String[] permissions = {
+                                android.Manifest.permission.WRITE_EXTERNAL_STORAGE,
+                                android.Manifest.permission.READ_EXTERNAL_STORAGE,
+                                Manifest.permission.CAMERA
+                        };
 
-                            Log.i(TAG, "Permissions NOT OK!");
-                        }
+                        ActivityCompat.requestPermissions(PhotoViewerActivity.this, permissions, CUSTOM_PERMISSIONS_REQUEST_CODE);
+
+                        Log.i(TAG, "Permissions NOT OK!");
                     }
-                });
+                }
+            });
 
-                mUploadButton.setOnClickListener(new View.OnClickListener() {
-                    @Override
-                    public void onClick(View v) {
-                        attemptUploadProfilePicture();
-                    }
-                });
-            }else {
-                mEditPhotoButton.setVisibility(View.GONE);
-            }
-        }else{
+            mUploadButton.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    attemptUploadProfilePicture();
+                }
+            });
+        }else {
             mEditPhotoButton.setVisibility(View.GONE);
         }
 
@@ -506,8 +505,10 @@ public class PhotoViewerActivity extends AppCompatActivity implements View.OnTou
         String path = mSavedBookImageFile.getPath();
         String name = mSavedBookImageFile.getName();
 
-        String serverArgsString = "?email=" + SessionManager.getCurrentUserDetails(getApplicationContext()).getEmail()
-                + "&password=" + SessionManager.getCurrentUserDetails(getApplicationContext()).getPassword()
+        User.Details currentUserDetails = SessionManager.getCurrentUserDetails(this);
+
+        String serverArgsString = "?email=" + currentUserDetails.getEmail()
+                + "&password=" + currentUserDetails.getPassword()
                 + "&imageName=" + name;
 
         String imageUrlString = BookieClient.BASE_URL + UPLOAD_IMAGE_URL + serverArgsString;

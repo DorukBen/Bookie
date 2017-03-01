@@ -4,7 +4,6 @@ import android.os.Parcel;
 import android.os.Parcelable;
 import android.support.annotation.Nullable;
 import android.text.TextUtils;
-import android.util.Log;
 
 import com.google.android.gms.maps.model.LatLng;
 import com.karambit.bookie.helper.ImageLinkSource;
@@ -448,5 +447,10 @@ public class User implements Parcelable {
             name = name.replace(" ", "").toLowerCase().trim();
             return name + "@gmail.com";
         }
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        return obj instanceof User && this.mID == ((User) obj).getID();
     }
 }

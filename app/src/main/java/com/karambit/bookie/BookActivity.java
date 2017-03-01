@@ -47,7 +47,6 @@ import org.json.JSONObject;
 
 import java.io.IOException;
 import java.util.Calendar;
-import java.util.GregorianCalendar;
 
 import okhttp3.ResponseBody;
 import retrofit2.Call;
@@ -113,7 +112,10 @@ public class BookActivity extends AppCompatActivity {
                         .setPositiveButton(R.string.accept, new DialogInterface.OnClickListener() {
                             @Override
                             public void onClick(DialogInterface dialog, int which) {
-                                bookProcessToServer(mBookDetails.getBook().new Request(Book.RequestType.SEND, mBookDetails.getBook().getOwner(), SessionManager.getCurrentUser(getApplicationContext()), new GregorianCalendar()));
+                                bookProcessToServer(mBookDetails.getBook().new Request(Book.RequestType.SEND,
+                                                                                       mBookDetails.getBook().getOwner(),
+                                                                                       SessionManager.getCurrentUser(BookActivity.this),
+                                                                                       Calendar.getInstance()));
                             }
                         })
                         .setNegativeButton(android.R.string.no, null)
@@ -134,7 +136,7 @@ public class BookActivity extends AppCompatActivity {
 
                             Toast.makeText(BookActivity.this, R.string.owner_change_notification, Toast.LENGTH_SHORT).show();
 
-                            User currentUser = SessionManager.getCurrentUser(BookActivity.this);
+                            final User currentUser = SessionManager.getCurrentUser(BookActivity.this);
 
                             Book.Transaction transaction = mBook.new Transaction(mBook.getOwner(), Book.TransactionType.COME_TO_HAND,
                                                                                  currentUser, Calendar.getInstance());
@@ -153,7 +155,7 @@ public class BookActivity extends AppCompatActivity {
                                     @Override
                                     public void onClick(DialogInterface dialog, int which) {
                                         Book.Interaction startReading = mBook.new Interaction(Book.InteractionType.READ_START,
-                                                                                              SessionManager.getCurrentUser(BookActivity.this),
+                                                                                              currentUser,
                                                                                               Calendar.getInstance());
                                         mBookDetails.getBookProcesses().add(startReading);
 
@@ -290,7 +292,7 @@ public class BookActivity extends AppCompatActivity {
                     if (intent.getParcelableExtra("notification") != null){
                         Notification notification = intent.getParcelableExtra("notification");
                         if (mBookDetails != null){
-                            if (notification.getBook().getID() == mBookDetails.getBook().getID()){
+                            if (notification.getBook().equals(mBookDetails.getBook())){
                                 mBookDetails.getBookProcesses().add(mBookDetails.getBook().new Request(
                                         Book.RequestType.SEND,
                                         mBookDetails.getBook().getOwner(),
@@ -304,7 +306,7 @@ public class BookActivity extends AppCompatActivity {
                     if (intent.getParcelableExtra("notification") != null){
                         Notification notification = intent.getParcelableExtra("notification");
                         if (mBookDetails != null){
-                            if (notification.getBook().getID() == mBookDetails.getBook().getID()){
+                            if (notification.getBook().equals(mBookDetails.getBook())){
                                 mBookDetails.getBookProcesses().add(mBookDetails.getBook().new Request(
                                         Book.RequestType.REJECT,
                                         notification.getOppositeUser(),
@@ -318,7 +320,7 @@ public class BookActivity extends AppCompatActivity {
                     if (intent.getParcelableExtra("notification") != null){
                         Notification notification = intent.getParcelableExtra("notification");
                         if (mBookDetails != null){
-                            if (notification.getBook().getID() == mBookDetails.getBook().getID()){
+                            if (notification.getBook().equals(mBookDetails.getBook())){
                                 mBookDetails.getBookProcesses().add(mBookDetails.getBook().new Request(
                                         Book.RequestType.ACCEPT,
                                         notification.getOppositeUser(),
@@ -328,7 +330,7 @@ public class BookActivity extends AppCompatActivity {
                                 mBookDetails.getBookProcesses().add(mBookDetails.getBook().new Transaction(
                                         mBookDetails.getBook().getOwner(),
                                         Book.TransactionType.DISPACTH,
-                                        SessionManager.getCurrentUser(getApplicationContext()),
+                                        SessionManager.getCurrentUser(context),
                                         notification.getCreatedAt()));
 
                                 mBookDetails.getBook().setState(Book.State.ON_ROAD);
@@ -377,7 +379,8 @@ public class BookActivity extends AppCompatActivity {
                 if (mBookDetails != null) {
                     Intent intent = new Intent(this, BookSettingsActivity.class);
                     intent.putExtra("book", mBook);
-                    boolean isAdder = mBookDetails.getAddedBy().getID() == SessionManager.getCurrentUser(this).getID();
+                    User currentUser = SessionManager.getCurrentUser(this);
+                    boolean isAdder = mBookDetails.getAddedBy().equals(currentUser);
                     intent.putExtra("is_adder", isAdder);
                     startActivityForResult(intent, REQUEST_EDIT_BOOK);
                     return true;
@@ -449,14 +452,16 @@ public class BookActivity extends AppCompatActivity {
             View.OnClickListener openToShareListener = new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
+                    User currentUser = SessionManager.getCurrentUser(BookActivity.this);
+
                     Book.Interaction openToShare = mBook.new Interaction(Book.InteractionType.OPEN_TO_SHARE,
-                                                                          SessionManager.getCurrentUser(BookActivity.this),
-                                                                          Calendar.getInstance());
+                                                                         currentUser,
+                                                                         Calendar.getInstance());
 
                     if (mBook.getState() == Book.State.READING) {
                         Book.Interaction stopReading = mBook.new Interaction(Book.InteractionType.READ_STOP,
-                                SessionManager.getCurrentUser(BookActivity.this),
-                                Calendar.getInstance());
+                                                                             currentUser,
+                                                                             Calendar.getInstance());
                         mBookDetails.getBookProcesses().add(stopReading);
                     }
 
@@ -482,6 +487,9 @@ public class BookActivity extends AppCompatActivity {
             View.OnClickListener closeToShareListener = new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
+
+                    final User currentUser = SessionManager.getCurrentUser(BookActivity.this);
+
                     if (mBookTimelineAdapter.getRequestCount() > 0) {
 
                         new AlertDialog.Builder(BookActivity.this)
@@ -491,11 +499,11 @@ public class BookActivity extends AppCompatActivity {
                                 @Override
                                 public void onClick(DialogInterface dialog, int which) {
                                     Book.Interaction closeToShare = mBook.new Interaction(Book.InteractionType.CLOSE_TO_SHARE,
-                                                                                          SessionManager.getCurrentUser(BookActivity.this),
+                                                                                          currentUser,
                                                                                           Calendar.getInstance());
                                     if (mBook.getState() == Book.State.READING) {
                                         Book.Interaction stopReading = mBook.new Interaction(Book.InteractionType.READ_STOP,
-                                                SessionManager.getCurrentUser(BookActivity.this),
+                                                                                             currentUser,
                                                 Calendar.getInstance());
                                         mBookDetails.getBookProcesses().add(stopReading);
                                     }
@@ -521,12 +529,12 @@ public class BookActivity extends AppCompatActivity {
 
                     } else {
                         Book.Interaction closeToShare = mBook.new Interaction(Book.InteractionType.CLOSE_TO_SHARE,
-                                                                              SessionManager.getCurrentUser(BookActivity.this),
+                                                                              currentUser,
                                                                               Calendar.getInstance());
 
                         if (mBook.getState() == Book.State.READING) {
                             Book.Interaction stopReading = mBook.new Interaction(Book.InteractionType.READ_STOP,
-                                    SessionManager.getCurrentUser(BookActivity.this),
+                                                                                 currentUser,
                                     Calendar.getInstance());
                             mBookDetails.getBookProcesses().add(stopReading);
                         }
@@ -645,8 +653,11 @@ public class BookActivity extends AppCompatActivity {
 
     private void fetchBookPageArguments() {
         final BookApi bookApi = BookieClient.getClient().create(BookApi.class);
-        String email = SessionManager.getCurrentUserDetails(this).getEmail();
-        String password = SessionManager.getCurrentUserDetails(this).getPassword();
+
+        User.Details currentUserDetails = SessionManager.getCurrentUserDetails(this);
+
+        String email = currentUserDetails.getEmail();
+        String password = currentUserDetails.getPassword();
         Call<ResponseBody> getBookPageArguments = bookApi.getBookPageArguments(email, password, mBook.getID());
 
         getBookPageArguments.enqueue(new Callback<ResponseBody>() {
@@ -734,8 +745,11 @@ public class BookActivity extends AppCompatActivity {
         comfortableProgressDialog.show();
 
         final BookApi bookApi = BookieClient.getClient().create(BookApi.class);
-        String email = SessionManager.getCurrentUserDetails(getApplicationContext()).getEmail();
-        String password = SessionManager.getCurrentUserDetails(getApplicationContext()).getPassword();
+
+        User.Details currentUserDetails = SessionManager.getCurrentUserDetails(this);
+
+        String email = currentUserDetails.getEmail();
+        String password = currentUserDetails.getPassword();
         Call<ResponseBody> addBookInteraction = bookApi.addBookInteraction(email, password, interaction.getBook().getID(), interaction.getInteractionType().getInteractionCode());
 
         addBookInteraction.enqueue(new Callback<ResponseBody>() {
@@ -757,8 +771,10 @@ public class BookActivity extends AppCompatActivity {
                                 data.putExtras(bundle);
                                 setResult(BOOK_PROCESS_CHANGED_RESULT_CODE, data);
 
-                                if (SessionManager.getCurrentUser(getApplicationContext()).getID() == interaction.getBook().getOwner().getID()){
-                                    mBookDetails.getBook().setOwner(SessionManager.getCurrentUser(getApplicationContext()));
+                                User currentUser = SessionManager.getCurrentUser(BookActivity.this);
+
+                                if (interaction.getBook().getOwner().equals(currentUser)){
+                                    mBookDetails.getBook().setOwner(currentUser);
                                     if (interaction.getInteractionType() == Book.InteractionType.CLOSE_TO_SHARE){
                                         mBook.setState(Book.State.CLOSED_TO_SHARE);
                                         mBookDetails.getBook().setState(Book.State.CLOSED_TO_SHARE);
@@ -824,8 +840,11 @@ public class BookActivity extends AppCompatActivity {
         comfortableProgressDialog.show();
 
         final BookApi bookApi = BookieClient.getClient().create(BookApi.class);
-        String email = SessionManager.getCurrentUserDetails(this).getEmail();
-        String password = SessionManager.getCurrentUserDetails(this).getPassword();
+
+        User.Details currentUserDetails = SessionManager.getCurrentUserDetails(this);
+
+        String email = currentUserDetails.getEmail();
+        String password = currentUserDetails.getPassword();
         Call<ResponseBody> addBookRequest = bookApi.addBookRequests(email, password, request.getBook().getID(), request.getFromUser().getID(), request.getToUser().getID(), request.getRequestType().getRequestCode());
 
         addBookRequest.enqueue(new Callback<ResponseBody>() {

@@ -75,11 +75,12 @@ public class Message implements Parcelable, Comparable<Message> {
     }
 
     public User getOppositeUser(User currentUser) {
-
-        if (currentUser.getID() != mSender.getID()) {
+        if (currentUser.equals(mReceiver)) {
             return mSender;
-        } else {
+        } else if (currentUser.equals(mSender)){
             return mReceiver;
+        } else {
+            throw new IllegalArgumentException("Invalid current user: " + currentUser);
         }
     }
 
@@ -202,8 +203,8 @@ public class Message implements Parcelable, Comparable<Message> {
 
             if (otherMessage.mID < 0 || this.mID < 0) {
                 return
-                    otherMessage.mSender.getID() == this.mSender.getID() &&
-                    otherMessage.mReceiver.getID() == this.mReceiver.getID() &&
+                    otherMessage.mSender.equals(this.mSender) &&
+                    otherMessage.mReceiver.equals(this.mReceiver) &&
                     otherMessage.mText.equals(this.mText) &&
                     otherMessage.mCreatedAt.getTimeInMillis() == this.mCreatedAt.getTimeInMillis();
             } else {

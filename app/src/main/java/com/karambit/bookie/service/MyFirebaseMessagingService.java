@@ -95,11 +95,11 @@ public class MyFirebaseMessagingService extends com.google.firebase.messaging.Fi
                             JSONObject jsonObject = new JSONObject(remoteMessage.getData().get("sender"));
                             User sender = User.jsonObjectToUser(jsonObject);
                             Message message = new Message(Integer.parseInt(remoteMessage.getData().get("messageID")),
-                                    remoteMessage.getData().get("message"),
-                                    sender,
-                                    SessionManager.getCurrentUser(getApplicationContext()),
-                                    Calendar.getInstance(),
-                                    Message.State.DELIVERED);
+                                                          remoteMessage.getData().get("message"),
+                                                          sender,
+                                                          SessionManager.getCurrentUser(this),
+                                                          Calendar.getInstance(),
+                                                          Message.State.DELIVERED);
 
                             if (ConversationActivity.currentConversationUserId != message.getSender().getID()){
                                 sendMessageNotification(message);
@@ -369,8 +369,11 @@ public class MyFirebaseMessagingService extends com.google.firebase.messaging.Fi
 
     private void uploadMessageDeliveredStateToServer(final int messageId) {
         final FcmApi fcmApi = BookieClient.getClient().create(FcmApi.class);
-        String email = SessionManager.getCurrentUserDetails(getApplicationContext()).getEmail();
-        String password = SessionManager.getCurrentUserDetails(getApplicationContext()).getPassword();
+
+        User.Details currentUserDetails = SessionManager.getCurrentUserDetails(this);
+
+        String email = currentUserDetails.getEmail();
+        String password = currentUserDetails.getPassword();
         final Call<ResponseBody> uploadMessageState = fcmApi.uploadMessageState(email, password, messageId, Message.State.DELIVERED.ordinal());
 
         uploadMessageState.enqueue(new Callback<ResponseBody>() {

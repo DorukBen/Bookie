@@ -79,13 +79,12 @@ public class MainActivity extends AppCompatActivity implements TabHost.OnTabChan
     private float[] mElevations;
 
     private View mIndicator;
-    private MenuItem mProfilePageMenuItem;
-    private MenuItem mNotificationMenuItem;
     private DoubleTapHomeButtonListener mDoubleTapHomeButtonListener;
     private ArrayList<TouchEventListener> mTouchEventListeners = new ArrayList<>();
     private ArrayList<Integer> mIndexOfListenersWillBeDeleted = new ArrayList<>();
     private boolean mIsBackPressed = false;
     private BroadcastReceiver mMessageReceiver;
+    private Menu mMenu;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -141,27 +140,25 @@ public class MainActivity extends AppCompatActivity implements TabHost.OnTabChan
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
+        mMenu = menu;
+        setNotificationMenuItemValue();
+        return super.onCreateOptionsMenu(menu);
+    }
+
+    @Override
+    public boolean onPrepareOptionsMenu(Menu menu) {
         MenuInflater inflater = getMenuInflater();
-        inflater.inflate(R.menu.main_menu, menu);
 
-        mProfilePageMenuItem = menu.findItem(R.id.action_more);
-        mNotificationMenuItem = menu.findItem(R.id.action_notification);
+        int currentPage = mViewPager.getCurrentItem();
 
-        if (mViewPager.getCurrentItem() == 3){
-            mProfilePageMenuItem.setVisible(true);
-        }else{
-            mProfilePageMenuItem.setVisible(false);
+        if (currentPage == 0){
+            inflater.inflate(R.menu.home_menu, menu);
+        } else if (currentPage == 2){
+            inflater.inflate(R.menu.current_user_menu, menu);
         }
-
-        if (mViewPager.getCurrentItem() == 0){
-            mNotificationMenuItem.setVisible(true);
-        }else{
-            mNotificationMenuItem.setVisible(false);
-        }
-
         setNotificationMenuItemValue();
 
-        return super.onCreateOptionsMenu(menu);
+        return super.onPrepareOptionsMenu(menu);
     }
 
     /**
@@ -258,12 +255,6 @@ public class MainActivity extends AppCompatActivity implements TabHost.OnTabChan
                 mViewPager.setCurrentItem(pos);
             }
 
-            if (pos == 0){
-                mNotificationMenuItem.setVisible(true);
-            }else{
-                mNotificationMenuItem.setVisible(false);
-            }
-
             if (pos == 1) {
                 mActionBar.setShowHideAnimationEnabled(false);
                 mActionBar.hide();
@@ -272,13 +263,9 @@ public class MainActivity extends AppCompatActivity implements TabHost.OnTabChan
                 mActionBar.show();
             }
 
-            if (pos == 3){
-                mProfilePageMenuItem.setVisible(true);
-            }else{
-                mProfilePageMenuItem.setVisible(false);
-            }
-
             mActionBar.setElevation(mElevations[pos]);
+
+            invalidateOptionsMenu();
 
         }else {
             mIndicator.setSelected(false);
@@ -320,7 +307,7 @@ public class MainActivity extends AppCompatActivity implements TabHost.OnTabChan
             case REQUEST_CODE_CURRENT_USER_PROFILE_SETTINGS_ACTIVITY:
                 if (resultCode == CurrentUserProfileSettingsActivity.RESULT_USER_LOGOUT){
                     //Using SessionManager here to use startActivityForResult() on MainActivity
-                    SessionManager.logout(getApplicationContext());
+                    SessionManager.logout(this);
                     startActivityForResult(new Intent(this, LoginRegisterActivity.class), REQUEST_CODE_LOGIN_REGISTER_ACTIVITY);
 
                 } else if (resultCode == CurrentUserProfileSettingsActivity.RESULT_USER_UPDATED) {
@@ -432,42 +419,47 @@ public class MainActivity extends AppCompatActivity implements TabHost.OnTabChan
     private void setNotificationMenuItemValue() {
         DBHandler dbHandler = DBHandler.getInstance(this);
         int notificationCount = dbHandler.getUnseenNotificationCount();
-        Log.d("hele"," " + notificationCount);
-        if (mNotificationMenuItem != null){
-            switch (notificationCount){
-                case 0:
-                    mNotificationMenuItem.setIcon(ContextCompat.getDrawable(MainActivity.this ,R.drawable.main_notification));
-                    break;
-                case 1:
-                    mNotificationMenuItem.setIcon(ContextCompat.getDrawable(MainActivity.this ,R.drawable.main_notification_1));
-                    break;
-                case 2:
-                    mNotificationMenuItem.setIcon(ContextCompat.getDrawable(MainActivity.this ,R.drawable.main_notification_2));
-                    break;
-                case 3:
-                    mNotificationMenuItem.setIcon(ContextCompat.getDrawable(MainActivity.this ,R.drawable.main_notification_3));
-                    break;
-                case 4:
-                    mNotificationMenuItem.setIcon(ContextCompat.getDrawable(MainActivity.this ,R.drawable.main_notification_4));
-                    break;
-                case 5:
-                    mNotificationMenuItem.setIcon(ContextCompat.getDrawable(MainActivity.this ,R.drawable.main_notification_5));
-                    break;
-                case 6:
-                    mNotificationMenuItem.setIcon(ContextCompat.getDrawable(MainActivity.this ,R.drawable.main_notification_6));
-                    break;
-                case 7:
-                    mNotificationMenuItem.setIcon(ContextCompat.getDrawable(MainActivity.this ,R.drawable.main_notification_7));
-                    break;
-                case 8:
-                    mNotificationMenuItem.setIcon(ContextCompat.getDrawable(MainActivity.this ,R.drawable.main_notification_8));
-                    break;
-                case 9:
-                    mNotificationMenuItem.setIcon(ContextCompat.getDrawable(MainActivity.this ,R.drawable.main_notification_9));
-                    break;
-                default:
-                    mNotificationMenuItem.setIcon(ContextCompat.getDrawable(MainActivity.this ,R.drawable.main_notification_9plus));
-                    break;
+
+        if (mMenu.hasVisibleItems()) {
+
+            MenuItem notificationItem = mMenu.findItem(R.id.action_notification);
+
+            if (notificationItem != null) {
+                switch (notificationCount) {
+                    case 0:
+                        notificationItem.setIcon(ContextCompat.getDrawable(MainActivity.this, R.drawable.main_notification));
+                        break;
+                    case 1:
+                        notificationItem.setIcon(ContextCompat.getDrawable(MainActivity.this, R.drawable.main_notification_1));
+                        break;
+                    case 2:
+                        notificationItem.setIcon(ContextCompat.getDrawable(MainActivity.this, R.drawable.main_notification_2));
+                        break;
+                    case 3:
+                        notificationItem.setIcon(ContextCompat.getDrawable(MainActivity.this, R.drawable.main_notification_3));
+                        break;
+                    case 4:
+                        notificationItem.setIcon(ContextCompat.getDrawable(MainActivity.this, R.drawable.main_notification_4));
+                        break;
+                    case 5:
+                        notificationItem.setIcon(ContextCompat.getDrawable(MainActivity.this, R.drawable.main_notification_5));
+                        break;
+                    case 6:
+                        notificationItem.setIcon(ContextCompat.getDrawable(MainActivity.this, R.drawable.main_notification_6));
+                        break;
+                    case 7:
+                        notificationItem.setIcon(ContextCompat.getDrawable(MainActivity.this, R.drawable.main_notification_7));
+                        break;
+                    case 8:
+                        notificationItem.setIcon(ContextCompat.getDrawable(MainActivity.this, R.drawable.main_notification_8));
+                        break;
+                    case 9:
+                        notificationItem.setIcon(ContextCompat.getDrawable(MainActivity.this, R.drawable.main_notification_9));
+                        break;
+                    default:
+                        notificationItem.setIcon(ContextCompat.getDrawable(MainActivity.this, R.drawable.main_notification_9plus));
+                        break;
+                }
             }
         }
     }
@@ -512,8 +504,11 @@ public class MainActivity extends AppCompatActivity implements TabHost.OnTabChan
 
     private void sendRegistrationToServer(final String token) {
         final FcmApi fcmApi = BookieClient.getClient().create(FcmApi.class);
-        String email = SessionManager.getCurrentUserDetails(getApplicationContext()).getEmail();
-        String password = SessionManager.getCurrentUserDetails(getApplicationContext()).getPassword();
+
+        User.Details currentUserDetails = SessionManager.getCurrentUserDetails(this);
+
+        String email = currentUserDetails.getEmail();
+        String password = currentUserDetails.getPassword();
         Call<ResponseBody> sendTokenToServer = fcmApi.sendFcmTokenToServer(email, password, token);
 
         sendTokenToServer.enqueue(new Callback<ResponseBody>() {

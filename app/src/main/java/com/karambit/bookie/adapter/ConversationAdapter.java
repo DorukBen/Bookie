@@ -106,7 +106,7 @@ public class ConversationAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
         Message message = mMessages.get(position);
         User currentUser = SessionManager.getCurrentUser(mContext);
 
-        if (message.getSender().getID() == currentUser.getID()) {
+        if (message.getSender().equals(currentUser)) {
             return TYPE_CURRENT_USER;
         } else {
             return TYPE_OPPOSITE_USER;

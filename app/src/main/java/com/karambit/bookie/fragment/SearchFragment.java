@@ -161,8 +161,11 @@ public class SearchFragment extends Fragment {
 
     private void getSearchResults(final String searchString) {
         final SearchApi searchApi = BookieClient.getClient().create(SearchApi.class);
-        String email = SessionManager.getCurrentUserDetails(getContext()).getEmail();
-        String password = SessionManager.getCurrentUserDetails(getContext()).getPassword();
+
+        User.Details currentUserDetails = SessionManager.getCurrentUserDetails(getContext());
+
+        String email = currentUserDetails.getEmail();
+        String password = currentUserDetails.getPassword();
         Call<ResponseBody> searchResults = searchApi.getSearchResults(email, password, searchString, mFetchGenreCode, mFetchSearchButtonPressed);
 
         searchResults.enqueue(new Callback<ResponseBody>() {

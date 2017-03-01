@@ -137,9 +137,6 @@ public class DBHandler extends SQLiteOpenHelper {
 
     private final Context mContext;
 
-    // TODO Draconian synchronization (Synchronized singleton) {@see http://stackoverflow.com/a/11165926}
-    // TODO getApplicationContext() in constructor
-
     private DBHandler(Context context) {
         super(context, DATABASE_NAME, null, 1);
         mContext = context.getApplicationContext();
@@ -516,7 +513,7 @@ public class DBHandler extends SQLiteOpenHelper {
             cv.put(USER_COLUMN_LONGITUDE, longitude);
 
             // getCurrentUser in this class fetch user from database. getCurrentUser in SessionManager fetch user from static User field
-            db.update(USER_TABLE_NAME, cv, USER_COLUMN_ID + "=" + SessionManager.getCurrentUser(mContext.getApplicationContext()).getID(), null);
+            db.update(USER_TABLE_NAME, cv, USER_COLUMN_ID + "=" + SessionManager.getCurrentUser(mContext).getID(), null);
         }finally {
             if (db != null && db.isOpen()) {
                 db.setTransactionSuccessful();
@@ -814,8 +811,11 @@ public class DBHandler extends SQLiteOpenHelper {
      * @return boolean value if insertion successful returns true else returns false.
      */
     public boolean saveMessageToDataBase(Message message){
-        if (!isMessageUserExists(message.getOppositeUser(SessionManager.getCurrentUser(mContext)))){
-            insertMessageUser(message.getOppositeUser(SessionManager.getCurrentUser(mContext)));
+
+        User currentUser = SessionManager.getCurrentUser(mContext);
+
+        if (!isMessageUserExists(message.getOppositeUser(currentUser))){
+            insertMessageUser(message.getOppositeUser(currentUser));
         }
         return insertMessage(message);
     }
@@ -989,7 +989,7 @@ public class DBHandler extends SQLiteOpenHelper {
                     calendar.setTimeInMillis(time);
 
                     Message message;
-                    if (res.getInt(res.getColumnIndex(MESSAGE_COLUMN_FROM_USER_ID)) == SessionManager.getCurrentUser(mContext.getApplicationContext()).getID()) {
+                    if (res.getInt(res.getColumnIndex(MESSAGE_COLUMN_FROM_USER_ID)) == currentUser.getID()) {
                         message = new Message(res.getInt(res.getColumnIndex(MESSAGE_COLUMN_ID)),
                                               res.getString(res.getColumnIndex(MESSAGE_COLUMN_TEXT)),
                                               currentUser,
@@ -1053,7 +1053,7 @@ public class DBHandler extends SQLiteOpenHelper {
                 calendar.setTimeInMillis(time);
 
 
-                if (res.getInt(res.getColumnIndex(MESSAGE_COLUMN_FROM_USER_ID)) == SessionManager.getCurrentUser(mContext.getApplicationContext()).getID()){
+                if (res.getInt(res.getColumnIndex(MESSAGE_COLUMN_FROM_USER_ID)) == currentUser.getID()){
                     message = new Message(res.getInt(res.getColumnIndex(MESSAGE_COLUMN_ID)),
                             res.getString(res.getColumnIndex(MESSAGE_COLUMN_TEXT)),
                             currentUser,
@@ -1201,7 +1201,7 @@ public class DBHandler extends SQLiteOpenHelper {
             db = this.getReadableDatabase();
             db.beginTransaction();
             res = db.rawQuery("SELECT COUNT(*) AS " + queryVariableString + " FROM " + MESSAGE_TABLE_NAME +
-                    " WHERE " + MESSAGE_COLUMN_FROM_USER_ID + " <> " + SessionManager.getCurrentUser(mContext.getApplicationContext()) +
+                    " WHERE " + MESSAGE_COLUMN_FROM_USER_ID + " <> " + SessionManager.getCurrentUser(mContext) +
                     " AND " + MESSAGE_COLUMN_STATE + " = " + Message.State.DELIVERED.ordinal(), null);
             res.moveToFirst();
 

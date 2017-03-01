@@ -34,6 +34,7 @@ import com.karambit.bookie.helper.NetworkChecker;
 import com.karambit.bookie.helper.SessionManager;
 import com.karambit.bookie.helper.TypefaceSpan;
 import com.karambit.bookie.model.Book;
+import com.karambit.bookie.model.User;
 
 public class BookSettingsActivity extends AppCompatActivity {
 
@@ -92,7 +93,9 @@ public class BookSettingsActivity extends AppCompatActivity {
 
         if (NetworkChecker.isNetworkAvailable(this)) {
 
-            if (mIsAdder && mBook.getOwner().getID() == SessionManager.getCurrentUser(this).getID()) {
+            User currentUser = SessionManager.getCurrentUser(this);
+
+            if (mIsAdder && mBook.getOwner().equals(currentUser)) {
                 findViewById(R.id.bookEditContainer).setVisibility(View.VISIBLE);
 
                 mBookNameEditText = (EditText) findViewById(R.id.bookNameEditText);
@@ -260,7 +263,7 @@ public class BookSettingsActivity extends AppCompatActivity {
 
             RadioButton tooDamaged = (RadioButton) findViewById(R.id.reportBookTooDamaged);
 
-            if (mBook.getOwner().getID() == SessionManager.getCurrentUser(this).getID()) {
+            if (mBook.getOwner().equals(currentUser)) {
                 tooDamaged.setVisibility(View.VISIBLE);
             } else {
                 tooDamaged.setVisibility(View.GONE);
@@ -292,7 +295,7 @@ public class BookSettingsActivity extends AppCompatActivity {
 
             View lostContainer = findViewById(R.id.lostContainer);
 
-            if (mBook.getOwner().getID() == SessionManager.getCurrentUser(this).getID()) {
+            if (mBook.getOwner().equals(currentUser)) {
                 lostContainer.setVisibility(View.VISIBLE);
                 Button lostButton = (Button) findViewById(R.id.lostButton);
                 lostButton.setOnClickListener(new View.OnClickListener() {

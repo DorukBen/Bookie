@@ -38,6 +38,7 @@ import com.karambit.bookie.helper.SessionManager;
 import com.karambit.bookie.helper.TypefaceSpan;
 import com.karambit.bookie.helper.UploadFileTask;
 import com.karambit.bookie.model.Book;
+import com.karambit.bookie.model.User;
 import com.karambit.bookie.rest_api.BookieClient;
 
 import java.io.File;
@@ -282,15 +283,17 @@ public class AddBookActivity extends AppCompatActivity {
         String path = mSavedBookImageFile.getPath();
         String name = mSavedBookImageFile.getName();
 
-        bookName.trim();
-        author.trim();
+        bookName = bookName.trim();
+        author = author.trim();
         bookName = upperCaseString(bookName);
         author = upperCaseString(author);
         bookName = bookName.replace(" ","_");
         author = author.replace(" ","_");
 
-        String serverArgsString = "?email=" + SessionManager.getCurrentUserDetails(getApplicationContext()).getEmail()
-                + "&password=" + SessionManager.getCurrentUserDetails(getApplicationContext()).getPassword()
+        User.Details currentUserDetails = SessionManager.getCurrentUserDetails(this);
+
+        String serverArgsString = "?email=" + currentUserDetails.getEmail()
+                + "&password=" + currentUserDetails.getPassword()
                 + "&imageName=" + name
                 + "&bookName=" + bookName
                 + "&author=" + author

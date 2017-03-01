@@ -307,13 +307,15 @@ public class ConversationActivity extends AppCompatActivity {
             notificationManager.cancel(getString(R.string.app_name), MyFirebaseMessagingService.MESSAGE_NOTIFICATION_ID);
         }
 
+        final User currentUser = SessionManager.getCurrentUser(this);
+
         mMessageReceiver = new BroadcastReceiver() {
             @Override
             public void onReceive(Context context, Intent intent) {
                 if (intent.getAction().equalsIgnoreCase("com.karambit.bookie.MESSAGE_RECEIVED")){
                     if (intent.getParcelableExtra("message") != null){
                         Message message = intent.getParcelableExtra("message");
-                        if(message.getOppositeUser(SessionManager.getCurrentUser(getApplicationContext())).getID() == mOppositeUser.getID()){
+                        if(message.getOppositeUser(currentUser).equals(mOppositeUser)){
                             insertMessage(message);
 
                             fetchSeenMessages();
@@ -328,7 +330,10 @@ public class ConversationActivity extends AppCompatActivity {
                         Message changedMessage = changeMessageState(intent.getIntExtra("message_id",-1), Message.State.SEEN);
                         if (changedMessage != null){
                             for (Message message: mMessages){
-                                if (message.getSender().getID() == SessionManager.getCurrentUser(getApplicationContext()).getID() && message.getState() == Message.State.DELIVERED && message.getCreatedAt().getTimeInMillis() <= changedMessage.getCreatedAt().getTimeInMillis()){
+
+                                if (message.getSender().equals(currentUser) && message.getState() == Message.State.DELIVERED &&
+                                    message.getCreatedAt().getTimeInMillis() <= changedMessage.getCreatedAt().getTimeInMillis()){
+
                                     changeMessageState(message.getID(), Message.State.SEEN);
                                 }
                             }
@@ -346,8 +351,11 @@ public class ConversationActivity extends AppCompatActivity {
     }
 
     private void fetchSeenMessages() {
+
+        User currentUser = SessionManager.getCurrentUser(this);
+
         for (Message message: mMessages){
-            if (message.getReceiver().getID() == SessionManager.getCurrentUser(getApplicationContext()).getID() && message.getState() != Message.State.SEEN){
+            if (message.getReceiver().equals(currentUser) && message.getState() != Message.State.SEEN){
                 changeMessageState(message.getID(), Message.State.SEEN);
             }
         }
@@ -376,7 +384,7 @@ public class ConversationActivity extends AppCompatActivity {
         mConversationAdapter.notifyItemInserted(0);
 
         User currentUser = SessionManager.getCurrentUser(this);
-        if (newMessage.getSender().getID() == currentUser.getID()) {
+        if (newMessage.getSender().equals(currentUser)) {
             mRecyclerView.smoothScrollToPosition(0);
         } else {
             LinearLayoutManager layoutManager = (LinearLayoutManager) mRecyclerView.getLayoutManager();
@@ -621,8 +629,11 @@ public class ConversationActivity extends AppCompatActivity {
 
     private void sendMessageToServer(final Message message) {
         final FcmApi fcmApi = BookieClient.getClient().create(FcmApi.class);
-        String email = SessionManager.getCurrentUserDetails(getApplicationContext()).getEmail();
-        String password = SessionManager.getCurrentUserDetails(getApplicationContext()).getPassword();
+
+        User.Details currentUserDetails = SessionManager.getCurrentUserDetails(this);
+
+        String email = currentUserDetails.getEmail();
+        String password = currentUserDetails.getPassword();
         Call<ResponseBody> sendMessage = fcmApi.sendMessage(email, password, message.getText(), message.getReceiver().getID(), message.getID());
 
         sendMessage.enqueue(new Callback<ResponseBody>() {
@@ -684,8 +695,11 @@ public class ConversationActivity extends AppCompatActivity {
 
     private void uploadMessageStateToServer(final Message message) {
         final FcmApi fcmApi = BookieClient.getClient().create(FcmApi.class);
-        String email = SessionManager.getCurrentUserDetails(getApplicationContext()).getEmail();
-        String password = SessionManager.getCurrentUserDetails(getApplicationContext()).getPassword();
+
+        User.Details currentUserDetails = SessionManager.getCurrentUserDetails(this);
+
+        String email = currentUserDetails.getEmail();
+        String password = currentUserDetails.getPassword();
         final Call<ResponseBody> uploadMessageState = fcmApi.uploadMessageState(email, password, message.getID(), message.getState().ordinal());
 
         uploadMessageState.enqueue(new Callback<ResponseBody>() {
