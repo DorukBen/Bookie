@@ -171,13 +171,6 @@ public class ProfileFragment extends Fragment {
 
         mPullRefreshLayout.setRefreshing(true);
         fetchProfilePageArguments();
-        return rootView;
-    }
-
-    @Override
-    public void onResume() {
-        super.onResume();
-
 
         mMessageReceiver = new BroadcastReceiver() {
             @Override
@@ -210,11 +203,12 @@ public class ProfileFragment extends Fragment {
         getContext().registerReceiver(mMessageReceiver, new IntentFilter("com.karambit.bookie.REJECTED_REQUEST_RECEIVED"));
         getContext().registerReceiver(mMessageReceiver, new IntentFilter("com.karambit.bookie.ACCEPTED_REQUEST_RECEIVED"));
         getContext().registerReceiver(mMessageReceiver, new IntentFilter("com.karambit.bookie.BOOK_OWNER_CHANGED_DATA_RECEIVED"));
+        return rootView;
     }
 
     @Override
-    public void onPause() {
-        super.onPause();
+    public void onDestroyView() {
+        super.onDestroyView();
 
         getContext().unregisterReceiver(mMessageReceiver);
     }
