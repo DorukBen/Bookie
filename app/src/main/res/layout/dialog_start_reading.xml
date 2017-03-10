@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+              android:layout_width="match_parent"
+              android:layout_height="wrap_content"
+              android:orientation="vertical"
+              android:paddingBottom="16dp"
+              android:paddingLeft="32dp"
+              android:paddingRight="32dp"
+              android:paddingTop="16dp">
+
+    <Button
+        android:id="@+id/addYourBook"
+        style="@style/Widget.AppCompat.ActionButton"
+        android:layout_width="match_parent"
+        android:layout_height="72dp"
+        android:gravity="center"
+        android:text="@string/add_book"
+        android:textColor="@color/primaryTextColor"
+        android:textSize="16sp"/>
+
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:layout_gravity="center"
+        android:background="@color/secondaryTextColor"/>
+
+    <Button
+        android:id="@+id/searchYourBook"
+        style="@style/Widget.AppCompat.ActionButton"
+        android:layout_width="match_parent"
+        android:layout_height="72dp"
+        android:gravity="center"
+        android:text="@string/search_book"
+        android:textColor="@color/primaryTextColor"
+        android:textSize="16sp"/>
+
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:layout_gravity="center"
+        android:background="@color/secondaryTextColor"/>
+
+    <Button
+        android:id="@+id/existingBook"
+        style="@style/Widget.AppCompat.ActionButton"
+        android:layout_width="match_parent"
+        android:layout_height="72dp"
+        android:gravity="center"
+        android:text="@string/existing_book"
+        android:textColor="@color/primaryTextColor"
+        android:textSize="16sp"/>
+
+</LinearLayout>

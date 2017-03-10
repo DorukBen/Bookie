@@ -7,7 +7,8 @@
     <color name="primaryTextColor">#455A64</color>
     <color name="secondaryTextColor">#78909C</color>
     <color name="transparent">#00000000</color>
-    <color name="colorAccentDark">#455A64</color>
+    <color name="colorAccentDark">#13ab7f</color>
+    <color name="tertiaryTextColor">#B0BEC5</color>
     <color name="colorPickImage">#78909C</color>
     <color name="progressBarColor">#546E7A</color>
 

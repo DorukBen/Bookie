@@ -562,6 +562,11 @@ public class MainActivity extends AppCompatActivity implements TabHost.OnTabChan
         });
     }
 
+    public void setCurrentPage(int index) {
+        mViewPager.setCurrentItem(index, true);
+        mTabHost.setCurrentTab(index < 2 ? index : index + 1);
+    }
+
     @Override
     public void onBackPressed() {
         if(!mIsBackPressed){

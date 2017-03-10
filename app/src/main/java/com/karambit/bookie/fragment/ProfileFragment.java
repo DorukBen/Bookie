@@ -7,13 +7,16 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
+import android.support.v7.app.AlertDialog;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Button;
 
+import com.karambit.bookie.AddBookActivity;
 import com.karambit.bookie.BookActivity;
 import com.karambit.bookie.MainActivity;
 import com.karambit.bookie.PhotoViewerActivity;
@@ -50,6 +53,8 @@ import static com.karambit.bookie.model.Book.State.OPENED_TO_SHARE;
  */
 public class ProfileFragment extends Fragment {
 
+    private static final int REQUEST_CODE_ADD_BOOK_ACTIVITY = 3;
+
     private static final int UPDATE_PROFILE_PICTURE_REQUEST_CODE = 1;
     private static final int UPDATE_BOOK_PROCESS_REQUEST_CODE = 2;
 
@@ -64,6 +69,7 @@ public class ProfileFragment extends Fragment {
     private PullRefreshLayout mPullRefreshLayout;
     private User.Details mUserDetails;
     private BroadcastReceiver mMessageReceiver;
+    private RecyclerView mProfileRecyclerView;
 
     public ProfileFragment() {
         // Required empty public constructor
@@ -99,8 +105,8 @@ public class ProfileFragment extends Fragment {
         // Inflate the layout for this fragment
         View rootView = inflater.inflate(R.layout.fragment_profile, container, false);
 
-        RecyclerView recyclerView = (RecyclerView) rootView.findViewById(R.id.profileRecyclerView);
-        recyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
+        mProfileRecyclerView = (RecyclerView) rootView.findViewById(R.id.profileRecyclerView);
+        mProfileRecyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
 
         User currentUser = SessionManager.getCurrentUser(getContext());
 
@@ -122,7 +128,54 @@ public class ProfileFragment extends Fragment {
         mProfileTimelineAdapter.setStartReadingClickListener(new ProfileTimelineAdapter.StartReadingClickListener() {
             @Override
             public void onStartReadingClick(User.Details userDetails) {
-                // TODO Start Reading Button
+
+                AlertDialog.Builder builder = new AlertDialog.Builder(getContext());
+                View dialogView = getActivity().getLayoutInflater().inflate(R.layout.dialog_start_reading, null);
+                builder.setView(dialogView);
+                final AlertDialog startReadingDialog = builder.create();
+
+                Button addBookButton = (Button) dialogView.findViewById(R.id.addYourBook);
+                Button searchBookButton = (Button) dialogView.findViewById(R.id.searchYourBook);
+                Button existingBook = (Button) dialogView.findViewById(R.id.existingBook);
+
+                addBookButton.setOnClickListener(new View.OnClickListener() {
+                    @Override
+                    public void onClick(View v) {
+                        startReadingDialog.dismiss();
+                        startActivityForResult(new Intent(getActivity(), AddBookActivity.class), REQUEST_CODE_ADD_BOOK_ACTIVITY);
+                    }
+                });
+
+                searchBookButton.setOnClickListener(new View.OnClickListener() {
+                    @Override
+                    public void onClick(View v) {
+                        startReadingDialog.dismiss();
+                        ((MainActivity) getActivity()).setCurrentPage(1);
+                    }
+                });
+
+                if (mUserDetails.getBooksOnHandCount() > 0) {
+
+                    existingBook.setVisibility(View.VISIBLE);
+
+                    existingBook.setOnClickListener(new View.OnClickListener() {
+                        @Override
+                        public void onClick(View v) {
+                            startReadingDialog.dismiss();
+
+                            int firstBookOnHandIndex = mProfileTimelineAdapter.getFirstBookOnHandIndex();
+                            LinearLayoutManager layoutManager = (LinearLayoutManager) mProfileRecyclerView.getLayoutManager();
+
+                            // scrollToPositionWithOffset() is scrolling to position and aligns item to top unlike other scroll methods
+                            layoutManager.scrollToPositionWithOffset(firstBookOnHandIndex - 1, 0);
+                        }
+                    });
+
+                } else {
+                    existingBook.setVisibility(View.GONE);
+                }
+
+                startReadingDialog.show();
             }
         });
 
@@ -145,12 +198,12 @@ public class ProfileFragment extends Fragment {
 
         mProfileTimelineAdapter.setHasStableIds(true);
 
-        recyclerView.setAdapter(mProfileTimelineAdapter);
+        mProfileRecyclerView.setAdapter(mProfileTimelineAdapter);
 
         if (mUser.equals(currentUser)){
-            recyclerView.setOnScrollListener(new ElevationScrollListener((MainActivity) getActivity(), PROFILE_FRAGMENT_TAB_INEX));
+            mProfileRecyclerView.setOnScrollListener(new ElevationScrollListener((MainActivity) getActivity(), PROFILE_FRAGMENT_TAB_INEX));
         }else{
-            recyclerView.setOnScrollListener(new ElevationScrollListener((ProfileActivity) getActivity()));
+            mProfileRecyclerView.setOnScrollListener(new ElevationScrollListener((ProfileActivity) getActivity()));
         }
 
         mPullRefreshLayout = (PullRefreshLayout) rootView.findViewById(R.id.swipeRefreshLayout);
@@ -165,9 +218,9 @@ public class ProfileFragment extends Fragment {
         });
 
         //For improving recyclerviews performance
-        recyclerView.setItemViewCacheSize(20);
-        recyclerView.setDrawingCacheEnabled(true);
-        recyclerView.setDrawingCacheQuality(View.DRAWING_CACHE_QUALITY_HIGH);
+        mProfileRecyclerView.setItemViewCacheSize(20);
+        mProfileRecyclerView.setDrawingCacheEnabled(true);
+        mProfileRecyclerView.setDrawingCacheQuality(View.DRAWING_CACHE_QUALITY_HIGH);
 
         mPullRefreshLayout.setRefreshing(true);
         fetchProfilePageArguments();
@@ -440,6 +493,8 @@ public class ProfileFragment extends Fragment {
                     mProfileTimelineAdapter.setUserDetails(mUserDetails);
                 }
             }
+        } else if (resultCode == AddBookActivity.RESULT_BOOK_CREATED) {
+            refreshProfilePage();
         }
     }
 }
