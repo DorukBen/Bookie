@@ -1039,6 +1039,10 @@ public class ProfileTimelineAdapter extends RecyclerView.Adapter<RecyclerView.Vi
         return offset + mUserDetails.getOnRoadBooksCount() + mUserDetails.getBooksOnHandCount();
     }
 
+    public int getFirstBookOnHandIndex() {
+        return calculateBooksOnHandOffset();
+    }
+
     public User.Details getUserDetails() {
         return mUserDetails;
     }
