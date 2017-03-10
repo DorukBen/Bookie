@@ -249,4 +249,6 @@
     <string name="search_history">Search History</string>
     <string name="message_notification">message_notification</string>
     <string name="notification">notification</string>
+    <string name="thanks_for_feedback">Thanks for your feedback!!</string>
+    <string name="password_changed">Password Changed Successfully</string>
 </resources>
