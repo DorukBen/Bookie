@@ -96,6 +96,8 @@ public class RequestActivity extends AppCompatActivity {
 
             float elevation = getResources().getDimension(R.dimen.actionbar_starting_elevation);
             actionBar.setElevation(elevation);
+            actionBar.setHomeAsUpIndicator(R.drawable.ic_arrow_back_primary_text_color);
+            actionBar.setElevation(0);
         }
 
         mBook = getIntent().getParcelableExtra(EXTRA_BOOK);

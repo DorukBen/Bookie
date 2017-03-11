@@ -97,7 +97,7 @@ public class BookSettingsActivity extends AppCompatActivity {
             actionBar.setTitle(s);
 
             actionBar.setDisplayHomeAsUpEnabled(true);
-            actionBar.setHomeAsUpIndicator(R.drawable.ic_messaging_cancel_selection);
+            actionBar.setHomeAsUpIndicator(R.drawable.ic_arrow_back_primary_text_color);
         }
 
         final ScrollView scrollView = (ScrollView) findViewById(R.id.settingsScrollView);

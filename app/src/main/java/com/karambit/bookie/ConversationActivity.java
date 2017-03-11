@@ -488,7 +488,7 @@ public class ConversationActivity extends AppCompatActivity {
             setActionBarTitle(selectedTitle);
 
             actionBar.setDisplayHomeAsUpEnabled(true);
-            actionBar.setHomeAsUpIndicator(R.drawable.ic_messaging_cancel_selection);
+            actionBar.setHomeAsUpIndicator(R.drawable.ic_arrow_back_primary_text_color);
 
             mDeleteMenuItem.setVisible(true);
 
