@@ -241,7 +241,7 @@
     <string name="report_hint_book_additional_info">Tell us anything about your problem…</string>
     <string name="report_hint_book_other">Tell us what\'s wrong with %s…</string>
     <string name="lost_prompt">%s lost?</string>
-    <string name="send_request_to_x">Are you sure? You are sending request to %s.</string>
+    <string name="send_request_to_x">Send request to %s?</string>
     <string name="requested_button">Requested</string>
     <string name="on_road_books">On Road Books</string>
     <string name="action_message">Message</string>
@@ -250,4 +250,12 @@
     <string name="add_book">Add your favorite book to Mantreads!</string>
     <string name="search_book">Search your most wanted book!</string>
     <string name="existing_book">Select a book that exists in your profile!</string>
+    <string name="feedback_info">Our team always consider your ideas and our developer team makes the dreamwork. Keep sharing your thoughts and complaints. Thanks in advance!</string>
+    <string name="transactions">Transactions</string>
+    <string name="who_are_we">Who are we?</string>
+    <string name="info">Info</string>
+    <string name="request_info">Book requests are required for book transactions in Mantreads. In the app, your book request limit is your given book count minus taken book count by you plus one. You can request any book from its owner unless its state is opened to share, on road or lost.\n\nYou will be notified for your rejection or acception.</string>
+    <string name="transaction_info">If your book has requested, you can accept any users request who have requested your book. Before accepting a request, always communicate with the other user and consider the users point, location and info.\n\nIf you accept one of request for your book, you have to send the book to requester. So both of you agree with transportation and transaction. Keep in mind that if you accept a request, all the other requests rejected automatically.\n\nWhen you get the book you must notify the app by \"Arrived\" button in the books page.\n\nIf the book stayed on road more than 2 weeks, the book will be marked as lost and transaction supposed to be failed.</string>
+    <string name="point_info">Book point is key element of trustworthiness across the whole app. Your point changes depends on your actions.\n\nAdding book is 2 points\nFinishing a book is 1 point\nGiving a book successfully is 5 points\nGetting a book is 3 points\n\nIf you lost a book you will lose 20 points\nIf your book lost while it is on road. Both of transaction users will lose 20 points.</string>
+    <string name="credit_info">We are a group of developers who want to make the world better. With Mantreads our goal is getting closer to us. Each of shared book is prevents the book waste and saves one more tree.\n\nThank you for helping us, helping the world…</string>
 </resources>

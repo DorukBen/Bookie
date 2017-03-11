@@ -82,7 +82,7 @@ public class RequestActivity extends AppCompatActivity {
         if (actionBar != null) {
             actionBar.setTitle(R.string.request_activity_title);
             actionBar.setDisplayHomeAsUpEnabled(true);
-            actionBar.setHomeAsUpIndicator(R.drawable.ic_messaging_cancel_selection);
+            actionBar.setHomeAsUpIndicator(R.drawable.ic_arrow_back_primary_text_color);
             actionBar.setElevation(0);
         }
 
