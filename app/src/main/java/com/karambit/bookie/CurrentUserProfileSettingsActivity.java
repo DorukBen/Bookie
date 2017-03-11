@@ -441,6 +441,7 @@ public class CurrentUserProfileSettingsActivity extends AppCompatActivity {
                                     User.Details userDetails = dbHandler.getCurrentUserDetails();
                                     dbHandler.deleteCurrentUser();
                                     userDetails.setPassword(responseObject.getString("newPassword"));
+                                    SessionManager.getCurrentUserDetails(CurrentUserProfileSettingsActivity.this).setPassword(responseObject.getString("newPassword"));
                                     dbHandler.insertCurrentUser(userDetails);
                                 }
 
