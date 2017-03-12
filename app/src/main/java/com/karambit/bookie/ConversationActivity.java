@@ -304,7 +304,8 @@ public class ConversationActivity extends AppCompatActivity {
             BookieFirebaseMessagingService.mNotificationUserIds.remove(currentConversationUserId);
 
             NotificationManager notificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
-            notificationManager.cancel(getString(R.string.app_name), BookieFirebaseMessagingService.MESSAGE_NOTIFICATION_ID);
+
+            notificationManager.cancel(getString(R.string.message_notification), BookieFirebaseMessagingService.MESSAGE_NOTIFICATION_ID);
         }
 
         final User currentUser = SessionManager.getCurrentUser(this);

@@ -252,4 +252,10 @@
     <string name="existing_book">Select a book that exists in your profile!</string>
     <string name="select_one_genre">Please select at least one genre</string>
     <string name="press_back_again">Press back again to exit…</string>
+    <string name="message_notification">message_notification</string>
+    <string name="notification">notification</string>
+    <string name="thanks_for_feedback">Thanks for your feedback!!</string>
+    <string name="password_changed">Password Changed Successfully</string>
+    <string name="thaks_for_your_report">Thanks for your  report!</string>
+    <string name="user_blocked">%s blocked!</string>
 </resources>

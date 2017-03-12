@@ -106,6 +106,11 @@ public class MainActivity extends AppCompatActivity implements TabHost.OnTabChan
             startActivity(new Intent(this, LovedGenresActivity.class));
         }else{
             initializeViewPager(getFragments(), mViewPager);
+
+            FcmPrefManager fcmPrefManager = new FcmPrefManager(MainActivity.this);
+            if (!fcmPrefManager.isUploadedToServer()){
+                sendRegistrationToServer(fcmPrefManager.getFcmToken());
+            }
         }
 
             //Changes action bar font style by getting font.ttf from assets/fonts action bars font style doesn't
@@ -124,6 +129,33 @@ public class MainActivity extends AppCompatActivity implements TabHost.OnTabChan
         }
 
         initializeTabHost(mTabHost);
+
+        mMessageReceiver = new BroadcastReceiver() {
+            @Override
+            public void onReceive(Context context, Intent intent) {
+                if (intent.getAction().equalsIgnoreCase(BookieIntentFilters.INTENT_FILTER_SENT_REQUEST_RECEIVED)){
+                    fetchNotificationMenuItemValue();
+                } else if (intent.getAction().equalsIgnoreCase(BookieIntentFilters.INTENT_FILTER_REJECTED_REQUEST_RECEIVED)){
+                    fetchNotificationMenuItemValue();
+                } else if (intent.getAction().equalsIgnoreCase(BookieIntentFilters.INTENT_FILTER_ACCEPTED_REQUEST_RECEIVED)){
+                    fetchNotificationMenuItemValue();
+                } else if (intent.getAction().equalsIgnoreCase(BookieIntentFilters.INTENT_FILTER_BOOK_OWNER_CHANGED_RECEIVED)){
+                    fetchNotificationMenuItemValue();
+                }
+            }
+        };
+
+        registerReceiver(mMessageReceiver, new IntentFilter(BookieIntentFilters.INTENT_FILTER_SENT_REQUEST_RECEIVED));
+        registerReceiver(mMessageReceiver, new IntentFilter(BookieIntentFilters.INTENT_FILTER_REJECTED_REQUEST_RECEIVED));
+        registerReceiver(mMessageReceiver, new IntentFilter(BookieIntentFilters.INTENT_FILTER_ACCEPTED_REQUEST_RECEIVED));
+        registerReceiver(mMessageReceiver, new IntentFilter(BookieIntentFilters.INTENT_FILTER_BOOK_OWNER_CHANGED_RECEIVED));
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+
+        unregisterReceiver(mMessageReceiver);
     }
 
     @Override
@@ -289,9 +321,8 @@ public class MainActivity extends AppCompatActivity implements TabHost.OnTabChan
                 if (resultCode == LoginRegisterActivity.RESULT_LOGGED_IN){
 
                     FcmPrefManager fcmPrefManager = new FcmPrefManager(MainActivity.this);
-                    if (!fcmPrefManager.isUploadedToServer()){
-                        sendRegistrationToServer(fcmPrefManager.getFcmToken());
-                    }
+                    sendRegistrationToServer(fcmPrefManager.getFcmToken());
+
 
                     if (!SessionManager.isLovedGenresSelectedLocal(this)) {
                         startActivity(new Intent(this, LovedGenresActivity.class));
@@ -375,10 +406,13 @@ public class MainActivity extends AppCompatActivity implements TabHost.OnTabChan
                 conversationIntent.putExtra("user", intent.getParcelableExtra("message_user"));
                 startActivityForResult(conversationIntent, REQUEST_CODE_CONVERSATION_ACTIVITY);
             }
-        }
 
-        mViewPager.setCurrentItem(MessageFragment.TAB_INDEX, false);
-        mTabHost.setCurrentTab(MessageFragment.TAB_INDEX);
+            mViewPager.setCurrentItem(MessageFragment.TAB_INDEX, false);
+            mTabHost.setCurrentTab(MessageFragment.TAB_INDEX);
+
+        } else if (intent.getParcelableExtra("notification") != null){
+            startActivity(new Intent(this, NotificationActivity.class));
+        }
     }
 
     public void setActionBarElevation(float dp, int tabIndex) {
@@ -388,40 +422,8 @@ public class MainActivity extends AppCompatActivity implements TabHost.OnTabChan
         mElevations[tabIndex] = dp;
     }
 
-    @Override
-    protected void onResume() {
-        super.onResume();
-
-
-        mMessageReceiver = new BroadcastReceiver() {
-            @Override
-            public void onReceive(Context context, Intent intent) {
-                if (intent.getAction().equalsIgnoreCase(BookieIntentFilters.INTENT_FILTER_SENT_REQUEST_RECEIVED)){
-                    fetchNotificationMenuItemValue();
-                } else if (intent.getAction().equalsIgnoreCase(BookieIntentFilters.INTENT_FILTER_REJECTED_REQUEST_RECEIVED)){
-                    fetchNotificationMenuItemValue();
-                } else if (intent.getAction().equalsIgnoreCase(BookieIntentFilters.INTENT_FILTER_ACCEPTED_REQUEST_RECEIVED)){
-                    fetchNotificationMenuItemValue();
-                } else if (intent.getAction().equalsIgnoreCase(BookieIntentFilters.INTENT_FILTER_BOOK_OWNER_CHANGED_RECEIVED)){
-                    fetchNotificationMenuItemValue();
-                }
-            }
-        };
-
-        registerReceiver(mMessageReceiver, new IntentFilter(BookieIntentFilters.INTENT_FILTER_SENT_REQUEST_RECEIVED));
-        registerReceiver(mMessageReceiver, new IntentFilter(BookieIntentFilters.INTENT_FILTER_REJECTED_REQUEST_RECEIVED));
-        registerReceiver(mMessageReceiver, new IntentFilter(BookieIntentFilters.INTENT_FILTER_ACCEPTED_REQUEST_RECEIVED));
-        registerReceiver(mMessageReceiver, new IntentFilter(BookieIntentFilters.INTENT_FILTER_BOOK_OWNER_CHANGED_RECEIVED));
-    }
-
-    @Override
-    protected void onPause() {
-        super.onPause();
-
-        unregisterReceiver(mMessageReceiver);
-    }
-
     public void fetchNotificationMenuItemValue() {
+
         DBHandler dbHandler = DBHandler.getInstance(this);
         int notificationCount = dbHandler.getUnseenNotificationCount();
 

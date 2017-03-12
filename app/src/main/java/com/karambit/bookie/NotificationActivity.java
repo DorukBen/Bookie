@@ -180,6 +180,10 @@ public class NotificationActivity extends AppCompatActivity {
         registerReceiver(mMessageReceiver, new IntentFilter(BookieIntentFilters.INTENT_FILTER_REJECTED_REQUEST_RECEIVED));
         registerReceiver(mMessageReceiver, new IntentFilter(BookieIntentFilters.INTENT_FILTER_ACCEPTED_REQUEST_RECEIVED));
         registerReceiver(mMessageReceiver, new IntentFilter(BookieIntentFilters.INTENT_FILTER_BOOK_OWNER_CHANGED_RECEIVED));
+
+        DBHandler dbHandler = DBHandler.getInstance(this);
+        dbHandler.updateAllNotificationsSeen();
+        setResult(NotificationActivity.RESULT_CODE_ALL_NOTIFICATION_SEENS_DELETED);
     }
 
     @Override

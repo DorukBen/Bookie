@@ -229,13 +229,6 @@ public class ProfileFragment extends Fragment {
 
         mPullRefreshLayout.setRefreshing(true);
         fetchProfilePageArguments();
-        return rootView;
-    }
-
-    @Override
-    public void onResume() {
-        super.onResume();
-
 
         mMessageReceiver = new BroadcastReceiver() {
             @Override
@@ -263,16 +256,17 @@ public class ProfileFragment extends Fragment {
                 }
             }
         };
-
         getContext().registerReceiver(mMessageReceiver, new IntentFilter(BookieIntentFilters.INTENT_FILTER_SENT_REQUEST_RECEIVED));
         getContext().registerReceiver(mMessageReceiver, new IntentFilter(BookieIntentFilters.INTENT_FILTER_REJECTED_REQUEST_RECEIVED));
         getContext().registerReceiver(mMessageReceiver, new IntentFilter(BookieIntentFilters.INTENT_FILTER_ACCEPTED_REQUEST_RECEIVED));
         getContext().registerReceiver(mMessageReceiver, new IntentFilter(BookieIntentFilters.INTENT_FILTER_BOOK_OWNER_CHANGED_RECEIVED));
+
+        return rootView;
     }
 
     @Override
-    public void onPause() {
-        super.onPause();
+    public void onDestroyView() {
+        super.onDestroyView();
 
         getContext().unregisterReceiver(mMessageReceiver);
     }

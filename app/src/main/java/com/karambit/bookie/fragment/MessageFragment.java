@@ -223,14 +223,6 @@ public class MessageFragment extends Fragment {
         recyclerView.setDrawingCacheQuality(View.DRAWING_CACHE_QUALITY_HIGH);
 
         recyclerView.setHasFixedSize(true);
-        return rootView;
-    }
-
-    @Override
-    public void onResume() {
-        super.onResume();
-
-        fetchMessages();
 
         mMessageReceiver = new BroadcastReceiver() {
             @Override
@@ -259,11 +251,19 @@ public class MessageFragment extends Fragment {
         getContext().registerReceiver(mMessageReceiver, new IntentFilter(BookieIntentFilters.INTENT_FILTER_MESSAGE_RECEIVED));
         getContext().registerReceiver(mMessageReceiver, new IntentFilter(BookieIntentFilters.INTENT_FILTER_MESSAGE_DELIVERED));
         getContext().registerReceiver(mMessageReceiver, new IntentFilter(BookieIntentFilters.INTENT_FILTER_MESSAGE_SEEN));
+        return rootView;
     }
 
     @Override
-    public void onPause() {
-        super.onPause();
+    public void onResume() {
+        super.onResume();
+
+        fetchMessages();
+    }
+
+    @Override
+    public void onDestroyView() {
+        super.onDestroyView();
         getContext().unregisterReceiver(mMessageReceiver);
     }
 
