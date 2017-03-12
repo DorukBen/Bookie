@@ -55,7 +55,8 @@ public class PhotoViewerActivity extends AppCompatActivity implements View.OnTou
 
     private static final int SELECT_IMAGE_REQUEST_CODE = 1;
     public static final int RESULT_PROFILE_PICTURE_UPDATED = 1002;
-    private static final String UPLOAD_IMAGE_URL = "ProfilePictureUpload";
+    private static final String UPLOAD_USER_IMAGE_URL = "ProfilePictureUpload";
+    private static final String UPLOAD_BOOK_IMAGE_URL = "BookUpdatePicture";
 
     // these matrices will be used to move and zoom image
     private Matrix mMatrix = new Matrix();
@@ -81,6 +82,7 @@ public class PhotoViewerActivity extends AppCompatActivity implements View.OnTou
     private ImageButton mCloseButton;
     private ImageButton mUploadButton;
 
+    private File mSavedUserImageFile;
     private File mSavedBookImageFile;
 
     private static final String TAG = PhotoViewerActivity.class.getSimpleName();
@@ -123,7 +125,7 @@ public class PhotoViewerActivity extends AppCompatActivity implements View.OnTou
         User photoUser = getIntent().getParcelableExtra("user");
         User currentUser =  SessionManager.getCurrentUser(this);
 
-        if (photoUser != null && photoUser.equals(currentUser)){
+        if (photoUser != null && photoUser.equals(currentUser) || getIntent().getBooleanExtra("canEditBookImage", false)){
             mEditPhotoButton.setVisibility(View.VISIBLE);
 
             mEditPhotoButton.setOnClickListener(new View.OnClickListener() {
@@ -150,7 +152,11 @@ public class PhotoViewerActivity extends AppCompatActivity implements View.OnTou
             mUploadButton.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
-                    attemptUploadProfilePicture();
+                    if (getIntent().getBooleanExtra("canEditBookImage",false)){
+                        attemptUploadBookPicture();
+                    }else {
+                        attemptUploadProfilePicture();
+                    }
                 }
             });
         }else {
@@ -392,6 +398,10 @@ public class PhotoViewerActivity extends AppCompatActivity implements View.OnTou
                 Bitmap bitmap = ImagePicker.getImageFromResult(getBaseContext(), resultCode, data);
                 Bitmap croppedBitmap = ImageScaler.cropImage(bitmap, 72 / 72f);
 
+                if (getIntent().getBooleanExtra("canEditBookImage", false)){
+                    croppedBitmap = ImageScaler.cropImage(bitmap, 72 / 96f);
+                }
+
                 savedMatrix = new Matrix();
                 savedMatrix.reset();
                 mMatrix = new Matrix();
@@ -404,7 +414,12 @@ public class PhotoViewerActivity extends AppCompatActivity implements View.OnTou
 
                 bringFrontPhotoForEdit();
                 mEditPhotoView.setImageBitmap(croppedBitmap);
-                mSavedBookImageFile = saveBitmap(croppedBitmap);
+                if (getIntent().getBooleanExtra("canEditBookImage", false)){
+                    mSavedBookImageFile = saveBitmap(croppedBitmap);
+                }else {
+                    mSavedUserImageFile = saveBitmap(croppedBitmap);
+                }
+
 
                 mImageWidth = croppedBitmap.getWidth();
                 mImageHeight = croppedBitmap.getHeight();
@@ -502,8 +517,8 @@ public class PhotoViewerActivity extends AppCompatActivity implements View.OnTou
         mProgressDialog.show();
 
         // Upload Book image
-        String path = mSavedBookImageFile.getPath();
-        String name = mSavedBookImageFile.getName();
+        String path = mSavedUserImageFile.getPath();
+        String name = mSavedUserImageFile.getName();
 
         User.Details currentUserDetails = SessionManager.getCurrentUserDetails(this);
 
@@ -511,7 +526,64 @@ public class PhotoViewerActivity extends AppCompatActivity implements View.OnTou
                 + "&password=" + currentUserDetails.getPassword()
                 + "&imageName=" + name;
 
-        String imageUrlString = BookieClient.BASE_URL + UPLOAD_IMAGE_URL + serverArgsString;
+        String imageUrlString = BookieClient.BASE_URL + UPLOAD_USER_IMAGE_URL + serverArgsString;
+
+
+        final UploadFileTask uftImage = new UploadFileTask(path, imageUrlString, name);
+
+        uftImage.setUploadProgressListener(new UploadFileTask.UploadProgressChangedListener() {
+            @Override
+            public void onProgressChanged(int progress) {
+                Log.i(TAG, "Image upload progress => " + progress + " / 100");
+            }
+
+            @Override
+            public void onProgressCompleted() {
+                Log.w(TAG, "Image upload is OK");
+                mProgressDialog.dismiss();
+
+                /*
+                    TODO Update Current user on database.
+                    This may be done in another Profile Activity or Main Activity
+                    Just check DBHandler for update current profile picture or update all the user details
+                  */
+
+                setResult(RESULT_PROFILE_PICTURE_UPDATED);
+                finish();
+            }
+
+            @Override
+            public void onProgressError() {
+                mProgressDialog.dismiss();
+                Log.e(TAG, "Image upload ERROR");
+                Toast.makeText(PhotoViewerActivity.this, R.string.unknown_error, Toast.LENGTH_SHORT).show();
+            }
+        });
+
+        uftImage.execute();
+    }
+
+    private void attemptUploadBookPicture() {
+
+        mProgressDialog = new ProgressDialog(this);
+        mProgressDialog.setMessage(getString(R.string.uploading_image));
+        mProgressDialog.setCancelable(false);
+        mProgressDialog.setCanceledOnTouchOutside(false);
+        mProgressDialog.setIndeterminate(true);
+        mProgressDialog.show();
+
+        // Upload Book image
+        String path = mSavedBookImageFile.getPath();
+        String name = mSavedBookImageFile.getName();
+
+        User.Details currentUserDetails = SessionManager.getCurrentUserDetails(this);
+
+        String serverArgsString = "?email=" + currentUserDetails.getEmail()
+                + "&password=" + currentUserDetails.getPassword()
+                + "&imageName=" + name
+                + "&bookID=" + getIntent().getIntExtra("bookID",-1);
+
+        String imageUrlString = BookieClient.BASE_URL + UPLOAD_BOOK_IMAGE_URL + serverArgsString;
 
 
         final UploadFileTask uftImage = new UploadFileTask(path, imageUrlString, name);

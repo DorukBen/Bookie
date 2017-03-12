@@ -73,4 +73,18 @@ public interface UserApi {
     Call<ResponseBody> uploadNewPassword (@Field("email") String email,
                                           @Field("password") String password,
                                           @Field("newPassword") String newPassword);
+
+    @FormUrlEncoded
+    @POST("ReportUser")
+    Call<ResponseBody> uploadUserReport (@Field("email") String email,
+                                         @Field("password") String password,
+                                         @Field("userID") int userId,
+                                         @Field("reportCode") int reportCode,
+                                         @Field("reportInfo") String reportInfo);
+
+    @FormUrlEncoded
+    @POST("BlockUser")
+    Call<ResponseBody> uploadUserBlock (@Field("email") String email,
+                                         @Field("password") String password,
+                                         @Field("userID") int userId);
 }

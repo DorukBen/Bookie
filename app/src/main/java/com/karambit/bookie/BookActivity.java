@@ -99,6 +99,13 @@ public class BookActivity extends AppCompatActivity {
                 Intent intent = new Intent(BookActivity.this, PhotoViewerActivity.class);
                 Bundle bundle = new Bundle();
                 bundle.putString("image", book.getImageURL());
+                if (mBookDetails != null){
+                    if (mBookDetails.getAddedBy().getID() == SessionManager.getCurrentUser(BookActivity.this).getID() &&
+                            mBookDetails.getBook().getOwner().getID() == SessionManager.getCurrentUser(BookActivity.this).getID()){
+                        bundle.putBoolean("canEditBookImage", true);
+                        bundle.putInt("bookID", mBook.getID());
+                    }
+                }
                 intent.putExtras(bundle);
                 startActivity(intent);
             }
