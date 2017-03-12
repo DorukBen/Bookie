@@ -41,6 +41,7 @@ import com.karambit.bookie.model.User;
 import com.karambit.bookie.rest_api.BookApi;
 import com.karambit.bookie.rest_api.BookieClient;
 import com.karambit.bookie.rest_api.ErrorCodes;
+import com.karambit.bookie.service.BookieIntentFilters;
 
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -55,12 +56,13 @@ import retrofit2.Response;
 
 public class BookActivity extends AppCompatActivity {
 
-    public static final int BOOK_PROCESS_CHANGED_RESULT_CODE = 1003;
-    private static final int REQUEST_CHANGED_REQUEST_CODE = 1004;
-
     private static final String TAG = BookActivity.class.getSimpleName();
 
-    private static final int REQUEST_EDIT_BOOK = 111;
+    public static final int RESULT_BOOK_PROCESS_CHANGED = 1;
+    private static final int REQUEST_CODE_REQUEST_CHANGED = 2;
+    private static final int REQUEST_CODE_EDIT_BOOK = 3;
+
+    public static final String EXTRA_BOOK = "book";
 
     private Book mBook;
     private BookTimelineAdapter mBookTimelineAdapter;
@@ -76,16 +78,20 @@ public class BookActivity extends AppCompatActivity {
         //Changes action bar font style by getting font.ttf from assets/fonts action bars font style doesn't
         // change from styles.xml
         SpannableString s = new SpannableString(getResources().getString(R.string.app_name));
-        s.setSpan(new TypefaceSpan(this, "comfortaa.ttf"), 0, s.length(),
+        s.setSpan(new TypefaceSpan(this, MainActivity.FONT_APP_NAME_TITLE), 0, s.length(),
                   Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
-        s.setSpan(new AbsoluteSizeSpan((int)convertDpToPixel(18, this)), 0, s.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+        float titleSize = getResources().getDimension(R.dimen.actionbar_app_name_title_size);
+        s.setSpan(new AbsoluteSizeSpan((int) titleSize), 0, s.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
 
         // Update the action bar title with the TypefaceSpan instance
-        if (getSupportActionBar() != null) {
-            getSupportActionBar().setTitle(s);
+        final ActionBar actionBar = getSupportActionBar();
+        if (actionBar != null) {
+            actionBar.setTitle(s);
+            float elevation = getResources().getDimension(R.dimen.actionbar_starting_elevation);
+            actionBar.setElevation(elevation);
         }
 
-        mBook = getIntent().getParcelableExtra("book");
+        mBook = getIntent().getParcelableExtra(EXTRA_BOOK);
 
         RecyclerView bookRecyclerView = (RecyclerView) findViewById(R.id.bookRecyclerView);
         bookRecyclerView.setLayoutManager(new LinearLayoutManager(this));
@@ -171,7 +177,7 @@ public class BookActivity extends AppCompatActivity {
                                         Bundle bundle = new Bundle();
                                         bundle.putParcelable("book",mBookDetails.getBook());
                                         data.putExtras(bundle);
-                                        setResult(BOOK_PROCESS_CHANGED_RESULT_CODE, data);
+                                        setResult(RESULT_BOOK_PROCESS_CHANGED, data);
                                     }
                                 })
                                 .setNegativeButton(R.string.no, new DialogInterface.OnClickListener() {
@@ -226,7 +232,7 @@ public class BookActivity extends AppCompatActivity {
             public void onRequestButtonClick(Book.Details bookDetails) {
                 Intent intent = new Intent(BookActivity.this, RequestActivity.class);
                 intent.putExtra("book", mBook);
-                startActivityForResult(intent, REQUEST_CHANGED_REQUEST_CODE);
+                startActivityForResult(intent, REQUEST_CODE_REQUEST_CHANGED);
             }
         });
 
@@ -263,7 +269,6 @@ public class BookActivity extends AppCompatActivity {
 
         bookRecyclerView.setOnScrollListener(new RecyclerView.OnScrollListener() {
 
-            ActionBar actionBar = getSupportActionBar();
             int totalScrolled = 0;
 
             @Override
@@ -288,7 +293,7 @@ public class BookActivity extends AppCompatActivity {
         mMessageReceiver = new BroadcastReceiver() {
             @Override
             public void onReceive(Context context, Intent intent) {
-                if (intent.getAction().equalsIgnoreCase("com.karambit.bookie.SENT_REQUEST_RECEIVED")){
+                if (intent.getAction().equalsIgnoreCase(BookieIntentFilters.INTENT_FILTER_SENT_REQUEST_RECEIVED)){
                     if (intent.getParcelableExtra("notification") != null){
                         Notification notification = intent.getParcelableExtra("notification");
                         if (mBookDetails != null){
@@ -302,7 +307,7 @@ public class BookActivity extends AppCompatActivity {
                             }
                         }
                     }
-                } else if (intent.getAction().equalsIgnoreCase("com.karambit.bookie.REJECTED_REQUEST_RECEIVED")){
+                } else if (intent.getAction().equalsIgnoreCase(BookieIntentFilters.INTENT_FILTER_REJECTED_REQUEST_RECEIVED)){
                     if (intent.getParcelableExtra("notification") != null){
                         Notification notification = intent.getParcelableExtra("notification");
                         if (mBookDetails != null){
@@ -316,7 +321,7 @@ public class BookActivity extends AppCompatActivity {
                             }
                         }
                     }
-                } else if (intent.getAction().equalsIgnoreCase("com.karambit.bookie.ACCEPTED_REQUEST_RECEIVED")){
+                } else if (intent.getAction().equalsIgnoreCase(BookieIntentFilters.INTENT_FILTER_ACCEPTED_REQUEST_RECEIVED)){
                     if (intent.getParcelableExtra("notification") != null){
                         Notification notification = intent.getParcelableExtra("notification");
                         if (mBookDetails != null){
@@ -339,7 +344,7 @@ public class BookActivity extends AppCompatActivity {
                             }
                         }
                     }
-                } else if (intent.getAction().equalsIgnoreCase("com.karambit.bookie.BOOK_OWNER_CHANGED_DATA_RECEIVED")){
+                } else if (intent.getAction().equalsIgnoreCase(BookieIntentFilters.INTENT_FILTER_BOOK_OWNER_CHANGED_RECEIVED)){
                     if (intent.getParcelableExtra("notification") != null){
                         if (mBookDetails != null){
                             fetchBookPageArguments();
@@ -349,10 +354,10 @@ public class BookActivity extends AppCompatActivity {
             }
         };
 
-        registerReceiver(mMessageReceiver, new IntentFilter("com.karambit.bookie.SENT_REQUEST_RECEIVED"));
-        registerReceiver(mMessageReceiver, new IntentFilter("com.karambit.bookie.REJECTED_REQUEST_RECEIVED"));
-        registerReceiver(mMessageReceiver, new IntentFilter("com.karambit.bookie.ACCEPTED_REQUEST_RECEIVED"));
-        registerReceiver(mMessageReceiver, new IntentFilter("com.karambit.bookie.BOOK_OWNER_CHANGED_DATA_RECEIVED"));
+        registerReceiver(mMessageReceiver, new IntentFilter(BookieIntentFilters.INTENT_FILTER_SENT_REQUEST_RECEIVED));
+        registerReceiver(mMessageReceiver, new IntentFilter(BookieIntentFilters.INTENT_FILTER_REJECTED_REQUEST_RECEIVED));
+        registerReceiver(mMessageReceiver, new IntentFilter(BookieIntentFilters.INTENT_FILTER_ACCEPTED_REQUEST_RECEIVED));
+        registerReceiver(mMessageReceiver, new IntentFilter(BookieIntentFilters.INTENT_FILTER_BOOK_OWNER_CHANGED_RECEIVED));
     }
 
     @Override
@@ -382,7 +387,7 @@ public class BookActivity extends AppCompatActivity {
                     User currentUser = SessionManager.getCurrentUser(this);
                     boolean isAdder = mBookDetails.getAddedBy().equals(currentUser);
                     intent.putExtra("is_adder", isAdder);
-                    startActivityForResult(intent, REQUEST_EDIT_BOOK);
+                    startActivityForResult(intent, REQUEST_CODE_EDIT_BOOK);
                     return true;
 
                 } else {
@@ -398,11 +403,11 @@ public class BookActivity extends AppCompatActivity {
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
-        if(requestCode == REQUEST_CHANGED_REQUEST_CODE){
-            if (resultCode == RequestActivity.REQUESTS_MODIFIED){
+        if(requestCode == REQUEST_CODE_REQUEST_CHANGED){
+            if (resultCode == RequestActivity.RESULT_REQUESTS_MODIFIED){
                 fetchBookPageArguments();
 
-            } else if (resultCode == RequestActivity.REQUEST_ACCEPTED){
+            } else if (resultCode == RequestActivity.RESULT_REQUEST_ACCEPTED){
                 fetchBookPageArguments();
 
                 Intent intent = new Intent();
@@ -411,9 +416,9 @@ public class BookActivity extends AppCompatActivity {
                 book.setState(Book.State.ON_ROAD);
                 bundle.putParcelable("book",book);
                 intent.putExtras(bundle);
-                setResult(BOOK_PROCESS_CHANGED_RESULT_CODE, intent);
+                setResult(RESULT_BOOK_PROCESS_CHANGED, intent);
             }
-        } else if (requestCode == REQUEST_EDIT_BOOK) {
+        } else if (requestCode == REQUEST_CODE_EDIT_BOOK) {
             if (resultCode == BookSettingsActivity.RESULT_BOOK_UPDATED) {
                 fetchBookPageArguments();
             }
@@ -480,7 +485,7 @@ public class BookActivity extends AppCompatActivity {
                     Bundle bundle = new Bundle();
                     bundle.putParcelable("book",mBookDetails.getBook());
                     data.putExtras(bundle);
-                    setResult(BOOK_PROCESS_CHANGED_RESULT_CODE, data);
+                    setResult(RESULT_BOOK_PROCESS_CHANGED, data);
                 }
             };
 
@@ -521,7 +526,7 @@ public class BookActivity extends AppCompatActivity {
                                     Bundle bundle = new Bundle();
                                     bundle.putParcelable("book",mBookDetails.getBook());
                                     data.putExtras(bundle);
-                                    setResult(BOOK_PROCESS_CHANGED_RESULT_CODE, data);
+                                    setResult(RESULT_BOOK_PROCESS_CHANGED, data);
                                 }
                             })
                             .setNegativeButton(android.R.string.no, null)
@@ -552,7 +557,7 @@ public class BookActivity extends AppCompatActivity {
                         Bundle bundle = new Bundle();
                         bundle.putParcelable("book",mBookDetails.getBook());
                         data.putExtras(bundle);
-                        setResult(BOOK_PROCESS_CHANGED_RESULT_CODE, data);
+                        setResult(RESULT_BOOK_PROCESS_CHANGED, data);
                     }
 
                     dismiss();
@@ -577,7 +582,7 @@ public class BookActivity extends AppCompatActivity {
                     Bundle bundle = new Bundle();
                     bundle.putParcelable("book",mBookDetails.getBook());
                     data.putExtras(bundle);
-                    setResult(BOOK_PROCESS_CHANGED_RESULT_CODE, data);
+                    setResult(RESULT_BOOK_PROCESS_CHANGED, data);
                 }
             };
 
@@ -769,7 +774,7 @@ public class BookActivity extends AppCompatActivity {
                                 Bundle bundle = new Bundle();
                                 bundle.putParcelable("book",mBookDetails.getBook());
                                 data.putExtras(bundle);
-                                setResult(BOOK_PROCESS_CHANGED_RESULT_CODE, data);
+                                setResult(RESULT_BOOK_PROCESS_CHANGED, data);
 
                                 User currentUser = SessionManager.getCurrentUser(BookActivity.this);
 

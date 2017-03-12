@@ -36,7 +36,7 @@ import java.util.List;
  *
  *
  * Created by doruk on 1.09.2016.
- * Created for Bookie
+ * Created for BookieApplication
  */
 public class ImagePicker {
 

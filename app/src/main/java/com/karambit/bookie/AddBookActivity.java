@@ -3,7 +3,6 @@ package com.karambit.bookie;
 import android.Manifest;
 import android.app.Dialog;
 import android.app.ProgressDialog;
-import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.content.res.Resources;
@@ -20,7 +19,6 @@ import android.text.Spannable;
 import android.text.SpannableString;
 import android.text.TextUtils;
 import android.text.style.AbsoluteSizeSpan;
-import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.Display;
 import android.view.View;
@@ -49,10 +47,14 @@ public class AddBookActivity extends AppCompatActivity {
 
     private static final String TAG = AddBookActivity.class.getSimpleName();
 
+    public static final int TAB_INDEX = 2;
+    public static final String TAB_SPEC = "tab_add_book";
+    public static final String TAB_INDICATOR = "tab2";
+
     private static final String UPLOAD_IMAGE_URL = "BookCreate";
 
-    public static final int RESULT_BOOK_CREATED = 1001;
-    private static final int CUSTOM_PERMISSIONS_REQUEST_CODE = 123;
+    public static final int RESULT_BOOK_CREATED = 1;
+    private static final int REQUEST_CODE_CUSTOM_PERMISSIONS = 2;
 
     private int mScreenHeight;
     private int mScreenWidth;
@@ -76,9 +78,10 @@ public class AddBookActivity extends AppCompatActivity {
         //Changes action bar font style by getting font.ttf from assets/fonts action bars font style doesn't
         // change from styles.xml
         SpannableString s = new SpannableString(getResources().getString(R.string.app_name));
-        s.setSpan(new TypefaceSpan(this, "comfortaa.ttf"), 0, s.length(),
+        s.setSpan(new TypefaceSpan(this, MainActivity.FONT_APP_NAME_TITLE), 0, s.length(),
                 Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
-        s.setSpan(new AbsoluteSizeSpan((int) convertDpToPixel(18, this)), 0, s.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+        float titleSize = getResources().getDimension(R.dimen.actionbar_app_name_title_size);
+        s.setSpan(new AbsoluteSizeSpan((int) titleSize), 0, s.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
 
         // Update the action bar title with the TypefaceSpan instance
         if (getSupportActionBar() != null) {
@@ -181,7 +184,7 @@ public class AddBookActivity extends AppCompatActivity {
                             Manifest.permission.CAMERA
                     };
 
-                    ActivityCompat.requestPermissions(AddBookActivity.this, permissions, CUSTOM_PERMISSIONS_REQUEST_CODE);
+                    ActivityCompat.requestPermissions(AddBookActivity.this, permissions, REQUEST_CODE_CUSTOM_PERMISSIONS);
 
                     Log.i(TAG, "Permissions NOT OK!");
                 }
@@ -205,45 +208,6 @@ public class AddBookActivity extends AppCompatActivity {
                 });
 
                 genrePickerDialog.show();
-//
-//                View dialogView = LayoutInflater.from(AddBookActivity.this).inflate(R.layout.genre_picker_dialog, null);
-//
-//                final NumberPicker numberPicker = (NumberPicker) dialogView.findViewById(R.id.numberPicker);
-//                numberPicker.setMinValue(0);
-//                numberPicker.setMaxValue(mGenreTypes.length - 1);
-//                numberPicker.setDisplayedValues(mGenreTypes);
-//                if (mSelectedGenre > 0) {
-//                    numberPicker.setValue(mSelectedGenre);
-//                }
-//
-//                new AlertDialog.Builder(AddBookActivity.this)
-//                    .setView(dialogView)
-//                    .create()
-//                    .show();
-//                final Dialog genrePicker = new Dialog(AddBookActivity.this);
-//                genrePicker.setContentView(R.layout.genre_picker_dialog);
-//                genrePicker.setTitle("");
-//
-//                final NumberPicker numberPicker = (NumberPicker) genrePicker.findViewById(R.id.numberPicker);
-//                numberPicker.setMinValue(0);
-//                numberPicker.setMaxValue(mGenreTypes.length - 1);
-//                numberPicker.setDisplayedValues(mGenreTypes);
-//                if (mSelectedGenre > 0) {
-//                    numberPicker.setValue(mSelectedGenre);
-//                }
-//
-//                Button selectGenre = (Button) genrePicker.findViewById(R.id.selectGenreButton);
-//
-//                selectGenre.setOnClickListener(new View.OnClickListener() {
-//                    @Override
-//                    public void onClick(View view) {
-//                        mSelectedGenre = numberPicker.getValue();
-//                        ((Button) findViewById(R.id.genreButton)).setText(mGenreTypes[numberPicker.getValue()]);
-//                        genrePicker.dismiss();
-//                    }
-//                });
-//
-//                genrePicker.show();
             }
         });
     }
@@ -410,7 +374,7 @@ public class AddBookActivity extends AppCompatActivity {
     @Override
     public void onRequestPermissionsResult(int requestCode, @NonNull String permissions[], @NonNull int[] grantResults) {
         switch (requestCode) {
-            case CUSTOM_PERMISSIONS_REQUEST_CODE: {
+            case REQUEST_CODE_CUSTOM_PERMISSIONS: {
                 // If request is cancelled, the result arrays are empty.
                 if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
 
@@ -423,19 +387,4 @@ public class AddBookActivity extends AppCompatActivity {
             }
         }
     }
-
-    /**
-     * This method converts dp unit to equivalent pixels, depending on device density.
-     *
-     * @param dp A value in dp (density independent pixels) unit. Which we need to convert into pixels
-     * @param context Context to get resources and device specific display metrics
-     * @return A float value to represent px equivalent to dp depending on device density
-     */
-    public static float convertDpToPixel(float dp, Context context){
-        Resources resources = context.getResources();
-        DisplayMetrics metrics = resources.getDisplayMetrics();
-        float px = dp * ((float)metrics.densityDpi / DisplayMetrics.DENSITY_DEFAULT);
-        return px;
-    }
-
 }

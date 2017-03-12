@@ -34,6 +34,7 @@ import com.karambit.bookie.model.User;
 import com.karambit.bookie.rest_api.BookieClient;
 import com.karambit.bookie.rest_api.ErrorCodes;
 import com.karambit.bookie.rest_api.UserApi;
+import com.karambit.bookie.service.BookieIntentFilters;
 
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -53,18 +54,22 @@ import static com.karambit.bookie.model.Book.State.OPENED_TO_SHARE;
  */
 public class ProfileFragment extends Fragment {
 
+    private static final String TAG = ProfileFragment.class.getSimpleName();
+
+    public static final int TAB_INDEX = 3;
+    public static final int VIEW_PAGER_INDEX = 2;
+    public static final String TAB_SPEC = "tab_profile";
+    public static final String TAB_INDICATOR = "tab3";
+
     private static final int REQUEST_CODE_ADD_BOOK_ACTIVITY = 3;
 
     private static final int UPDATE_PROFILE_PICTURE_REQUEST_CODE = 1;
     private static final int UPDATE_BOOK_PROCESS_REQUEST_CODE = 2;
 
-    public static final String TAG = ProfileFragment.class.getSimpleName();
-
     private static final String USER = "user";
 
     private User mUser;
 
-    public static final int PROFILE_FRAGMENT_TAB_INEX = 3;
     private ProfileTimelineAdapter mProfileTimelineAdapter;
     private PullRefreshLayout mPullRefreshLayout;
     private User.Details mUserDetails;
@@ -201,7 +206,7 @@ public class ProfileFragment extends Fragment {
         mProfileRecyclerView.setAdapter(mProfileTimelineAdapter);
 
         if (mUser.equals(currentUser)){
-            mProfileRecyclerView.setOnScrollListener(new ElevationScrollListener((MainActivity) getActivity(), PROFILE_FRAGMENT_TAB_INEX));
+            mProfileRecyclerView.setOnScrollListener(new ElevationScrollListener((MainActivity) getActivity(), TAB_INDEX));
         }else{
             mProfileRecyclerView.setOnScrollListener(new ElevationScrollListener((ProfileActivity) getActivity()));
         }
@@ -235,21 +240,21 @@ public class ProfileFragment extends Fragment {
         mMessageReceiver = new BroadcastReceiver() {
             @Override
             public void onReceive(Context context, Intent intent) {
-                if (intent.getAction().equalsIgnoreCase("com.karambit.bookie.SENT_REQUEST_RECEIVED")){
+                if (intent.getAction().equalsIgnoreCase(BookieIntentFilters.INTENT_FILTER_SENT_REQUEST_RECEIVED)){
                     if (intent.getParcelableExtra("notification") != null){
                         Notification notification = intent.getParcelableExtra("notification");
                     }
-                } else if (intent.getAction().equalsIgnoreCase("com.karambit.bookie.REJECTED_REQUEST_RECEIVED")){
+                } else if (intent.getAction().equalsIgnoreCase(BookieIntentFilters.INTENT_FILTER_REJECTED_REQUEST_RECEIVED)){
                     if (intent.getParcelableExtra("notification") != null){
                         Notification notification = intent.getParcelableExtra("notification");
                     }
-                } else if (intent.getAction().equalsIgnoreCase("com.karambit.bookie.ACCEPTED_REQUEST_RECEIVED")){
+                } else if (intent.getAction().equalsIgnoreCase(BookieIntentFilters.INTENT_FILTER_ACCEPTED_REQUEST_RECEIVED)){
                     if (intent.getParcelableExtra("notification") != null){
                         Notification notification = intent.getParcelableExtra("notification");
                         mUserDetails.getOnRoadBooks().add(notification.getBook());
                         mProfileTimelineAdapter.setUserDetails(mUserDetails);
                     }
-                } else if (intent.getAction().equalsIgnoreCase("com.karambit.bookie.BOOK_OWNER_CHANGED_DATA_RECEIVED")){
+                } else if (intent.getAction().equalsIgnoreCase(BookieIntentFilters.INTENT_FILTER_BOOK_OWNER_CHANGED_RECEIVED)){
                     if (intent.getParcelableExtra("notification") != null){
                         Notification notification = intent.getParcelableExtra("notification");
                         mUserDetails.getBooksOnHand().remove(notification.getBook());
@@ -259,10 +264,10 @@ public class ProfileFragment extends Fragment {
             }
         };
 
-        getContext().registerReceiver(mMessageReceiver, new IntentFilter("com.karambit.bookie.SENT_REQUEST_RECEIVED"));
-        getContext().registerReceiver(mMessageReceiver, new IntentFilter("com.karambit.bookie.REJECTED_REQUEST_RECEIVED"));
-        getContext().registerReceiver(mMessageReceiver, new IntentFilter("com.karambit.bookie.ACCEPTED_REQUEST_RECEIVED"));
-        getContext().registerReceiver(mMessageReceiver, new IntentFilter("com.karambit.bookie.BOOK_OWNER_CHANGED_DATA_RECEIVED"));
+        getContext().registerReceiver(mMessageReceiver, new IntentFilter(BookieIntentFilters.INTENT_FILTER_SENT_REQUEST_RECEIVED));
+        getContext().registerReceiver(mMessageReceiver, new IntentFilter(BookieIntentFilters.INTENT_FILTER_REJECTED_REQUEST_RECEIVED));
+        getContext().registerReceiver(mMessageReceiver, new IntentFilter(BookieIntentFilters.INTENT_FILTER_ACCEPTED_REQUEST_RECEIVED));
+        getContext().registerReceiver(mMessageReceiver, new IntentFilter(BookieIntentFilters.INTENT_FILTER_BOOK_OWNER_CHANGED_RECEIVED));
     }
 
     @Override
@@ -407,7 +412,7 @@ public class ProfileFragment extends Fragment {
                 refreshProfilePage();
             }
         } else if (requestCode == UPDATE_BOOK_PROCESS_REQUEST_CODE){
-            if (resultCode == BookActivity.BOOK_PROCESS_CHANGED_RESULT_CODE){
+            if (resultCode == BookActivity.RESULT_BOOK_PROCESS_CHANGED){
                 if (mUserDetails != null){
                     Book book = data.getExtras().getParcelable("book");
                     if (mUserDetails.getBooksOnHand().contains(book)){

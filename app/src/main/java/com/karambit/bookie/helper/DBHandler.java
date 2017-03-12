@@ -34,7 +34,7 @@ public class DBHandler extends SQLiteOpenHelper {
 
     public static final String TAG = DBHandler.class.getSimpleName();
 
-    private static final String DATABASE_NAME = "Bookie.db";
+    private static final String DATABASE_NAME = "BookieApplication.db";
 
     private static final String USER_TABLE_NAME = "user";
     private static final String USER_COLUMN_ID = "id";

@@ -49,8 +49,12 @@ import retrofit2.Response;
  */
 public class SearchFragment extends Fragment {
 
-
     private static final String TAG = SearchFragment.class.getSimpleName();
+
+    public static final int TAB_INDEX = 1;
+    public static final int VIEW_PAGER_INDEX = 1;
+    public static final String TAB_SPEC = "tab_search";
+    public static final String TAB_INDICATOR = "tab1";
 
     private String[] mAllGenres ;
     private ArrayList<Integer> mGenreCodes = new ArrayList<>();

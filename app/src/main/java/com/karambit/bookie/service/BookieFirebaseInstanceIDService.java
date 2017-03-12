@@ -38,9 +38,9 @@ import retrofit2.Callback;
 import retrofit2.Response;
 
 
-public class MyFirebaseInstanceIDService extends FirebaseInstanceIdService {
+public class BookieFirebaseInstanceIDService extends FirebaseInstanceIdService {
 
-    private static final String TAG = "MyFirebaseIIDService";
+    private static final String TAG = "MyFirebaseIDService";
 
     /**
      * Called if InstanceID token is updated. This may occur if the security of
@@ -96,7 +96,7 @@ public class MyFirebaseInstanceIDService extends FirebaseInstanceIdService {
                             boolean error = responseObject.getBoolean("error");
 
                             if (!error) {
-                                FcmPrefManager fcmPrefManager = new FcmPrefManager(MyFirebaseInstanceIDService.this);
+                                FcmPrefManager fcmPrefManager = new FcmPrefManager(BookieFirebaseInstanceIDService.this);
                                 fcmPrefManager.setUploadedToServer(true);
 
                                 Log.i(TAG, "Token sent completed successfuly");

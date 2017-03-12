@@ -12,6 +12,7 @@ import android.text.Spannable;
 import android.text.SpannableString;
 import android.text.TextUtils;
 import android.text.TextWatcher;
+import android.text.style.AbsoluteSizeSpan;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
@@ -40,8 +41,8 @@ public class BookSettingsActivity extends AppCompatActivity {
 
     private static final String TAG = BookSettingsActivity.class.getSimpleName();
 
-    public static final int RESULT_LOST = 123;
-    public static final int RESULT_BOOK_UPDATED = 111;
+    public static final int RESULT_LOST = 1;
+    public static final int RESULT_BOOK_UPDATED = 2;
 
     private static final int REPORT_BOOK_WRONG_NAME = 1;
     private static final int REPORT_BOOK_WRONG_AUTHOR = 2;
@@ -71,8 +72,10 @@ public class BookSettingsActivity extends AppCompatActivity {
         if (actionBar != null) {
             actionBar.setElevation(0);
             SpannableString s = new SpannableString(mBook.getName());
-            s.setSpan(new TypefaceSpan(this, "montserrat_regular.ttf"), 0, s.length(),
+            s.setSpan(new TypefaceSpan(this, MainActivity.FONT_GENERAL_TITLE), 0, s.length(),
                       Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+            float titleSize = getResources().getDimension(R.dimen.actionbar_title_size);
+            s.setSpan(new AbsoluteSizeSpan((int) titleSize), 0, s.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
             actionBar.setTitle(s);
 
             actionBar.setDisplayHomeAsUpEnabled(true);

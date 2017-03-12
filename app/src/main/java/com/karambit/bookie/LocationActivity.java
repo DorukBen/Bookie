@@ -1,8 +1,11 @@
 package com.karambit.bookie;
 
 import android.support.v4.content.ContextCompat;
+import android.support.v7.app.ActionBar;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.text.Spannable;
+import android.text.SpannableString;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
@@ -13,12 +16,13 @@ import com.google.android.gms.location.places.ui.PlaceSelectionListener;
 import com.google.android.gms.location.places.ui.SupportPlaceAutocompleteFragment;
 import com.karambit.bookie.helper.DBHandler;
 import com.karambit.bookie.helper.SessionManager;
+import com.karambit.bookie.helper.TypefaceSpan;
 
 public class LocationActivity extends AppCompatActivity {
 
     public static final String TAG = LocationActivity.class.getSimpleName();
 
-    public static final int RESULT_LOCATION_UPDATED = 11;
+    public static final int RESULT_LOCATION_UPDATED = 1;
 
     private double mLatitude;
     private double mLongitude;
@@ -28,9 +32,12 @@ public class LocationActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_location);
 
-        if (getSupportActionBar() != null){
-            getSupportActionBar().setTitle(R.string.select_location);
-            getSupportActionBar().setElevation(0);
+        ActionBar actionBar = getSupportActionBar();
+        if (actionBar != null){
+            SpannableString s = new SpannableString(getString(R.string.select_location));
+            s.setSpan(new TypefaceSpan(this, MainActivity.FONT_GENERAL_TITLE), 0, s.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+            float elevation = getResources().getDimension(R.dimen.actionbar_title_size);
+            actionBar.setElevation(elevation);
         }
 
         final Button okButton = (Button) findViewById(R.id.locationOKButton);

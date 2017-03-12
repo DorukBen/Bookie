@@ -8,6 +8,7 @@ import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.text.Spannable;
 import android.text.SpannableString;
+import android.text.style.AbsoluteSizeSpan;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -49,8 +50,9 @@ public class LovedGenresActivity extends AppCompatActivity {
         setContentView(R.layout.activity_loved_genres);
 
         SpannableString s = new SpannableString(getResources().getString(R.string.loved_genres_title));
-        s.setSpan(new TypefaceSpan(this, "comfortaa.ttf"), 0, s.length(),
-                  Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+        s.setSpan(new TypefaceSpan(this, MainActivity.FONT_GENERAL_TITLE), 0, s.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+        float titleSize = getResources().getDimension(R.dimen.actionbar_title_size);
+        s.setSpan(new AbsoluteSizeSpan((int) titleSize), 0, s.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
         setTitle(s);
 
         mDBHandler = DBHandler.getInstance(this);
@@ -61,7 +63,9 @@ public class LovedGenresActivity extends AppCompatActivity {
         RecyclerView genreRecyclerView = (RecyclerView) findViewById(R.id.genreRecyclerView);
         genreRecyclerView.setLayoutManager(new GridLayoutManager(this, 2, LinearLayoutManager.VERTICAL, false));
 
-        mLovedGenreAdapter = new LovedGenreAdapter(this, genres, mDBHandler.getLovedGenresAsInt(mCurrentUser));
+        Integer[] lovedGenresAsInt = mDBHandler.getLovedGenresAsInt(mCurrentUser);
+
+        mLovedGenreAdapter = new LovedGenreAdapter(this, genres, lovedGenresAsInt);
 
         genreRecyclerView.setAdapter(mLovedGenreAdapter);
     }
@@ -87,7 +91,7 @@ public class LovedGenresActivity extends AppCompatActivity {
     private void commitSelectedGenres() {
         Integer[] selectedGenreCodes = mLovedGenreAdapter.getSelectedGenreCodes();
         if (selectedGenreCodes.length < 1){
-            Toast.makeText(this, "Please select at least one genre", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, R.string.select_one_genre, Toast.LENGTH_SHORT).show();
         }else{
             mProgressDialog = new ProgressDialog(this);
             mProgressDialog.setMessage(getString(R.string.please_wait));
@@ -107,14 +111,16 @@ public class LovedGenresActivity extends AppCompatActivity {
         new Thread(new Runnable() {
             @Override
             public void run() {
-                mDBHandler.insertLovedGenres(mCurrentUser, selectedGenreCodes);
-                mLocalDone = true;
+                synchronized (DBHandler.class) {
+                    mDBHandler.insertLovedGenres(mCurrentUser, selectedGenreCodes);
+                    mLocalDone = true;
 
-                if (mServerDone) {
-                    if (mProgressDialog.isShowing()) {
-                        mProgressDialog.dismiss();
+                    if (mServerDone) {
+                        if (mProgressDialog.isShowing()) {
+                            mProgressDialog.dismiss();
+                        }
+                        finish();
                     }
-                    finish();
                 }
             }
         }).start();

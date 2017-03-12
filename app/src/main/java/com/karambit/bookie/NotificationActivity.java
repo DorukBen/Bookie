@@ -24,6 +24,7 @@ import com.karambit.bookie.helper.pull_refresh_layout.PullRefreshLayout;
 import com.karambit.bookie.model.Book;
 import com.karambit.bookie.model.Notification;
 import com.karambit.bookie.model.User;
+import com.karambit.bookie.service.BookieIntentFilters;
 
 import java.util.ArrayList;
 
@@ -42,14 +43,17 @@ public class NotificationActivity extends AppCompatActivity {
         //Changes action bar font style by getting font.ttf from assets/fonts action bars font style doesn't
         // change from styles.xml
         SpannableString s = new SpannableString(getResources().getString(R.string.app_name));
-        s.setSpan(new TypefaceSpan(this, "comfortaa.ttf"), 0, s.length(),
+        s.setSpan(new TypefaceSpan(this, MainActivity.FONT_APP_NAME_TITLE), 0, s.length(),
                 Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
-        s.setSpan(new AbsoluteSizeSpan((int)convertDpToPixel(18, this)), 0, s.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+        float titleSize = getResources().getDimension(R.dimen.actionbar_app_name_title_size);
+        s.setSpan(new AbsoluteSizeSpan((int) titleSize), 0, s.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
 
         // Update the action bar title with the TypefaceSpan instance
-        if(getSupportActionBar() != null){
-            getSupportActionBar().setTitle(s);
-            getSupportActionBar().setElevation(0);
+        final ActionBar actionBar = getSupportActionBar();
+        if(actionBar != null){
+            actionBar.setTitle(s);
+            float elevation = getResources().getDimension(R.dimen.actionbar_starting_elevation);
+            actionBar.setElevation(elevation);
         }
 
         RecyclerView recyclerView = (RecyclerView) findViewById(R.id.notificationRecyclerView);
@@ -105,7 +109,6 @@ public class NotificationActivity extends AppCompatActivity {
 
         recyclerView.setOnScrollListener(new RecyclerView.OnScrollListener() {
 
-            ActionBar actionBar = getSupportActionBar();
             int totalScrolled = 0;
 
             @Override
@@ -145,25 +148,25 @@ public class NotificationActivity extends AppCompatActivity {
         mMessageReceiver = new BroadcastReceiver() {
             @Override
             public void onReceive(Context context, Intent intent) {
-                if (intent.getAction().equalsIgnoreCase("com.karambit.bookie.SENT_REQUEST_RECEIVED")){
+                if (intent.getAction().equalsIgnoreCase(BookieIntentFilters.INTENT_FILTER_SENT_REQUEST_RECEIVED)){
                     if (intent.getParcelableExtra("notification") != null){
                         Notification notification = intent.getParcelableExtra("notification");
                         mNotifications.add(notification);
                         mNotificationAdapter.setNotifications(mNotifications);
                     }
-                } else if (intent.getAction().equalsIgnoreCase("com.karambit.bookie.REJECTED_REQUEST_RECEIVED")){
+                } else if (intent.getAction().equalsIgnoreCase(BookieIntentFilters.INTENT_FILTER_REJECTED_REQUEST_RECEIVED)){
                     if (intent.getParcelableExtra("notification") != null){
                         Notification notification = intent.getParcelableExtra("notification");
                         mNotifications.add(notification);
                         mNotificationAdapter.setNotifications(mNotifications);
                     }
-                } else if (intent.getAction().equalsIgnoreCase("com.karambit.bookie.ACCEPTED_REQUEST_RECEIVED")){
+                } else if (intent.getAction().equalsIgnoreCase(BookieIntentFilters.INTENT_FILTER_ACCEPTED_REQUEST_RECEIVED)){
                     if (intent.getParcelableExtra("notification") != null){
                         Notification notification = intent.getParcelableExtra("notification");
                         mNotifications.add(notification);
                         mNotificationAdapter.setNotifications(mNotifications);
                     }
-                } else if (intent.getAction().equalsIgnoreCase("com.karambit.bookie.BOOK_OWNER_CHANGED_DATA_RECEIVED")){
+                } else if (intent.getAction().equalsIgnoreCase(BookieIntentFilters.INTENT_FILTER_BOOK_OWNER_CHANGED_RECEIVED)){
                     if (intent.getParcelableExtra("notification") != null){
                         Notification notification = intent.getParcelableExtra("notification");
                         mNotifications.add(notification);
@@ -173,10 +176,10 @@ public class NotificationActivity extends AppCompatActivity {
             }
         };
 
-        registerReceiver(mMessageReceiver, new IntentFilter("com.karambit.bookie.SENT_REQUEST_RECEIVED"));
-        registerReceiver(mMessageReceiver, new IntentFilter("com.karambit.bookie.REJECTED_REQUEST_RECEIVED"));
-        registerReceiver(mMessageReceiver, new IntentFilter("com.karambit.bookie.ACCEPTED_REQUEST_RECEIVED"));
-        registerReceiver(mMessageReceiver, new IntentFilter("com.karambit.bookie.BOOK_OWNER_CHANGED_DATA_RECEIVED"));
+        registerReceiver(mMessageReceiver, new IntentFilter(BookieIntentFilters.INTENT_FILTER_SENT_REQUEST_RECEIVED));
+        registerReceiver(mMessageReceiver, new IntentFilter(BookieIntentFilters.INTENT_FILTER_REJECTED_REQUEST_RECEIVED));
+        registerReceiver(mMessageReceiver, new IntentFilter(BookieIntentFilters.INTENT_FILTER_ACCEPTED_REQUEST_RECEIVED));
+        registerReceiver(mMessageReceiver, new IntentFilter(BookieIntentFilters.INTENT_FILTER_BOOK_OWNER_CHANGED_RECEIVED));
     }
 
     @Override

@@ -14,6 +14,7 @@ import android.text.Spannable;
 import android.text.SpannableString;
 import android.text.TextUtils;
 import android.text.TextWatcher;
+import android.text.style.AbsoluteSizeSpan;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuInflater;
@@ -44,8 +45,8 @@ public class CurrentUserProfileSettingsActivity extends AppCompatActivity {
 
     private static final String TAG = CurrentUserProfileSettingsActivity.class.getSimpleName();
 
-    private static final int UPDATE_PROFILE_PICTURE_REQUEST_CODE = 1;
-    private static final int REQUEST_LOCATION = 2;
+    private static final int REQUEST_CODE_UPDATE_PROFILE_PICTURE = 1;
+    private static final int REQUEST_CODE_LOCATION = 2;
 
     public static final int RESULT_USER_LOGOUT = 1;
     public static final int RESULT_USER_UPDATED = 2;
@@ -66,10 +67,13 @@ public class CurrentUserProfileSettingsActivity extends AppCompatActivity {
 
         final ActionBar actionBar = getSupportActionBar();
         if (actionBar != null) {
-            actionBar.setElevation(0);
+            float elevation = getResources().getDimension(R.dimen.actionbar_starting_elevation);
+            actionBar.setElevation(elevation);
             SpannableString s = new SpannableString(getString(R.string.settings));
-            s.setSpan(new TypefaceSpan(this, "montserrat_regular.ttf"), 0, s.length(),
-                      Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+            s.setSpan(new TypefaceSpan(this, MainActivity.FONT_GENERAL_TITLE), 0, s.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+            float titleSize = getResources().getDimension(R.dimen.actionbar_title_size);
+            s.setSpan(new AbsoluteSizeSpan((int) titleSize), 0, s.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+
             actionBar.setTitle(s);
 
             actionBar.setDisplayHomeAsUpEnabled(true);
@@ -122,7 +126,7 @@ public class CurrentUserProfileSettingsActivity extends AppCompatActivity {
                     Intent intent = new Intent(CurrentUserProfileSettingsActivity.this, PhotoViewerActivity.class);
                     intent.putExtra("user", mCurrentUserDetails.getUser());
                     intent.putExtra("image", mCurrentUserDetails.getUser().getImageUrl());
-                    startActivityForResult(intent, UPDATE_PROFILE_PICTURE_REQUEST_CODE);
+                    startActivityForResult(intent, REQUEST_CODE_UPDATE_PROFILE_PICTURE);
                 }
             });
 
@@ -136,7 +140,7 @@ public class CurrentUserProfileSettingsActivity extends AppCompatActivity {
                 @Override
                 public void onClick(View v) {
                     Intent intent = new Intent(CurrentUserProfileSettingsActivity.this, LocationActivity.class);
-                    startActivityForResult(intent, REQUEST_LOCATION);
+                    startActivityForResult(intent, REQUEST_CODE_LOCATION);
                 }
             });
 
@@ -224,12 +228,12 @@ public class CurrentUserProfileSettingsActivity extends AppCompatActivity {
     public void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
 
-        if (requestCode == UPDATE_PROFILE_PICTURE_REQUEST_CODE) {
+        if (requestCode == REQUEST_CODE_UPDATE_PROFILE_PICTURE) {
             if (resultCode == PhotoViewerActivity.RESULT_PROFILE_PICTURE_UPDATED) {
                 setResult(RESULT_USER_UPDATED);
                 finish();
             }
-        } else if (requestCode == REQUEST_LOCATION) {
+        } else if (requestCode == REQUEST_CODE_LOCATION) {
             if (resultCode == LocationActivity.RESULT_LOCATION_UPDATED) {
                 LatLng previousLocation = mCurrentUserDetails.getUser().getLocation();
                 double newLatitude = data.getDoubleExtra("latitude", previousLocation != null ? previousLocation.latitude : Long.MIN_VALUE);

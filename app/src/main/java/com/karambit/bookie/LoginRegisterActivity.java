@@ -1,6 +1,5 @@
 package com.karambit.bookie;
 
-import android.app.Activity;
 import android.app.ProgressDialog;
 import android.content.Intent;
 import android.os.Bundle;
@@ -42,6 +41,8 @@ public class LoginRegisterActivity extends AppCompatActivity {
 
     private static final String TAG = LoginRegisterActivity.class.getSimpleName();
 
+    public static final int RESULT_LOGGED_IN = 1;
+
     public static final int PASSWORD_LENGTH_MIN = 6;
     public static final int PASSWORD_LENGTH_MAX = 128;
 
@@ -60,8 +61,6 @@ public class LoginRegisterActivity extends AppCompatActivity {
 
         if (new IntroductionPrefManager(this).isFirstTimeLaunch()) {
             startActivity(new Intent(this, IntroductionActivity.class));
-            setResult(RESULT_OK);
-            finish();
         }
 
         if (getSupportActionBar() != null) {
@@ -77,7 +76,7 @@ public class LoginRegisterActivity extends AppCompatActivity {
         Button startReadingButton = (Button) findViewById(R.id.startReadingButton);
 
 
-        // Bookie font
+        // BookieApplication font
         SpannableString s = new SpannableString(getResources().getString(R.string.app_name));
         s.setSpan(new TypefaceSpan(this, "comfortaa.ttf"), 0, s.length(),
                 Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
@@ -241,7 +240,7 @@ public class LoginRegisterActivity extends AppCompatActivity {
                             }
 
 
-                            setResult(Activity.RESULT_OK);
+                            setResult(RESULT_LOGGED_IN);
                             finish();
 
                         } else {
@@ -351,7 +350,7 @@ public class LoginRegisterActivity extends AppCompatActivity {
                                     Log.e(TAG, "Error occured while Login.");
                                 }
 
-                                setResult(Activity.RESULT_OK);
+                                setResult(RESULT_LOGGED_IN);
                                 finish();
                             } else {
                                 Log.e(TAG, "userLoginModel is empty. (Login Error)");

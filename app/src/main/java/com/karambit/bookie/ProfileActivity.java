@@ -26,12 +26,12 @@ public class ProfileActivity extends AppCompatActivity {
     private static final String TAG = ProfileActivity.class.getSimpleName();
 
     public final static String USER = "user";
-    private static final int REQUEST_OTHER_USER_SETTINGS = 111;
-    public final static int MESSAGE_PROCESS_REQUEST_CODE = 1006;
+
+    private static final int REQUEST_CODE_OTHER_USER_SETTINGS = 1;
+    public final static int REQUEST_CODE_MESSAGE_PROCESS = 2;
 
     private ActionBar mActionBar;
     private User mUser;
-
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -43,14 +43,15 @@ public class ProfileActivity extends AppCompatActivity {
         //Changes action bar font style by getting font.ttf from assets/fonts action bars font style doesn't
         // change from styles.xml
         SpannableString s = new SpannableString(getResources().getString(R.string.app_name));
-        s.setSpan(new TypefaceSpan(this, "comfortaa.ttf"), 0, s.length(),
-                Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
-        s.setSpan(new AbsoluteSizeSpan((int)convertDpToPixel(18, this)), 0, s.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+        s.setSpan(new TypefaceSpan(this, MainActivity.FONT_APP_NAME_TITLE), 0, s.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+        float titleSize = getResources().getDimension(R.dimen.actionbar_app_name_title_size);
+        s.setSpan(new AbsoluteSizeSpan((int) titleSize), 0, s.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
 
         // Update the action bar title with the TypefaceSpan instance
         if(mActionBar != null){
             mActionBar.setTitle(s);
-            mActionBar.setElevation(0);
+            float elevation = getResources().getDimension(R.dimen.actionbar_starting_elevation);
+            mActionBar.setElevation(elevation);
         }
 
         Bundle bundle = getIntent().getExtras();
@@ -75,15 +76,14 @@ public class ProfileActivity extends AppCompatActivity {
             case R.id.action_more:
                 Intent data = new Intent(this, OtherUserProfileSettingsActivity.class);
                 data.putExtra("user", mUser);
-                startActivityForResult(data, REQUEST_OTHER_USER_SETTINGS);
+                startActivityForResult(data, REQUEST_CODE_OTHER_USER_SETTINGS);
                 return true;
 
             case R.id.action_message:
                 Bundle bundle = getIntent().getExtras();
-
                 Intent intent = new Intent(this,ConversationActivity.class);
                 intent.putExtra(USER, bundle.getParcelable(USER));
-                startActivityForResult(intent, MESSAGE_PROCESS_REQUEST_CODE);
+                startActivityForResult(intent, REQUEST_CODE_MESSAGE_PROCESS);
                 return true;
 
             default:
@@ -94,15 +94,15 @@ public class ProfileActivity extends AppCompatActivity {
     @Override
     public void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
-        if (requestCode == REQUEST_OTHER_USER_SETTINGS) {
+        if (requestCode == REQUEST_CODE_OTHER_USER_SETTINGS) {
             if (resultCode == OtherUserProfileSettingsActivity.RESULT_USER_BLOCKED) {
 
                 // TODO Block user
                 Log.i(TAG, mUser.getName() + " blocked");
                 finish();
             }
-        }else if (requestCode == MESSAGE_PROCESS_REQUEST_CODE){
-            if (resultCode == ConversationActivity.ALL_MESSAGES_DELETED){
+        }else if (requestCode == REQUEST_CODE_MESSAGE_PROCESS){
+            if (resultCode == ConversationActivity.RESULT_ALL_MESSAGES_DELETED){
                 DBHandler dbHandler = DBHandler.getInstance(this);
                 dbHandler.deleteMessageUser((User) data.getParcelableExtra("opposite_user"));
                 dbHandler.deleteMessageUsersConversation((User) data.getParcelableExtra("opposite_user"));

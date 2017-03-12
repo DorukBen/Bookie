@@ -20,6 +20,7 @@ import android.text.Spanned;
 import android.text.TextPaint;
 import android.text.TextUtils;
 import android.text.method.LinkMovementMethod;
+import android.text.style.AbsoluteSizeSpan;
 import android.text.style.ClickableSpan;
 import android.text.style.ForegroundColorSpan;
 import android.text.style.StyleSpan;
@@ -35,6 +36,7 @@ import com.karambit.bookie.helper.ElevationScrollListener;
 import com.karambit.bookie.helper.LayoutUtils;
 import com.karambit.bookie.helper.NetworkChecker;
 import com.karambit.bookie.helper.SessionManager;
+import com.karambit.bookie.helper.TypefaceSpan;
 import com.karambit.bookie.helper.pull_refresh_layout.PullRefreshLayout;
 import com.karambit.bookie.model.Book;
 import com.karambit.bookie.model.User;
@@ -61,8 +63,8 @@ public class RequestActivity extends AppCompatActivity {
 
     private static final String TAG = RequestActivity.class.getSimpleName();
 
-    public static final int REQUESTS_MODIFIED = 1005;
-    public static int REQUEST_ACCEPTED = 1007;
+    public static final int RESULT_REQUESTS_MODIFIED = 1;
+    public static final int RESULT_REQUEST_ACCEPTED = 2;
 
     private Book mBook;
     private ArrayList<Book.Request> mRequests = new ArrayList<>();
@@ -80,10 +82,18 @@ public class RequestActivity extends AppCompatActivity {
         final ActionBar actionBar = getSupportActionBar();
 
         if (actionBar != null) {
-            actionBar.setTitle(R.string.request_activity_title);
             actionBar.setDisplayHomeAsUpEnabled(true);
             actionBar.setHomeAsUpIndicator(R.drawable.ic_messaging_cancel_selection);
-            actionBar.setElevation(0);
+
+            SpannableString s = new SpannableString(getResources().getString(R.string.request_activity_title));
+            s.setSpan(new TypefaceSpan(this, MainActivity.FONT_GENERAL_TITLE), 0, s.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+            float titleSize = getResources().getDimension(R.dimen.actionbar_title_size);
+            s.setSpan(new AbsoluteSizeSpan((int) titleSize), 0, s.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+
+            actionBar.setTitle(s);
+
+            float elevation = getResources().getDimension(R.dimen.actionbar_starting_elevation);
+            actionBar.setElevation(elevation);
         }
 
         mBook = getIntent().getParcelableExtra("book");
@@ -323,7 +333,7 @@ public class RequestActivity extends AppCompatActivity {
 
                                     setAcceptedRequestText(oldRequest);
 
-                                    setResult(REQUEST_ACCEPTED); // for refreshing previous page
+                                    setResult(RESULT_REQUEST_ACCEPTED); // for refreshing previous page
                                 }else if (request.getRequestType() == Book.RequestType.REJECT){
                                     int indexBefore = mRequests.indexOf(oldRequest);
                                     oldRequest.setRequestType(Book.RequestType.REJECT);
@@ -335,7 +345,7 @@ public class RequestActivity extends AppCompatActivity {
                                     mRequestAdapter.notifyItemMoved(indexBefore, indexAfter);
                                     mRequestAdapter.notifyItemChanged(mRequestAdapter.getSentRequestCount() - 1);
 
-                                    setResult(REQUESTS_MODIFIED); // for refreshing previous page
+                                    setResult(RESULT_REQUESTS_MODIFIED); // for refreshing previous page
                                 }
 
                                 comfortableProgressDialog.dismiss();

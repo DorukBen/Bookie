@@ -12,6 +12,7 @@ import android.text.Spannable;
 import android.text.SpannableString;
 import android.text.TextUtils;
 import android.text.TextWatcher;
+import android.text.style.AbsoluteSizeSpan;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewTreeObserver;
@@ -55,10 +56,11 @@ public class OtherUserProfileSettingsActivity extends AppCompatActivity {
 
         final ActionBar actionBar = getSupportActionBar();
         if (actionBar != null) {
-            actionBar.setElevation(0);
+            actionBar.setElevation(getResources().getDimension(R.dimen.actionbar_starting_elevation));
             SpannableString s = new SpannableString(mUser.getName());
-            s.setSpan(new TypefaceSpan(this, "montserrat_regular.ttf"), 0, s.length(),
-                      Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+            s.setSpan(new TypefaceSpan(this, MainActivity.FONT_GENERAL_TITLE), 0, s.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+            float titleSize = getResources().getDimension(R.dimen.actionbar_title_size);
+            s.setSpan(new AbsoluteSizeSpan((int) titleSize), 0, s.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
             actionBar.setTitle(s);
 
             actionBar.setDisplayHomeAsUpEnabled(true);

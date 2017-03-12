@@ -56,7 +56,7 @@ import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
 
-public class MyFirebaseMessagingService extends com.google.firebase.messaging.FirebaseMessagingService {
+public class BookieFirebaseMessagingService extends com.google.firebase.messaging.FirebaseMessagingService {
 
     private static final String TAG = "FirebaseMsgService";
     public static final int MESSAGE_NOTIFICATION_ID = 785;
@@ -108,7 +108,7 @@ public class MyFirebaseMessagingService extends com.google.firebase.messaging.Fi
                             DBHandler dbHandler = DBHandler.getInstance(this);
                             dbHandler.saveMessageToDataBase(message);
 
-                            Intent intent = new Intent("com.karambit.bookie.MESSAGE_RECEIVED");
+                            Intent intent = new Intent(BookieIntentFilters.INTENT_FILTER_MESSAGE_RECEIVED);
                             Bundle bundle = new Bundle();
                             bundle.putParcelable("message", message);
                             intent.putExtras(bundle);
@@ -124,7 +124,7 @@ public class MyFirebaseMessagingService extends com.google.firebase.messaging.Fi
                         DBHandler dbHandler = DBHandler.getInstance(this);
                         dbHandler.updateMessageState(Integer.parseInt(remoteMessage.getData().get("messageID")), Message.State.DELIVERED);
 
-                        Intent intent = new Intent("com.karambit.bookie.MESSAGE_DELIVERED");
+                        Intent intent = new Intent(BookieIntentFilters.INTENT_FILTER_MESSAGE_DELIVERED);
                         Bundle bundle = new Bundle();
                         bundle.putInt("message_id", Integer.parseInt(remoteMessage.getData().get("messageID")));
                         intent.putExtras(bundle);
@@ -134,7 +134,7 @@ public class MyFirebaseMessagingService extends com.google.firebase.messaging.Fi
                     DBHandler dbHandler = DBHandler.getInstance(this);
                     dbHandler.updateMessageState(Integer.parseInt(remoteMessage.getData().get("messageID")), Message.State.SEEN);
 
-                    Intent intent = new Intent("com.karambit.bookie.MESSAGE_SEEN");
+                    Intent intent = new Intent(BookieIntentFilters.INTENT_FILTER_MESSAGE_SEEN);
                     Bundle bundle = new Bundle();
                     bundle.putInt("message_id", Integer.parseInt(remoteMessage.getData().get("messageID")));
                     intent.putExtras(bundle);
@@ -158,7 +158,7 @@ public class MyFirebaseMessagingService extends com.google.firebase.messaging.Fi
                             DBHandler dbHandler = DBHandler.getInstance(this);
                             dbHandler.saveNotificationToDatabase(notification);
 
-                            Intent intent = new Intent("com.karambit.bookie.SENT_REQUEST_RECEIVED");
+                            Intent intent = new Intent(BookieIntentFilters.INTENT_FILTER_SENT_REQUEST_RECEIVED);
                             Bundle bundle = new Bundle();
                             bundle.putParcelable("notification", notification);
                             intent.putExtras(bundle);
@@ -186,7 +186,7 @@ public class MyFirebaseMessagingService extends com.google.firebase.messaging.Fi
                             DBHandler dbHandler = DBHandler.getInstance(this);
                             dbHandler.saveNotificationToDatabase(notification);
 
-                            Intent intent = new Intent("com.karambit.bookie.REJECTED_REQUEST_RECEIVED");
+                            Intent intent = new Intent(BookieIntentFilters.INTENT_FILTER_REJECTED_REQUEST_RECEIVED);
                             Bundle bundle = new Bundle();
                             bundle.putParcelable("notification", notification);
                             intent.putExtras(bundle);
@@ -214,7 +214,7 @@ public class MyFirebaseMessagingService extends com.google.firebase.messaging.Fi
                             DBHandler dbHandler = DBHandler.getInstance(this);
                             dbHandler.saveNotificationToDatabase(notification);
 
-                            Intent intent = new Intent("com.karambit.bookie.ACCEPTED_REQUEST_RECEIVED");
+                            Intent intent = new Intent(BookieIntentFilters.INTENT_FILTER_ACCEPTED_REQUEST_RECEIVED);
                             Bundle bundle = new Bundle();
                             bundle.putParcelable("notification", notification);
                             intent.putExtras(bundle);
@@ -242,7 +242,7 @@ public class MyFirebaseMessagingService extends com.google.firebase.messaging.Fi
                             DBHandler dbHandler = DBHandler.getInstance(this);
                             dbHandler.saveNotificationToDatabase(notification);
 
-                            Intent intent = new Intent("com.karambit.bookie.BOOK_OWNER_CHANGED_DATA_RECEIVED");
+                            Intent intent = new Intent(BookieIntentFilters.INTENT_FILTER_BOOK_OWNER_CHANGED_RECEIVED);
                             Bundle bundle = new Bundle();
                             bundle.putParcelable("notification", notification);
                             intent.putExtras(bundle);

@@ -27,6 +27,7 @@ import com.karambit.bookie.helper.SessionManager;
 import com.karambit.bookie.helper.pull_refresh_layout.PullRefreshLayout;
 import com.karambit.bookie.model.Message;
 import com.karambit.bookie.model.User;
+import com.karambit.bookie.service.BookieIntentFilters;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -36,9 +37,12 @@ import java.util.Collections;
  */
 public class MessageFragment extends Fragment {
 
-    public static final int MESSAGE_FRAGMENT_TAB_INEX = 4;
-
     private static final String TAG = MessageFragment.class.getSimpleName();
+
+    public static final int TAB_INDEX = 4;
+    public static final int VIEW_PAGER_INDEX = 3;
+    public static final String TAB_SPEC = "tab_message";
+    public static final String TAB_INDICATOR = "tab4";
 
     public static final int LAST_MESSAGE_REQUEST_CODE = 1;
 
@@ -211,7 +215,7 @@ public class MessageFragment extends Fragment {
 
         recyclerView.setAdapter(mLastMessageAdapter);
 
-        recyclerView.setOnScrollListener(new ElevationScrollListener((MainActivity) getActivity(), MESSAGE_FRAGMENT_TAB_INEX));
+        recyclerView.setOnScrollListener(new ElevationScrollListener((MainActivity) getActivity(), TAB_INDEX));
 
         //For improving recyclerviews performance
         recyclerView.setItemViewCacheSize(20);
@@ -231,7 +235,7 @@ public class MessageFragment extends Fragment {
         mMessageReceiver = new BroadcastReceiver() {
             @Override
             public void onReceive(Context context, Intent intent) {
-                if (intent.getAction().equalsIgnoreCase("com.karambit.bookie.MESSAGE_RECEIVED")){
+                if (intent.getAction().equalsIgnoreCase(BookieIntentFilters.INTENT_FILTER_MESSAGE_RECEIVED)){
                     if (intent.getParcelableExtra("message") != null){
                         if (((Message) intent.getParcelableExtra("message")).getSender().getID() != ConversationActivity.currentConversationUserId){
                             insertLastMessage((Message) intent.getParcelableExtra("message"));
@@ -239,11 +243,11 @@ public class MessageFragment extends Fragment {
                     }
                 } else {
                     int messageID = intent.getIntExtra("message_id", -1);
-                    if (intent.getAction().equalsIgnoreCase("com.karambit.bookie.MESSAGE_DELIVERED")){
+                    if (intent.getAction().equalsIgnoreCase(BookieIntentFilters.INTENT_FILTER_MESSAGE_DELIVERED)){
                         if (messageID > 0){
                             changeMessageState(messageID, Message.State.DELIVERED);
                         }
-                    } else if (intent.getAction().equalsIgnoreCase("com.karambit.bookie.MESSAGE_SEEN")){
+                    } else if (intent.getAction().equalsIgnoreCase(BookieIntentFilters.INTENT_FILTER_MESSAGE_SEEN)){
                         if (messageID > 0){
                             changeMessageState(messageID, Message.State.SEEN);
                         }
@@ -252,9 +256,9 @@ public class MessageFragment extends Fragment {
             }
         };
 
-        getContext().registerReceiver(mMessageReceiver, new IntentFilter("com.karambit.bookie.MESSAGE_RECEIVED"));
-        getContext().registerReceiver(mMessageReceiver, new IntentFilter("com.karambit.bookie.MESSAGE_DELIVERED"));
-        getContext().registerReceiver(mMessageReceiver, new IntentFilter("com.karambit.bookie.MESSAGE_SEEN"));
+        getContext().registerReceiver(mMessageReceiver, new IntentFilter(BookieIntentFilters.INTENT_FILTER_MESSAGE_RECEIVED));
+        getContext().registerReceiver(mMessageReceiver, new IntentFilter(BookieIntentFilters.INTENT_FILTER_MESSAGE_DELIVERED));
+        getContext().registerReceiver(mMessageReceiver, new IntentFilter(BookieIntentFilters.INTENT_FILTER_MESSAGE_SEEN));
     }
 
     @Override
@@ -313,11 +317,11 @@ public class MessageFragment extends Fragment {
     public void onActivityResult(int requestCode, int resultCode, Intent data) {
         if (requestCode == LAST_MESSAGE_REQUEST_CODE) {
 
-            if (resultCode == ConversationActivity.MESSAGE_INSERTED) {
+            if (resultCode == ConversationActivity.RESULT_MESSAGE_INSERTED) {
                 Message lastMessage = data.getParcelableExtra("last_message");
                 insertLastMessage(lastMessage);
 
-            } else if (resultCode == ConversationActivity.ALL_MESSAGES_DELETED) {
+            } else if (resultCode == ConversationActivity.RESULT_ALL_MESSAGES_DELETED) {
 
                 User currentUser = SessionManager.getCurrentUser(getContext());
                 User oppositeUser = data.getParcelableExtra("opposite_user");

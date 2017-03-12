@@ -37,7 +37,8 @@ import com.karambit.bookie.model.User;
 import com.karambit.bookie.rest_api.BookieClient;
 import com.karambit.bookie.rest_api.ErrorCodes;
 import com.karambit.bookie.rest_api.FcmApi;
-import com.karambit.bookie.service.MyFirebaseMessagingService;
+import com.karambit.bookie.service.BookieFirebaseMessagingService;
+import com.karambit.bookie.service.BookieIntentFilters;
 
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -55,14 +56,12 @@ import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
 
-import static com.karambit.bookie.MainActivity.convertDpToPixel;
-
 public class ConversationActivity extends AppCompatActivity {
 
     private static final String TAG = ConversationActivity.class.getSimpleName();
 
-    public static final int MESSAGE_INSERTED = 1;
-    public static final int ALL_MESSAGES_DELETED = 2;
+    public static final int RESULT_MESSAGE_INSERTED = 1;
+    public static final int RESULT_ALL_MESSAGES_DELETED = 2;
 
     public static Integer currentConversationUserId = -1;
 
@@ -84,9 +83,10 @@ public class ConversationActivity extends AppCompatActivity {
         mOppositeUser = getIntent().getExtras().getParcelable("user");
 
         SpannableString s = new SpannableString(mOppositeUser.getName());
-        s.setSpan(new TypefaceSpan(this, "comfortaa.ttf"), 0, s.length(),
+        s.setSpan(new TypefaceSpan(this, MainActivity.FONT_GENERAL_TITLE), 0, s.length(),
                 Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
-        s.setSpan(new AbsoluteSizeSpan((int) convertDpToPixel(18, this)), 0, s.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+        float titleSize = getResources().getDimension(R.dimen.actionbar_title_size);
+        s.setSpan(new AbsoluteSizeSpan((int) titleSize), 0, s.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
         getSupportActionBar().setTitle(s);
 
         final User currentUser = SessionManager.getCurrentUser(this);
@@ -290,7 +290,7 @@ public class ConversationActivity extends AppCompatActivity {
         super.onResume();
         currentConversationUserId = mOppositeUser.getID();
 
-        Iterator<Message> iterator = MyFirebaseMessagingService.mNotificationMessages.iterator();
+        Iterator<Message> iterator = BookieFirebaseMessagingService.mNotificationMessages.iterator();
 
         while (iterator.hasNext()){
             Message message = iterator.next();
@@ -300,11 +300,11 @@ public class ConversationActivity extends AppCompatActivity {
         }
 
 
-        if (MyFirebaseMessagingService.mNotificationUserIds.contains(currentConversationUserId)){
-            MyFirebaseMessagingService.mNotificationUserIds.remove(currentConversationUserId);
+        if (BookieFirebaseMessagingService.mNotificationUserIds.contains(currentConversationUserId)){
+            BookieFirebaseMessagingService.mNotificationUserIds.remove(currentConversationUserId);
 
             NotificationManager notificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
-            notificationManager.cancel(getString(R.string.app_name), MyFirebaseMessagingService.MESSAGE_NOTIFICATION_ID);
+            notificationManager.cancel(getString(R.string.app_name), BookieFirebaseMessagingService.MESSAGE_NOTIFICATION_ID);
         }
 
         final User currentUser = SessionManager.getCurrentUser(this);
@@ -312,7 +312,7 @@ public class ConversationActivity extends AppCompatActivity {
         mMessageReceiver = new BroadcastReceiver() {
             @Override
             public void onReceive(Context context, Intent intent) {
-                if (intent.getAction().equalsIgnoreCase("com.karambit.bookie.MESSAGE_RECEIVED")){
+                if (intent.getAction().equalsIgnoreCase(BookieIntentFilters.INTENT_FILTER_MESSAGE_RECEIVED)){
                     if (intent.getParcelableExtra("message") != null){
                         Message message = intent.getParcelableExtra("message");
                         if(message.getOppositeUser(currentUser).equals(mOppositeUser)){
@@ -321,11 +321,11 @@ public class ConversationActivity extends AppCompatActivity {
                             fetchSeenMessages();
                         }
                     }
-                } else if (intent.getAction().equalsIgnoreCase("com.karambit.bookie.MESSAGE_DELIVERED")){
+                } else if (intent.getAction().equalsIgnoreCase(BookieIntentFilters.INTENT_FILTER_MESSAGE_DELIVERED)){
                     if (intent.getIntExtra("message_id",-1) > 0){
                         changeMessageState(intent.getIntExtra("message_id",-1), Message.State.DELIVERED);
                     }
-                } else if (intent.getAction().equalsIgnoreCase("com.karambit.bookie.MESSAGE_SEEN")){
+                } else if (intent.getAction().equalsIgnoreCase(BookieIntentFilters.INTENT_FILTER_MESSAGE_SEEN)){
                     if (intent.getIntExtra("message_id",-1) > 0){
                         Message changedMessage = changeMessageState(intent.getIntExtra("message_id",-1), Message.State.SEEN);
                         if (changedMessage != null){
@@ -343,9 +343,9 @@ public class ConversationActivity extends AppCompatActivity {
             }
         };
 
-        registerReceiver(mMessageReceiver, new IntentFilter("com.karambit.bookie.MESSAGE_RECEIVED"));
-        registerReceiver(mMessageReceiver, new IntentFilter("com.karambit.bookie.MESSAGE_DELIVERED"));
-        registerReceiver(mMessageReceiver, new IntentFilter("com.karambit.bookie.MESSAGE_SEEN"));
+        registerReceiver(mMessageReceiver, new IntentFilter(BookieIntentFilters.INTENT_FILTER_MESSAGE_RECEIVED));
+        registerReceiver(mMessageReceiver, new IntentFilter(BookieIntentFilters.INTENT_FILTER_MESSAGE_DELIVERED));
+        registerReceiver(mMessageReceiver, new IntentFilter(BookieIntentFilters.INTENT_FILTER_MESSAGE_SEEN));
 
         fetchSeenMessages();
     }
@@ -398,7 +398,7 @@ public class ConversationActivity extends AppCompatActivity {
             changeMessageState(newMessage.getID(), Message.State.SEEN);
         }
 
-        setResult(MESSAGE_INSERTED, getIntent().putExtra("last_message", mMessages.get(0)));
+        setResult(RESULT_MESSAGE_INSERTED, getIntent().putExtra("last_message", mMessages.get(0)));
     }
 
     public Message changeMessageState(int messageID, Message.State state) {
@@ -475,9 +475,10 @@ public class ConversationActivity extends AppCompatActivity {
         ActionBar actionBar = getSupportActionBar();
 
         SpannableString title = new SpannableString(selectedTitle);
-        title.setSpan(new TypefaceSpan(this, "montserrat_regular.ttf"), 0, title.length(),
+        title.setSpan(new TypefaceSpan(this, MainActivity.FONT_GENERAL_TITLE), 0, title.length(),
                       Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
-        title.setSpan(new AbsoluteSizeSpan(60), 0, title.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+        float titleSize = getResources().getDimension(R.dimen.actionbar_title_size);
+        title.setSpan(new AbsoluteSizeSpan((int) titleSize), 0, title.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
 
         // Update the action bar title with the TypefaceSpan instance
         actionBar.setTitle(title);
@@ -533,9 +534,9 @@ public class ConversationActivity extends AppCompatActivity {
                             mConversationAdapter.notifyDataSetChanged();
 
                             if (!mMessages.isEmpty()) {
-                                setResult(MESSAGE_INSERTED, getIntent().putExtra("last_message", mMessages.get(0)));
+                                setResult(RESULT_MESSAGE_INSERTED, getIntent().putExtra("last_message", mMessages.get(0)));
                             } else {
-                                setResult(ALL_MESSAGES_DELETED, getIntent().putExtra("opposite_user", mOppositeUser));
+                                setResult(RESULT_ALL_MESSAGES_DELETED, getIntent().putExtra("opposite_user", mOppositeUser));
                             }
 
                             // TODO Server delete notify

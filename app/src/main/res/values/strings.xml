@@ -250,4 +250,6 @@
     <string name="add_book">Add your favorite book to Mantreads!</string>
     <string name="search_book">Search your most wanted book!</string>
     <string name="existing_book">Select a book that exists in your profile!</string>
+    <string name="select_one_genre">Please select at least one genre</string>
+    <string name="press_back_again">Press back again to exit…</string>
 </resources>

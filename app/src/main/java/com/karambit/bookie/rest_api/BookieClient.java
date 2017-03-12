@@ -2,7 +2,7 @@ package com.karambit.bookie.rest_api;
 
 import android.util.Log;
 
-import com.karambit.bookie.Bookie;
+import com.karambit.bookie.BookieApplication;
 import com.karambit.bookie.BuildConfig;
 
 import java.io.File;
@@ -62,7 +62,7 @@ public class BookieClient {
         Cache cache = null;
         try
         {
-            cache = new Cache( new File( Bookie.getInstance().getCacheDir(), CACHE_FILE_NAME),
+            cache = new Cache( new File( BookieApplication.getInstance().getCacheDir(), CACHE_FILE_NAME),
                     10 * 1024 * 1024 ); // 10 MB
         }
         catch (Exception e)
@@ -119,7 +119,7 @@ public class BookieClient {
             {
                 Request request = chain.request();
 
-                if ( !Bookie.hasNetwork() )
+                if ( !BookieApplication.hasNetwork() )
                 {
                     CacheControl cacheControl = new CacheControl.Builder()
                             .maxStale( 7, TimeUnit.DAYS )

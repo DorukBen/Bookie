@@ -115,7 +115,6 @@ public class IntroductionActivity extends AppCompatActivity {
     private void launchHomeScreen() {
 
         new IntroductionPrefManager(this).setFirstTimeLaunch(false);
-        startActivity(new Intent(IntroductionActivity.this, LoginRegisterActivity.class));
         finish();
     }
 

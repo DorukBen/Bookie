@@ -43,8 +43,12 @@ import retrofit2.Response;
  */
 public class HomeFragment extends Fragment {
 
-    public static final int HOME_FRAGMENT_TAB_INEX = 0;
     private static final String TAG = HomeFragment.class.getSimpleName();
+
+    public static final int TAB_INDEX = 0;
+    public static final int VIEW_PAGER_INDEX = 0;
+    public static final String TAB_SPEC = "tab_home";
+    public static final String TAB_INDICATOR = "tab0";
 
     private ArrayList<Book> mHeaderBooks = new ArrayList<>();
     private ArrayList<Book> mListBooks = new ArrayList<>();
@@ -67,7 +71,7 @@ public class HomeFragment extends Fragment {
 
         mRecyclerView = (RecyclerView) rootView.findViewById(R.id.homeRecyclerView);
 
-        mRecyclerView.setOnScrollListener(new ElevationScrollListener((MainActivity) getActivity(), HOME_FRAGMENT_TAB_INEX));
+        mRecyclerView.setOnScrollListener(new ElevationScrollListener((MainActivity) getActivity(), TAB_INDEX));
 
         final LinearLayoutManager linearLayoutManager = new LinearLayoutManager(getContext());
         mRecyclerView.setLayoutManager(linearLayoutManager);
@@ -93,7 +97,7 @@ public class HomeFragment extends Fragment {
             @Override
             public void onBookClick(Book book) {
                 Intent intent = new Intent(getContext(), BookActivity.class);
-                intent.putExtra("book", book);
+                intent.putExtra(BookActivity.EXTRA_BOOK, book);
                 startActivity(intent);
             }
         });
@@ -108,6 +112,7 @@ public class HomeFragment extends Fragment {
                 if (!mIsBooksFetching){
                     mListBooks = new ArrayList<>();
                     fetchHomePageBooks(true);
+                    ((MainActivity) getActivity()).fetchNotificationMenuItemValue();
                 }
             }
         });

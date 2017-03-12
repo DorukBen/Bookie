@@ -5,7 +5,6 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
-import android.content.res.Resources;
 import android.os.Bundle;
 import android.os.Handler;
 import android.support.v4.app.Fragment;
@@ -17,7 +16,6 @@ import android.support.v7.app.AppCompatActivity;
 import android.text.Spannable;
 import android.text.SpannableString;
 import android.text.style.AbsoluteSizeSpan;
-import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.Menu;
@@ -27,6 +25,7 @@ import android.view.MotionEvent;
 import android.view.View;
 import android.widget.ImageView;
 import android.widget.TabHost;
+import android.widget.Toast;
 
 import com.karambit.bookie.fragment.HomeFragment;
 import com.karambit.bookie.fragment.MessageFragment;
@@ -41,6 +40,7 @@ import com.karambit.bookie.model.User;
 import com.karambit.bookie.rest_api.BookieClient;
 import com.karambit.bookie.rest_api.ErrorCodes;
 import com.karambit.bookie.rest_api.FcmApi;
+import com.karambit.bookie.service.BookieIntentFilters;
 import com.karambit.bookie.service.FcmPrefManager;
 
 import org.json.JSONException;
@@ -60,14 +60,19 @@ import retrofit2.Response;
 public class MainActivity extends AppCompatActivity implements TabHost.OnTabChangeListener {
 
     private static final String TAG = MainActivity.class.getSimpleName();
+
+    public static final String FONT_APP_NAME_TITLE = "comfortaa.ttf";
+    public static final String FONT_GENERAL_TITLE = "comfortaa.ttf";
+
     private static final int REQUEST_CODE_LOGIN_REGISTER_ACTIVITY = 1;
     private static final int REQUEST_CODE_CURRENT_USER_PROFILE_SETTINGS_ACTIVITY = 2;
     private static final int REQUEST_CODE_ADD_BOOK_ACTIVITY = 3;
-    private static final int REQUEST_CODE_IS_ALL_MESSAGES_DELETED = 1007;
-    private static final int REQUEST_CODE_DELETE_NOTIFICATION_SEENS = 1011;
+    private static final int REQUEST_CODE_CONVERSATION_ACTIVITY = 4;
+    private static final int REQUEST_CODE_NOTIFICATION_ACTIVITY = 5;
+
     private TabHost mTabHost;
     private ViewPager mViewPager;
-    private int mOldPos = 0; //Specifys old position for tab view
+    private int mOldPos = HomeFragment.TAB_INDEX; //Specifys old position for tab view
 
     //This can be used for listeners
     private HomeFragment mHomeFragment;
@@ -106,15 +111,16 @@ public class MainActivity extends AppCompatActivity implements TabHost.OnTabChan
             //Changes action bar font style by getting font.ttf from assets/fonts action bars font style doesn't
         // change from styles.xml
         SpannableString s = new SpannableString(getResources().getString(R.string.app_name));
-        s.setSpan(new TypefaceSpan(this, "comfortaa.ttf"), 0, s.length(),
-                Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
-        s.setSpan(new AbsoluteSizeSpan((int) convertDpToPixel(18, this)), 0, s.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+        s.setSpan(new TypefaceSpan(this, FONT_APP_NAME_TITLE), 0, s.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+        float titleSize = getResources().getDimension(R.dimen.actionbar_app_name_title_size);
+        s.setSpan(new AbsoluteSizeSpan((int) titleSize), 0, s.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
 
         // Update the action bar title with the TypefaceSpan instance
         if(getSupportActionBar() != null){
             mActionBar = getSupportActionBar();
             mActionBar.setTitle(s);
-            mActionBar.setElevation(0);
+            float elevation = getResources().getDimension(R.dimen.actionbar_starting_elevation);
+            mActionBar.setElevation(elevation);
         }
 
         initializeTabHost(mTabHost);
@@ -128,7 +134,7 @@ public class MainActivity extends AppCompatActivity implements TabHost.OnTabChan
                 return true;
 
             case R.id.action_notification:
-                startActivityForResult(new Intent(this,NotificationActivity.class), REQUEST_CODE_DELETE_NOTIFICATION_SEENS);
+                startActivityForResult(new Intent(this,NotificationActivity.class), REQUEST_CODE_NOTIFICATION_ACTIVITY);
                 return true;
 
             default:
@@ -141,7 +147,7 @@ public class MainActivity extends AppCompatActivity implements TabHost.OnTabChan
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         mMenu = menu;
-        setNotificationMenuItemValue();
+        fetchNotificationMenuItemValue();
         return super.onCreateOptionsMenu(menu);
     }
 
@@ -151,12 +157,12 @@ public class MainActivity extends AppCompatActivity implements TabHost.OnTabChan
 
         int currentPage = mViewPager.getCurrentItem();
 
-        if (currentPage == 0){
+        if (currentPage == HomeFragment.VIEW_PAGER_INDEX){
             inflater.inflate(R.menu.home_menu, menu);
-        } else if (currentPage == 2){
+        } else if (currentPage == ProfileFragment.VIEW_PAGER_INDEX){
             inflater.inflate(R.menu.current_user_menu, menu);
         }
-        setNotificationMenuItemValue();
+        fetchNotificationMenuItemValue();
 
         return super.onPrepareOptionsMenu(menu);
     }
@@ -168,26 +174,26 @@ public class MainActivity extends AppCompatActivity implements TabHost.OnTabChan
     private void initializeTabHost(final TabHost tabHost) {
         tabHost.setup();
 
-        addTab(this, tabHost, tabHost.newTabSpec("tab_home").setIndicator("Tab"),R.drawable.tab_home_indicator_selector);
-        addTab(this, tabHost, tabHost.newTabSpec("tab_search").setIndicator("Tab2"),R.drawable.tab_search_indicator_selector);
-        addTab(this, tabHost, tabHost.newTabSpec("tab_add_book").setIndicator("Tab3"),R.drawable.tab_add_book_indicator_selector);
-        addTab(this, tabHost, tabHost.newTabSpec("tab_profile").setIndicator("Tab4"),R.drawable.tab_profile_indicator_selector);
-        addTab(this, tabHost, tabHost.newTabSpec("tab_notification").setIndicator("Tab5"),R.drawable.tab_notification_indicator_selector);
+        addTab(this, tabHost, tabHost.newTabSpec(HomeFragment.TAB_SPEC).setIndicator(HomeFragment.TAB_INDICATOR),R.drawable.tab_home_indicator_selector);
+        addTab(this, tabHost, tabHost.newTabSpec(SearchFragment.TAB_SPEC).setIndicator(SearchFragment.TAB_INDICATOR),R.drawable.tab_search_indicator_selector);
+        addTab(this, tabHost, tabHost.newTabSpec(AddBookActivity.TAB_SPEC).setIndicator(AddBookActivity.TAB_INDICATOR),R.drawable.tab_add_book_indicator_selector);
+        addTab(this, tabHost, tabHost.newTabSpec(ProfileFragment.TAB_SPEC).setIndicator(ProfileFragment.TAB_INDICATOR),R.drawable.tab_profile_indicator_selector);
+        addTab(this, tabHost, tabHost.newTabSpec(MessageFragment.TAB_SPEC).setIndicator(MessageFragment.TAB_INDICATOR),R.drawable.tab_message_indicator_selector);
 
         tabHost.setOnTabChangedListener(this);
 
-        ViewCompat.setElevation(tabHost.getTabWidget().getChildTabViewAt(0),32);
-        ViewCompat.setElevation(tabHost.getTabWidget().getChildTabViewAt(1),32);
-        ViewCompat.setElevation(tabHost.getTabWidget().getChildTabViewAt(3),32);
-        ViewCompat.setElevation(tabHost.getTabWidget().getChildTabViewAt(4),32);
+        ViewCompat.setElevation(tabHost.getTabWidget().getChildTabViewAt(HomeFragment.TAB_INDEX),32);
+        ViewCompat.setElevation(tabHost.getTabWidget().getChildTabViewAt(SearchFragment.TAB_INDEX),32);
+        ViewCompat.setElevation(tabHost.getTabWidget().getChildTabViewAt(ProfileFragment.TAB_INDEX),32);
+        ViewCompat.setElevation(tabHost.getTabWidget().getChildTabViewAt(MessageFragment.TAB_INDEX),32);
 
-        tabHost.getTabWidget().getChildTabViewAt(0).setOnClickListener(new View.OnClickListener() {
+        tabHost.getTabWidget().getChildTabViewAt(HomeFragment.TAB_INDEX).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
                 if (tabHost.getCurrentTabView() == view){
                     mDoubleTapHomeButtonListener.onDoubleTapHomeButton();
                 }else{
-                    tabHost.setCurrentTab(0);
+                    tabHost.setCurrentTab(HomeFragment.TAB_INDEX);
                 }
             }
         });
@@ -238,7 +244,7 @@ public class MainActivity extends AppCompatActivity implements TabHost.OnTabChan
     public void onTabChanged(String s) {
         int pos = mTabHost.getCurrentTab();
 
-        if (pos != 2){
+        if (pos != AddBookActivity.TAB_INDEX){
             mOldPos = pos;
             mTabHost.getTabWidget().dispatchSetSelected(false);
             mTabHost.getCurrentTabView().setSelected(true);
@@ -249,13 +255,13 @@ public class MainActivity extends AppCompatActivity implements TabHost.OnTabChan
             mTabHost.getCurrentTabView().findViewById(R.id.tab_strip).setVisibility(View.VISIBLE);
 
             //Because using position 2 for adding new book not for new fragment
-            if (pos > 1){
+            if (pos > SearchFragment.TAB_INDEX){
                 mViewPager.setCurrentItem(pos-1);
             }else {
                 mViewPager.setCurrentItem(pos);
             }
 
-            if (pos == 1) {
+            if (pos == SearchFragment.TAB_INDEX) {
                 mActionBar.setShowHideAnimationEnabled(false);
                 mActionBar.hide();
             } else {
@@ -280,7 +286,7 @@ public class MainActivity extends AppCompatActivity implements TabHost.OnTabChan
         switch (requestCode){
             //Controlling result from LoginRegisterActivity
             case REQUEST_CODE_LOGIN_REGISTER_ACTIVITY:
-                if (resultCode == Activity.RESULT_OK){
+                if (resultCode == LoginRegisterActivity.RESULT_LOGGED_IN){
 
                     FcmPrefManager fcmPrefManager = new FcmPrefManager(MainActivity.this);
                     if (!fcmPrefManager.isUploadedToServer()){
@@ -293,8 +299,8 @@ public class MainActivity extends AppCompatActivity implements TabHost.OnTabChan
 
                     //Reinitialize view pager on each login session completed
                     initializeViewPager(getFragments(), mViewPager);
-                    mTabHost.setCurrentTab(HomeFragment.HOME_FRAGMENT_TAB_INEX);
-                    mViewPager.setCurrentItem(HomeFragment.HOME_FRAGMENT_TAB_INEX);
+                    mTabHost.setCurrentTab(HomeFragment.TAB_INDEX);
+                    mViewPager.setCurrentItem(HomeFragment.TAB_INDEX);
 
                     Log.d(TAG,"Result ok while returning to MainActivity from LoginRegisterActivity");
                 }else if(resultCode == Activity.RESULT_CANCELED){
@@ -313,7 +319,6 @@ public class MainActivity extends AppCompatActivity implements TabHost.OnTabChan
                 } else if (resultCode == CurrentUserProfileSettingsActivity.RESULT_USER_UPDATED) {
                     mProfileFragment.refreshProfilePage();
                 }
-
                 break;
 
             case REQUEST_CODE_ADD_BOOK_ACTIVITY:
@@ -322,17 +327,17 @@ public class MainActivity extends AppCompatActivity implements TabHost.OnTabChan
                 }
                 break;
 
-            case REQUEST_CODE_IS_ALL_MESSAGES_DELETED:
-                if (resultCode == ConversationActivity.ALL_MESSAGES_DELETED){
+            case REQUEST_CODE_CONVERSATION_ACTIVITY:
+                if (resultCode == ConversationActivity.RESULT_ALL_MESSAGES_DELETED){
                     DBHandler dbHandler = DBHandler.getInstance(this);
                     dbHandler.deleteMessageUser((User) data.getParcelableExtra("opposite_user"));
                     dbHandler.deleteMessageUsersConversation((User) data.getParcelableExtra("opposite_user"));
                 }
                 break;
 
-            case REQUEST_CODE_DELETE_NOTIFICATION_SEENS:
+            case REQUEST_CODE_NOTIFICATION_ACTIVITY:
                 if (resultCode == NotificationActivity.RESULT_CODE_ALL_NOTIFICATION_SEENS_DELETED){
-                    setNotificationMenuItemValue();
+                    fetchNotificationMenuItemValue();
                 }
                 break;
         }
@@ -368,12 +373,12 @@ public class MainActivity extends AppCompatActivity implements TabHost.OnTabChan
                 Intent conversationIntent = new Intent(this, ConversationActivity.class);
 
                 conversationIntent.putExtra("user", intent.getParcelableExtra("message_user"));
-                startActivityForResult(conversationIntent, REQUEST_CODE_IS_ALL_MESSAGES_DELETED);
+                startActivityForResult(conversationIntent, REQUEST_CODE_CONVERSATION_ACTIVITY);
             }
         }
 
-        mViewPager.setCurrentItem(4, false);
-        mTabHost.setCurrentTab(4);
+        mViewPager.setCurrentItem(MessageFragment.TAB_INDEX, false);
+        mTabHost.setCurrentTab(MessageFragment.TAB_INDEX);
     }
 
     public void setActionBarElevation(float dp, int tabIndex) {
@@ -391,22 +396,22 @@ public class MainActivity extends AppCompatActivity implements TabHost.OnTabChan
         mMessageReceiver = new BroadcastReceiver() {
             @Override
             public void onReceive(Context context, Intent intent) {
-                if (intent.getAction().equalsIgnoreCase("com.karambit.bookie.SENT_REQUEST_RECEIVED")){
-                    setNotificationMenuItemValue();
-                } else if (intent.getAction().equalsIgnoreCase("com.karambit.bookie.REJECTED_REQUEST_RECEIVED")){
-                    setNotificationMenuItemValue();
-                } else if (intent.getAction().equalsIgnoreCase("com.karambit.bookie.ACCEPTED_REQUEST_RECEIVED")){
-                    setNotificationMenuItemValue();
-                } else if (intent.getAction().equalsIgnoreCase("com.karambit.bookie.BOOK_OWNER_CHANGED_DATA_RECEIVED")){
-                    setNotificationMenuItemValue();
+                if (intent.getAction().equalsIgnoreCase(BookieIntentFilters.INTENT_FILTER_SENT_REQUEST_RECEIVED)){
+                    fetchNotificationMenuItemValue();
+                } else if (intent.getAction().equalsIgnoreCase(BookieIntentFilters.INTENT_FILTER_REJECTED_REQUEST_RECEIVED)){
+                    fetchNotificationMenuItemValue();
+                } else if (intent.getAction().equalsIgnoreCase(BookieIntentFilters.INTENT_FILTER_ACCEPTED_REQUEST_RECEIVED)){
+                    fetchNotificationMenuItemValue();
+                } else if (intent.getAction().equalsIgnoreCase(BookieIntentFilters.INTENT_FILTER_BOOK_OWNER_CHANGED_RECEIVED)){
+                    fetchNotificationMenuItemValue();
                 }
             }
         };
 
-        registerReceiver(mMessageReceiver, new IntentFilter("com.karambit.bookie.SENT_REQUEST_RECEIVED"));
-        registerReceiver(mMessageReceiver, new IntentFilter("com.karambit.bookie.REJECTED_REQUEST_RECEIVED"));
-        registerReceiver(mMessageReceiver, new IntentFilter("com.karambit.bookie.ACCEPTED_REQUEST_RECEIVED"));
-        registerReceiver(mMessageReceiver, new IntentFilter("com.karambit.bookie.BOOK_OWNER_CHANGED_DATA_RECEIVED"));
+        registerReceiver(mMessageReceiver, new IntentFilter(BookieIntentFilters.INTENT_FILTER_SENT_REQUEST_RECEIVED));
+        registerReceiver(mMessageReceiver, new IntentFilter(BookieIntentFilters.INTENT_FILTER_REJECTED_REQUEST_RECEIVED));
+        registerReceiver(mMessageReceiver, new IntentFilter(BookieIntentFilters.INTENT_FILTER_ACCEPTED_REQUEST_RECEIVED));
+        registerReceiver(mMessageReceiver, new IntentFilter(BookieIntentFilters.INTENT_FILTER_BOOK_OWNER_CHANGED_RECEIVED));
     }
 
     @Override
@@ -416,7 +421,7 @@ public class MainActivity extends AppCompatActivity implements TabHost.OnTabChan
         unregisterReceiver(mMessageReceiver);
     }
 
-    private void setNotificationMenuItemValue() {
+    public void fetchNotificationMenuItemValue() {
         DBHandler dbHandler = DBHandler.getInstance(this);
         int notificationCount = dbHandler.getUnseenNotificationCount();
 
@@ -488,20 +493,6 @@ public class MainActivity extends AppCompatActivity implements TabHost.OnTabChan
         mTouchEventListeners.clear();
     }
 
-    /**
-     * This method converts dp unit to equivalent pixels, depending on device density.
-     *
-     * @param dp A value in dp (density independent pixels) unit. Which we need to convert into pixels
-     * @param context Context to get resources and device specific display metrics
-     * @return A float value to represent px equivalent to dp depending on device density
-     */
-    public static float convertDpToPixel(float dp, Context context){
-        Resources resources = context.getResources();
-        DisplayMetrics metrics = resources.getDisplayMetrics();
-        float px = dp * ((float)metrics.densityDpi / DisplayMetrics.DENSITY_DEFAULT);
-        return px;
-    }
-
     private void sendRegistrationToServer(final String token) {
         final FcmApi fcmApi = BookieClient.getClient().create(FcmApi.class);
 
@@ -570,11 +561,12 @@ public class MainActivity extends AppCompatActivity implements TabHost.OnTabChan
     @Override
     public void onBackPressed() {
         if(!mIsBackPressed){
-            if (mTabHost.getCurrentTab() != 0){
-                mViewPager.setCurrentItem(0, true);
-                mTabHost.setCurrentTab(0);
+            if (mTabHost.getCurrentTab() != HomeFragment.TAB_INDEX){
+                mViewPager.setCurrentItem(HomeFragment.TAB_INDEX, true);
+                mTabHost.setCurrentTab(HomeFragment.TAB_INDEX);
             }else {
                 mIsBackPressed = true;
+                Toast.makeText(this, R.string.press_back_again, Toast.LENGTH_SHORT).show();
                 new Handler().postDelayed(new Runnable() {
                     @Override
                     public void run() {

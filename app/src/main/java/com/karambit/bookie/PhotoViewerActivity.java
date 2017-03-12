@@ -50,11 +50,10 @@ import java.io.IOException;
 
 public class PhotoViewerActivity extends AppCompatActivity implements View.OnTouchListener {
 
+    private static final int REQUEST_CODE_CUSTOM_PERMISSIONS = 1;
+    private static final int REQUEST_CODE_SELECT_IMAGE = 2;
+    public static final int RESULT_PROFILE_PICTURE_UPDATED = 3;
 
-    private static final int CUSTOM_PERMISSIONS_REQUEST_CODE = 123;
-
-    private static final int SELECT_IMAGE_REQUEST_CODE = 1;
-    public static final int RESULT_PROFILE_PICTURE_UPDATED = 1002;
     private static final String UPLOAD_IMAGE_URL = "ProfilePictureUpload";
 
     // these matrices will be used to move and zoom image
@@ -130,7 +129,7 @@ public class PhotoViewerActivity extends AppCompatActivity implements View.OnTou
                 @Override
                 public void onClick(View v) {
                     if (checkPermissions()) {
-                        startActivityForResult(ImagePicker.getPickImageIntent(getBaseContext()), SELECT_IMAGE_REQUEST_CODE);
+                        startActivityForResult(ImagePicker.getPickImageIntent(getBaseContext()), REQUEST_CODE_SELECT_IMAGE);
 
                         Log.i(TAG, "Permissions OK!");
                     } else {
@@ -140,7 +139,7 @@ public class PhotoViewerActivity extends AppCompatActivity implements View.OnTou
                                 Manifest.permission.CAMERA
                         };
 
-                        ActivityCompat.requestPermissions(PhotoViewerActivity.this, permissions, CUSTOM_PERMISSIONS_REQUEST_CODE);
+                        ActivityCompat.requestPermissions(PhotoViewerActivity.this, permissions, REQUEST_CODE_CUSTOM_PERMISSIONS);
 
                         Log.i(TAG, "Permissions NOT OK!");
                     }
@@ -387,7 +386,7 @@ public class PhotoViewerActivity extends AppCompatActivity implements View.OnTou
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
 
-        if (requestCode == SELECT_IMAGE_REQUEST_CODE) {
+        if (requestCode == REQUEST_CODE_SELECT_IMAGE) {
             if (resultCode == Activity.RESULT_OK) {
                 Bitmap bitmap = ImagePicker.getImageFromResult(getBaseContext(), resultCode, data);
                 Bitmap croppedBitmap = ImageScaler.cropImage(bitmap, 72 / 72f);
@@ -460,7 +459,7 @@ public class PhotoViewerActivity extends AppCompatActivity implements View.OnTou
     @Override
     public void onRequestPermissionsResult(int requestCode, @NonNull String permissions[], @NonNull int[] grantResults) {
         switch (requestCode) {
-            case CUSTOM_PERMISSIONS_REQUEST_CODE: {
+            case REQUEST_CODE_CUSTOM_PERMISSIONS: {
                 // If request is cancelled, the result arrays are empty.
                 if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
 

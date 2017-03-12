@@ -749,6 +749,37 @@ public class BookTimelineAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
 
                         if (interaction.getUser().equals(currentUser)) {
 
+                            switch (interaction.getInteractionType()) {
+
+                                case ADD:
+                                    bookProcessHolder.mProcessImage.setImageResource(R.drawable.ic_book_timeline_add_book_outline_36dp);
+                                    bookProcessHolder.mProcessChange.setText(R.string.you_added);
+                                    break;
+                                case READ_START:
+                                    bookProcessHolder.mProcessImage.setImageResource(R.drawable.ic_book_timeline_read_start_stop_36dp);
+                                    bookProcessHolder.mProcessChange.setText(R.string.you_started_to_read);
+                                    break;
+
+                                case READ_STOP:
+                                    bookProcessHolder.mProcessImage.setImageResource(R.drawable.ic_book_timeline_read_start_stop_36dp);
+                                    bookProcessHolder.mProcessChange.setText(R.string.you_finished_to_read);
+                                    break;
+
+                                case CLOSE_TO_SHARE:
+                                    bookProcessHolder.mProcessImage.setImageResource(R.drawable.ic_book_timeline_closed_to_share_36dp);
+                                    bookProcessHolder.mProcessChange.setText(R.string.you_closed_sharing);
+                                    break;
+
+                                case OPEN_TO_SHARE:
+                                    bookProcessHolder.mProcessImage.setImageResource(R.drawable.ic_book_timeline_opened_to_share_36dp);
+                                    bookProcessHolder.mProcessChange.setText(R.string.you_opened_sharing);
+                                    break;
+
+                                default:
+                                    throw new IllegalArgumentException("Invalid interaction type:" + interaction.getInteractionType().name());
+                            }
+                        } else {
+
                             String userName = interaction.getUser().getName();
 
                             ClickableSpan clickableSpanUserName = new ClickableSpan() {
@@ -799,7 +830,7 @@ public class BookTimelineAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
 
                                     break;
                                 }
-                                
+
                                 case READ_STOP: {
                                     String readStopString = mContext.getString(R.string.x_finished_to_read, userName);
                                     SpannableString spanReadStop = new SpannableString(readStopString);
@@ -816,7 +847,7 @@ public class BookTimelineAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
 
                                     break;
                                 }
-                                
+
                                 case CLOSE_TO_SHARE: {
                                     String closeToShareString = mContext.getString(R.string.x_closed_sharing, userName);
                                     SpannableString spanCloseToShare = new SpannableString(closeToShareString);
@@ -858,37 +889,6 @@ public class BookTimelineAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
                             bookProcessHolder.mProcessChange.setMovementMethod(LinkMovementMethod.getInstance());
                             bookProcessHolder.mProcessChange.setHighlightColor(Color.TRANSPARENT);
 
-                        } else {
-
-                            switch (interaction.getInteractionType()) {
-
-                                case ADD:
-                                    bookProcessHolder.mProcessImage.setImageResource(R.drawable.ic_book_timeline_add_book_outline_36dp);
-                                    bookProcessHolder.mProcessChange.setText(R.string.you_added);
-                                    break;
-                                case READ_START:
-                                    bookProcessHolder.mProcessImage.setImageResource(R.drawable.ic_book_timeline_read_start_stop_36dp);
-                                    bookProcessHolder.mProcessChange.setText(R.string.you_started_to_read);
-                                    break;
-
-                                case READ_STOP:
-                                    bookProcessHolder.mProcessImage.setImageResource(R.drawable.ic_book_timeline_read_start_stop_36dp);
-                                    bookProcessHolder.mProcessChange.setText(R.string.you_finished_to_read);
-                                    break;
-
-                                case CLOSE_TO_SHARE:
-                                    bookProcessHolder.mProcessImage.setImageResource(R.drawable.ic_book_timeline_closed_to_share_36dp);
-                                    bookProcessHolder.mProcessChange.setText(R.string.you_closed_sharing);
-                                    break;
-
-                                case OPEN_TO_SHARE:
-                                    bookProcessHolder.mProcessImage.setImageResource(R.drawable.ic_book_timeline_opened_to_share_36dp);
-                                    bookProcessHolder.mProcessChange.setText(R.string.you_opened_sharing);
-                                    break;
-
-                                default:
-                                    throw new IllegalArgumentException("Invalid interaction type:" + interaction.getInteractionType().name());
-                            }
                         }
                     }
 
