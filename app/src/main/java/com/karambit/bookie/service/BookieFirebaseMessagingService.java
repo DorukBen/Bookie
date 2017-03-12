@@ -26,6 +26,7 @@ import android.media.RingtoneManager;
 import android.net.Uri;
 import android.os.Bundle;
 import android.support.v4.app.NotificationCompat;
+import android.support.v4.content.LocalBroadcastManager;
 import android.util.Log;
 
 import com.google.firebase.messaging.RemoteMessage;
@@ -118,7 +119,7 @@ public class BookieFirebaseMessagingService extends com.google.firebase.messagin
                             Bundle bundle = new Bundle();
                             bundle.putParcelable("message", message);
                             intent.putExtras(bundle);
-                            sendBroadcast(intent);
+                            LocalBroadcastManager.getInstance(this).sendBroadcast(intent);
 
                             uploadMessageDeliveredStateToServer(message.getID());
                         } catch (JSONException e) {
@@ -134,7 +135,7 @@ public class BookieFirebaseMessagingService extends com.google.firebase.messagin
                         Bundle bundle = new Bundle();
                         bundle.putInt("message_id", Integer.parseInt(remoteMessage.getData().get("messageID")));
                         intent.putExtras(bundle);
-                        sendBroadcast(intent);
+                        LocalBroadcastManager.getInstance(this).sendBroadcast(intent);
                     }
                 } else if (Integer.parseInt(remoteMessage.getData().get("fcmDataType")) == FcmDataTypes.FCM_DATA_TYPE_SEEN_MESSAGE){
                     DBHandler dbHandler = DBHandler.getInstance(this);
@@ -144,7 +145,7 @@ public class BookieFirebaseMessagingService extends com.google.firebase.messagin
                     Bundle bundle = new Bundle();
                     bundle.putInt("message_id", Integer.parseInt(remoteMessage.getData().get("messageID")));
                     intent.putExtras(bundle);
-                    sendBroadcast(intent);
+                    LocalBroadcastManager.getInstance(this).sendBroadcast(intent);
                 } else if (Integer.parseInt(remoteMessage.getData().get("fcmDataType")) == FcmDataTypes.FCM_DATA_TYPE_REQUEST_SENT){
                     if (remoteMessage.getData().containsKey("book") && remoteMessage.getData().containsKey("sender")){
                         try {
@@ -171,7 +172,7 @@ public class BookieFirebaseMessagingService extends com.google.firebase.messagin
                             Bundle bundle = new Bundle();
                             bundle.putParcelable("notification", notification);
                             intent.putExtras(bundle);
-                            sendBroadcast(intent);
+                            LocalBroadcastManager.getInstance(this).sendBroadcast(intent);
                         } catch (JSONException e) {
                             e.printStackTrace();
                         }
@@ -201,7 +202,7 @@ public class BookieFirebaseMessagingService extends com.google.firebase.messagin
                             Bundle bundle = new Bundle();
                             bundle.putParcelable("notification", notification);
                             intent.putExtras(bundle);
-                            sendBroadcast(intent);
+                            LocalBroadcastManager.getInstance(this).sendBroadcast(intent);
                         } catch (JSONException e) {
                             e.printStackTrace();
                         }
@@ -231,7 +232,7 @@ public class BookieFirebaseMessagingService extends com.google.firebase.messagin
                             Bundle bundle = new Bundle();
                             bundle.putParcelable("notification", notification);
                             intent.putExtras(bundle);
-                            sendBroadcast(intent);
+                            LocalBroadcastManager.getInstance(this).sendBroadcast(intent);
                         } catch (JSONException e) {
                             e.printStackTrace();
                         }
@@ -260,7 +261,7 @@ public class BookieFirebaseMessagingService extends com.google.firebase.messagin
                             Bundle bundle = new Bundle();
                             bundle.putParcelable("notification", notification);
                             intent.putExtras(bundle);
-                            sendBroadcast(intent);
+                            LocalBroadcastManager.getInstance(this).sendBroadcast(intent);
                         } catch (JSONException e) {
                             e.printStackTrace();
                         }
