@@ -5,6 +5,8 @@ import android.content.Context;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 
+import com.karambit.bookie.helper.SessionManager;
+
 /**
  * Created by doruk on 16.02.2017.
  */

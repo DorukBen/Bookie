@@ -42,7 +42,6 @@ import com.karambit.bookie.model.User;
 import com.karambit.bookie.rest_api.BookieClient;
 import com.karambit.bookie.rest_api.ErrorCodes;
 import com.karambit.bookie.rest_api.FcmApi;
-import com.karambit.bookie.rest_api.FcmDataTypes;
 
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -62,7 +61,7 @@ import static com.karambit.bookie.model.Notification.Type.REQUESTED;
 
 public class BookieFirebaseMessagingService extends com.google.firebase.messaging.FirebaseMessagingService {
 
-    private static final String TAG = "FirebaseMsgService";
+    private static final String TAG = BookieFirebaseMessagingService.class.getSimpleName();
     public static final int MESSAGE_NOTIFICATION_ID = 785;
     public static ArrayList<Message> mNotificationMessages = new ArrayList<>();
     public static ArrayList<Integer> mNotificationUserIds = new ArrayList<>();
@@ -77,7 +76,7 @@ public class BookieFirebaseMessagingService extends com.google.firebase.messagin
      */
     // [START receive_message]
     @Override
-    public void onMessageReceived(RemoteMessage remoteMessage) {
+    public void onMessageReceived(final RemoteMessage remoteMessage) {
         // [START_EXCLUDE]
         // There are two types of messages data messages and notification messages. Data messages are handled
         // here in onMessageReceived whether the app is in the foreground or background. Data messages are the type
@@ -101,7 +100,7 @@ public class BookieFirebaseMessagingService extends com.google.firebase.messagin
                         try {
                             JSONObject jsonObject = new JSONObject(remoteMessage.getData().get("sender"));
                             User sender = User.jsonObjectToUser(jsonObject);
-                            Message message = new Message(Integer.parseInt(remoteMessage.getData().get("messageID")),
+                            final Message message = new Message(Integer.parseInt(remoteMessage.getData().get("messageID")),
                                                           remoteMessage.getData().get("message"),
                                                           sender,
                                                           SessionManager.getCurrentUser(this),
@@ -112,12 +111,18 @@ public class BookieFirebaseMessagingService extends com.google.firebase.messagin
                                 sendMessageNotification(message);
                             }
 
-                            DBHandler dbHandler = DBHandler.getInstance(this);
-                            dbHandler.saveMessageToDataBase(message);
+                            new Thread(new Runnable() {
+                                @Override
+                                public void run() {
+                                    synchronized (DBHandler.class) {
+                                        DBHandler.getInstance(BookieFirebaseMessagingService.this).saveMessageToDataBase(message);
+                                    }
+                                }
+                            }).start();
 
                             Intent intent = new Intent(BookieIntentFilters.INTENT_FILTER_MESSAGE_RECEIVED);
                             Bundle bundle = new Bundle();
-                            bundle.putParcelable("message", message);
+                            bundle.putParcelable(BookieIntentFilters.EXTRA_MESSAGE, message);
                             intent.putExtras(bundle);
                             LocalBroadcastManager.getInstance(this).sendBroadcast(intent);
 
@@ -128,22 +133,36 @@ public class BookieFirebaseMessagingService extends com.google.firebase.messagin
                     }
                 } else if (Integer.parseInt(remoteMessage.getData().get("fcmDataType")) == FcmDataTypes.FCM_DATA_TYPE_DELIVERED_MESSAGE){
                     if (remoteMessage.getData().containsKey("messageID")){
-                        DBHandler dbHandler = DBHandler.getInstance(this);
-                        dbHandler.updateMessageState(Integer.parseInt(remoteMessage.getData().get("messageID")), Message.State.DELIVERED);
+                        new Thread(new Runnable() {
+                            @Override
+                            public void run() {
+                                synchronized (DBHandler.class) {
+                                    DBHandler dbHandler = DBHandler.getInstance(BookieFirebaseMessagingService.this);
+                                    dbHandler.updateMessageState(Integer.parseInt(remoteMessage.getData().get("messageID")), Message.State.DELIVERED);
+                                }
+                            }
+                        }).start();
 
                         Intent intent = new Intent(BookieIntentFilters.INTENT_FILTER_MESSAGE_DELIVERED);
                         Bundle bundle = new Bundle();
-                        bundle.putInt("message_id", Integer.parseInt(remoteMessage.getData().get("messageID")));
+                        bundle.putInt(BookieIntentFilters.EXTRA_MESSAGE_ID, Integer.parseInt(remoteMessage.getData().get("messageID")));
                         intent.putExtras(bundle);
                         LocalBroadcastManager.getInstance(this).sendBroadcast(intent);
                     }
                 } else if (Integer.parseInt(remoteMessage.getData().get("fcmDataType")) == FcmDataTypes.FCM_DATA_TYPE_SEEN_MESSAGE){
-                    DBHandler dbHandler = DBHandler.getInstance(this);
-                    dbHandler.updateMessageState(Integer.parseInt(remoteMessage.getData().get("messageID")), Message.State.SEEN);
+                    new Thread(new Runnable() {
+                        @Override
+                        public void run() {
+                            synchronized (DBHandler.class) {
+                                DBHandler dbHandler = DBHandler.getInstance(BookieFirebaseMessagingService.this);
+                                dbHandler.updateMessageState(Integer.parseInt(remoteMessage.getData().get("messageID")), Message.State.SEEN);
+                            }
+                        }
+                    }).start();
 
                     Intent intent = new Intent(BookieIntentFilters.INTENT_FILTER_MESSAGE_SEEN);
                     Bundle bundle = new Bundle();
-                    bundle.putInt("message_id", Integer.parseInt(remoteMessage.getData().get("messageID")));
+                    bundle.putInt(BookieIntentFilters.EXTRA_MESSAGE_ID, Integer.parseInt(remoteMessage.getData().get("messageID")));
                     intent.putExtras(bundle);
                     LocalBroadcastManager.getInstance(this).sendBroadcast(intent);
                 } else if (Integer.parseInt(remoteMessage.getData().get("fcmDataType")) == FcmDataTypes.FCM_DATA_TYPE_REQUEST_SENT){
@@ -156,21 +175,29 @@ public class BookieFirebaseMessagingService extends com.google.firebase.messagin
                             Book book = Book.jsonObjectToBook(bookJsonObject);
 
 
-                            Notification notification = new Notification(REQUESTED,
+                            final Notification notification = new Notification(REQUESTED,
                                                     Calendar.getInstance(),
                                                     book,
                                                     sender,
                                                     false);
 
 
-                            DBHandler dbHandler = DBHandler.getInstance(this);
                             sendNotification(notification);
 
-                            dbHandler.saveNotificationToDatabase(notification);
+                            new Thread(new Runnable() {
+                                @Override
+                                public void run() {
+                                    synchronized (DBHandler.class) {
+                                        DBHandler dbHandler = DBHandler.getInstance(BookieFirebaseMessagingService.this);
+                                        dbHandler.saveNotificationToDatabase(notification);
+                                    }
+                                }
+                            }).start();
+
 
                             Intent intent = new Intent(BookieIntentFilters.INTENT_FILTER_SENT_REQUEST_RECEIVED);
                             Bundle bundle = new Bundle();
-                            bundle.putParcelable("notification", notification);
+                            bundle.putParcelable(BookieIntentFilters.EXTRA_NOTIFICATION, notification);
                             intent.putExtras(bundle);
                             LocalBroadcastManager.getInstance(this).sendBroadcast(intent);
                         } catch (JSONException e) {
@@ -187,20 +214,27 @@ public class BookieFirebaseMessagingService extends com.google.firebase.messagin
                             Book book = Book.jsonObjectToBook(bookJsonObject);
 
 
-                            Notification notification = new Notification(Notification.Type.REQUEST_REJECTED,
+                            final Notification notification = new Notification(Notification.Type.REQUEST_REJECTED,
                                     Calendar.getInstance(),
                                     book,
                                     sender,
                                     false);
 
-                            DBHandler dbHandler = DBHandler.getInstance(this);
                             sendNotification(notification);
 
-                            dbHandler.saveNotificationToDatabase(notification);
+                            new Thread(new Runnable() {
+                                @Override
+                                public void run() {
+                                    synchronized (DBHandler.class) {
+                                        DBHandler dbHandler = DBHandler.getInstance(BookieFirebaseMessagingService.this);
+                                        dbHandler.saveNotificationToDatabase(notification);
+                                    }
+                                }
+                            }).start();
 
                             Intent intent = new Intent(BookieIntentFilters.INTENT_FILTER_REJECTED_REQUEST_RECEIVED);
                             Bundle bundle = new Bundle();
-                            bundle.putParcelable("notification", notification);
+                            bundle.putParcelable(BookieIntentFilters.EXTRA_NOTIFICATION, notification);
                             intent.putExtras(bundle);
                             LocalBroadcastManager.getInstance(this).sendBroadcast(intent);
                         } catch (JSONException e) {
@@ -217,20 +251,27 @@ public class BookieFirebaseMessagingService extends com.google.firebase.messagin
                             Book book = Book.jsonObjectToBook(bookJsonObject);
 
 
-                            Notification notification = new Notification(Notification.Type.REQUEST_ACCEPTED,
+                            final Notification notification = new Notification(Notification.Type.REQUEST_ACCEPTED,
                                     Calendar.getInstance(),
                                     book,
                                     sender,
                                     false);
 
-                            DBHandler dbHandler = DBHandler.getInstance(this);
                             sendNotification(notification);
 
-                            dbHandler.saveNotificationToDatabase(notification);
+                            new Thread(new Runnable() {
+                                @Override
+                                public void run() {
+                                    synchronized (DBHandler.class) {
+                                        DBHandler dbHandler = DBHandler.getInstance(BookieFirebaseMessagingService.this);
+                                        dbHandler.saveNotificationToDatabase(notification);
+                                    }
+                                }
+                            }).start();
 
                             Intent intent = new Intent(BookieIntentFilters.INTENT_FILTER_ACCEPTED_REQUEST_RECEIVED);
                             Bundle bundle = new Bundle();
-                            bundle.putParcelable("notification", notification);
+                            bundle.putParcelable(BookieIntentFilters.EXTRA_NOTIFICATION, notification);
                             intent.putExtras(bundle);
                             LocalBroadcastManager.getInstance(this).sendBroadcast(intent);
                         } catch (JSONException e) {
@@ -247,19 +288,27 @@ public class BookieFirebaseMessagingService extends com.google.firebase.messagin
                             Book book = Book.jsonObjectToBook(bookJsonObject);
 
 
-                            Notification notification = new Notification(BOOK_OWNER_CHANGED,
+                            final Notification notification = new Notification(BOOK_OWNER_CHANGED,
                                     Calendar.getInstance(),
                                     book,
                                     sender,
                                     false);
 
-                            DBHandler dbHandler = DBHandler.getInstance(this);
                             sendNotification(notification);
-                            dbHandler.saveNotificationToDatabase(notification);
+
+                            new Thread(new Runnable() {
+                                @Override
+                                public void run() {
+                                    synchronized (DBHandler.class) {
+                                        DBHandler dbHandler = DBHandler.getInstance(BookieFirebaseMessagingService.this);
+                                        dbHandler.saveNotificationToDatabase(notification);
+                                    }
+                                }
+                            }).start();
 
                             Intent intent = new Intent(BookieIntentFilters.INTENT_FILTER_BOOK_OWNER_CHANGED_RECEIVED);
                             Bundle bundle = new Bundle();
-                            bundle.putParcelable("notification", notification);
+                            bundle.putParcelable(BookieIntentFilters.EXTRA_NOTIFICATION, notification);
                             intent.putExtras(bundle);
                             LocalBroadcastManager.getInstance(this).sendBroadcast(intent);
                         } catch (JSONException e) {
@@ -298,7 +347,7 @@ public class BookieFirebaseMessagingService extends com.google.firebase.messagin
         inboxStyle.setBigContentTitle(getString(R.string.app_name));
         if (mNotificationUserIds.size() > 1){
             if (mNotificationMessages.size() > 1){
-                inboxStyle.setSummaryText(mNotificationMessages.size() + " new messages from " + mNotificationUserIds.size() + " chats");
+                inboxStyle.setSummaryText(getString(R.string.notification_multiple_messages, mNotificationMessages.size(), mNotificationUserIds.size()));
             }
 
             for (Message notificationMessage: mNotificationMessages){
@@ -307,7 +356,7 @@ public class BookieFirebaseMessagingService extends com.google.firebase.messagin
 
             Intent intent = new Intent(this, MainActivity.class);
             Bundle bundle = new Bundle();
-            bundle.putParcelable("message_user", null);
+            bundle.putParcelable(MainActivity.EXTRA_MESSAGE_USER, null);
             intent.putExtras(bundle);
 
             PendingIntent pendingIntent = PendingIntent.getActivity(this, 1000, intent,
@@ -317,7 +366,7 @@ public class BookieFirebaseMessagingService extends com.google.firebase.messagin
 
             builder = new NotificationCompat.Builder(this)
                     .setContentTitle(getString(R.string.app_name))
-                    .setContentText(mNotificationMessages.size() + " new messages from " + mNotificationUserIds.size() + " chats")
+                    .setContentText(getString(R.string.notification_multiple_messages, mNotificationMessages.size(), mNotificationUserIds.size()))
                     .setSmallIcon(R.mipmap.ic_launcher)
                     .setLargeIcon(bitmap)
                     .setSound(defaultSoundUri)
@@ -330,11 +379,13 @@ public class BookieFirebaseMessagingService extends com.google.firebase.messagin
             inboxStyle.setBigContentTitle(message.getSender().getName());
             String notificationMessageText;
             if (mNotificationMessages.size() > 1){
-                inboxStyle.setSummaryText(mNotificationMessages.size() + " new messages.");
-                notificationMessageText = mNotificationMessages.size() + " new messages.";
+                String notificationString = getString(R.string.notification_new_messages, mNotificationMessages.size());
+                inboxStyle.setSummaryText(notificationString);
+                notificationMessageText = notificationString;
             }else{
-                inboxStyle.setSummaryText(mNotificationMessages.size() + " new message.");
-                notificationMessageText = mNotificationMessages.size() + " new message.";
+                String notificationString = getString(R.string.notification_new_message, mNotificationMessages.size());
+                inboxStyle.setSummaryText(notificationString);
+                notificationMessageText = notificationString;
             }
 
             for (Message notificationMessage: mNotificationMessages){
@@ -343,7 +394,7 @@ public class BookieFirebaseMessagingService extends com.google.firebase.messagin
 
             Intent intent = new Intent(this, MainActivity.class);
             Bundle bundle = new Bundle();
-            bundle.putParcelable("message_user", message.getSender());
+            bundle.putParcelable(MainActivity.EXTRA_MESSAGE_USER, message.getSender());
             intent.putExtras(bundle);
 
             PendingIntent pendingIntent = PendingIntent.getActivity(this, 1000, intent,
@@ -387,31 +438,33 @@ public class BookieFirebaseMessagingService extends com.google.firebase.messagin
         NotificationCompat.InboxStyle inboxStyle = new NotificationCompat.InboxStyle();
         inboxStyle.setBigContentTitle(getString(R.string.app_name));
 
-        String summeryText;
+        String summaryText;
         if (mNotifications.size() > 1){
-            inboxStyle.setSummaryText(mNotifications.size() + " new notifications.");
-            summeryText = mNotifications.size() + " new notifications.";
+            String notificationString = getString(R.string.notification_new_notifications, mNotifications.size());
+            inboxStyle.setSummaryText(notificationString);
+            summaryText = notificationString;
         }else {
-            inboxStyle.setSummaryText(mNotifications.size() + " new notifications.");
+            String notificationString = getString(R.string.notification_new_notification, mNotifications.size());
+            inboxStyle.setSummaryText(notificationString);
             switch (notification.getType()) {
                 case REQUESTED:
-                    summeryText = getString(R.string.x_requested_for_y, notification.getOppositeUser().getName(), notification.getBook().getName());
+                    summaryText = getString(R.string.x_requested_for_y, notification.getOppositeUser().getName(), notification.getBook().getName());
                     break;
 
                 case BOOK_OWNER_CHANGED:
-                    summeryText = getString(R.string.x_now_owned_by_y, notification.getBook().getName(), notification.getOppositeUser().getName());
+                    summaryText = getString(R.string.x_now_owned_by_y, notification.getBook().getName(), notification.getOppositeUser().getName());
                     break;
 
                 case BOOK_LOST:
-                    summeryText = getString(R.string.x_lost_y, notification.getOppositeUser().getName(), notification.getBook().getName());
+                    summaryText = getString(R.string.x_lost_y, notification.getOppositeUser().getName(), notification.getBook().getName());
                     break;
 
                 case REQUEST_ACCEPTED:
-                    summeryText = getString(R.string.x_accepted_your_request_for_y, notification.getOppositeUser().getName(), notification.getBook().getName());
+                    summaryText = getString(R.string.x_accepted_your_request_for_y, notification.getOppositeUser().getName(), notification.getBook().getName());
                     break;
 
                 case REQUEST_REJECTED:
-                    summeryText = getString(R.string.x_rejected_your_request_for_y, notification.getOppositeUser().getName(), notification.getBook().getName());
+                    summaryText = getString(R.string.x_rejected_your_request_for_y, notification.getOppositeUser().getName(), notification.getBook().getName());
                     break;
 
                 default:
@@ -453,7 +506,7 @@ public class BookieFirebaseMessagingService extends com.google.firebase.messagin
 
         Intent intent = new Intent(this, MainActivity.class);
         Bundle bundle = new Bundle();
-        bundle.putParcelable("notification", notification);
+        bundle.putParcelable(MainActivity.EXTRA_NOTIFICATION, notification);
         intent.putExtras(bundle);
 
         PendingIntent pendingIntent = PendingIntent.getActivity(this, 500 /* Request code */, intent,
@@ -463,7 +516,7 @@ public class BookieFirebaseMessagingService extends com.google.firebase.messagin
 
         builder = new NotificationCompat.Builder(this)
                 .setContentTitle(getString(R.string.app_name))
-                .setContentText(summeryText)
+                .setContentText(summaryText)
                 .setSmallIcon(R.mipmap.ic_launcher)
                 .setLargeIcon(bitmap)
                 .setSound(defaultSoundUri)

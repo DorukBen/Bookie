@@ -40,7 +40,7 @@ import retrofit2.Response;
 
 public class BookieFirebaseInstanceIDService extends FirebaseInstanceIdService {
 
-    private static final String TAG = "MyFirebaseIDService";
+    private static final String TAG = BookieFirebaseInstanceIDService.class.getSimpleName();
 
     /**
      * Called if InstanceID token is updated. This may occur if the security of

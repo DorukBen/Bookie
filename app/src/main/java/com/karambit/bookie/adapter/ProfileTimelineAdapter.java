@@ -1,5 +1,6 @@
 package com.karambit.bookie.adapter;
 
+import android.app.Activity;
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.location.Address;
@@ -8,6 +9,7 @@ import android.support.v4.view.ViewCompat;
 import android.support.v7.widget.CardView;
 import android.support.v7.widget.RecyclerView;
 import android.text.TextUtils;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -19,6 +21,7 @@ import android.widget.TextView;
 import com.bumptech.glide.Glide;
 import com.bumptech.glide.request.animation.GlideAnimation;
 import com.bumptech.glide.request.target.SimpleTarget;
+import com.karambit.bookie.BookieApplication;
 import com.karambit.bookie.R;
 import com.karambit.bookie.helper.CircleImageView;
 import com.karambit.bookie.helper.ImageScaler;
@@ -62,6 +65,7 @@ public class ProfileTimelineAdapter extends RecyclerView.Adapter<RecyclerView.Vi
     private int mErrorType = ERROR_TYPE_NONE;
 
     private Context mContext;
+    private User mUser;
     private User.Details mUserDetails;
 
     private BookClickListener mBookClickListener;
@@ -70,6 +74,7 @@ public class ProfileTimelineAdapter extends RecyclerView.Adapter<RecyclerView.Vi
 
     private boolean mProgressBarActive;
     private HorizontalPagerAdapter mHorizontalPagerAdapter;
+    private String mFetchedLocation;
 
     public ProfileTimelineAdapter(Context context, User.Details userDetails) {
         mContext = context;
@@ -78,9 +83,9 @@ public class ProfileTimelineAdapter extends RecyclerView.Adapter<RecyclerView.Vi
         mProgressBarActive = false;
     }
 
-    public ProfileTimelineAdapter(Context context) {
+    public ProfileTimelineAdapter(Context context, User user) {
         mContext = context;
-
+        mUser = user;
         mProgressBarActive = false;
     }
 
@@ -636,7 +641,7 @@ public class ProfileTimelineAdapter extends RecyclerView.Adapter<RecyclerView.Vi
         switch (getItemViewType(position)) {
 
             case TYPE_HEADER: {
-                HeaderViewHolder headerViewHolder = (HeaderViewHolder) holder;
+                final HeaderViewHolder headerViewHolder = (HeaderViewHolder) holder;
 
                 //
                 // Listener setup
@@ -697,55 +702,70 @@ public class ProfileTimelineAdapter extends RecyclerView.Adapter<RecyclerView.Vi
                 // Location
                 //
 
-                if (mUserDetails.getUser().getLocation() != null) {
+                if (TextUtils.isEmpty(mFetchedLocation)) {
+                    if (mUserDetails.getUser().getLocation() != null && BookieApplication.hasNetwork()) {
+                        new Thread(new Runnable() {
+                            @Override
+                            public void run() {
+                                double latitude = mUserDetails.getUser().getLocation().latitude;
+                                double longitude = mUserDetails.getUser().getLocation().longitude;
 
-                    double latitude = mUserDetails.getUser().getLocation().latitude;
-                    double longitude = mUserDetails.getUser().getLocation().longitude;
+                                List<Address> addresses = new ArrayList<>();
 
-                    try {
-                        List<Address> addresses;
-                        Geocoder geocoder = new Geocoder(mContext, Locale.getDefault());
-                        if (latitude > -90 && latitude < 90 && longitude > -90 && longitude < 90){
-                            addresses = geocoder.getFromLocation(latitude, longitude, 1);
-                        }else {
-                            addresses = new ArrayList<>();
-                        }
+                                try {
+                                    Geocoder geocoder = new Geocoder(mContext, Locale.getDefault());
+                                    addresses = geocoder.getFromLocation(latitude, longitude, 1);
 
+                                } catch (IOException e) {
+                                    e.printStackTrace();
 
-                        // Admin area equals Istanbul
-                        // Subadmin are equals Bahçelievler
+                                    ((Activity) mContext).runOnUiThread(new Runnable() {
+                                        @Override
+                                        public void run() {
+                                            headerViewHolder.mLocation.setVisibility(View.GONE);
+                                        }
+                                    });
+                                }
+                                // Admin area equals Istanbul
+                                // Subadmin are equals Bahçelievler
+                                final List<Address> finalAddresses = addresses;
+                                ((Activity) mContext).runOnUiThread(new Runnable() {
+                                    @Override
+                                    public void run() {
+                                        if (finalAddresses.size() > 0) {
+                                            String locationString = "";
 
-                        if (addresses.size() > 0) {
-                            String locationString = "";
+                                            String subAdminArea = finalAddresses.get(0).getSubAdminArea();
+                                            if (subAdminArea != null && !subAdminArea.equals("null")) {
+                                                locationString += subAdminArea + " / ";
+                                            }
 
-                            String subAdminArea = addresses.get(0).getSubAdminArea();
-                            if (subAdminArea != null && !subAdminArea.equals("null")) {
-                                locationString += subAdminArea + " / ";
+                                            String adminArea = finalAddresses.get(0).getAdminArea();
+                                            if (adminArea != null && !adminArea.equals("null")) {
+                                                locationString += adminArea;
+                                            }
+
+                                            if (TextUtils.isEmpty(locationString)) {
+                                                headerViewHolder.mLocation.setVisibility(View.GONE);
+                                            } else {
+
+                                                mFetchedLocation = locationString;
+
+                                                headerViewHolder.mLocation.setText(locationString);
+                                                headerViewHolder.mLocation.setVisibility(View.VISIBLE);
+                                            }
+                                        } else {
+                                            headerViewHolder.mLocation.setVisibility(View.GONE);
+                                        }
+                                    }
+                                });
                             }
-
-                            String adminArea = addresses.get(0).getAdminArea();
-                            if (adminArea != null && !adminArea.equals("null")) {
-                                locationString += adminArea;
-                            }
-
-                            if (TextUtils.isEmpty(locationString)) {
-                                headerViewHolder.mLocation.setVisibility(View.GONE);
-                            } else {
-                                headerViewHolder.mLocation.setText(locationString);
-                                headerViewHolder.mLocation.setVisibility(View.VISIBLE);
-                            }
-
-                        } else {
-                            headerViewHolder.mLocation.setVisibility(View.GONE);
-                        }
-
-                    } catch (IOException e) {
-                        e.printStackTrace();
-
+                        }).start();
+                    } else {
                         headerViewHolder.mLocation.setVisibility(View.GONE);
                     }
                 } else {
-                    headerViewHolder.mLocation.setVisibility(View.GONE);
+                    headerViewHolder.mLocation.setText(mFetchedLocation);
                 }
 
                 headerViewHolder.mReadBooks.setText(String.valueOf(mUserDetails.getReadBooksCount()));
@@ -759,7 +779,10 @@ public class ProfileTimelineAdapter extends RecyclerView.Adapter<RecyclerView.Vi
 
                 CurrentlyReadingViewHolder currentlyReadingHolder = (CurrentlyReadingViewHolder) holder;
 
+                Log.i(TAG, "mUserDetails.getCurrentlyReading(): " + mUserDetails.getCurrentlyReading());
+
                 if (mHorizontalPagerAdapter != null){
+                    mHorizontalPagerAdapter.setBooks(mUserDetails.getCurrentlyReading());
                     currentlyReadingHolder.mCycleViewPager.notifyDataSetChanged();
                     currentlyReadingHolder.mCycleViewPager.setInfiniteCyclerManagerPagerAdapter(mHorizontalPagerAdapter);
                 }else{
@@ -1048,6 +1071,7 @@ public class ProfileTimelineAdapter extends RecyclerView.Adapter<RecyclerView.Vi
     }
 
     public void setUserDetails(User.Details userDetails) {
+        Log.v(TAG, "User.Details changed. Before: \n " + mUserDetails + "\nAfter:\n" + userDetails);
         mUserDetails = userDetails;
         setProgressBarActive(false);
         notifyDataSetChanged();

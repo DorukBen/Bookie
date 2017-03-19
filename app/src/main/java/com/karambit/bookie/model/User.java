@@ -172,7 +172,7 @@ public class User implements Parcelable {
         return mLocation;
     }
 
-    public void setLatitude(LatLng location) {
+    public void setLocation(LatLng location) {
         mLocation = location;
     }
 
@@ -351,18 +351,66 @@ public class User implements Parcelable {
 
         @Override
         public String toString() {
+
+            StringBuilder stringBuilder = new StringBuilder();
+
+            if (mCurrentlyReading != null && mCurrentlyReading.size() > 0) {
+                for (Book book : mCurrentlyReading) {
+                    stringBuilder.append(book).append("\n");
+                }
+            }else {
+                stringBuilder.append("null\n");
+            }
+
+            String currentlyReading = stringBuilder.toString();
+
+            stringBuilder = new StringBuilder();
+
+            if (mOnRoadBooks != null && mOnRoadBooks.size() > 0) {
+                for (Book book : mOnRoadBooks) {
+                    stringBuilder.append(book).append("\n");
+                }
+            } else {
+                stringBuilder.append("null\n");
+            }
+
+            String onRoadBooks = stringBuilder.toString();
+
+            stringBuilder = new StringBuilder();
+
+            if (mBooksOnHand != null && mBooksOnHand.size() > 0) {
+                for (Book book : mBooksOnHand) {
+                    stringBuilder.append(book).append("\n");
+                }
+            } else {
+                stringBuilder.append("null\n");
+            }
+
+            String booksOnHand = stringBuilder.toString();
+
+            stringBuilder = new StringBuilder();
+
+            if (mReadBooks != null && mReadBooks.size() > 0) {
+                for (Book book : mReadBooks) {
+                    stringBuilder.append(book).append("\n");
+                }
+            } else {
+                stringBuilder.append("null\n");
+            }
+
+            String readBooks = stringBuilder.toString();
+
             return User.this.toString() + ".Details{" +
-                    "mPassword='" + mPassword + '\'' +
-                    ", mEmail='" + mEmail + '\'' +
-                    ", mVerified=" + mVerified +
-                    ", mBio='" + mBio + '\'' +
-                    ", mBookCounter=" + mBookCounter +
-                    ", mPoint=" + mPoint +
-                    ",\nmCurrentlyReading=" + mCurrentlyReading +
-                    ",\nmOnRoadBooks=" + mOnRoadBooks +
-                    ",\nmReadBooks=" + mReadBooks +
-                    ",\nmBooksOnHand=" + mBooksOnHand +
-                    ",\nmSharedBooks=" + mSharedBooks + '}';
+                    "\nmPassword='" + mPassword + '\'' +
+                    ",\nmEmail='" + mEmail + '\'' +
+                    ",\nmVerified=" + mVerified +
+                    ",\nmBio='" + mBio + '\'' +
+                    ",\nmBookCounter=" + mBookCounter +
+                    ",\nmPoint=" + mPoint +
+                    ",\nmCurrentlyReading=\n" + currentlyReading +
+                    ",mOnRoadBooks=\n" + onRoadBooks +
+                    ",mBooksOnHand=\n" + booksOnHand +
+                    ",mReadBooks=\n" + readBooks + '}';
         }
     }
 

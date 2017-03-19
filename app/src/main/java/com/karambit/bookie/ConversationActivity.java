@@ -30,6 +30,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.karambit.bookie.adapter.ConversationAdapter;
+import com.karambit.bookie.fragment.MessageFragment;
 import com.karambit.bookie.helper.DBHandler;
 import com.karambit.bookie.helper.SessionManager;
 import com.karambit.bookie.helper.TypefaceSpan;
@@ -47,10 +48,12 @@ import org.json.JSONObject;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.Locale;
+import java.util.concurrent.CountDownLatch;
 
 import okhttp3.ResponseBody;
 import retrofit2.Call;
@@ -63,6 +66,10 @@ public class ConversationActivity extends AppCompatActivity {
 
     public static final int RESULT_MESSAGE_INSERTED = 1;
     public static final int RESULT_ALL_MESSAGES_DELETED = 2;
+
+    public static final String EXTRA_USER = "user";
+    public static final String EXTRA_LAST_MESSAGE = "last_message";
+    public static final String EXTRA_OPPOSITE_USER = "opposite_user";
 
     public static Integer currentConversationUserId = -1;
 
@@ -81,7 +88,7 @@ public class ConversationActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_conversation);
 
-        mOppositeUser = getIntent().getExtras().getParcelable("user");
+        mOppositeUser = getIntent().getExtras().getParcelable(EXTRA_USER);
 
         SpannableString s = new SpannableString(mOppositeUser.getName());
         s.setSpan(new TypefaceSpan(this, MainActivity.FONT_GENERAL_TITLE), 0, s.length(),
@@ -169,6 +176,8 @@ public class ConversationActivity extends AppCompatActivity {
 
                     if (!selectedIndexes.contains(position)) {
 
+                        Log.i(TAG, "Message " + position + " selected");
+
                         if (selectedIndexes.size() == 0) {
                             setSelectionMode(true);
                         }
@@ -179,6 +188,8 @@ public class ConversationActivity extends AppCompatActivity {
                         setActionBarTitle(selectedTitle);
 
                     } else {
+
+                        Log.i(TAG, "Message " + position + " unselected");
 
                         selectedIndexes.remove((Integer) position);
 
@@ -201,6 +212,8 @@ public class ConversationActivity extends AppCompatActivity {
 
                 if (!selectedIndexes.contains(position)) {
 
+                    Log.i(TAG, "Message " + position + " selected");
+
                     if (selectedIndexes.size() == 0) {
                         setSelectionMode(true);
                     }
@@ -211,6 +224,9 @@ public class ConversationActivity extends AppCompatActivity {
                     setActionBarTitle(selectedTitle);
 
                 } else {
+
+                    Log.i(TAG, "Message " + position + " unselected");
+
                     selectedIndexes.remove((Integer) position);
 
                     if (selectedIndexes.isEmpty()) {
@@ -261,27 +277,50 @@ public class ConversationActivity extends AppCompatActivity {
         mSendMessageButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                String messageText = mMessageEditText.getText().toString();
-                messageText = messageText.trim();
 
-                if (!TextUtils.isEmpty(messageText)) {
+                // Threaded structure for sending messages simultaneously
 
-                    messageText = trimInnerNewLines(messageText);
+                new Thread(new Runnable() {
+                    @Override
+                    public void run() {
 
-                    int id = createTemporaryMessageID();
-                    Message message = new Message(id, messageText, currentUser,
-                                                  mOppositeUser, Calendar.getInstance(), Message.State.PENDING);
+                        synchronized (DBHandler.class) {
+                            String messageText = mMessageEditText.getText().toString();
+                            messageText = messageText.trim();
 
-                    if (mDbHandler.saveMessageToDataBase(message)){
-                        mMessageEditText.setText("");
-                        toggleSendButton(false);
-                        sendMessageToServer(message);
-                        insertMessage(message);
-                    }else {
-                        Log.e(TAG, "Message Insertion Failed!");
-                        Toast.makeText(ConversationActivity.this, getString(R.string.unknown_error), Toast.LENGTH_SHORT).show();
+                            if (!TextUtils.isEmpty(messageText)) {
+
+                                messageText = trimInnerNewLines(messageText);
+
+                                int id = createTemporaryMessageID();
+                                final Message message = new Message(id, messageText, currentUser,
+                                        mOppositeUser, Calendar.getInstance(), Message.State.PENDING);
+
+                                new Thread(new Runnable() {
+                                    @Override
+                                    public void run() {
+                                        synchronized (DBHandler.class) {
+                                            if (mDbHandler.saveMessageToDataBase(message)){
+                                                runOnUiThread(new Runnable() {
+                                                    @Override
+                                                    public void run() {
+                                                        mMessageEditText.setText("");
+                                                        toggleSendButton(false);
+                                                        sendMessageToServer(message);
+                                                        insertMessage(message);
+                                                    }
+                                                });
+                                            }else {
+                                                Log.e(TAG, "Message Insertion Failed!");
+                                                Toast.makeText(ConversationActivity.this, getString(R.string.unknown_error), Toast.LENGTH_SHORT).show();
+                                            }
+                                        }
+                                    }
+                                }).start();
+                            }
+                        }
                     }
-                }
+                }).start();
             }
         });
     }
@@ -315,8 +354,8 @@ public class ConversationActivity extends AppCompatActivity {
             @Override
             public void onReceive(Context context, Intent intent) {
                 if (intent.getAction().equalsIgnoreCase(BookieIntentFilters.INTENT_FILTER_MESSAGE_RECEIVED)){
-                    if (intent.getParcelableExtra("message") != null){
-                        Message message = intent.getParcelableExtra("message");
+                    Message message = intent.getParcelableExtra(BookieIntentFilters.EXTRA_MESSAGE);
+                    if (message != null){
                         if(message.getOppositeUser(currentUser).equals(mOppositeUser)){
                             insertMessage(message);
 
@@ -324,22 +363,45 @@ public class ConversationActivity extends AppCompatActivity {
                         }
                     }
                 } else if (intent.getAction().equalsIgnoreCase(BookieIntentFilters.INTENT_FILTER_MESSAGE_DELIVERED)){
-                    if (intent.getIntExtra("message_id",-1) > 0){
-                        changeMessageState(intent.getIntExtra("message_id",-1), Message.State.DELIVERED);
-                    }
-                } else if (intent.getAction().equalsIgnoreCase(BookieIntentFilters.INTENT_FILTER_MESSAGE_SEEN)){
-                    if (intent.getIntExtra("message_id",-1) > 0){
-                        Message changedMessage = changeMessageState(intent.getIntExtra("message_id",-1), Message.State.SEEN);
-                        if (changedMessage != null){
-                            for (Message message: mMessages){
-
-                                if (message.getSender().equals(currentUser) && message.getState() == Message.State.DELIVERED &&
-                                    message.getCreatedAt().getTimeInMillis() <= changedMessage.getCreatedAt().getTimeInMillis()){
-
-                                    changeMessageState(message.getID(), Message.State.SEEN);
+                    final int messageId = intent.getIntExtra(BookieIntentFilters.EXTRA_MESSAGE_ID, -1);
+                    if (messageId > 0){
+                        new Thread(new Runnable() {
+                            @Override
+                            public void run() {
+                                synchronized (DBHandler.class) {
+                                    changeMessageState(messageId, Message.State.DELIVERED);
                                 }
                             }
-                        }
+                        }).start();
+                    }
+                } else if (intent.getAction().equalsIgnoreCase(BookieIntentFilters.INTENT_FILTER_MESSAGE_SEEN)){
+                    final int messageId = intent.getIntExtra(BookieIntentFilters.EXTRA_MESSAGE_ID, -1);
+                    if (messageId > 0){
+                        new Thread(new Runnable() {
+                            @Override
+                            public void run() {
+                                synchronized (DBHandler.class) {
+                                    Message changedMessage = changeMessageState(messageId, Message.State.SEEN);
+                                    if (changedMessage != null){
+                                        for (final Message message: mMessages){
+
+                                            if (message.getSender().equals(currentUser) && message.getState() == Message.State.DELIVERED &&
+                                                    message.getCreatedAt().getTimeInMillis() <= changedMessage.getCreatedAt().getTimeInMillis()){
+
+                                                new Thread(new Runnable() {
+                                                    @Override
+                                                    public void run() {
+                                                        synchronized (DBHandler.class){
+                                                            changeMessageState(message.getID(), Message.State.SEEN);
+                                                        }
+                                                    }
+                                                }).start();
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }).start();
                     }
                 }
             }
@@ -354,11 +416,20 @@ public class ConversationActivity extends AppCompatActivity {
 
     private void fetchSeenMessages() {
 
-        User currentUser = SessionManager.getCurrentUser(this);
+        User currentUser = SessionManager.getCurrentUser(ConversationActivity.this);
 
-        for (Message message: mMessages){
+        Iterator<Message> messageIterator = mMessages.iterator();
+        while (messageIterator.hasNext()){
+            final Message message = messageIterator.next();
             if (message.getReceiver().equals(currentUser) && message.getState() != Message.State.SEEN){
-                changeMessageState(message.getID(), Message.State.SEEN);
+                new Thread(new Runnable() {
+                    @Override
+                    public void run() {
+                        synchronized (DBHandler.class){
+                            changeMessageState(message.getID(), Message.State.SEEN);
+                        }
+                    }
+                }).start();
             }
         }
     }
@@ -381,7 +452,10 @@ public class ConversationActivity extends AppCompatActivity {
         }
     }
 
-    public void insertMessage(Message newMessage) {
+    public void insertMessage(final Message newMessage) {
+
+        Log.i(TAG, "Message inserted: " + newMessage.getText());
+
         mMessages.add(0, newMessage);
         mConversationAdapter.notifyItemInserted(0);
 
@@ -397,18 +471,37 @@ public class ConversationActivity extends AppCompatActivity {
         }
 
         if (newMessage.getSender().getID() != currentUser.getID()) {
-            changeMessageState(newMessage.getID(), Message.State.SEEN);
+            new Thread(new Runnable() {
+                @Override
+                public void run() {
+                    synchronized (DBHandler.class) {
+                        changeMessageState(newMessage.getID(), Message.State.SEEN);
+                    }
+                }
+            }).start();
+
         }
 
-        setResult(RESULT_MESSAGE_INSERTED, getIntent().putExtra("last_message", mMessages.get(0)));
+        ArrayList<Integer> selectedIndexes = mConversationAdapter.getSelectedIndexes();
+        for (int i = 0; i < selectedIndexes.size(); i++) {
+            selectedIndexes.set(i, selectedIndexes.get(i) + 1);
+        }
+
+        setResult(RESULT_MESSAGE_INSERTED, getIntent().putExtra(EXTRA_LAST_MESSAGE, mMessages.get(0)));
     }
 
+    // This method must call UI processes with runOnUiThread() method. It can be called with sperate threads...
     public Message changeMessageState(int messageID, Message.State state) {
-        for (Message message : mMessages) {
+        for (final Message message : mMessages) {
             if (message.getID() == messageID) {
                 if (message.getState() != Message.State.SEEN) {
                     message.setState(state);
-                    mConversationAdapter.notifyItemChanged(mMessages.indexOf(message));
+                    runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            mConversationAdapter.notifyItemChanged(mMessages.indexOf(message));
+                        }
+                    });
                     mDbHandler.updateMessageState(message, state);
 
                     if (message.getSender().getID() != SessionManager.getCurrentUser(getApplicationContext()).getID()){
@@ -418,7 +511,12 @@ public class ConversationActivity extends AppCompatActivity {
                 } else {
                     if (state == Message.State.SEEN){
                         message.setState(state);
-                        mConversationAdapter.notifyItemChanged(mMessages.indexOf(message));
+                        runOnUiThread(new Runnable() {
+                            @Override
+                            public void run() {
+                                mConversationAdapter.notifyItemChanged(mMessages.indexOf(message));
+                            }
+                        });
                         mDbHandler.updateMessageState(message, state);
 
                         if (message.getSender().getID() != SessionManager.getCurrentUser(getApplicationContext()).getID()){
@@ -445,14 +543,6 @@ public class ConversationActivity extends AppCompatActivity {
         return false;
     }
 
-    private void clearSelections() {
-        ArrayList<Integer> selectedIndexes = new ArrayList<>(mConversationAdapter.getSelectedIndexes());
-        mConversationAdapter.getSelectedIndexes().clear();
-        for (int i : selectedIndexes) {
-            mConversationAdapter.notifyItemChanged(i);
-        }
-    }
-
     private void setSelectionMode(boolean toggle) {
         ActionBar actionBar = getSupportActionBar();
 
@@ -464,12 +554,16 @@ public class ConversationActivity extends AppCompatActivity {
             actionBar.setHomeAsUpIndicator(R.drawable.ic_messaging_cancel_selection);
 
             mDeleteMenuItem.setVisible(true);
+
+            Log.i(TAG, "Message selection mode on");
         } else {
             setActionBarTitle(mOppositeUser.getName());
 
             actionBar.setDisplayHomeAsUpEnabled(false);
 
             mDeleteMenuItem.setVisible(false);
+
+            Log.i(TAG, "Message selection mode off");
         }
     }
 
@@ -520,28 +614,33 @@ public class ConversationActivity extends AppCompatActivity {
 
                             ArrayList<Integer> selectedIndexes = mConversationAdapter.getSelectedIndexes();
 
-                            Log.d(TAG, selectedIndexes.toString());
-
                             Collections.sort(selectedIndexes);
                             Collections.reverse(selectedIndexes);
 
-                            for (int index : selectedIndexes) {
+                            int[] selectedMessageIds = new int[selectedIndexes.size()];
+
+                            for (int i = 0; i < selectedIndexes.size(); i++) {
+                                int index = selectedIndexes.get(i);
                                 Message message = mMessages.get(index);
+                                selectedMessageIds[i] = message.getID();
                                 mMessages.remove(index);
                                 mDbHandler.deleteMessage(message);
                             }
+
+                            deleteMessagesOnServer(selectedMessageIds);
+
+                            Log.i(TAG, "Deleted message indexes: " + selectedIndexes.toString());
+                            Log.i(TAG, "Deleted message IDs: " + Arrays.toString(selectedMessageIds));
 
                             selectedIndexes.clear();
                             setSelectionMode(false);
                             mConversationAdapter.notifyDataSetChanged();
 
                             if (!mMessages.isEmpty()) {
-                                setResult(RESULT_MESSAGE_INSERTED, getIntent().putExtra("last_message", mMessages.get(0)));
+                                setResult(RESULT_MESSAGE_INSERTED, getIntent().putExtra(EXTRA_LAST_MESSAGE, mMessages.get(0)));
                             } else {
-                                setResult(RESULT_ALL_MESSAGES_DELETED, getIntent().putExtra("opposite_user", mOppositeUser));
+                                setResult(RESULT_ALL_MESSAGES_DELETED, getIntent().putExtra(EXTRA_OPPOSITE_USER, mOppositeUser));
                             }
-
-                            // TODO Server delete notify
                         }
                     })
                     .setNegativeButton(android.R.string.cancel, null)
@@ -575,6 +674,11 @@ public class ConversationActivity extends AppCompatActivity {
 
             mSendMessageButton.setClickable(false);
         }
+    }
+
+    private void deleteMessagesOnServer(int[] selectedMessageIds) {
+
+        // TODO Server delete notify (selectedMessageIds[])
     }
 
     /**
@@ -648,13 +752,36 @@ public class ConversationActivity extends AppCompatActivity {
                         if (response.body() != null){
                             String json = response.body().string();
 
-                            JSONObject responseObject = new JSONObject(json);
+                            final JSONObject responseObject = new JSONObject(json);
                             boolean error = responseObject.getBoolean("error");
 
                             if (!error) {
                                 if (!responseObject.isNull("oldMessageID") && !responseObject.isNull("newMessageID")){
-                                    changeMessageID(responseObject.getInt("oldMessageID"), responseObject.getInt("newMessageID"));
-                                    changeMessageState(responseObject.getInt("newMessageID"), Message.State.SENT);
+                                    new Thread(new Runnable() {
+                                        @Override
+                                        public void run() {
+                                            synchronized (DBHandler.class) {
+                                                try {
+                                                    changeMessageID(responseObject.getInt("oldMessageID"), responseObject.getInt("newMessageID"));
+                                                } catch (JSONException e) {
+                                                    e.printStackTrace();
+                                                }
+                                            }
+                                        }
+                                    }).start();
+
+                                    new Thread(new Runnable() {
+                                        @Override
+                                        public void run() {
+                                            synchronized (DBHandler.class) {
+                                                try {
+                                                    changeMessageState(responseObject.getInt("newMessageID"), Message.State.SENT);
+                                                } catch (JSONException e) {
+                                                    e.printStackTrace();
+                                                }
+                                            }
+                                        }
+                                    }).start();
                                 }
 
                             } else {

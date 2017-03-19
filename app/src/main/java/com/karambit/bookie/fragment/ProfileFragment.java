@@ -19,6 +19,7 @@ import android.widget.Button;
 
 import com.karambit.bookie.AddBookActivity;
 import com.karambit.bookie.BookActivity;
+import com.karambit.bookie.BookieApplication;
 import com.karambit.bookie.MainActivity;
 import com.karambit.bookie.PhotoViewerActivity;
 import com.karambit.bookie.ProfileActivity;
@@ -26,7 +27,6 @@ import com.karambit.bookie.R;
 import com.karambit.bookie.adapter.ProfileTimelineAdapter;
 import com.karambit.bookie.helper.DBHandler;
 import com.karambit.bookie.helper.ElevationScrollListener;
-import com.karambit.bookie.helper.NetworkChecker;
 import com.karambit.bookie.helper.SessionManager;
 import com.karambit.bookie.helper.pull_refresh_layout.PullRefreshLayout;
 import com.karambit.bookie.model.Book;
@@ -50,6 +50,8 @@ import retrofit2.Response;
 import static com.karambit.bookie.model.Book.State.CLOSED_TO_SHARE;
 import static com.karambit.bookie.model.Book.State.ON_ROAD;
 import static com.karambit.bookie.model.Book.State.OPENED_TO_SHARE;
+import static com.karambit.bookie.model.Book.State.READING;
+
 /**
  * A simple {@link Fragment} subclass.
  */
@@ -67,7 +69,7 @@ public class ProfileFragment extends Fragment {
     private static final int UPDATE_PROFILE_PICTURE_REQUEST_CODE = 1;
     private static final int UPDATE_BOOK_PROCESS_REQUEST_CODE = 2;
 
-    private static final String USER = "user";
+    private static final String EXTRA_USER = "user";
 
     private User mUser;
 
@@ -91,7 +93,7 @@ public class ProfileFragment extends Fragment {
     public static ProfileFragment newInstance(User user) {
         ProfileFragment fragment = new ProfileFragment();
         Bundle args = new Bundle();
-        args.putParcelable(USER, user);
+        args.putParcelable(EXTRA_USER, user);
         fragment.setArguments(args);
         return fragment;
     }
@@ -100,7 +102,7 @@ public class ProfileFragment extends Fragment {
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         if (getArguments() != null) {
-            mUser = getArguments().getParcelable(USER);
+            mUser = getArguments().getParcelable(EXTRA_USER);
         }
     }
 
@@ -117,16 +119,16 @@ public class ProfileFragment extends Fragment {
         User currentUser = SessionManager.getCurrentUser(getContext());
 
         if (mUser.equals(currentUser)){
-            mProfileTimelineAdapter = new ProfileTimelineAdapter(getContext(),  SessionManager.getCurrentUserDetails(getContext()));
+            mProfileTimelineAdapter = new ProfileTimelineAdapter(getContext(), SessionManager.getCurrentUserDetails(getContext()));
         }else {
-            mProfileTimelineAdapter = new ProfileTimelineAdapter(getContext());
+            mProfileTimelineAdapter = new ProfileTimelineAdapter(getContext(), mUser);
         }
 
         mProfileTimelineAdapter.setBookClickListener(new ProfileTimelineAdapter.BookClickListener() {
             @Override
             public void onBookClick(Book book) {
                 Intent intent = new Intent(getContext(), BookActivity.class);
-                intent.putExtra("book", book);
+                intent.putExtra(BookActivity.EXTRA_BOOK, book);
                 startActivityForResult(intent, UPDATE_BOOK_PROCESS_REQUEST_CODE);
             }
         });
@@ -190,8 +192,8 @@ public class ProfileFragment extends Fragment {
             public void onProfilePictureClick(User.Details details) {
                 Intent intent = new Intent(getContext(), PhotoViewerActivity.class);
                 Bundle bundle = new Bundle();
-                bundle.putParcelable("user", details.getUser());
-                bundle.putString("image", details.getUser().getImageUrl());
+                bundle.putParcelable(PhotoViewerActivity.EXTRA_USER, details.getUser());
+                bundle.putString(PhotoViewerActivity.EXTRA_IMAGE, details.getUser().getImageUrl());
                 intent.putExtras(bundle);
                 startActivityForResult(intent, UPDATE_PROFILE_PICTURE_REQUEST_CODE);
             }
@@ -235,24 +237,133 @@ public class ProfileFragment extends Fragment {
             @Override
             public void onReceive(Context context, Intent intent) {
                 if (intent.getAction().equalsIgnoreCase(BookieIntentFilters.INTENT_FILTER_SENT_REQUEST_RECEIVED)){
-                    if (intent.getParcelableExtra("notification") != null){
-                        Notification notification = intent.getParcelableExtra("notification");
+                    if (intent.getParcelableExtra(BookieIntentFilters.EXTRA_NOTIFICATION) != null){
+                        Notification notification = intent.getParcelableExtra(BookieIntentFilters.EXTRA_NOTIFICATION);
                     }
                 } else if (intent.getAction().equalsIgnoreCase(BookieIntentFilters.INTENT_FILTER_REJECTED_REQUEST_RECEIVED)){
-                    if (intent.getParcelableExtra("notification") != null){
-                        Notification notification = intent.getParcelableExtra("notification");
+                    if (intent.getParcelableExtra(BookieIntentFilters.EXTRA_NOTIFICATION) != null){
+                        Notification notification = intent.getParcelableExtra(BookieIntentFilters.EXTRA_NOTIFICATION);
                     }
                 } else if (intent.getAction().equalsIgnoreCase(BookieIntentFilters.INTENT_FILTER_ACCEPTED_REQUEST_RECEIVED)){
-                    if (intent.getParcelableExtra("notification") != null){
-                        Notification notification = intent.getParcelableExtra("notification");
+                    if (intent.getParcelableExtra(BookieIntentFilters.EXTRA_NOTIFICATION) != null){
+                        Notification notification = intent.getParcelableExtra(BookieIntentFilters.EXTRA_NOTIFICATION);
                         mUserDetails.getOnRoadBooks().add(notification.getBook());
                         mProfileTimelineAdapter.setUserDetails(mUserDetails);
+                        Log.i(TAG, notification.getBook().getName() + " state changed to " + Book.State.ON_ROAD + " (added to OnRoadBooks)");
                     }
                 } else if (intent.getAction().equalsIgnoreCase(BookieIntentFilters.INTENT_FILTER_BOOK_OWNER_CHANGED_RECEIVED)){
-                    if (intent.getParcelableExtra("notification") != null){
-                        Notification notification = intent.getParcelableExtra("notification");
+                    if (intent.getParcelableExtra(BookieIntentFilters.EXTRA_NOTIFICATION) != null){
+                        Notification notification = intent.getParcelableExtra(BookieIntentFilters.EXTRA_NOTIFICATION);
                         mUserDetails.getBooksOnHand().remove(notification.getBook());
                         mProfileTimelineAdapter.setUserDetails(mUserDetails);
+                        Log.i(TAG, notification.getBook().getName() + " owner changed (removed from BooksOnHand)");
+                    }
+                } else if (intent.getAction().equalsIgnoreCase(BookieIntentFilters.INTENT_FILTER_BOOK_STATE_CHANGED)){
+                    if (mUserDetails != null){
+                        Book book = intent.getParcelableExtra(BookieIntentFilters.EXTRA_BOOK);
+                        if (book != null) {
+                            if (mUserDetails.getBooksOnHand().contains(book)){
+
+                                int indexOfBook = mUserDetails.getBooksOnHand().indexOf(book);
+
+                                switch (book.getState()){
+                                    case READING:{
+                                        mUserDetails.getBooksOnHand().remove(book);
+                                        mUserDetails.getCurrentlyReading().add(book);
+                                        Log.i(TAG, book.getName() + " state changed to " + READING + " from " + OPENED_TO_SHARE + " or " + CLOSED_TO_SHARE + " (removed from BooksOnHand, added to CurrentlyReading)");
+                                        break;
+                                    }
+
+                                    case OPENED_TO_SHARE:{
+                                        mUserDetails.getBooksOnHand().get(indexOfBook).setState(OPENED_TO_SHARE);
+                                        Log.i(TAG, book.getName() + " state changed to " + Book.State.OPENED_TO_SHARE + " from " + CLOSED_TO_SHARE + " (already in BooksOnHand)");
+                                        break;
+                                    }
+
+                                    case CLOSED_TO_SHARE:{
+                                        mUserDetails.getBooksOnHand().get(indexOfBook).setState(CLOSED_TO_SHARE);
+                                        Log.i(TAG, book.getName() + " state changed to " + Book.State.CLOSED_TO_SHARE + " from " + OPENED_TO_SHARE + " (already in BooksOnHand)");
+                                        break;
+                                    }
+
+                                    case ON_ROAD:{
+                                        mUserDetails.getBooksOnHand().get(indexOfBook).setState(ON_ROAD);
+                                        Log.i(TAG, book.getName() + " state changed to " + Book.State.ON_ROAD + " from " + OPENED_TO_SHARE + " or " + CLOSED_TO_SHARE + " (already in BooksOnHand)");
+                                        break;
+                                    }
+                                }
+                            } else if (mUserDetails.getCurrentlyReading().contains(book)){
+
+                                switch (book.getState()){
+
+                                    case OPENED_TO_SHARE:{
+                                        mUserDetails.getCurrentlyReading().remove(book);
+                                        mUserDetails.getBooksOnHand().add(book);
+                                        if (!mUserDetails.getReadBooks().contains(book)){
+                                            mUserDetails.getReadBooks().add(book);
+                                            Log.i(TAG, book.getName() + " state changed to " + Book.State.OPENED_TO_SHARE + " from " + READING + " (removed from CurrentlyReading, added to BooksOnHand and ReadBooks)");
+                                        } else {
+                                            Log.i(TAG, book.getName() + " state changed to " + Book.State.OPENED_TO_SHARE + " from " + READING + " (removed from CurrentlyReading, added to BooksOnHand, already in ReadBooks)");
+                                        }
+                                        break;
+                                    }
+
+                                    case CLOSED_TO_SHARE:{
+                                        mUserDetails.getCurrentlyReading().remove(book);
+                                        mUserDetails.getBooksOnHand().add(book);
+                                        if (!mUserDetails.getReadBooks().contains(book)){
+                                            mUserDetails.getReadBooks().add(book);
+                                            Log.i(TAG, book.getName() + " state changed to " + Book.State.CLOSED_TO_SHARE + " from " + READING + " (removed from CurrentlyReading, added to BooksOnHand and ReadBooks)");
+                                        } else {
+                                            Log.i(TAG, book.getName() + " state changed to " + Book.State.CLOSED_TO_SHARE + " from " + READING + " (removed from CurrentlyReading, added to BooksOnHand, already in ReadBooks)");
+                                        }
+                                        break;
+                                    }
+
+                                    case ON_ROAD:{
+                                        mUserDetails.getCurrentlyReading().remove(book);
+                                        mUserDetails.getOnRoadBooks().add(book);
+                                        if (!mUserDetails.getReadBooks().contains(book)){
+                                            mUserDetails.getReadBooks().add(book);
+                                            Log.i(TAG, book.getName() + " state changed to " + Book.State.ON_ROAD + " from " + READING + " (removed from CurrentlyReading, added to OnRoadBooks and ReadBooks)");
+                                        } else {
+                                            Log.i(TAG, book.getName() + " state changed to " + Book.State.ON_ROAD + " from " + READING + " (removed from CurrentlyReading, added to OnRoadBooks, already in ReadBooks)");
+                                        }
+                                        break;
+                                    }
+                                }
+                            }else if (mUserDetails.getOnRoadBooks().contains(book)){
+
+                                switch (book.getState()){
+                                    case READING:{
+                                        mUserDetails.getOnRoadBooks().remove(book);
+                                        mUserDetails.getCurrentlyReading().add(book);
+                                        Log.i(TAG, book.getName() + " state changed to " + READING + " from " + ON_ROAD + " (removed from OnRoadBooks, added to CurrentlyReading)");
+                                        break;
+                                    }
+
+                                    case OPENED_TO_SHARE:{
+                                        mUserDetails.getOnRoadBooks().remove(book);
+                                        mUserDetails.getBooksOnHand().add(book);
+                                        Log.i(TAG, book.getName() + " state changed to " + Book.State.OPENED_TO_SHARE + " from " + ON_ROAD + " (removed from OnRoadBooks, added to BooksOnHand)");
+                                        break;
+                                    }
+
+                                    case CLOSED_TO_SHARE:{
+                                        mUserDetails.getOnRoadBooks().remove(book);
+                                        mUserDetails.getBooksOnHand().add(book);
+                                        Log.i(TAG, book.getName() + " state changed to " + Book.State.CLOSED_TO_SHARE + " from " + ON_ROAD + " (removed from OnRoadBooks, added to BooksOnHand)");
+                                        break;
+                                    }
+                                }
+                            } else {
+                                Log.e(TAG, "Invalid book state on state changing!");
+                            }
+                            mProfileTimelineAdapter.setUserDetails(mUserDetails);
+                            mProfileTimelineAdapter.notifyDataSetChanged();
+                        } else {
+                            Log.e(TAG, "Null book in intent extra");
+                        }
                     }
                 }
             }
@@ -261,6 +372,7 @@ public class ProfileFragment extends Fragment {
         LocalBroadcastManager.getInstance(getContext()).registerReceiver(mMessageReceiver, new IntentFilter(BookieIntentFilters.INTENT_FILTER_REJECTED_REQUEST_RECEIVED));
         LocalBroadcastManager.getInstance(getContext()).registerReceiver(mMessageReceiver, new IntentFilter(BookieIntentFilters.INTENT_FILTER_ACCEPTED_REQUEST_RECEIVED));
         LocalBroadcastManager.getInstance(getContext()).registerReceiver(mMessageReceiver, new IntentFilter(BookieIntentFilters.INTENT_FILTER_BOOK_OWNER_CHANGED_RECEIVED));
+        LocalBroadcastManager.getInstance(getContext()).registerReceiver(mMessageReceiver, new IntentFilter(BookieIntentFilters.INTENT_FILTER_BOOK_STATE_CHANGED));
 
         return rootView;
     }
@@ -327,7 +439,7 @@ public class ProfileFragment extends Fragment {
                                                 synchronized (DBHandler.class) { // REQUIRED
                                                     DBHandler dbHandler = DBHandler.getInstance(getContext());
                                                     dbHandler.updateCurrentUser(mUserDetails);
-                                                    SessionManager.updateCurrentUserFromDB(getContext());
+                                                    SessionManager.updateCurrentUser(mUserDetails);
                                                 }
                                             }
                                         }).start();
@@ -340,6 +452,7 @@ public class ProfileFragment extends Fragment {
                                     }
 
                                     mProfileTimelineAdapter.setUserDetails(mUserDetails);
+                                    mProfileTimelineAdapter.notifyDataSetChanged();
                                 }
 
                             } else {
@@ -370,7 +483,7 @@ public class ProfileFragment extends Fragment {
                 } catch (IOException | JSONException e) {
                     e.printStackTrace();
 
-                    if(NetworkChecker.isNetworkAvailable(getContext())){
+                    if(BookieApplication.hasNetwork()){
                         mProfileTimelineAdapter.setError(ProfileTimelineAdapter.ERROR_TYPE_UNKNOWN_ERROR);
                     }else{
                         mProfileTimelineAdapter.setError(ProfileTimelineAdapter.ERROR_TYPE_NO_CONNECTION);
@@ -383,7 +496,7 @@ public class ProfileFragment extends Fragment {
             @Override
             public void onFailure(Call<ResponseBody> call, Throwable t) {
 
-                if(NetworkChecker.isNetworkAvailable(getContext())){
+                if(BookieApplication.hasNetwork()){
                     mProfileTimelineAdapter.setError(ProfileTimelineAdapter.ERROR_TYPE_UNKNOWN_ERROR);
                 }else{
                     mProfileTimelineAdapter.setError(ProfileTimelineAdapter.ERROR_TYPE_NO_CONNECTION);
@@ -405,93 +518,6 @@ public class ProfileFragment extends Fragment {
         if (requestCode == UPDATE_PROFILE_PICTURE_REQUEST_CODE){
             if (resultCode == PhotoViewerActivity.RESULT_PROFILE_PICTURE_UPDATED){
                 refreshProfilePage();
-            }
-        } else if (requestCode == UPDATE_BOOK_PROCESS_REQUEST_CODE){
-            if (resultCode == BookActivity.RESULT_BOOK_PROCESS_CHANGED){
-                if (mUserDetails != null){
-                    Book book = data.getExtras().getParcelable("book");
-                    if (mUserDetails.getBooksOnHand().contains(book)){
-                        if (book != null) {
-                            switch (book.getState()){
-                                case READING:{
-                                    mUserDetails.getBooksOnHand().remove(book);
-                                    mUserDetails.getCurrentlyReading().add(book);
-                                    break;
-                                }
-
-                                case OPENED_TO_SHARE:{
-                                    mUserDetails.getBooksOnHand().get(mUserDetails.getBooksOnHand().indexOf(book)).setState(OPENED_TO_SHARE);
-                                    break;
-                                }
-
-                                case CLOSED_TO_SHARE:{
-                                    mUserDetails.getBooksOnHand().get(mUserDetails.getBooksOnHand().indexOf(book)).setState(CLOSED_TO_SHARE);
-                                    break;
-                                }
-
-                                case ON_ROAD:{
-                                    mUserDetails.getBooksOnHand().get(mUserDetails.getBooksOnHand().indexOf(book)).setState(ON_ROAD);
-                                    break;
-                                }
-                            }
-                        }
-                    }else if (mUserDetails.getCurrentlyReading().contains(book)){
-                        if (book != null) {
-                            switch (book.getState()){
-
-                                case OPENED_TO_SHARE:{
-                                    mUserDetails.getCurrentlyReading().remove(book);
-                                    mUserDetails.getBooksOnHand().add(book);
-                                    if (!mUserDetails.getReadBooks().contains(book)){
-                                        mUserDetails.getReadBooks().add(book);
-                                    }
-                                    break;
-                                }
-
-                                case CLOSED_TO_SHARE:{
-                                    mUserDetails.getCurrentlyReading().remove(book);
-                                    mUserDetails.getBooksOnHand().add(book);
-                                    if (!mUserDetails.getReadBooks().contains(book)){
-                                        mUserDetails.getReadBooks().add(book);
-                                    }
-                                    break;
-                                }
-
-                                case ON_ROAD:{
-                                    mUserDetails.getCurrentlyReading().remove(book);
-                                    mUserDetails.getBooksOnHand().add(book);
-                                    if (!mUserDetails.getReadBooks().contains(book)){
-                                        mUserDetails.getReadBooks().add(book);
-                                    }
-                                    break;
-                                }
-                            }
-                        }
-                    }else if (mUserDetails.getOnRoadBooks().contains(book)){
-                        if (book != null) {
-                            switch (book.getState()){
-                                case READING:{
-                                    mUserDetails.getOnRoadBooks().remove(book);
-                                    mUserDetails.getCurrentlyReading().add(book);
-                                    break;
-                                }
-
-                                case OPENED_TO_SHARE:{
-                                    mUserDetails.getOnRoadBooks().remove(book);
-                                    mUserDetails.getBooksOnHand().add(book);
-                                    break;
-                                }
-
-                                case CLOSED_TO_SHARE:{
-                                    mUserDetails.getOnRoadBooks().remove(book);
-                                    mUserDetails.getBooksOnHand().add(book);
-                                    break;
-                                }
-                            }
-                        }
-                    }
-                    mProfileTimelineAdapter.setUserDetails(mUserDetails);
-                }
             }
         } else if (resultCode == AddBookActivity.RESULT_BOOK_CREATED) {
             refreshProfilePage();

@@ -58,6 +58,11 @@ public class PhotoViewerActivity extends AppCompatActivity implements View.OnTou
     private static final String UPLOAD_USER_IMAGE_URL = "ProfilePictureUpload";
     private static final String UPLOAD_BOOK_IMAGE_URL = "BookUpdatePicture";
 
+    public static final String EXTRA_USER = "user";
+    public static final String EXTRA_CAN_EDIT_BOOK_IMAGE = "can_edit_book_image";
+    public static final String EXTRA_IMAGE = "image";
+    public static final String EXTRA_BOOK_ID = "book_id";
+
     // these matrices will be used to move and zoom image
     private Matrix mMatrix = new Matrix();
     private Matrix savedMatrix = new Matrix();
@@ -122,10 +127,10 @@ public class PhotoViewerActivity extends AppCompatActivity implements View.OnTou
 
         bringFrontPhotoForGlide();
 
-        User photoUser = getIntent().getParcelableExtra("user");
+        User photoUser = getIntent().getParcelableExtra(EXTRA_USER);
         User currentUser =  SessionManager.getCurrentUser(this);
 
-        if (photoUser != null && photoUser.equals(currentUser) || getIntent().getBooleanExtra("canEditBookImage", false)){
+        if (photoUser != null && photoUser.equals(currentUser) || getIntent().getBooleanExtra(EXTRA_CAN_EDIT_BOOK_IMAGE, false)){
             mEditPhotoButton.setVisibility(View.VISIBLE);
 
             mEditPhotoButton.setOnClickListener(new View.OnClickListener() {
@@ -152,7 +157,7 @@ public class PhotoViewerActivity extends AppCompatActivity implements View.OnTou
             mUploadButton.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
-                    if (getIntent().getBooleanExtra("canEditBookImage",false)){
+                    if (getIntent().getBooleanExtra(EXTRA_CAN_EDIT_BOOK_IMAGE, false)){
                         attemptUploadBookPicture();
                     }else {
                         attemptUploadProfilePicture();
@@ -165,7 +170,7 @@ public class PhotoViewerActivity extends AppCompatActivity implements View.OnTou
 
 
         Glide.with(PhotoViewerActivity.this)
-                .load(getIntent().getStringExtra("image"))
+                .load(getIntent().getStringExtra(EXTRA_IMAGE))
                 .asBitmap()
                 .diskCacheStrategy(DiskCacheStrategy.SOURCE)
                 .error(ContextCompat.getDrawable(this, R.drawable.error_192dp))
@@ -398,7 +403,7 @@ public class PhotoViewerActivity extends AppCompatActivity implements View.OnTou
                 Bitmap bitmap = ImagePicker.getImageFromResult(getBaseContext(), resultCode, data);
                 Bitmap croppedBitmap = ImageScaler.cropImage(bitmap, 72 / 72f);
 
-                if (getIntent().getBooleanExtra("canEditBookImage", false)){
+                if (getIntent().getBooleanExtra(EXTRA_CAN_EDIT_BOOK_IMAGE, false)){
                     croppedBitmap = ImageScaler.cropImage(bitmap, 72 / 96f);
                 }
 
@@ -414,7 +419,7 @@ public class PhotoViewerActivity extends AppCompatActivity implements View.OnTou
 
                 bringFrontPhotoForEdit();
                 mEditPhotoView.setImageBitmap(croppedBitmap);
-                if (getIntent().getBooleanExtra("canEditBookImage", false)){
+                if (getIntent().getBooleanExtra(EXTRA_CAN_EDIT_BOOK_IMAGE, false)){
                     mSavedBookImageFile = saveBitmap(croppedBitmap);
                 }else {
                     mSavedUserImageFile = saveBitmap(croppedBitmap);
@@ -581,7 +586,7 @@ public class PhotoViewerActivity extends AppCompatActivity implements View.OnTou
         String serverArgsString = "?email=" + currentUserDetails.getEmail()
                 + "&password=" + currentUserDetails.getPassword()
                 + "&imageName=" + name
-                + "&bookID=" + getIntent().getIntExtra("bookID",-1);
+                + "&bookID=" + getIntent().getIntExtra(EXTRA_BOOK_ID,-1);
 
         String imageUrlString = BookieClient.BASE_URL + UPLOAD_BOOK_IMAGE_URL + serverArgsString;
 

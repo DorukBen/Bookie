@@ -24,6 +24,9 @@ public class LocationActivity extends AppCompatActivity {
 
     public static final int RESULT_LOCATION_UPDATED = 1;
 
+    public static final String EXTRA_LATITUDE = "latitude";
+    public static final String EXTRA_LONGITUDE = "longitude";
+
     private double mLatitude;
     private double mLongitude;
 
@@ -90,8 +93,8 @@ public class LocationActivity extends AppCompatActivity {
                 DBHandler dbHandler = DBHandler.getInstance(LocationActivity.this);
                 dbHandler.updateCurrentUserLocation(mLatitude, mLongitude);
                 SessionManager.updateCurrentUserFromDB(LocationActivity.this);
-                getIntent().putExtra("latitude", mLatitude);
-                getIntent().putExtra("longitude", mLongitude);
+                getIntent().putExtra(EXTRA_LATITUDE, mLatitude);
+                getIntent().putExtra(EXTRA_LONGITUDE, mLongitude);
                 setResult(RESULT_LOCATION_UPDATED, getIntent());
                 finish();
             }

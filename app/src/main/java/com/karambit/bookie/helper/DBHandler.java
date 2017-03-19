@@ -210,8 +210,8 @@ public class DBHandler extends SQLiteOpenHelper {
                 "CREATE TABLE " + NOTIFICATION_USER_TABLE_NAME + " (" +
                         NOTIFICATION_USER_COLUMN_ID + " INTEGER PRIMARY KEY NOT NULL, " +
                         NOTIFICATION_USER_COLUMN_NAME + " TEXT NOT NULL, " +
-                        NOTIFICATION_USER_COLUMN_IMAGE_URL + " TEXT NOT NULL, " +
-                        NOTIFICATION_USER_COLUMN_THUMBNAIL_URL + " TEXT NOT NULL, " +
+                        NOTIFICATION_USER_COLUMN_IMAGE_URL + " TEXT, " +
+                        NOTIFICATION_USER_COLUMN_THUMBNAIL_URL + " TEXT, " +
                         NOTIFICATION_USER_COLUMN_LATITUDE + " DOUBLE, " +
                         NOTIFICATION_USER_COLUMN_LONGITUDE + " DOUBLE)"
         );
@@ -231,9 +231,9 @@ public class DBHandler extends SQLiteOpenHelper {
         db.execSQL(
                 "CREATE TABLE " + NOTIFICATION_BOOK_USER_TABLE_NAME + " (" +
                         NOTIFICATION_BOOK_USER_COLUMN_ID + " INTEGER PRIMARY KEY NOT NULL, " +
-                        NOTIFICATION_BOOK_USER_COLUMN_NAME + " TEXT NOT NULL, " +
-                        NOTIFICATION_BOOK_USER_COLUMN_IMAGE_URL + " TEXT NOT NULL, " +
-                        NOTIFICATION_BOOK_USER_COLUMN_THUMBNAIL_URL + " TEXT NOT NULL, " +
+                        NOTIFICATION_BOOK_USER_COLUMN_NAME + " TEXT, " +
+                        NOTIFICATION_BOOK_USER_COLUMN_IMAGE_URL + " TEXT, " +
+                        NOTIFICATION_BOOK_USER_COLUMN_THUMBNAIL_URL + " TEXT, " +
                         NOTIFICATION_BOOK_USER_COLUMN_LATITUDE + " DOUBLE, " +
                         NOTIFICATION_BOOK_USER_COLUMN_LONGITUDE + " DOUBLE)"
         );
@@ -242,8 +242,8 @@ public class DBHandler extends SQLiteOpenHelper {
                 "CREATE TABLE " + SEARCH_USER_TABLE_NAME + " (" +
                         SEARCH_USER_COLUMN_ID + " INTEGER PRIMARY KEY NOT NULL, " +
                         SEARCH_USER_COLUMN_NAME + " TEXT NOT NULL, " +
-                        SEARCH_USER_COLUMN_IMAGE_URL + " TEXT NOT NULL, " +
-                        SEARCH_USER_COLUMN_THUMBNAIL_URL + " TEXT NOT NULL, " +
+                        SEARCH_USER_COLUMN_IMAGE_URL + " TEXT, " +
+                        SEARCH_USER_COLUMN_THUMBNAIL_URL + " TEXT, " +
                         SEARCH_USER_COLUMN_LATITUDE + " DOUBLE, " +
                         SEARCH_USER_COLUMN_LONGITUDE + " DOUBLE)"
         );
@@ -264,8 +264,8 @@ public class DBHandler extends SQLiteOpenHelper {
                 "CREATE TABLE " + SEARCH_BOOK_USER_TABLE_NAME + " (" +
                         SEARCH_BOOK_USER_COLUMN_ID + " INTEGER PRIMARY KEY NOT NULL, " +
                         SEARCH_BOOK_USER_COLUMN_NAME + " TEXT NOT NULL, " +
-                        SEARCH_BOOK_USER_COLUMN_IMAGE_URL + " TEXT NOT NULL, " +
-                        SEARCH_BOOK_USER_COLUMN_THUMBNAIL_URL + " TEXT NOT NULL, " +
+                        SEARCH_BOOK_USER_COLUMN_IMAGE_URL + " TEXT, " +
+                        SEARCH_BOOK_USER_COLUMN_THUMBNAIL_URL + " TEXT, " +
                         SEARCH_BOOK_USER_COLUMN_LATITUDE + " DOUBLE, " +
                         SEARCH_BOOK_USER_COLUMN_LONGITUDE + " DOUBLE)"
         );
@@ -810,13 +810,45 @@ public class DBHandler extends SQLiteOpenHelper {
      *
      * @return boolean value if insertion successful returns true else returns false.
      */
-    public boolean saveMessageToDataBase(Message message){
+    public boolean saveMessageToDataBase(final Message message){
 
-        User currentUser = SessionManager.getCurrentUser(mContext);
+        final User currentUser = SessionManager.getCurrentUser(mContext);
 
-        if (!isMessageUserExists(message.getOppositeUser(currentUser))){
-            insertMessageUser(message.getOppositeUser(currentUser));
-        }
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                synchronized (DBHandler.class) {
+                    if (!isMessageUserExists(message.getOppositeUser(currentUser))) {
+                        new Thread(new Runnable() {
+                            @Override
+                            public void run() {
+                                synchronized (DBHandler.class) {
+                                    insertMessageUser(message.getOppositeUser(currentUser));
+                                }
+                            }
+                        }).start();
+                    }
+                }
+            }
+        }).start();
+
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                synchronized (DBHandler.class) {
+                    if (!isMessageUserExists(message.getOppositeUser(currentUser))) {
+                        new Thread(new Runnable() {
+                            @Override
+                            public void run() {
+                                synchronized (DBHandler.class) {
+                                    insertMessageUser(message.getOppositeUser(currentUser));
+                                }
+                            }
+                        }).start();
+                    }
+                }
+            }
+        }).start();
         return insertMessage(message);
     }
 
@@ -1524,18 +1556,58 @@ public class DBHandler extends SQLiteOpenHelper {
         Log.i(TAG, "All Message Users and Messages deleted from database");
     }
 
-    public void saveNotificationToDatabase(Notification notification){
-        if (!isNotificationBookUserExists(notification.getBook().getOwner())){
-            insertNotificationBookUser(notification.getBook().getOwner());
-        }
-        if (!isNotificationBookExists(notification.getBook())){
-            insertNotificationBook(notification.getBook());
-        }
-        if (!isNotificationUserExists(notification.getOppositeUser())){
-            insertNotificationUser(notification.getOppositeUser());
-        }
+    public void saveNotificationToDatabase(final Notification notification){
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                synchronized (DBHandler.class){
+                    Log.d(TAG, "Checking notification book user exists: " + notification.getBook().getOwner().getName());
+                    if (!isNotificationBookUserExists(notification.getBook().getOwner())){
+                        insertNotificationBookUser(notification.getBook().getOwner());
+                        Log.d(TAG, "Inserting notification book user: " + notification.getBook().getOwner().getName());
+                    }
+                }
+            }
+        }).start();
 
-        insertNotification(notification);
+
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                synchronized (DBHandler.class){
+                    Log.d(TAG, "Checking notification book exists: " + notification.getBook().getName());
+                    if (!isNotificationBookExists(notification.getBook())){
+                        insertNotificationBook(notification.getBook());
+                        Log.d(TAG, "Inserting notification book: " + notification.getBook().getName());
+                    }
+                }
+            }
+        }).start();
+
+
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                synchronized (DBHandler.class){
+                    Log.d(TAG, "Checking notification user exists: " + notification.getOppositeUser().getName());
+                    if (!isNotificationUserExists(notification.getOppositeUser())){
+                        insertNotificationUser(notification.getOppositeUser());
+                        Log.d(TAG, "Inserting notification user: " + notification.getOppositeUser().getName());
+                    }
+                }
+            }
+        }).start();
+
+
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                synchronized (DBHandler.class){
+                    insertNotification(notification);
+                    Log.d(TAG, "Inserting notification object");
+                }
+            }
+        }).start();
     }
 
     /**

@@ -71,7 +71,7 @@ public class NotificationActivity extends AppCompatActivity {
             public void onUserNameClick(User user) {
                 Intent intent = new Intent(NotificationActivity.this, ProfileActivity.class);
                 Bundle bundle = new Bundle();
-                bundle.putParcelable(ProfileActivity.USER, user);
+                bundle.putParcelable(ProfileActivity.EXTRA_USER, user);
                 intent.putExtras(bundle);
                 startActivity(intent);
             }
@@ -89,7 +89,7 @@ public class NotificationActivity extends AppCompatActivity {
             public void onUserPhotoClick(User user) {
                 Intent intent = new Intent(NotificationActivity.this, ProfileActivity.class);
                 Bundle bundle = new Bundle();
-                bundle.putParcelable(ProfileActivity.USER, user);
+                bundle.putParcelable(ProfileActivity.EXTRA_USER, user);
                 intent.putExtras(bundle);
                 startActivity(intent);
             }
@@ -130,7 +130,9 @@ public class NotificationActivity extends AppCompatActivity {
             @Override
             public void onRefresh() {
                 // start refresh
-                //TODO: On page refresh events here layout.serRefreshing() true for start on refresh method
+                DBHandler dbHandler = DBHandler.getInstance(NotificationActivity.this);
+                mNotifications = dbHandler.getAllNotifications(dbHandler.getAllNotificationUsers(), dbHandler.getAllNotificationBooks(dbHandler.getAllNotificationBookUsers()));
+                mNotificationAdapter.notifyDataSetChanged();
             }
         });
 
@@ -196,19 +198,5 @@ public class NotificationActivity extends AppCompatActivity {
         DBHandler dbHandler = DBHandler.getInstance(this);
         dbHandler.updateAllNotificationsSeen();
         setResult(NotificationActivity.RESULT_CODE_ALL_NOTIFICATION_SEENS_DELETED);
-    }
-
-    /**
-     * This method converts dp unit to equivalent pixels, depending on device density.
-     *
-     * @param dp A value in dp (density independent pixels) unit. Which we need to convert into pixels
-     * @param context Context to get resources and device specific display metrics
-     * @return A float value to represent px equivalent to dp depending on device density
-     */
-    public static float convertDpToPixel(float dp, Context context){
-        Resources resources = context.getResources();
-        DisplayMetrics metrics = resources.getDisplayMetrics();
-        float px = dp * ((float)metrics.densityDpi / DisplayMetrics.DENSITY_DEFAULT);
-        return px;
     }
 }

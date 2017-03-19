@@ -16,11 +16,11 @@ import android.view.ViewGroup;
 import android.widget.EditText;
 
 import com.karambit.bookie.BookActivity;
+import com.karambit.bookie.BookieApplication;
 import com.karambit.bookie.ProfileActivity;
 import com.karambit.bookie.R;
 import com.karambit.bookie.adapter.SearchAdapter;
 import com.karambit.bookie.helper.DBHandler;
-import com.karambit.bookie.helper.NetworkChecker;
 import com.karambit.bookie.helper.SessionManager;
 import com.karambit.bookie.helper.string_similarity.JaroWinkler;
 import com.karambit.bookie.model.Book;
@@ -62,7 +62,7 @@ public class SearchFragment extends Fragment {
     private ArrayList<User> mUsers = new ArrayList<>();
 
     private int mFetchGenreCode = -1;
-    private int mFetchSearchButtonPressed = 0;
+    private int mFetchSearchButtonPressed = 0; // TODO Change type to boolean
     private SearchAdapter mSearchAdapter;
     private DBHandler mDbHandler;
 
@@ -109,7 +109,7 @@ public class SearchFragment extends Fragment {
 
                 Intent intent = new Intent(getContext(), ProfileActivity.class);
                 Bundle bundle = new Bundle();
-                bundle.putParcelable(ProfileActivity.USER, user);
+                bundle.putParcelable(ProfileActivity.EXTRA_USER, user);
                 intent.putExtras(bundle);
                 startActivity(intent);
             }
@@ -244,7 +244,7 @@ public class SearchFragment extends Fragment {
                 } catch (IOException | JSONException e) {
                     e.printStackTrace();
 
-                    if(NetworkChecker.isNetworkAvailable(getContext())){
+                    if(BookieApplication.hasNetwork()){
                         mSearchAdapter.setError(SearchAdapter.ERROR_TYPE_UNKNOWN_ERROR);
                     }else{
                         mSearchAdapter.setError(SearchAdapter.ERROR_TYPE_NO_CONNECTION);
@@ -255,7 +255,7 @@ public class SearchFragment extends Fragment {
 
             @Override
             public void onFailure(Call<ResponseBody> call, Throwable t) {
-                if(NetworkChecker.isNetworkAvailable(getContext())){
+                if(BookieApplication.hasNetwork()){
                     mSearchAdapter.setError(SearchAdapter.ERROR_TYPE_UNKNOWN_ERROR);
                 }else{
                     mSearchAdapter.setError(SearchAdapter.ERROR_TYPE_NO_CONNECTION);

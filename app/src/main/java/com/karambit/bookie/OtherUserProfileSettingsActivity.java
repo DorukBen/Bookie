@@ -27,7 +27,6 @@ import android.widget.Toast;
 
 import com.karambit.bookie.helper.ComfortableProgressDialog;
 import com.karambit.bookie.helper.ElevationScrollListener;
-import com.karambit.bookie.helper.NetworkChecker;
 import com.karambit.bookie.helper.SessionManager;
 import com.karambit.bookie.helper.TypefaceSpan;
 import com.karambit.bookie.model.User;
@@ -58,6 +57,8 @@ public class OtherUserProfileSettingsActivity extends AppCompatActivity {
     public static final int REPORT_USER_NOT_BOOK_GIVER = 4;
     public static final int REPORT_USER_OTHER = 5;
 
+    public static final String EXTRA_USER = "user";
+
     private User mUser;
     private EditText mReportEditText;
     private Button mSendReportButton;
@@ -68,7 +69,7 @@ public class OtherUserProfileSettingsActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_other_user_profile_settings);
 
-        mUser = getIntent().getParcelableExtra("user");
+        mUser = getIntent().getParcelableExtra(EXTRA_USER);
 
         final ActionBar actionBar = getSupportActionBar();
         if (actionBar != null) {
@@ -95,7 +96,7 @@ public class OtherUserProfileSettingsActivity extends AppCompatActivity {
             }
         });
 
-        if (NetworkChecker.isNetworkAvailable(this)) {
+        if (BookieApplication.hasNetwork()) {
 
             mSendReportButton = (Button) findViewById(R.id.reportSendButton);
 

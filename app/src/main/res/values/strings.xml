@@ -258,4 +258,9 @@
     <string name="password_changed">Password Changed Successfully</string>
     <string name="thaks_for_your_report">Thanks for your  report!</string>
     <string name="user_blocked">%s blocked!</string>
+    <string name="notification_multiple_messages">%1$d new messages from %2$d chats</string>
+    <string name="notification_new_messages">%d new messages</string>
+    <string name="notification_new_message">%d new message</string>
+    <string name="notification_new_notifications">%d new notifications</string>
+    <string name="notification_new_notification">%d new notification</string>
 </resources>

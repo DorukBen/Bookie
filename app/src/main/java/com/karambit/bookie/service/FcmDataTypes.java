@@ -1,4 +1,4 @@
-package com.karambit.bookie.rest_api;
+package com.karambit.bookie.service;
 
 /**
  * Created by doruk on 24.02.2017.

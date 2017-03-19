@@ -8,10 +8,12 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.os.Bundle;
+import android.os.Parcelable;
 import android.support.v4.app.Fragment;
 import android.support.v4.content.LocalBroadcastManager;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
+import android.util.Log;
 import android.util.SparseIntArray;
 import android.view.LayoutInflater;
 import android.view.MotionEvent;
@@ -84,7 +86,7 @@ public class MessageFragment extends Fragment {
 
                 User currentUser = SessionManager.getCurrentUser(getContext());
 
-                intent.putExtra("user", lastMessage.getOppositeUser(currentUser));
+                intent.putExtra(ConversationActivity.EXTRA_USER, lastMessage.getOppositeUser(currentUser));
 
                 startActivityForResult(intent, LAST_MESSAGE_REQUEST_CODE);
             }
@@ -150,8 +152,12 @@ public class MessageFragment extends Fragment {
 
                 if (previousSelected == position) {
                     mLastMessageAdapter.setSelectedPosition(-1);
+
+                    Log.i(TAG, "Message user unselected at position " + position + ": " + message.getOppositeUser(currentUser).getName());
                 } else {
                     mLastMessageAdapter.setSelectedPosition(position);
+
+                    Log.i(TAG, "Message user selected at position " + position + ": " + message.getOppositeUser(currentUser).getName());
                 }
 
                 mLastMessageAdapter.notifyItemChanged(position);
@@ -174,12 +180,15 @@ public class MessageFragment extends Fragment {
                         public void onClick(DialogInterface dialog, int which) {
                             unSelectMessages();
                             mLastMessages.remove(message);
-                            mLastMessageAdapter.notifyItemRemoved(position);
+                            mLastMessageAdapter.notifyDataSetChanged();
 
-                            mDbHandler.deleteMessageUsersConversation(message.getOppositeUser(currentUser));
-                            mDbHandler.deleteMessageUser(message.getOppositeUser(currentUser));
+                            User oppositeUser = message.getOppositeUser(currentUser);
+                            mDbHandler.deleteMessageUsersConversation(oppositeUser);
+                            mDbHandler.deleteMessageUser(oppositeUser);
 
-                            // TODO Server delete notify
+                            deleteMessageUserOnServer(oppositeUser);
+
+                            Log.i(TAG, "Message user deleted: " + oppositeUser.getName());
                         }
                     })
                     .setNegativeButton(android.R.string.cancel, new DialogInterface.OnClickListener() {
@@ -229,13 +238,14 @@ public class MessageFragment extends Fragment {
             @Override
             public void onReceive(Context context, Intent intent) {
                 if (intent.getAction().equalsIgnoreCase(BookieIntentFilters.INTENT_FILTER_MESSAGE_RECEIVED)){
-                    if (intent.getParcelableExtra("message") != null){
-                        if (((Message) intent.getParcelableExtra("message")).getSender().getID() != ConversationActivity.currentConversationUserId){
-                            insertLastMessage((Message) intent.getParcelableExtra("message"));
+                    final Message message = intent.getParcelableExtra(BookieIntentFilters.EXTRA_MESSAGE);
+                    if (message != null){
+                        if (message.getSender().getID() != ConversationActivity.currentConversationUserId){
+                            insertLastMessage(message);
                         }
                     }
                 } else {
-                    int messageID = intent.getIntExtra("message_id", -1);
+                    int messageID = intent.getIntExtra(BookieIntentFilters.EXTRA_MESSAGE_ID, -1);
                     if (intent.getAction().equalsIgnoreCase(BookieIntentFilters.INTENT_FILTER_MESSAGE_DELIVERED)){
                         if (messageID > 0){
                             changeMessageState(messageID, Message.State.DELIVERED);
@@ -253,6 +263,12 @@ public class MessageFragment extends Fragment {
         LocalBroadcastManager.getInstance(getContext()).registerReceiver(mMessageReceiver, new IntentFilter(BookieIntentFilters.INTENT_FILTER_MESSAGE_DELIVERED));
         LocalBroadcastManager.getInstance(getContext()).registerReceiver(mMessageReceiver, new IntentFilter(BookieIntentFilters.INTENT_FILTER_MESSAGE_SEEN));
         return rootView;
+    }
+
+    private void deleteMessageUserOnServer(User oppositeUser) {
+        int userId = oppositeUser.getID();
+
+        // TODO Server delete message user
     }
 
     @Override
@@ -275,20 +291,40 @@ public class MessageFragment extends Fragment {
             public void run() {
                 synchronized (DBHandler.class) {
                     final User currentUser = SessionManager.getCurrentUser(getContext());
-                    ArrayList<User> users = mDbHandler.getAllMessageUsers();
-                    mLastMessages = mDbHandler.getLastMessages(users, currentUser);
-                    Collections.sort(mLastMessages);
+                    final ArrayList<User> users = new ArrayList<>();
 
-                    getActivity().runOnUiThread(new Runnable() {
+                    new Thread(new Runnable() {
                         @Override
                         public void run() {
-                            mLastMessageAdapter.setLastMessages(mLastMessages);
-
-                            mPullRefreshLayout.setRefreshing(false);
-
-                            fetchUnseenCounts();
+                            synchronized (DBHandler.class){
+                                users.addAll(mDbHandler.getAllMessageUsers());
+                            }
                         }
-                    });
+                    }).start();
+
+                    new Thread(new Runnable() {
+                        @Override
+                        public void run() {
+                            synchronized (DBHandler.class){
+                                mLastMessages = mDbHandler.getLastMessages(users, currentUser);
+                                Collections.sort(mLastMessages);
+
+                                getActivity().runOnUiThread(new Runnable() {
+                                    @Override
+                                    public void run() {
+                                        mLastMessageAdapter.setLastMessages(mLastMessages);
+
+                                        mPullRefreshLayout.setRefreshing(false);
+
+                                        synchronized (DBHandler.class) {
+                                            fetchUnseenCounts();
+                                        }
+                                    }
+                                });
+                            }
+                        }
+                    }).start();
+
                 }
             }
         }).start();
@@ -296,22 +332,33 @@ public class MessageFragment extends Fragment {
 
     // Last messages should be sorted
     private void fetchUnseenCounts() {
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                synchronized (DBHandler.class){
+                    User currentUser = SessionManager.getCurrentUser(getContext());
 
-        User currentUser = SessionManager.getCurrentUser(getContext());
+                    if (mUnseenCounts == null) {
+                        mUnseenCounts = new SparseIntArray(mLastMessages.size());
+                    } else {
+                        mUnseenCounts.clear();
+                    }
 
-        if (mUnseenCounts == null) {
-            mUnseenCounts = new SparseIntArray(mLastMessages.size());
-        } else {
-            mUnseenCounts.clear();
-        }
+                    for (int i = 0; i < mLastMessages.size(); i++) {
+                        Message message = mLastMessages.get(i);
+                        int unseenCount = mDbHandler.getUnseenMessageCount(message.getOppositeUser(currentUser));
+                        mUnseenCounts.append(i, unseenCount);
+                    }
 
-        for (int i = 0; i < mLastMessages.size(); i++) {
-            Message message = mLastMessages.get(i);
-            int unseenCount = mDbHandler.getUnseenMessageCount(message.getOppositeUser(currentUser));
-            mUnseenCounts.append(i, unseenCount);
-        }
-
-        mLastMessageAdapter.setUnseenCounts(mUnseenCounts);
+                    getActivity().runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            mLastMessageAdapter.setUnseenCounts(mUnseenCounts);
+                        }
+                    });
+                }
+            }
+        }).start();
     }
 
     @Override
@@ -319,13 +366,13 @@ public class MessageFragment extends Fragment {
         if (requestCode == LAST_MESSAGE_REQUEST_CODE) {
 
             if (resultCode == ConversationActivity.RESULT_MESSAGE_INSERTED) {
-                Message lastMessage = data.getParcelableExtra("last_message");
+                Message lastMessage = data.getParcelableExtra(ConversationActivity.EXTRA_LAST_MESSAGE);
                 insertLastMessage(lastMessage);
 
             } else if (resultCode == ConversationActivity.RESULT_ALL_MESSAGES_DELETED) {
 
                 User currentUser = SessionManager.getCurrentUser(getContext());
-                User oppositeUser = data.getParcelableExtra("opposite_user");
+                User oppositeUser = data.getParcelableExtra(ConversationActivity.EXTRA_OPPOSITE_USER);
 
                 for (int i = 0; i < mLastMessages.size(); i++) {
                     Message message = mLastMessages.get(i);
@@ -335,44 +382,82 @@ public class MessageFragment extends Fragment {
                     }
                 }
                 mDbHandler.deleteMessageUser(oppositeUser);
+
+                Log.i(TAG, "All messages deleted in ConversationActivity with " + oppositeUser.getName() + " (message user deleted)");
             }
         }
     }
 
-    public void insertLastMessage(Message newMessage) {
+    public void insertLastMessage(final Message newMessage) {
 
-        User currentUser = SessionManager.getCurrentUser(getContext());
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                synchronized (DBHandler.class){
+                    User currentUser = SessionManager.getCurrentUser(getContext());
 
-        int messageUserIndex = -1;
+                    int messageUserIndex = -1;
 
-        for (int i = 0; i < mLastMessages.size(); i++) {
-            Message m = mLastMessages.get(i);
-            if (m.getOppositeUser(currentUser).equals(newMessage.getOppositeUser(currentUser))) {
-                messageUserIndex = i;
+                    for (int i = 0; i < mLastMessages.size(); i++) {
+                        Message m = mLastMessages.get(i);
+                        if (m.getOppositeUser(currentUser).equals(newMessage.getOppositeUser(currentUser))) {
+                            messageUserIndex = i;
+                        }
+                    }
+
+                    int selectedPosition = mLastMessageAdapter.getSelectedPosition();
+
+                    if (messageUserIndex == -1) {
+                        mLastMessages.add(0, newMessage);
+
+                        // Selection correction
+                        if (selectedPosition != -1) {
+                            mLastMessageAdapter.setSelectedPosition(selectedPosition + 1);
+                        }
+
+                    } else if (messageUserIndex == 0) {
+                        mLastMessages.set(0, newMessage);
+
+                    } else {
+                        mLastMessages.remove(messageUserIndex);
+                        mLastMessages.add(0, newMessage);
+
+                        // Selection correction
+                        if (selectedPosition != -1) {
+
+                            if (selectedPosition < messageUserIndex) {
+                                mLastMessageAdapter.setSelectedPosition(selectedPosition + 1);
+
+                            } else if (selectedPosition == messageUserIndex) {
+                                mLastMessageAdapter.setSelectedPosition(0);
+                            }
+                        }
+                    }
+
+                    Collections.sort(mLastMessages);
+
+                    getActivity().runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+
+                            fetchUnseenCounts();
+
+                            mLastMessageAdapter.setLastMessages(mLastMessages);
+
+
+                        }
+                    });
+                }
             }
-        }
-
-        if (messageUserIndex == -1) {
-            mLastMessages.add(0, newMessage);
-
-        } else if (messageUserIndex == 0) {
-            mLastMessages.set(0, newMessage);
-
-        } else {
-            mLastMessages.remove(messageUserIndex);
-            mLastMessages.add(0, newMessage);
-        }
-
-        Collections.sort(mLastMessages);
-
-        fetchUnseenCounts();
-
-        mLastMessageAdapter.setLastMessages(mLastMessages);
+        }).start();
     }
 
     public boolean changeMessageState(int messageID, Message.State state) {
         for (Message message : mLastMessages) {
             if (message.getID() == messageID) {
+
+                Log.i(TAG, "Message state changed to " + state + " from " + message.getState());
+
                 message.setState(state);
                 mLastMessageAdapter.notifyItemChanged(mLastMessages.indexOf(message));
                 return true;
@@ -395,5 +480,7 @@ public class MessageFragment extends Fragment {
         int tempIndex = mLastMessageAdapter.getSelectedPosition();
         mLastMessageAdapter.setSelectedPosition(-1);
         mLastMessageAdapter.notifyItemChanged(tempIndex);
+
+        Log.i(TAG, "Message users unselected");
     }
 }

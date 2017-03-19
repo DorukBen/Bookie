@@ -143,9 +143,7 @@ public class LastMessageAdapter extends RecyclerView.Adapter<RecyclerView.ViewHo
     }
 
     @Override
-    public void onBindViewHolder(RecyclerView.ViewHolder holder, int position) {
-
-        final int finalPosition = position;
+    public void onBindViewHolder(final RecyclerView.ViewHolder holder, int position) {
 
         final Message message = (mLastMessages.size() > 0)? mLastMessages.get(position): null;
 
@@ -229,14 +227,14 @@ public class LastMessageAdapter extends RecyclerView.Adapter<RecyclerView.ViewHo
                     messageHolder.itemView.setOnClickListener(new View.OnClickListener() {
                         @Override
                         public void onClick(View v) {
-                            mOnMessageClickListener.onMessageClick(message, finalPosition);
+                            mOnMessageClickListener.onMessageClick(message, holder.getAdapterPosition());
                         }
                     });
 
                     messageHolder.itemView.setOnLongClickListener(new View.OnLongClickListener() {
                         @Override
                         public boolean onLongClick(View v) {
-                            return mOnMessageClickListener.onMessageLongClick(message, finalPosition);
+                            return mOnMessageClickListener.onMessageLongClick(message, holder.getAdapterPosition());
                         }
                     });
                 }
@@ -252,21 +250,21 @@ public class LastMessageAdapter extends RecyclerView.Adapter<RecyclerView.ViewHo
                     selectedHolder.mDelete.setOnClickListener(new View.OnClickListener() {
                         @Override
                         public void onClick(View v) {
-                            mOnSelectedStateClickListener.onDeleteClick(message, finalPosition);
+                            mOnSelectedStateClickListener.onDeleteClick(message, holder.getAdapterPosition());
                         }
                     });
 
                     selectedHolder.itemView.setOnClickListener(new View.OnClickListener() {
                         @Override
                         public void onClick(View v) {
-                            mOnSelectedStateClickListener.onSelectedEmptyClick(message, finalPosition);
+                            mOnSelectedStateClickListener.onSelectedEmptyClick(message, holder.getAdapterPosition());
                         }
                     });
 
                     selectedHolder.itemView.setOnLongClickListener(new View.OnLongClickListener() {
                         @Override
                         public boolean onLongClick(View v) {
-                            return mOnSelectedStateClickListener.onSelectedEmptyClick(message, finalPosition);
+                            return mOnSelectedStateClickListener.onSelectedEmptyClick(message, holder.getAdapterPosition());
                         }
                     });
                 }

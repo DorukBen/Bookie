@@ -13,11 +13,11 @@ import android.view.ViewGroup;
 import android.widget.Toast;
 
 import com.karambit.bookie.BookActivity;
+import com.karambit.bookie.BookieApplication;
 import com.karambit.bookie.MainActivity;
 import com.karambit.bookie.R;
 import com.karambit.bookie.adapter.HomeTimelineAdapter;
 import com.karambit.bookie.helper.ElevationScrollListener;
-import com.karambit.bookie.helper.NetworkChecker;
 import com.karambit.bookie.helper.SessionManager;
 import com.karambit.bookie.helper.pull_refresh_layout.PullRefreshLayout;
 import com.karambit.bookie.model.Book;
@@ -236,7 +236,7 @@ public class HomeFragment extends Fragment {
                 } catch (IOException | JSONException e) {
                     e.printStackTrace();
 
-                    if (NetworkChecker.isNetworkAvailable(getContext())){
+                    if (BookieApplication.hasNetwork()){
                         if(!isFromTop){
                             Toast.makeText(getContext(), getString(R.string.unknown_error), Toast.LENGTH_SHORT).show();
                         }else {
@@ -259,7 +259,7 @@ public class HomeFragment extends Fragment {
             public void onFailure(Call<ResponseBody> call, Throwable t) {
                 Log.e(TAG, "Home Page book fetch onFailure: " + t.getMessage());
 
-                if (NetworkChecker.isNetworkAvailable(getContext())){
+                if (BookieApplication.hasNetwork()){
                     if(!isFromTop){
                         Toast.makeText(getContext(), getString(R.string.unknown_error), Toast.LENGTH_SHORT).show();
                     }else {

@@ -34,7 +34,6 @@ import com.karambit.bookie.helper.CircleImageView;
 import com.karambit.bookie.helper.ComfortableProgressDialog;
 import com.karambit.bookie.helper.ElevationScrollListener;
 import com.karambit.bookie.helper.GenrePickerDialog;
-import com.karambit.bookie.helper.NetworkChecker;
 import com.karambit.bookie.helper.SessionManager;
 import com.karambit.bookie.helper.TypefaceSpan;
 import com.karambit.bookie.model.Book;
@@ -60,6 +59,9 @@ public class BookSettingsActivity extends AppCompatActivity {
     public static final int RESULT_LOST = 1;
     public static final int RESULT_BOOK_UPDATED = 2;
 
+    public static final String EXTRA_BOOK = "book";
+    public static final String EXTRA_IS_ADDER = "is_adder";
+
     private static final int REPORT_BOOK_WRONG_NAME = 1;
     private static final int REPORT_BOOK_WRONG_AUTHOR = 2;
     private static final int REPORT_BOOK_WRONG_GENRE = 3;
@@ -81,8 +83,8 @@ public class BookSettingsActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_book_settings);
 
-        mBook = getIntent().getParcelableExtra("book");
-        mIsAdder = getIntent().getBooleanExtra("is_adder", false);
+        mBook = getIntent().getParcelableExtra(EXTRA_BOOK);
+        mIsAdder = getIntent().getBooleanExtra(EXTRA_IS_ADDER, false);
 
         final ActionBar actionBar = getSupportActionBar();
         if (actionBar != null) {
@@ -110,7 +112,7 @@ public class BookSettingsActivity extends AppCompatActivity {
             }
         });
 
-        if (NetworkChecker.isNetworkAvailable(this)) {
+        if (BookieApplication.hasNetwork()) {
 
             User currentUser = SessionManager.getCurrentUser(this);
 
@@ -136,10 +138,10 @@ public class BookSettingsActivity extends AppCompatActivity {
                     public void onClick(View v) {
                         Intent intent = new Intent(BookSettingsActivity.this, PhotoViewerActivity.class);
                         Bundle bundle = new Bundle();
-                        bundle.putString("image", mBook.getImageURL());
+                        bundle.putString(PhotoViewerActivity.EXTRA_IMAGE, mBook.getImageURL());
                         if (mIsAdder && mBook.getOwner().getID() == SessionManager.getCurrentUser(BookSettingsActivity.this).getID()){
-                            bundle.putBoolean("canEditBookImage", true);
-                            bundle.putInt("bookID", mBook.getID());
+                            bundle.putBoolean(PhotoViewerActivity.EXTRA_CAN_EDIT_BOOK_IMAGE, true);
+                            bundle.putInt(PhotoViewerActivity.EXTRA_BOOK_ID, mBook.getID());
                         }
                         intent.putExtras(bundle);
                         startActivity(intent);
@@ -470,7 +472,7 @@ public class BookSettingsActivity extends AppCompatActivity {
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
-        if (NetworkChecker.isNetworkAvailable(this) && mIsAdder) {
+        if (BookieApplication.hasNetwork() && mIsAdder) {
             MenuInflater inflater = getMenuInflater();
             inflater.inflate(R.menu.done_menu, menu);
             return super.onCreateOptionsMenu(menu);

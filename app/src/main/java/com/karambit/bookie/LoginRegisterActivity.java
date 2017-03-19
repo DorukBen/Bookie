@@ -16,7 +16,6 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.karambit.bookie.helper.DBHandler;
-import com.karambit.bookie.helper.NetworkChecker;
 import com.karambit.bookie.helper.SessionManager;
 import com.karambit.bookie.helper.TypefaceSpan;
 import com.karambit.bookie.introduction.IntroductionActivity;
@@ -78,7 +77,7 @@ public class LoginRegisterActivity extends AppCompatActivity {
 
         // BookieApplication font
         SpannableString s = new SpannableString(getResources().getString(R.string.app_name));
-        s.setSpan(new TypefaceSpan(this, "comfortaa.ttf"), 0, s.length(),
+        s.setSpan(new TypefaceSpan(this, MainActivity.FONT_APP_NAME_TITLE), 0, s.length(),
                 Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
 
         ((TextView) findViewById(R.id.app_name)).setText(s);
@@ -119,7 +118,7 @@ public class LoginRegisterActivity extends AppCompatActivity {
             @Override
             public void onClick(View v) {
 
-                if (!NetworkChecker.isNetworkAvailable(LoginRegisterActivity.this)) {
+                if (!BookieApplication.hasNetwork()) {
                     Toast.makeText(LoginRegisterActivity.this, R.string.no_internet_connection, Toast.LENGTH_SHORT).show();
 
                 } else if (areAllInputsValid()) {

@@ -65,6 +65,10 @@ public class MainActivity extends AppCompatActivity implements TabHost.OnTabChan
     public static final String FONT_APP_NAME_TITLE = "comfortaa.ttf";
     public static final String FONT_GENERAL_TITLE = "comfortaa.ttf";
 
+    public static final String EXTRA_MESSAGE_USER = "message_user";
+    public static final String EXTRA_OPPOSITE_USER = "opposite_user";
+    public static final String EXTRA_NOTIFICATION = "notification";
+
     private static final int REQUEST_CODE_LOGIN_REGISTER_ACTIVITY = 1;
     private static final int REQUEST_CODE_CURRENT_USER_PROFILE_SETTINGS_ACTIVITY = 2;
     private static final int REQUEST_CODE_ADD_BOOK_ACTIVITY = 3;
@@ -100,17 +104,21 @@ public class MainActivity extends AppCompatActivity implements TabHost.OnTabChan
         mViewPager = (ViewPager) findViewById(R.id.viewpager);
         mTabHost = (TabHost) findViewById(R.id.tabhost);
 
-        if (! SessionManager.isLoggedIn(this)) {
+        boolean loggedIn = SessionManager.isLoggedIn(this);
+        if (!loggedIn) {
             startActivityForResult(new Intent(this, LoginRegisterActivity.class), REQUEST_CODE_LOGIN_REGISTER_ACTIVITY);
-        } else if (!SessionManager.isLovedGenresSelectedLocal(this)) {
-            //No need for start activity for result. LovedGenreActivity don't returns any result.
-            startActivity(new Intent(this, LovedGenresActivity.class));
-        }else{
-            initializeViewPager(getFragments(), mViewPager);
+        } else {
+            boolean lovedGenresSelectedLocal = SessionManager.isLovedGenresSelectedLocal(this);
+            if (!lovedGenresSelectedLocal) {
+                //No need for start activity for result. LovedGenreActivity don't returns any result.
+                startActivity(new Intent(this, LovedGenresActivity.class));
+            }else{
+                initializeViewPager(getFragments(), mViewPager);
 
-            FcmPrefManager fcmPrefManager = new FcmPrefManager(MainActivity.this);
-            if (!fcmPrefManager.isUploadedToServer()){
-                sendRegistrationToServer(fcmPrefManager.getFcmToken());
+                FcmPrefManager fcmPrefManager = new FcmPrefManager(MainActivity.this);
+                if (!fcmPrefManager.isUploadedToServer()){
+                    sendRegistrationToServer(fcmPrefManager.getFcmToken());
+                }
             }
         }
 
@@ -215,10 +223,12 @@ public class MainActivity extends AppCompatActivity implements TabHost.OnTabChan
 
         tabHost.setOnTabChangedListener(this);
 
-        ViewCompat.setElevation(tabHost.getTabWidget().getChildTabViewAt(HomeFragment.TAB_INDEX),32);
-        ViewCompat.setElevation(tabHost.getTabWidget().getChildTabViewAt(SearchFragment.TAB_INDEX),32);
-        ViewCompat.setElevation(tabHost.getTabWidget().getChildTabViewAt(ProfileFragment.TAB_INDEX),32);
-        ViewCompat.setElevation(tabHost.getTabWidget().getChildTabViewAt(MessageFragment.TAB_INDEX),32);
+        float tabElevation = getResources().getDimension(R.dimen.tab_host_item_elevation);
+
+        ViewCompat.setElevation(tabHost.getTabWidget().getChildTabViewAt(HomeFragment.TAB_INDEX), tabElevation);
+        ViewCompat.setElevation(tabHost.getTabWidget().getChildTabViewAt(SearchFragment.TAB_INDEX),tabElevation);
+        ViewCompat.setElevation(tabHost.getTabWidget().getChildTabViewAt(ProfileFragment.TAB_INDEX),tabElevation);
+        ViewCompat.setElevation(tabHost.getTabWidget().getChildTabViewAt(MessageFragment.TAB_INDEX),tabElevation);
 
         tabHost.getTabWidget().getChildTabViewAt(HomeFragment.TAB_INDEX).setOnClickListener(new View.OnClickListener() {
             @Override
@@ -362,8 +372,8 @@ public class MainActivity extends AppCompatActivity implements TabHost.OnTabChan
             case REQUEST_CODE_CONVERSATION_ACTIVITY:
                 if (resultCode == ConversationActivity.RESULT_ALL_MESSAGES_DELETED){
                     DBHandler dbHandler = DBHandler.getInstance(this);
-                    dbHandler.deleteMessageUser((User) data.getParcelableExtra("opposite_user"));
-                    dbHandler.deleteMessageUsersConversation((User) data.getParcelableExtra("opposite_user"));
+                    dbHandler.deleteMessageUser((User) data.getParcelableExtra(EXTRA_OPPOSITE_USER));
+                    dbHandler.deleteMessageUsersConversation((User) data.getParcelableExtra(EXTRA_OPPOSITE_USER));
                 }
                 break;
 
@@ -399,19 +409,19 @@ public class MainActivity extends AppCompatActivity implements TabHost.OnTabChan
     protected void onNewIntent(Intent intent) {
         super.onNewIntent(intent);
 
-        if (intent.getParcelableExtra("message_user") != null){
+        if (intent.getParcelableExtra(EXTRA_MESSAGE_USER) != null){
             DBHandler dbHandler = DBHandler.getInstance(this);
-            if (dbHandler.isMessageUserExists((User)intent.getParcelableExtra("message_user"))){
+            if (dbHandler.isMessageUserExists((User)intent.getParcelableExtra(EXTRA_MESSAGE_USER))){
                 Intent conversationIntent = new Intent(this, ConversationActivity.class);
 
-                conversationIntent.putExtra("user", intent.getParcelableExtra("message_user"));
+                conversationIntent.putExtra(ConversationActivity.EXTRA_USER, intent.getParcelableExtra(EXTRA_MESSAGE_USER));
                 startActivityForResult(conversationIntent, REQUEST_CODE_CONVERSATION_ACTIVITY);
             }
 
             mViewPager.setCurrentItem(MessageFragment.TAB_INDEX, false);
             mTabHost.setCurrentTab(MessageFragment.TAB_INDEX);
 
-        } else if (intent.getParcelableExtra("notification") != null){
+        } else if (intent.getParcelableExtra(EXTRA_NOTIFICATION) != null){
             startActivity(new Intent(this, NotificationActivity.class));
         }
     }
@@ -563,22 +573,25 @@ public class MainActivity extends AppCompatActivity implements TabHost.OnTabChan
 
     @Override
     public void onBackPressed() {
-        if(!mIsBackPressed){
-            if (mTabHost.getCurrentTab() != HomeFragment.TAB_INDEX){
-                mViewPager.setCurrentItem(HomeFragment.TAB_INDEX, true);
-                mTabHost.setCurrentTab(HomeFragment.TAB_INDEX);
-            }else {
-                mIsBackPressed = true;
+        if (mTabHost.getCurrentTab() != HomeFragment.TAB_INDEX){
+            mViewPager.setCurrentItem(HomeFragment.TAB_INDEX, true);
+            mTabHost.setCurrentTab(HomeFragment.TAB_INDEX);
+        }else {
+            if(!mIsBackPressed){
                 Toast.makeText(this, R.string.press_back_again, Toast.LENGTH_SHORT).show();
+                mIsBackPressed = true;
                 new Handler().postDelayed(new Runnable() {
                     @Override
                     public void run() {
                         mIsBackPressed = false;
                     }
-                }, 500);
+                }, 1500);
+            }else {
+                super.onBackPressed();
             }
-        }else {
-            super.onBackPressed();
+
         }
+
+
     }
 }

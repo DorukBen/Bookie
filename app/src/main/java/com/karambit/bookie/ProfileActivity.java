@@ -25,7 +25,7 @@ public class ProfileActivity extends AppCompatActivity {
 
     private static final String TAG = ProfileActivity.class.getSimpleName();
 
-    public final static String USER = "user";
+    public final static String EXTRA_USER = "user";
 
     private static final int REQUEST_CODE_OTHER_USER_SETTINGS = 1;
     public final static int REQUEST_CODE_MESSAGE_PROCESS = 2;
@@ -55,7 +55,7 @@ public class ProfileActivity extends AppCompatActivity {
         }
 
         Bundle bundle = getIntent().getExtras();
-        mUser = bundle.getParcelable(USER);
+        mUser = bundle.getParcelable(EXTRA_USER);
         ProfileFragment profileFragment = ProfileFragment.newInstance(mUser);
         FragmentTransaction transaction = getSupportFragmentManager().beginTransaction();
         transaction.add(R.id.profileFragmentFrame, profileFragment );
@@ -75,14 +75,14 @@ public class ProfileActivity extends AppCompatActivity {
         switch (item.getItemId()) {
             case R.id.action_more:
                 Intent data = new Intent(this, OtherUserProfileSettingsActivity.class);
-                data.putExtra("user", mUser);
+                data.putExtra(OtherUserProfileSettingsActivity.EXTRA_USER, mUser);
                 startActivityForResult(data, REQUEST_CODE_OTHER_USER_SETTINGS);
                 return true;
 
             case R.id.action_message:
                 Bundle bundle = getIntent().getExtras();
                 Intent intent = new Intent(this,ConversationActivity.class);
-                intent.putExtra(USER, bundle.getParcelable(USER));
+                intent.putExtra(ConversationActivity.EXTRA_USER, bundle.getParcelable(EXTRA_USER));
                 startActivityForResult(intent, REQUEST_CODE_MESSAGE_PROCESS);
                 return true;
 
@@ -104,27 +104,13 @@ public class ProfileActivity extends AppCompatActivity {
         }else if (requestCode == REQUEST_CODE_MESSAGE_PROCESS){
             if (resultCode == ConversationActivity.RESULT_ALL_MESSAGES_DELETED){
                 DBHandler dbHandler = DBHandler.getInstance(this);
-                dbHandler.deleteMessageUser((User) data.getParcelableExtra("opposite_user"));
-                dbHandler.deleteMessageUsersConversation((User) data.getParcelableExtra("opposite_user"));
+                dbHandler.deleteMessageUser((User) data.getParcelableExtra(ConversationActivity.EXTRA_OPPOSITE_USER));
+                dbHandler.deleteMessageUsersConversation((User) data.getParcelableExtra(ConversationActivity.EXTRA_OPPOSITE_USER));
             }
         }
     }
 
     public void setActionBarElevation(float dp) {
         mActionBar.setElevation(dp);
-    }
-
-    /**
-     * This method converts dp unit to equivalent pixels, depending on device density.
-     *
-     * @param dp A value in dp (density independent pixels) unit. Which we need to convert into pixels
-     * @param context Context to get resources and device specific display metrics
-     * @return A float value to represent px equivalent to dp depending on device density
-     */
-    public static float convertDpToPixel(float dp, Context context){
-        Resources resources = context.getResources();
-        DisplayMetrics metrics = resources.getDisplayMetrics();
-        float px = dp * ((float)metrics.densityDpi / DisplayMetrics.DENSITY_DEFAULT);
-        return px;
     }
 }

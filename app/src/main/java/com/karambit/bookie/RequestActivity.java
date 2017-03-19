@@ -34,7 +34,6 @@ import com.karambit.bookie.adapter.RequestAdapter;
 import com.karambit.bookie.helper.ComfortableProgressDialog;
 import com.karambit.bookie.helper.ElevationScrollListener;
 import com.karambit.bookie.helper.LayoutUtils;
-import com.karambit.bookie.helper.NetworkChecker;
 import com.karambit.bookie.helper.SessionManager;
 import com.karambit.bookie.helper.TypefaceSpan;
 import com.karambit.bookie.helper.pull_refresh_layout.PullRefreshLayout;
@@ -66,6 +65,8 @@ public class RequestActivity extends AppCompatActivity {
     public static final int RESULT_REQUESTS_MODIFIED = 1;
     public static final int RESULT_REQUEST_ACCEPTED = 2;
 
+    public static final String EXTRA_BOOK = "book";
+
     private Book mBook;
     private ArrayList<Book.Request> mRequests = new ArrayList<>();
     private PullRefreshLayout mPullRefreshLayout;
@@ -96,7 +97,7 @@ public class RequestActivity extends AppCompatActivity {
             actionBar.setElevation(elevation);
         }
 
-        mBook = getIntent().getParcelableExtra("book");
+        mBook = getIntent().getParcelableExtra(EXTRA_BOOK);
 
         mPullRefreshLayout = (PullRefreshLayout) findViewById(R.id.swipeRefreshLayout);
         mPullRefreshLayout.setRefreshing(true);
@@ -136,7 +137,7 @@ public class RequestActivity extends AppCompatActivity {
             @Override
             public void onUserClick(User user) {
                 Intent intent = new Intent(RequestActivity.this, ProfileActivity.class);
-                intent.putExtra(ProfileActivity.USER, user);
+                intent.putExtra(ProfileActivity.EXTRA_USER, user);
                 startActivity(intent);
             }
 
@@ -213,6 +214,23 @@ public class RequestActivity extends AppCompatActivity {
                                     mRequests.clear();
                                     mRequests.addAll(Book.jsonObjectToBookRequests(responseObject, mBook));
 
+                                    Log.i(TAG, mRequests.toString());
+
+                                    for (Book.Request r : mRequests) {
+                                        if (r.getRequestType() == Book.RequestType.ACCEPT) {
+                                            setAcceptedRequestText(r);
+
+                                            for (Book.Request request : mRequests){
+                                                if (request.getRequestType() != Book.RequestType.ACCEPT){
+                                                    User tmpUser = request.getFromUser();
+                                                    request.setFromUser(request.getToUser());
+                                                    request.setToUser(tmpUser);
+                                                    request.setRequestType(Book.RequestType.REJECT);
+                                                }
+                                            }
+                                        }
+                                    }
+
                                     mRequestAdapter.setError(RequestAdapter.ERROR_TYPE_NONE);
                                     mRequestAdapter.setRequests(mRequests);
                                     mRequestAdapter.notifyDataSetChanged();
@@ -223,12 +241,6 @@ public class RequestActivity extends AppCompatActivity {
                                     mPullRefreshLayout.setRefreshing(false);
 
                                     fetchLocations();
-
-                                    for (Book.Request r : mRequests) {
-                                        if (r.getRequestType() == Book.RequestType.ACCEPT) {
-                                            setAcceptedRequestText(r);
-                                        }
-                                    }
 
                                     Log.i(TAG, "Book requests fetched");
                                 }else {
@@ -266,7 +278,7 @@ public class RequestActivity extends AppCompatActivity {
                 } catch (IOException | JSONException e) {
                     e.printStackTrace();
 
-                    if (NetworkChecker.isNetworkAvailable(RequestActivity.this)){
+                    if (BookieApplication.hasNetwork()){
                         mRequestAdapter.setError(RequestAdapter.ERROR_TYPE_UNKNOWN_ERROR);
                     }else {
                         mRequestAdapter.setError(RequestAdapter.ERROR_TYPE_NO_CONNECTION);
@@ -279,7 +291,7 @@ public class RequestActivity extends AppCompatActivity {
             @Override
             public void onFailure(Call<ResponseBody> call, Throwable t) {
                 Log.e(TAG, "Home Page book fetch onFailure: " + t.getMessage());
-                if (NetworkChecker.isNetworkAvailable(RequestActivity.this)){
+                if (BookieApplication.hasNetwork()){
                     mRequestAdapter.setError(RequestAdapter.ERROR_TYPE_UNKNOWN_ERROR);
                 }else {
                     mRequestAdapter.setError(RequestAdapter.ERROR_TYPE_NO_CONNECTION);
@@ -343,7 +355,8 @@ public class RequestActivity extends AppCompatActivity {
                                     Collections.sort(mRequests);
                                     int indexAfter = mRequests.indexOf(oldRequest) + 1; // Subtitle
                                     mRequestAdapter.notifyItemMoved(indexBefore, indexAfter);
-                                    mRequestAdapter.notifyItemChanged(mRequestAdapter.getSentRequestCount() - 1);
+                                    Log.i(TAG, "Item moved: " + indexBefore + " -> " + indexAfter);
+                                    //mRequestAdapter.notifyItemChanged(mRequestAdapter.getSentRequestCount() - 1);
 
                                     setResult(RESULT_REQUESTS_MODIFIED); // for refreshing previous page
                                 }
@@ -408,7 +421,7 @@ public class RequestActivity extends AppCompatActivity {
             @Override
             public void onClick(View widget) {
                 Intent intent = new Intent(RequestActivity.this, ProfileActivity.class);
-                intent.putExtra(ProfileActivity.USER, request.getFromUser());
+                intent.putExtra(ProfileActivity.EXTRA_USER, request.getFromUser());
                 startActivity(intent);
             }
 
@@ -427,7 +440,7 @@ public class RequestActivity extends AppCompatActivity {
         mAcceptedRequestTextView.setHighlightColor(Color.TRANSPARENT);
         mAcceptedRequestTextView.setText(spanAcceptRequest);
 
-        getSupportActionBar().setElevation(0);
+        getSupportActionBar().setElevation(getResources().getDimension(R.dimen.actionbar_starting_elevation));
         mRequestRecyclerView.setOnScrollListener(null);
 
         ViewCompat.setElevation(mAcceptedRequestTextView, 8f * LayoutUtils.DP);
@@ -458,13 +471,8 @@ public class RequestActivity extends AppCompatActivity {
                         final double longitude = fromUser.getLocation().longitude;
 
                         try {
-                            List<Address> addresses;
                             Geocoder geocoder = new Geocoder(RequestActivity.this, Locale.getDefault());
-                            if (latitude > -90 && latitude < 90 && longitude > -90 && longitude < 90) {
-                                addresses = geocoder.getFromLocation(latitude, longitude, 1);
-                            } else {
-                                addresses = new ArrayList<>();
-                            }
+                            List<Address> addresses = geocoder.getFromLocation(latitude, longitude, 1);
 
                             // Admin area equals Istanbul
                             // Subadmin are equals Bahçelievler

@@ -22,6 +22,8 @@ import java.util.ArrayList;
  */
 public class HorizontalPagerAdapter extends InfiniteCyclePagerAdapter {
 
+    public static final String TAG = HorizontalPagerAdapter.class.getSimpleName();
+
     private ArrayList<Book> mBooks = new ArrayList<>();
     private Context mContext;
     private LayoutInflater mLayoutInflater;
@@ -91,8 +93,8 @@ public class HorizontalPagerAdapter extends InfiniteCyclePagerAdapter {
     }
 
     void setBooks(ArrayList<Book> books){
-        mBooks.clear();
-        mBooks.addAll(books);
+        mBooks = books;
+        Log.i(TAG, "Books set: " + books);
     }
 
     public interface BookClickListener {

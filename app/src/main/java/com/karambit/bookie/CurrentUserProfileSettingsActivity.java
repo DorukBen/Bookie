@@ -34,7 +34,6 @@ import com.karambit.bookie.helper.CircleImageView;
 import com.karambit.bookie.helper.ComfortableProgressDialog;
 import com.karambit.bookie.helper.DBHandler;
 import com.karambit.bookie.helper.ElevationScrollListener;
-import com.karambit.bookie.helper.NetworkChecker;
 import com.karambit.bookie.helper.SessionManager;
 import com.karambit.bookie.helper.TypefaceSpan;
 import com.karambit.bookie.model.User;
@@ -93,7 +92,7 @@ public class CurrentUserProfileSettingsActivity extends AppCompatActivity {
             actionBar.setHomeAsUpIndicator(R.drawable.ic_arrow_back_black_24dp);
         }
 
-        if (NetworkChecker.isNetworkAvailable(this)) {
+        if (BookieApplication.hasNetwork()) {
 
             mCurrentUserDetails = SessionManager.getCurrentUserDetails(this);
 
@@ -112,7 +111,7 @@ public class CurrentUserProfileSettingsActivity extends AppCompatActivity {
 
             mBioEditText = (EditText) findViewById(R.id.bioEditText);
             String bio = mCurrentUserDetails.getBio();
-            if (!TextUtils.isEmpty(bio) && !bio.equals("null")) {
+            if (!TextUtils.isEmpty(bio)) {
                 mBioEditText.setText(bio);
             }
 
@@ -137,8 +136,8 @@ public class CurrentUserProfileSettingsActivity extends AppCompatActivity {
                 @Override
                 public void onClick(View v) {
                     Intent intent = new Intent(CurrentUserProfileSettingsActivity.this, PhotoViewerActivity.class);
-                    intent.putExtra("user", mCurrentUserDetails.getUser());
-                    intent.putExtra("image", mCurrentUserDetails.getUser().getImageUrl());
+                    intent.putExtra(PhotoViewerActivity.EXTRA_USER, mCurrentUserDetails.getUser());
+                    intent.putExtra(PhotoViewerActivity.EXTRA_IMAGE, mCurrentUserDetails.getUser().getImageUrl());
                     startActivityForResult(intent, REQUEST_CODE_UPDATE_PROFILE_PICTURE);
                 }
             });
@@ -249,9 +248,9 @@ public class CurrentUserProfileSettingsActivity extends AppCompatActivity {
         } else if (requestCode == REQUEST_CODE_LOCATION) {
             if (resultCode == LocationActivity.RESULT_LOCATION_UPDATED) {
                 LatLng previousLocation = mCurrentUserDetails.getUser().getLocation();
-                double newLatitude = data.getDoubleExtra("latitude", previousLocation != null ? previousLocation.latitude : Long.MIN_VALUE);
-                double newLongitude = data.getDoubleExtra("longitude", previousLocation != null ? previousLocation.longitude : Long.MIN_VALUE);
-                mCurrentUserDetails.getUser().setLatitude(new LatLng(newLatitude, newLongitude));
+                double newLatitude = data.getDoubleExtra(LocationActivity.EXTRA_LATITUDE, previousLocation != null ? previousLocation.latitude : Long.MIN_VALUE);
+                double newLongitude = data.getDoubleExtra(LocationActivity.EXTRA_LONGITUDE, previousLocation != null ? previousLocation.longitude : Long.MIN_VALUE);
+                mCurrentUserDetails.getUser().setLocation(new LatLng(newLatitude, newLongitude));
                 fetchLocation();
             }
         }
@@ -592,7 +591,7 @@ public class CurrentUserProfileSettingsActivity extends AppCompatActivity {
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
-        if (NetworkChecker.isNetworkAvailable(this)) {
+        if (BookieApplication.hasNetwork()) {
             MenuInflater inflater = getMenuInflater();
             inflater.inflate(R.menu.done_menu, menu);
             return super.onCreateOptionsMenu(menu);
@@ -611,7 +610,7 @@ public class CurrentUserProfileSettingsActivity extends AppCompatActivity {
             }
 
             case R.id.action_done: {
-                if (NetworkChecker.isNetworkAvailable(this)) {
+                if (BookieApplication.hasNetwork()) {
                     saveChanges();
                 } else {
                     Toast.makeText(this, R.string.no_internet_connection, Toast.LENGTH_SHORT).show();
