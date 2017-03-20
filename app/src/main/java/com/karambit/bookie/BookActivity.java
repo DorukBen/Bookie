@@ -120,7 +120,13 @@ public class BookActivity extends AppCompatActivity {
         mBookTimelineAdapter.setOtherUserClickListeners(new BookTimelineAdapter.StateOtherUserClickListeners() {
             @Override
             public void onRequestButtonClick(Book.Details details) {
-                new android.app.AlertDialog.Builder(BookActivity.this)
+
+                User.Details currentUserDetails = SessionManager.getCurrentUserDetails(BookActivity.this);
+
+                // TODO /////////////////////////////////////////////////////////////////////////////////////
+
+                if (currentUserDetails.getBookCounter() > 0) {
+                    new android.app.AlertDialog.Builder(BookActivity.this)
                         .setMessage(getString(R.string.send_request_to_x, mBook.getOwner().getName()))
                         .setPositiveButton(R.string.accept, new DialogInterface.OnClickListener() {
                             @Override
@@ -138,6 +144,20 @@ public class BookActivity extends AppCompatActivity {
                         .setNegativeButton(android.R.string.no, null)
                         .create()
                         .show();
+                } else {
+                    new android.app.AlertDialog.Builder(BookActivity.this)
+                        .setMessage(getString(R.string.send_request_to_x, mBook.getOwner().getName()))
+                        .setPositiveButton(android.R.string.ok, null)
+                        .setNeutralButton(R.string.more_info, new DialogInterface.OnClickListener() {
+                            @Override
+                            public void onClick(DialogInterface dialog, int which) {
+
+                                // TODO InfoActivity
+                            }
+                        })
+                        .create()
+                        .show();
+                }
             }
 
             @Override
