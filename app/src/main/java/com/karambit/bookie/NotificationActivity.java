@@ -4,7 +4,6 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
-import android.content.res.Resources;
 import android.os.Bundle;
 import android.support.v4.content.LocalBroadcastManager;
 import android.support.v7.app.ActionBar;
@@ -14,11 +13,11 @@ import android.support.v7.widget.RecyclerView;
 import android.text.Spannable;
 import android.text.SpannableString;
 import android.text.style.AbsoluteSizeSpan;
-import android.util.DisplayMetrics;
 import android.view.View;
 
 import com.karambit.bookie.adapter.NotificationAdapter;
-import com.karambit.bookie.helper.DBHandler;
+import com.karambit.bookie.database.DBHelper;
+import com.karambit.bookie.database.DBManager;
 import com.karambit.bookie.helper.ElevationScrollListener;
 import com.karambit.bookie.helper.TypefaceSpan;
 import com.karambit.bookie.helper.pull_refresh_layout.PullRefreshLayout;
@@ -36,6 +35,8 @@ public class NotificationActivity extends AppCompatActivity {
     private NotificationAdapter mNotificationAdapter;
     private ArrayList<Notification> mNotifications = new ArrayList<>();
 
+    private DBManager mDbManager;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -51,7 +52,7 @@ public class NotificationActivity extends AppCompatActivity {
 
         // Update the action bar title with the TypefaceSpan instance
         final ActionBar actionBar = getSupportActionBar();
-        if(actionBar != null){
+        if (actionBar != null) {
             actionBar.setTitle(s);
             float elevation = getResources().getDimension(R.dimen.actionbar_starting_elevation);
             actionBar.setElevation(elevation);
@@ -60,10 +61,10 @@ public class NotificationActivity extends AppCompatActivity {
         RecyclerView recyclerView = (RecyclerView) findViewById(R.id.notificationRecyclerView);
         recyclerView.setLayoutManager(new LinearLayoutManager(NotificationActivity.this));
 
+        mDbManager = new DBManager(this);
+        mDbManager.open();
 
-        DBHandler dbHandler = DBHandler.getInstance(this);
-
-        mNotifications = dbHandler.getAllNotifications(dbHandler.getAllNotificationUsers(), dbHandler.getAllNotificationBooks(dbHandler.getAllNotificationBookUsers()));
+        mNotifications = mDbManager.getNotificationDataSource().getAllNotifications();
         mNotificationAdapter = new NotificationAdapter(this, mNotifications);
 
         mNotificationAdapter.setSpanTextClickListeners(new NotificationAdapter.SpanTextClickListeners() {
@@ -130,8 +131,7 @@ public class NotificationActivity extends AppCompatActivity {
             @Override
             public void onRefresh() {
                 // start refresh
-                DBHandler dbHandler = DBHandler.getInstance(NotificationActivity.this);
-                mNotifications = dbHandler.getAllNotifications(dbHandler.getAllNotificationUsers(), dbHandler.getAllNotificationBooks(dbHandler.getAllNotificationBookUsers()));
+                mNotifications = mDbManager.getNotificationDataSource().getAllNotifications();
                 mNotificationAdapter.notifyDataSetChanged();
             }
         });
@@ -140,37 +140,35 @@ public class NotificationActivity extends AppCompatActivity {
         recyclerView.setItemViewCacheSize(20);
         recyclerView.setDrawingCacheEnabled(true);
         recyclerView.setDrawingCacheQuality(View.DRAWING_CACHE_QUALITY_HIGH);
-
     }
 
     @Override
     protected void onResume() {
         super.onResume();
 
-
         mMessageReceiver = new BroadcastReceiver() {
             @Override
             public void onReceive(Context context, Intent intent) {
-                if (intent.getAction().equalsIgnoreCase(BookieIntentFilters.INTENT_FILTER_SENT_REQUEST_RECEIVED)){
-                    if (intent.getParcelableExtra("notification") != null){
+                if (intent.getAction().equalsIgnoreCase(BookieIntentFilters.INTENT_FILTER_SENT_REQUEST_RECEIVED)) {
+                    if (intent.getParcelableExtra("notification") != null) {
                         Notification notification = intent.getParcelableExtra("notification");
                         mNotifications.add(notification);
                         mNotificationAdapter.setNotifications(mNotifications);
                     }
-                } else if (intent.getAction().equalsIgnoreCase(BookieIntentFilters.INTENT_FILTER_REJECTED_REQUEST_RECEIVED)){
-                    if (intent.getParcelableExtra("notification") != null){
+                } else if (intent.getAction().equalsIgnoreCase(BookieIntentFilters.INTENT_FILTER_REJECTED_REQUEST_RECEIVED)) {
+                    if (intent.getParcelableExtra("notification") != null) {
                         Notification notification = intent.getParcelableExtra("notification");
                         mNotifications.add(notification);
                         mNotificationAdapter.setNotifications(mNotifications);
                     }
-                } else if (intent.getAction().equalsIgnoreCase(BookieIntentFilters.INTENT_FILTER_ACCEPTED_REQUEST_RECEIVED)){
-                    if (intent.getParcelableExtra("notification") != null){
+                } else if (intent.getAction().equalsIgnoreCase(BookieIntentFilters.INTENT_FILTER_ACCEPTED_REQUEST_RECEIVED)) {
+                    if (intent.getParcelableExtra("notification") != null) {
                         Notification notification = intent.getParcelableExtra("notification");
                         mNotifications.add(notification);
                         mNotificationAdapter.setNotifications(mNotifications);
                     }
-                } else if (intent.getAction().equalsIgnoreCase(BookieIntentFilters.INTENT_FILTER_BOOK_OWNER_CHANGED_RECEIVED)){
-                    if (intent.getParcelableExtra("notification") != null){
+                } else if (intent.getAction().equalsIgnoreCase(BookieIntentFilters.INTENT_FILTER_BOOK_OWNER_CHANGED_RECEIVED)) {
+                    if (intent.getParcelableExtra("notification") != null) {
                         Notification notification = intent.getParcelableExtra("notification");
                         mNotifications.add(notification);
                         mNotificationAdapter.setNotifications(mNotifications);
@@ -184,8 +182,7 @@ public class NotificationActivity extends AppCompatActivity {
         LocalBroadcastManager.getInstance(this).registerReceiver(mMessageReceiver, new IntentFilter(BookieIntentFilters.INTENT_FILTER_ACCEPTED_REQUEST_RECEIVED));
         LocalBroadcastManager.getInstance(this).registerReceiver(mMessageReceiver, new IntentFilter(BookieIntentFilters.INTENT_FILTER_BOOK_OWNER_CHANGED_RECEIVED));
 
-        DBHandler dbHandler = DBHandler.getInstance(this);
-        dbHandler.updateAllNotificationsSeen();
+        mDbManager.getNotificationDataSource().updateAllNotificationsSeen();
         setResult(NotificationActivity.RESULT_CODE_ALL_NOTIFICATION_SEENS_DELETED);
     }
 
@@ -195,8 +192,7 @@ public class NotificationActivity extends AppCompatActivity {
 
         LocalBroadcastManager.getInstance(this).unregisterReceiver(mMessageReceiver);
 
-        DBHandler dbHandler = DBHandler.getInstance(this);
-        dbHandler.updateAllNotificationsSeen();
+        mDbManager.getNotificationDataSource().updateAllNotificationsSeen();
         setResult(NotificationActivity.RESULT_CODE_ALL_NOTIFICATION_SEENS_DELETED);
     }
 }

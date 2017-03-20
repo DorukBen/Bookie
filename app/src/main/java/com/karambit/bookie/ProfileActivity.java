@@ -1,8 +1,6 @@
 package com.karambit.bookie;
 
-import android.content.Context;
 import android.content.Intent;
-import android.content.res.Resources;
 import android.os.Bundle;
 import android.support.v4.app.FragmentTransaction;
 import android.support.v7.app.ActionBar;
@@ -10,14 +8,14 @@ import android.support.v7.app.AppCompatActivity;
 import android.text.Spannable;
 import android.text.SpannableString;
 import android.text.style.AbsoluteSizeSpan;
-import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
 
+import com.karambit.bookie.database.DBManager;
 import com.karambit.bookie.fragment.ProfileFragment;
-import com.karambit.bookie.helper.DBHandler;
+import com.karambit.bookie.database.DBHelper;
 import com.karambit.bookie.helper.TypefaceSpan;
 import com.karambit.bookie.model.User;
 
@@ -29,6 +27,8 @@ public class ProfileActivity extends AppCompatActivity {
 
     private static final int REQUEST_CODE_OTHER_USER_SETTINGS = 1;
     public final static int REQUEST_CODE_MESSAGE_PROCESS = 2;
+
+    private DBManager mDbManager;
 
     private ActionBar mActionBar;
     private User mUser;
@@ -53,6 +53,9 @@ public class ProfileActivity extends AppCompatActivity {
             float elevation = getResources().getDimension(R.dimen.actionbar_starting_elevation);
             mActionBar.setElevation(elevation);
         }
+
+        mDbManager = new DBManager(this);
+        mDbManager.open();
 
         Bundle bundle = getIntent().getExtras();
         mUser = bundle.getParcelable(EXTRA_USER);
@@ -103,9 +106,7 @@ public class ProfileActivity extends AppCompatActivity {
             }
         }else if (requestCode == REQUEST_CODE_MESSAGE_PROCESS){
             if (resultCode == ConversationActivity.RESULT_ALL_MESSAGES_DELETED){
-                DBHandler dbHandler = DBHandler.getInstance(this);
-                dbHandler.deleteMessageUser((User) data.getParcelableExtra(ConversationActivity.EXTRA_OPPOSITE_USER));
-                dbHandler.deleteMessageUsersConversation((User) data.getParcelableExtra(ConversationActivity.EXTRA_OPPOSITE_USER));
+                mDbManager.getMessageDataSource().deleteConversation((User) data.getParcelableExtra(ConversationActivity.EXTRA_OPPOSITE_USER));
             }
         }
     }

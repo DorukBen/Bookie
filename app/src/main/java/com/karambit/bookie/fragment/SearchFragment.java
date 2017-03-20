@@ -20,7 +20,8 @@ import com.karambit.bookie.BookieApplication;
 import com.karambit.bookie.ProfileActivity;
 import com.karambit.bookie.R;
 import com.karambit.bookie.adapter.SearchAdapter;
-import com.karambit.bookie.helper.DBHandler;
+import com.karambit.bookie.database.DBHelper;
+import com.karambit.bookie.database.DBManager;
 import com.karambit.bookie.helper.SessionManager;
 import com.karambit.bookie.helper.string_similarity.JaroWinkler;
 import com.karambit.bookie.model.Book;
@@ -64,7 +65,7 @@ public class SearchFragment extends Fragment {
     private int mFetchGenreCode = -1;
     private int mFetchSearchButtonPressed = 0; // TODO Change type to boolean
     private SearchAdapter mSearchAdapter;
-    private DBHandler mDbHandler;
+    private DBManager mDbManager;
 
     public SearchFragment() {
         // Required empty public constructor
@@ -81,7 +82,8 @@ public class SearchFragment extends Fragment {
         recyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
         final EditText searchEditText = (EditText)rootView.findViewById(R.id.searchEditText);
 
-        mDbHandler = DBHandler.getInstance(getContext());
+        mDbManager = new DBManager(getContext());
+        mDbManager.open();
 
         mAllGenres  = getContext().getResources().getStringArray(R.array.genre_types);
 
@@ -116,7 +118,10 @@ public class SearchFragment extends Fragment {
 
             @Override
             public void onClearHistoryClick() {
-                mDbHandler.clearSearchHistory();
+                //Clear history
+                mDbManager.getSearchBookDataSource().deleteAllBooks();
+                mDbManager.getSearchUserDataSource().deleteAllUsers();
+
                 mSearchAdapter.setWarning(SearchAdapter.WARNING_TYPE_NOTHING_TO_SHOW);
             }
         });
@@ -312,8 +317,8 @@ public class SearchFragment extends Fragment {
     }
 
     private void showSearchHistory(){
-        ArrayList<Book> historyBooks = mDbHandler.getAllSearchBooks(mDbHandler.getAllSearchBookUsers());
-        ArrayList<User> historyUsers = mDbHandler.getAllSearchUsers();
+        ArrayList<Book> historyBooks = mDbManager.getSearchBookDataSource().getAllBooks();
+        ArrayList<User> historyUsers = mDbManager.getSearchUserDataSource().getAllUsers();
 
         if (historyBooks.size() + historyUsers.size() > 0){
             mSearchAdapter.setItems(new ArrayList<Integer>(), historyBooks, historyUsers);
@@ -324,42 +329,34 @@ public class SearchFragment extends Fragment {
     }
 
     private void addBookToSearchHistory(Book book) {
-        ArrayList<Book> historyBooks = mDbHandler.getAllSearchBooks(mDbHandler.getAllSearchBookUsers());
+        ArrayList<Book> historyBooks = mDbManager.getSearchBookDataSource().getAllBooks();
 
         if (historyBooks.size() > 2){
-            mDbHandler.deleteAllSearchBooks();
+            mDbManager.getSearchBookDataSource().deleteAllBooks();
 
             historyBooks.remove(0);
 
             for (Book historyBook: historyBooks){
-                mDbHandler.insertSearchBookUser(historyBook.getOwner());
-                mDbHandler.insertSearchBook(historyBook);
+                mDbManager.getSearchBookDataSource().saveBook(historyBook);
             }
         }
 
-        if (!mDbHandler.isSearchBookUserExists(book.getOwner())){
-            mDbHandler.insertSearchBookUser(book.getOwner());
-        }
-        if (!mDbHandler.isSearchBookExists(book)){
-            mDbHandler.insertSearchBook(book);
-        }
+        mDbManager.getSearchBookDataSource().saveBook(book);
     }
 
     private void addUserToSearchHistory(User user) {
-        ArrayList<User> historyUsers = mDbHandler.getAllSearchUsers();
+        ArrayList<User> historyUsers = mDbManager.getSearchUserDataSource().getAllUsers();
 
         if (historyUsers.size() > 2){
-            mDbHandler.deleteAllSearchUsers();
+            mDbManager.getSearchUserDataSource().deleteAllUsers();
 
             historyUsers.remove(0);
 
             for (User historyUser: historyUsers){
-                mDbHandler.insertSearchUser(historyUser);
+                mDbManager.getSearchUserDataSource().saveUser(historyUser);
             }
         }
 
-        if (!mDbHandler.isSearchUserExists(user)){
-            mDbHandler.insertSearchUser(user);
-        }
+        mDbManager.getSearchUserDataSource().saveUser(user);
     }
 }

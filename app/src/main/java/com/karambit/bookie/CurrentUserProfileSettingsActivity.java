@@ -30,9 +30,10 @@ import android.widget.Toast;
 
 import com.bumptech.glide.Glide;
 import com.google.android.gms.maps.model.LatLng;
+import com.karambit.bookie.database.DBManager;
 import com.karambit.bookie.helper.CircleImageView;
 import com.karambit.bookie.helper.ComfortableProgressDialog;
-import com.karambit.bookie.helper.DBHandler;
+import com.karambit.bookie.database.DBHelper;
 import com.karambit.bookie.helper.ElevationScrollListener;
 import com.karambit.bookie.helper.SessionManager;
 import com.karambit.bookie.helper.TypefaceSpan;
@@ -70,6 +71,8 @@ public class CurrentUserProfileSettingsActivity extends AppCompatActivity {
     private EditText mBioEditText;
     private ScrollView mScrollView;
 
+    private DBManager mDbManager;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -91,6 +94,9 @@ public class CurrentUserProfileSettingsActivity extends AppCompatActivity {
             actionBar.setDisplayHomeAsUpEnabled(true);
             actionBar.setHomeAsUpIndicator(R.drawable.ic_arrow_back_black_24dp);
         }
+
+        mDbManager = new DBManager(this);
+        mDbManager.open();
 
         if (BookieApplication.hasNetwork()) {
 
@@ -440,12 +446,9 @@ public class CurrentUserProfileSettingsActivity extends AppCompatActivity {
                                     newPasswordDialog.dismiss();
                                     Toast.makeText(CurrentUserProfileSettingsActivity.this, getString(R.string.password_changed), Toast.LENGTH_SHORT).show();
 
-                                    DBHandler dbHandler = DBHandler.getInstance(CurrentUserProfileSettingsActivity.this);
-                                    User.Details userDetails = dbHandler.getCurrentUserDetails();
-                                    dbHandler.deleteCurrentUser();
-                                    userDetails.setPassword(responseObject.getString("newPassword"));
+                                    mDbManager.getUserDataSource().updateUserPassword(responseObject.getString("newPassword"));
                                     SessionManager.getCurrentUserDetails(CurrentUserProfileSettingsActivity.this).setPassword(responseObject.getString("newPassword"));
-                                    dbHandler.insertCurrentUser(userDetails);
+
                                 }
 
                             } else {

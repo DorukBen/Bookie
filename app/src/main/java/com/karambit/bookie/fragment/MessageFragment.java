@@ -8,7 +8,6 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.os.Bundle;
-import android.os.Parcelable;
 import android.support.v4.app.Fragment;
 import android.support.v4.content.LocalBroadcastManager;
 import android.support.v7.widget.LinearLayoutManager;
@@ -24,7 +23,8 @@ import com.karambit.bookie.ConversationActivity;
 import com.karambit.bookie.MainActivity;
 import com.karambit.bookie.R;
 import com.karambit.bookie.adapter.LastMessageAdapter;
-import com.karambit.bookie.helper.DBHandler;
+import com.karambit.bookie.database.DBHelper;
+import com.karambit.bookie.database.DBManager;
 import com.karambit.bookie.helper.ElevationScrollListener;
 import com.karambit.bookie.helper.SessionManager;
 import com.karambit.bookie.helper.pull_refresh_layout.PullRefreshLayout;
@@ -49,7 +49,7 @@ public class MessageFragment extends Fragment {
 
     public static final int LAST_MESSAGE_REQUEST_CODE = 1;
 
-    private DBHandler mDbHandler;
+    private DBManager mDBManager;
     private ArrayList<Message> mLastMessages;
     private LastMessageAdapter mLastMessageAdapter;
     private PullRefreshLayout mPullRefreshLayout;
@@ -70,7 +70,8 @@ public class MessageFragment extends Fragment {
 
         recyclerView.setLayoutManager(new LinearLayoutManager(getActivity()));
 
-        mDbHandler = DBHandler.getInstance(getContext());
+        mDBManager = new DBManager(getContext());
+        mDBManager.open();
 
         final User currentUser = SessionManager.getCurrentUser(getContext());
 
@@ -174,36 +175,35 @@ public class MessageFragment extends Fragment {
             @Override
             public void onDeleteClick(final Message message, final int position) {
                 new AlertDialog.Builder(getContext())
-                    .setMessage(getString(R.string.delete_prompt_message_user, message.getOppositeUser(currentUser).getName()))
-                    .setPositiveButton(R.string.delete, new DialogInterface.OnClickListener() {
-                        @Override
-                        public void onClick(DialogInterface dialog, int which) {
-                            unSelectMessages();
-                            mLastMessages.remove(message);
-                            mLastMessageAdapter.notifyDataSetChanged();
+                        .setMessage(getString(R.string.delete_prompt_message_user, message.getOppositeUser(currentUser).getName()))
+                        .setPositiveButton(R.string.delete, new DialogInterface.OnClickListener() {
+                            @Override
+                            public void onClick(DialogInterface dialog, int which) {
+                                unSelectMessages();
+                                mLastMessages.remove(message);
+                                mLastMessageAdapter.notifyDataSetChanged();
 
-                            User oppositeUser = message.getOppositeUser(currentUser);
-                            mDbHandler.deleteMessageUsersConversation(oppositeUser);
-                            mDbHandler.deleteMessageUser(oppositeUser);
+                                User oppositeUser = message.getOppositeUser(currentUser);
+                                mDBManager.getMessageDataSource().deleteConversation(oppositeUser);
 
-                            deleteMessageUserOnServer(oppositeUser);
+                                deleteMessageUserOnServer(oppositeUser);
 
-                            Log.i(TAG, "Message user deleted: " + oppositeUser.getName());
-                        }
-                    })
-                    .setNegativeButton(android.R.string.cancel, new DialogInterface.OnClickListener() {
-                        @Override
-                        public void onClick(DialogInterface dialog, int which) {
-                            unSelectMessages();
-                        }
-                    })
-                    .setOnCancelListener(new DialogInterface.OnCancelListener() {
-                        @Override
-                        public void onCancel(DialogInterface dialog) {
-                            unSelectMessages();
-                        }
-                    })
-                    .create().show();
+                                Log.i(TAG, "Message user deleted: " + oppositeUser.getName());
+                            }
+                        })
+                        .setNegativeButton(android.R.string.cancel, new DialogInterface.OnClickListener() {
+                            @Override
+                            public void onClick(DialogInterface dialog, int which) {
+                                unSelectMessages();
+                            }
+                        })
+                        .setOnCancelListener(new DialogInterface.OnCancelListener() {
+                            @Override
+                            public void onCancel(DialogInterface dialog) {
+                                unSelectMessages();
+                            }
+                        })
+                        .create().show();
             }
 
             @Override
@@ -237,21 +237,21 @@ public class MessageFragment extends Fragment {
         mMessageReceiver = new BroadcastReceiver() {
             @Override
             public void onReceive(Context context, Intent intent) {
-                if (intent.getAction().equalsIgnoreCase(BookieIntentFilters.INTENT_FILTER_MESSAGE_RECEIVED)){
+                if (intent.getAction().equalsIgnoreCase(BookieIntentFilters.INTENT_FILTER_MESSAGE_RECEIVED)) {
                     final Message message = intent.getParcelableExtra(BookieIntentFilters.EXTRA_MESSAGE);
-                    if (message != null){
-                        if (message.getSender().getID() != ConversationActivity.currentConversationUserId){
+                    if (message != null) {
+                        if (message.getSender().getID() != ConversationActivity.currentConversationUserId) {
                             insertLastMessage(message);
                         }
                     }
                 } else {
                     int messageID = intent.getIntExtra(BookieIntentFilters.EXTRA_MESSAGE_ID, -1);
-                    if (intent.getAction().equalsIgnoreCase(BookieIntentFilters.INTENT_FILTER_MESSAGE_DELIVERED)){
-                        if (messageID > 0){
+                    if (intent.getAction().equalsIgnoreCase(BookieIntentFilters.INTENT_FILTER_MESSAGE_DELIVERED)) {
+                        if (messageID > 0) {
                             changeMessageState(messageID, Message.State.DELIVERED);
                         }
-                    } else if (intent.getAction().equalsIgnoreCase(BookieIntentFilters.INTENT_FILTER_MESSAGE_SEEN)){
-                        if (messageID > 0){
+                    } else if (intent.getAction().equalsIgnoreCase(BookieIntentFilters.INTENT_FILTER_MESSAGE_SEEN)) {
+                        if (messageID > 0) {
                             changeMessageState(messageID, Message.State.SEEN);
                         }
                     }
@@ -285,80 +285,30 @@ public class MessageFragment extends Fragment {
     }
 
     public void fetchMessages() {
+        mLastMessages = mDBManager.getMessageDataSource().getLastMessages(SessionManager.getCurrentUser(getContext()));
+        Collections.sort(mLastMessages);
 
-        new Thread(new Runnable() {
-            @Override
-            public void run() {
-                synchronized (DBHandler.class) {
-                    final User currentUser = SessionManager.getCurrentUser(getContext());
-                    final ArrayList<User> users = new ArrayList<>();
-
-                    new Thread(new Runnable() {
-                        @Override
-                        public void run() {
-                            synchronized (DBHandler.class){
-                                users.addAll(mDbHandler.getAllMessageUsers());
-                            }
-                        }
-                    }).start();
-
-                    new Thread(new Runnable() {
-                        @Override
-                        public void run() {
-                            synchronized (DBHandler.class){
-                                mLastMessages = mDbHandler.getLastMessages(users, currentUser);
-                                Collections.sort(mLastMessages);
-
-                                getActivity().runOnUiThread(new Runnable() {
-                                    @Override
-                                    public void run() {
-                                        mLastMessageAdapter.setLastMessages(mLastMessages);
-
-                                        mPullRefreshLayout.setRefreshing(false);
-
-                                        synchronized (DBHandler.class) {
-                                            fetchUnseenCounts();
-                                        }
-                                    }
-                                });
-                            }
-                        }
-                    }).start();
-
-                }
-            }
-        }).start();
+        mLastMessageAdapter.setLastMessages(mLastMessages);
+        mPullRefreshLayout.setRefreshing(false);
+        fetchUnseenCounts();
     }
 
     // Last messages should be sorted
     private void fetchUnseenCounts() {
-        new Thread(new Runnable() {
-            @Override
-            public void run() {
-                synchronized (DBHandler.class){
-                    User currentUser = SessionManager.getCurrentUser(getContext());
+        if (mUnseenCounts == null) {
+            mUnseenCounts = new SparseIntArray(mLastMessages.size());
+        } else {
+            mUnseenCounts.clear();
+        }
 
-                    if (mUnseenCounts == null) {
-                        mUnseenCounts = new SparseIntArray(mLastMessages.size());
-                    } else {
-                        mUnseenCounts.clear();
-                    }
+        for (int i = 0; i < mLastMessages.size(); i++) {
+            Message message = mLastMessages.get(i);
+            int unseenCount = mDBManager.getMessageDataSource().getUnseenMessageCount(message.getOppositeUser(SessionManager.getCurrentUser(getContext())));
+            mUnseenCounts.append(i, unseenCount);
+        }
 
-                    for (int i = 0; i < mLastMessages.size(); i++) {
-                        Message message = mLastMessages.get(i);
-                        int unseenCount = mDbHandler.getUnseenMessageCount(message.getOppositeUser(currentUser));
-                        mUnseenCounts.append(i, unseenCount);
-                    }
+        mLastMessageAdapter.setUnseenCounts(mUnseenCounts);
 
-                    getActivity().runOnUiThread(new Runnable() {
-                        @Override
-                        public void run() {
-                            mLastMessageAdapter.setUnseenCounts(mUnseenCounts);
-                        }
-                    });
-                }
-            }
-        }).start();
     }
 
     @Override
@@ -381,7 +331,8 @@ public class MessageFragment extends Fragment {
                         mLastMessageAdapter.notifyItemRemoved(i);
                     }
                 }
-                mDbHandler.deleteMessageUser(oppositeUser);
+
+                mDBManager.getMessageDataSource().deleteConversation(oppositeUser);
 
                 Log.i(TAG, "All messages deleted in ConversationActivity with " + oppositeUser.getName() + " (message user deleted)");
             }
@@ -393,7 +344,7 @@ public class MessageFragment extends Fragment {
         new Thread(new Runnable() {
             @Override
             public void run() {
-                synchronized (DBHandler.class){
+                synchronized (DBHelper.class) {
                     User currentUser = SessionManager.getCurrentUser(getContext());
 
                     int messageUserIndex = -1;

@@ -15,7 +15,8 @@ import android.view.MenuItem;
 import android.widget.Toast;
 
 import com.karambit.bookie.adapter.LovedGenreAdapter;
-import com.karambit.bookie.helper.DBHandler;
+import com.karambit.bookie.database.DBHelper;
+import com.karambit.bookie.database.DBManager;
 import com.karambit.bookie.helper.SessionManager;
 import com.karambit.bookie.helper.TypefaceSpan;
 import com.karambit.bookie.model.User;
@@ -38,7 +39,7 @@ public class LovedGenresActivity extends AppCompatActivity {
     private static final String TAG = LovedGenresActivity.class.getSimpleName();
 
     private LovedGenreAdapter mLovedGenreAdapter;
-    private DBHandler mDBHandler;
+    private DBManager mDbManager;
     private User mCurrentUser;
     private boolean mLocalDone = false;
     private boolean mServerDone = false;
@@ -55,7 +56,9 @@ public class LovedGenresActivity extends AppCompatActivity {
         s.setSpan(new AbsoluteSizeSpan((int) titleSize), 0, s.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
         setTitle(s);
 
-        mDBHandler = DBHandler.getInstance(this);
+        mDbManager = new DBManager(this);
+        mDbManager.open();
+
         mCurrentUser = SessionManager.getCurrentUser(this);
 
         String[] genres = getResources().getStringArray(R.array.genre_types);
@@ -63,7 +66,7 @@ public class LovedGenresActivity extends AppCompatActivity {
         RecyclerView genreRecyclerView = (RecyclerView) findViewById(R.id.genreRecyclerView);
         genreRecyclerView.setLayoutManager(new GridLayoutManager(this, 2, LinearLayoutManager.VERTICAL, false));
 
-        Integer[] lovedGenresAsInt = mDBHandler.getLovedGenresAsInt(mCurrentUser);
+        Integer[] lovedGenresAsInt = mDbManager.getLovedGenreDataSource().getGenres(mCurrentUser);
 
         mLovedGenreAdapter = new LovedGenreAdapter(this, genres, lovedGenresAsInt);
 
@@ -111,8 +114,8 @@ public class LovedGenresActivity extends AppCompatActivity {
         new Thread(new Runnable() {
             @Override
             public void run() {
-                synchronized (DBHandler.class) {
-                    mDBHandler.insertLovedGenres(mCurrentUser, selectedGenreCodes);
+                synchronized (DBHelper.class) {
+                    mDbManager.getLovedGenreDataSource().insertGenres(mCurrentUser, selectedGenreCodes);
                     mLocalDone = true;
 
                     if (mServerDone) {

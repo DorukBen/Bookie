@@ -14,7 +14,8 @@ import com.google.android.gms.location.places.AutocompleteFilter;
 import com.google.android.gms.location.places.Place;
 import com.google.android.gms.location.places.ui.PlaceSelectionListener;
 import com.google.android.gms.location.places.ui.SupportPlaceAutocompleteFragment;
-import com.karambit.bookie.helper.DBHandler;
+import com.karambit.bookie.database.DBHelper;
+import com.karambit.bookie.database.DBManager;
 import com.karambit.bookie.helper.SessionManager;
 import com.karambit.bookie.helper.TypefaceSpan;
 
@@ -30,6 +31,8 @@ public class LocationActivity extends AppCompatActivity {
     private double mLatitude;
     private double mLongitude;
 
+    private DBManager mDbManager;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -42,6 +45,9 @@ public class LocationActivity extends AppCompatActivity {
             float elevation = getResources().getDimension(R.dimen.actionbar_title_size);
             actionBar.setElevation(elevation);
         }
+
+        mDbManager = new DBManager(this);
+        mDbManager.open();
 
         final Button okButton = (Button) findViewById(R.id.locationOKButton);
         okButton.setEnabled(false);
@@ -90,8 +96,7 @@ public class LocationActivity extends AppCompatActivity {
         okButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                DBHandler dbHandler = DBHandler.getInstance(LocationActivity.this);
-                dbHandler.updateCurrentUserLocation(mLatitude, mLongitude);
+                mDbManager.getUserDataSource().updateUserLocation(mLatitude, mLongitude);
                 SessionManager.updateCurrentUserFromDB(LocationActivity.this);
                 getIntent().putExtra(EXTRA_LATITUDE, mLatitude);
                 getIntent().putExtra(EXTRA_LONGITUDE, mLongitude);

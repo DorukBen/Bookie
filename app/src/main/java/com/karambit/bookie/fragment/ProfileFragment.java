@@ -25,7 +25,8 @@ import com.karambit.bookie.PhotoViewerActivity;
 import com.karambit.bookie.ProfileActivity;
 import com.karambit.bookie.R;
 import com.karambit.bookie.adapter.ProfileTimelineAdapter;
-import com.karambit.bookie.helper.DBHandler;
+import com.karambit.bookie.database.DBHelper;
+import com.karambit.bookie.database.DBManager;
 import com.karambit.bookie.helper.ElevationScrollListener;
 import com.karambit.bookie.helper.SessionManager;
 import com.karambit.bookie.helper.pull_refresh_layout.PullRefreshLayout;
@@ -73,6 +74,7 @@ public class ProfileFragment extends Fragment {
 
     private User mUser;
 
+    private DBManager mDbManager;
     private ProfileTimelineAdapter mProfileTimelineAdapter;
     private PullRefreshLayout mPullRefreshLayout;
     private User.Details mUserDetails;
@@ -115,6 +117,9 @@ public class ProfileFragment extends Fragment {
 
         mProfileRecyclerView = (RecyclerView) rootView.findViewById(R.id.profileRecyclerView);
         mProfileRecyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
+
+        mDbManager = new DBManager(getContext());
+        mDbManager.open();
 
         User currentUser = SessionManager.getCurrentUser(getContext());
 
@@ -391,7 +396,7 @@ public class ProfileFragment extends Fragment {
 
         String email = currentUserDetails.getEmail();
         String password = currentUserDetails.getPassword();
-        Call<ResponseBody> getUserProfilePageComponents = userApi.getUserProfilePageComponents(email, password, mUser.getID());
+        final Call<ResponseBody> getUserProfilePageComponents = userApi.getUserProfilePageComponents(email, password, mUser.getID());
 
         getUserProfilePageComponents.enqueue(new Callback<ResponseBody>() {
             @Override
@@ -433,16 +438,9 @@ public class ProfileFragment extends Fragment {
                                     // Updating local database
                                     User currentUser = SessionManager.getCurrentUser(getContext());
                                     if (mUser.equals(currentUser)) {
-                                        new Thread(new Runnable() {
-                                            @Override
-                                            public void run() {
-                                                synchronized (DBHandler.class) { // REQUIRED
-                                                    DBHandler dbHandler = DBHandler.getInstance(getContext());
-                                                    dbHandler.updateCurrentUser(mUserDetails);
-                                                    SessionManager.updateCurrentUser(mUserDetails);
-                                                }
-                                            }
-                                        }).start();
+
+                                        mDbManager.getUserDataSource().updateUserDetails(mUserDetails);
+                                        SessionManager.updateCurrentUser(mUserDetails);
                                     }
 
                                     if (!responseObject.isNull("onRoadBooks")){

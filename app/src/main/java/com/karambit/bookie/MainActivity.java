@@ -28,11 +28,12 @@ import android.widget.ImageView;
 import android.widget.TabHost;
 import android.widget.Toast;
 
+import com.karambit.bookie.database.DBManager;
 import com.karambit.bookie.fragment.HomeFragment;
 import com.karambit.bookie.fragment.MessageFragment;
 import com.karambit.bookie.fragment.ProfileFragment;
 import com.karambit.bookie.fragment.SearchFragment;
-import com.karambit.bookie.helper.DBHandler;
+import com.karambit.bookie.database.DBHelper;
 import com.karambit.bookie.helper.SessionManager;
 import com.karambit.bookie.helper.TabFactory;
 import com.karambit.bookie.helper.TypefaceSpan;
@@ -66,6 +67,7 @@ public class MainActivity extends AppCompatActivity implements TabHost.OnTabChan
     public static final String FONT_GENERAL_TITLE = "comfortaa.ttf";
 
     public static final String EXTRA_MESSAGE_USER = "message_user";
+    public static final String  EXTRA_IS_SINGLE_USER = "is_single_user";
     public static final String EXTRA_OPPOSITE_USER = "opposite_user";
     public static final String EXTRA_NOTIFICATION = "notification";
 
@@ -88,6 +90,8 @@ public class MainActivity extends AppCompatActivity implements TabHost.OnTabChan
     private ActionBar mActionBar;
     private float[] mElevations;
 
+    private DBManager mDbManager;
+
     private View mIndicator;
     private DoubleTapHomeButtonListener mDoubleTapHomeButtonListener;
     private ArrayList<TouchEventListener> mTouchEventListeners = new ArrayList<>();
@@ -103,6 +107,9 @@ public class MainActivity extends AppCompatActivity implements TabHost.OnTabChan
 
         mViewPager = (ViewPager) findViewById(R.id.viewpager);
         mTabHost = (TabHost) findViewById(R.id.tabhost);
+
+        mDbManager = new DBManager(this);
+        mDbManager.open();
 
         boolean loggedIn = SessionManager.isLoggedIn(this);
         if (!loggedIn) {
@@ -165,6 +172,8 @@ public class MainActivity extends AppCompatActivity implements TabHost.OnTabChan
         super.onDestroy();
 
         LocalBroadcastManager.getInstance(this).unregisterReceiver(mMessageReceiver);
+
+        mDbManager.close();
     }
 
     @Override
@@ -371,9 +380,7 @@ public class MainActivity extends AppCompatActivity implements TabHost.OnTabChan
 
             case REQUEST_CODE_CONVERSATION_ACTIVITY:
                 if (resultCode == ConversationActivity.RESULT_ALL_MESSAGES_DELETED){
-                    DBHandler dbHandler = DBHandler.getInstance(this);
-                    dbHandler.deleteMessageUser((User) data.getParcelableExtra(EXTRA_OPPOSITE_USER));
-                    dbHandler.deleteMessageUsersConversation((User) data.getParcelableExtra(EXTRA_OPPOSITE_USER));
+                    mDbManager.getMessageDataSource().deleteConversation((User) data.getParcelableExtra(EXTRA_OPPOSITE_USER));
                 }
                 break;
 
@@ -410,8 +417,7 @@ public class MainActivity extends AppCompatActivity implements TabHost.OnTabChan
         super.onNewIntent(intent);
 
         if (intent.getParcelableExtra(EXTRA_MESSAGE_USER) != null){
-            DBHandler dbHandler = DBHandler.getInstance(this);
-            if (dbHandler.isMessageUserExists((User)intent.getParcelableExtra(EXTRA_MESSAGE_USER))){
+            if (intent.getBooleanExtra(EXTRA_IS_SINGLE_USER, false)){
                 Intent conversationIntent = new Intent(this, ConversationActivity.class);
 
                 conversationIntent.putExtra(ConversationActivity.EXTRA_USER, intent.getParcelableExtra(EXTRA_MESSAGE_USER));
@@ -434,9 +440,7 @@ public class MainActivity extends AppCompatActivity implements TabHost.OnTabChan
     }
 
     public void fetchNotificationMenuItemValue() {
-
-        DBHandler dbHandler = DBHandler.getInstance(this);
-        int notificationCount = dbHandler.getUnseenNotificationCount();
+        int notificationCount = mDbManager.getNotificationDataSource().getUnseenNotificationCount();
 
         if (mMenu.hasVisibleItems()) {
 

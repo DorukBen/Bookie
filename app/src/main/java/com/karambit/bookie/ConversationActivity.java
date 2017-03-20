@@ -30,8 +30,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.karambit.bookie.adapter.ConversationAdapter;
-import com.karambit.bookie.fragment.MessageFragment;
-import com.karambit.bookie.helper.DBHandler;
+import com.karambit.bookie.database.DBManager;
 import com.karambit.bookie.helper.SessionManager;
 import com.karambit.bookie.helper.TypefaceSpan;
 import com.karambit.bookie.model.Message;
@@ -53,7 +52,6 @@ import java.util.Calendar;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.Locale;
-import java.util.concurrent.CountDownLatch;
 
 import okhttp3.ResponseBody;
 import retrofit2.Call;
@@ -74,7 +72,7 @@ public class ConversationActivity extends AppCompatActivity {
     public static Integer currentConversationUserId = -1;
 
     private User mOppositeUser;
-    private DBHandler mDbHandler;
+    private DBManager mDbManager;
     private ConversationAdapter mConversationAdapter;
     private ImageButton mSendMessageButton;
     private EditText mMessageEditText;
@@ -93,13 +91,13 @@ public class ConversationActivity extends AppCompatActivity {
         SpannableString s = new SpannableString(mOppositeUser.getName());
         s.setSpan(new TypefaceSpan(this, MainActivity.FONT_GENERAL_TITLE), 0, s.length(),
                 Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
-        float titleSize = getResources().getDimension(R.dimen.actionbar_title_size);
+        final float titleSize = getResources().getDimension(R.dimen.actionbar_title_size);
         s.setSpan(new AbsoluteSizeSpan((int) titleSize), 0, s.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
         getSupportActionBar().setTitle(s);
 
-        final User currentUser = SessionManager.getCurrentUser(this);
-        mDbHandler = DBHandler.getInstance(this);
-        mMessages = mDbHandler.getConversationMessages(mOppositeUser, currentUser);
+        mDbManager = new DBManager(this);
+        mDbManager.open();
+        mMessages = mDbManager.getMessageDataSource().getConversation(mOppositeUser, SessionManager.getCurrentUser(this));
 
         mMessageEditText = (EditText) findViewById(R.id.messageEditText);
         mSendMessageButton = (ImageButton) findViewById(R.id.messageSendButton);
@@ -278,49 +276,30 @@ public class ConversationActivity extends AppCompatActivity {
             @Override
             public void onClick(View v) {
 
-                // Threaded structure for sending messages simultaneously
+                String messageText = mMessageEditText.getText().toString();
+                messageText = messageText.trim();
 
-                new Thread(new Runnable() {
-                    @Override
-                    public void run() {
+                if (!TextUtils.isEmpty(messageText)) {
 
-                        synchronized (DBHandler.class) {
-                            String messageText = mMessageEditText.getText().toString();
-                            messageText = messageText.trim();
+                    messageText = trimInnerNewLines(messageText);
 
-                            if (!TextUtils.isEmpty(messageText)) {
+                    int id = createTemporaryMessageID();
+                    final Message message = new Message(id, messageText, SessionManager.getCurrentUser(ConversationActivity.this),
+                            mOppositeUser, Calendar.getInstance(), Message.State.PENDING);
 
-                                messageText = trimInnerNewLines(messageText);
+                                if (mDbManager.getMessageDataSource().saveMessage(message, SessionManager.getCurrentUser(ConversationActivity.this))){
 
-                                int id = createTemporaryMessageID();
-                                final Message message = new Message(id, messageText, currentUser,
-                                        mOppositeUser, Calendar.getInstance(), Message.State.PENDING);
+                                    mMessageEditText.setText("");
+                                    toggleSendButton(false);
+                                    sendMessageToServer(message);
+                                    insertMessage(message);
+                                }else {
+                                    Log.e(TAG, "Message Insertion Failed!");
+                                    Toast.makeText(ConversationActivity.this, getString(R.string.unknown_error), Toast.LENGTH_SHORT).show();
+                                }
 
-                                new Thread(new Runnable() {
-                                    @Override
-                                    public void run() {
-                                        synchronized (DBHandler.class) {
-                                            if (mDbHandler.saveMessageToDataBase(message)){
-                                                runOnUiThread(new Runnable() {
-                                                    @Override
-                                                    public void run() {
-                                                        mMessageEditText.setText("");
-                                                        toggleSendButton(false);
-                                                        sendMessageToServer(message);
-                                                        insertMessage(message);
-                                                    }
-                                                });
-                                            }else {
-                                                Log.e(TAG, "Message Insertion Failed!");
-                                                Toast.makeText(ConversationActivity.this, getString(R.string.unknown_error), Toast.LENGTH_SHORT).show();
-                                            }
-                                        }
-                                    }
-                                }).start();
-                            }
-                        }
-                    }
-                }).start();
+                }
+
             }
         });
     }
@@ -365,43 +344,25 @@ public class ConversationActivity extends AppCompatActivity {
                 } else if (intent.getAction().equalsIgnoreCase(BookieIntentFilters.INTENT_FILTER_MESSAGE_DELIVERED)){
                     final int messageId = intent.getIntExtra(BookieIntentFilters.EXTRA_MESSAGE_ID, -1);
                     if (messageId > 0){
-                        new Thread(new Runnable() {
-                            @Override
-                            public void run() {
-                                synchronized (DBHandler.class) {
-                                    changeMessageState(messageId, Message.State.DELIVERED);
-                                }
-                            }
-                        }).start();
+
+                        changeMessageState(messageId, Message.State.DELIVERED);
                     }
                 } else if (intent.getAction().equalsIgnoreCase(BookieIntentFilters.INTENT_FILTER_MESSAGE_SEEN)){
                     final int messageId = intent.getIntExtra(BookieIntentFilters.EXTRA_MESSAGE_ID, -1);
                     if (messageId > 0){
-                        new Thread(new Runnable() {
-                            @Override
-                            public void run() {
-                                synchronized (DBHandler.class) {
-                                    Message changedMessage = changeMessageState(messageId, Message.State.SEEN);
-                                    if (changedMessage != null){
-                                        for (final Message message: mMessages){
 
-                                            if (message.getSender().equals(currentUser) && message.getState() == Message.State.DELIVERED &&
-                                                    message.getCreatedAt().getTimeInMillis() <= changedMessage.getCreatedAt().getTimeInMillis()){
+                        Message changedMessage = changeMessageState(messageId, Message.State.SEEN);
+                        if (changedMessage != null){
+                            for (final Message message: mMessages){
 
-                                                new Thread(new Runnable() {
-                                                    @Override
-                                                    public void run() {
-                                                        synchronized (DBHandler.class){
-                                                            changeMessageState(message.getID(), Message.State.SEEN);
-                                                        }
-                                                    }
-                                                }).start();
-                                            }
-                                        }
-                                    }
+                                if (message.getSender().equals(currentUser) && message.getState() == Message.State.DELIVERED &&
+                                        message.getCreatedAt().getTimeInMillis() <= changedMessage.getCreatedAt().getTimeInMillis()){
+                                    changeMessageState(message.getID(), Message.State.SEEN);
+
                                 }
                             }
-                        }).start();
+                        }
+
                     }
                 }
             }
@@ -422,14 +383,8 @@ public class ConversationActivity extends AppCompatActivity {
         while (messageIterator.hasNext()){
             final Message message = messageIterator.next();
             if (message.getReceiver().equals(currentUser) && message.getState() != Message.State.SEEN){
-                new Thread(new Runnable() {
-                    @Override
-                    public void run() {
-                        synchronized (DBHandler.class){
-                            changeMessageState(message.getID(), Message.State.SEEN);
-                        }
-                    }
-                }).start();
+
+                changeMessageState(message.getID(), Message.State.SEEN);
             }
         }
     }
@@ -443,7 +398,7 @@ public class ConversationActivity extends AppCompatActivity {
     }
 
     public int createTemporaryMessageID() {
-        int minimum = mDbHandler.getMinimumMessageId();
+        int minimum = mDbManager.getMessageDataSource().getMinimumMessageId();
 
         if (minimum >= 0) {
             return -1;
@@ -471,15 +426,8 @@ public class ConversationActivity extends AppCompatActivity {
         }
 
         if (newMessage.getSender().getID() != currentUser.getID()) {
-            new Thread(new Runnable() {
-                @Override
-                public void run() {
-                    synchronized (DBHandler.class) {
-                        changeMessageState(newMessage.getID(), Message.State.SEEN);
-                    }
-                }
-            }).start();
 
+            changeMessageState(newMessage.getID(), Message.State.SEEN);
         }
 
         ArrayList<Integer> selectedIndexes = mConversationAdapter.getSelectedIndexes();
@@ -490,19 +438,13 @@ public class ConversationActivity extends AppCompatActivity {
         setResult(RESULT_MESSAGE_INSERTED, getIntent().putExtra(EXTRA_LAST_MESSAGE, mMessages.get(0)));
     }
 
-    // This method must call UI processes with runOnUiThread() method. It can be called with sperate threads...
     public Message changeMessageState(int messageID, Message.State state) {
         for (final Message message : mMessages) {
             if (message.getID() == messageID) {
                 if (message.getState() != Message.State.SEEN) {
                     message.setState(state);
-                    runOnUiThread(new Runnable() {
-                        @Override
-                        public void run() {
-                            mConversationAdapter.notifyItemChanged(mMessages.indexOf(message));
-                        }
-                    });
-                    mDbHandler.updateMessageState(message, state);
+                    mConversationAdapter.notifyItemChanged(mMessages.indexOf(message));
+                    mDbManager.getMessageDataSource().updateMessageState(message, state);
 
                     if (message.getSender().getID() != SessionManager.getCurrentUser(getApplicationContext()).getID()){
                         uploadMessageStateToServer(message);
@@ -511,13 +453,8 @@ public class ConversationActivity extends AppCompatActivity {
                 } else {
                     if (state == Message.State.SEEN){
                         message.setState(state);
-                        runOnUiThread(new Runnable() {
-                            @Override
-                            public void run() {
-                                mConversationAdapter.notifyItemChanged(mMessages.indexOf(message));
-                            }
-                        });
-                        mDbHandler.updateMessageState(message, state);
+                        mConversationAdapter.notifyItemChanged(mMessages.indexOf(message));
+                        mDbManager.getMessageDataSource().updateMessageState(message, state);
 
                         if (message.getSender().getID() != SessionManager.getCurrentUser(getApplicationContext()).getID()){
                             uploadMessageStateToServer(message);
@@ -536,7 +473,7 @@ public class ConversationActivity extends AppCompatActivity {
         for (Message message : mMessages) {
             if (message.getID() == oldMessageID) {
                 message.setID(newMessageID);
-                mDbHandler.updateMessageId(oldMessageID, newMessageID);
+                mDbManager.getMessageDataSource().updateMessageId(oldMessageID, newMessageID);
                 return true;
             }
         }
@@ -624,7 +561,7 @@ public class ConversationActivity extends AppCompatActivity {
                                 Message message = mMessages.get(index);
                                 selectedMessageIds[i] = message.getID();
                                 mMessages.remove(index);
-                                mDbHandler.deleteMessage(message);
+                                mDbManager.getMessageDataSource().deleteMessage(message);
                             }
 
                             deleteMessagesOnServer(selectedMessageIds);
@@ -757,31 +694,19 @@ public class ConversationActivity extends AppCompatActivity {
 
                             if (!error) {
                                 if (!responseObject.isNull("oldMessageID") && !responseObject.isNull("newMessageID")){
-                                    new Thread(new Runnable() {
-                                        @Override
-                                        public void run() {
-                                            synchronized (DBHandler.class) {
-                                                try {
-                                                    changeMessageID(responseObject.getInt("oldMessageID"), responseObject.getInt("newMessageID"));
-                                                } catch (JSONException e) {
-                                                    e.printStackTrace();
-                                                }
-                                            }
-                                        }
-                                    }).start();
 
-                                    new Thread(new Runnable() {
-                                        @Override
-                                        public void run() {
-                                            synchronized (DBHandler.class) {
-                                                try {
-                                                    changeMessageState(responseObject.getInt("newMessageID"), Message.State.SENT);
-                                                } catch (JSONException e) {
-                                                    e.printStackTrace();
-                                                }
-                                            }
-                                        }
-                                    }).start();
+                                    try {
+                                        changeMessageID(responseObject.getInt("oldMessageID"), responseObject.getInt("newMessageID"));
+                                    } catch (JSONException e) {
+                                        e.printStackTrace();
+                                    }
+
+                                    try {
+                                        changeMessageState(responseObject.getInt("newMessageID"), Message.State.SENT);
+                                    } catch (JSONException e) {
+                                        e.printStackTrace();
+                                    }
+
                                 }
 
                             } else {

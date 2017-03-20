@@ -15,7 +15,8 @@ import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import com.karambit.bookie.helper.DBHandler;
+import com.karambit.bookie.database.DBHelper;
+import com.karambit.bookie.database.DBManager;
 import com.karambit.bookie.helper.SessionManager;
 import com.karambit.bookie.helper.TypefaceSpan;
 import com.karambit.bookie.introduction.IntroductionActivity;
@@ -335,7 +336,9 @@ public class LoginRegisterActivity extends AppCompatActivity {
                                         }
 
                                         if (userDetails != null) {
-                                            DBHandler.getInstance(LoginRegisterActivity.this).insertLovedGenres(userDetails.getUser(), lovedGenres);
+                                            DBManager dbManager = new DBManager(LoginRegisterActivity.this);
+                                            dbManager.open();
+                                            dbManager.getLovedGenreDataSource().insertGenres(userDetails.getUser(), lovedGenres);
                                         }
                                     }
                                 } else {
