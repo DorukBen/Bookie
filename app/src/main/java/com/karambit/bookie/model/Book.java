@@ -483,11 +483,11 @@ public class Book implements Parcelable {
 
         @Override
         public String toString() {
-            return Book.this.toString() + ".Transaction{" +
+            return Book.this.getName() + ".Transaction{" +
                     "mTransactionType=" + mTransactionType +
-                    ", mFromUser=" + mFromUser +
-                    ", mToUser=" + mToUser +
-                    ", mCreatedAt=" + mCreatedAt + '}';
+                    ", mFromUser=" + mFromUser.getName() +
+                    ", mToUser=" + mToUser.getName() +
+                    ", mCreatedAt=" + mCreatedAt.getTimeInMillis() + '}';
         }
 
         @Override

@@ -48,6 +48,7 @@ import org.json.JSONObject;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.Collections;
 import java.util.Hashtable;
 import java.util.List;
@@ -142,42 +143,49 @@ public class RequestActivity extends AppCompatActivity {
             }
 
             @Override
-            public void onAcceptClick(final Book.Request request) {
+            public void onAcceptClick(final Book.Request clickedRequest) {
+
+                String message;
+
                 if (mBook.getState() == Book.State.READING){
-                    new AlertDialog.Builder(RequestActivity.this)
-                            .setMessage(getString(R.string.accept_request_prompt_when_state_reading, request.getFromUser().getName()))
-                            .setPositiveButton(R.string.accept, new DialogInterface.OnClickListener() {
-                                @Override
-                                public void onClick(DialogInterface dialog, int which) {
-                                    addBookRequestToServer(request.getBook().new Request(Book.RequestType.ACCEPT, request.getFromUser(), request.getToUser(),request.getCreatedAt()), request);
-                                }
-                            })
-                            .setNegativeButton(android.R.string.no, null)
-                            .create()
-                            .show();
+                    message = getString(R.string.accept_request_prompt_when_state_reading, clickedRequest.getFromUser().getName());
                 }else {
-                    new AlertDialog.Builder(RequestActivity.this)
-                            .setMessage(getString(R.string.accept_request_prompt, request.getFromUser().getName()))
-                            .setPositiveButton(R.string.accept, new DialogInterface.OnClickListener() {
-                                @Override
-                                public void onClick(DialogInterface dialog, int which) {
-                                    addBookRequestToServer(request.getBook().new Request(Book.RequestType.ACCEPT, request.getFromUser(), request.getToUser(),request.getCreatedAt()), request);
-                                }
-                            })
-                            .setNegativeButton(android.R.string.no, null)
-                            .create()
-                            .show();
+                    message = getString(R.string.accept_request_prompt, clickedRequest.getFromUser().getName());
                 }
+
+                // Created at changed to Calendar.getInstance() because the new process has been created at the moment.
+                new AlertDialog.Builder(RequestActivity.this)
+                    .setMessage(message)
+                    .setPositiveButton(R.string.accept, new DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(DialogInterface dialog, int which) {
+                            Book.Request createdRequest = clickedRequest.getBook().new Request(Book.RequestType.ACCEPT, clickedRequest.getFromUser(), clickedRequest.getToUser(), Calendar.getInstance());
+
+                            Log.i(TAG, "Clicked request: " + clickedRequest);
+                            Log.i(TAG, "Created request: " + createdRequest);
+
+                            addBookRequestToServer(createdRequest, clickedRequest);
+                        }
+                    })
+                    .setNegativeButton(android.R.string.no, null)
+                    .create()
+                    .show();
             }
 
             @Override
-            public void onRejectClick(final Book.Request request) {
+            public void onRejectClick(final Book.Request clickedRequest) {
                 new AlertDialog.Builder(RequestActivity.this)
-                    .setMessage(getString(R.string.reject_request_prompt, request.getFromUser().getName()))
+                    .setMessage(getString(R.string.reject_request_prompt, clickedRequest.getFromUser().getName()))
                     .setPositiveButton(R.string.reject, new DialogInterface.OnClickListener() {
                         @Override
                         public void onClick(DialogInterface dialog, int which) {
-                            addBookRequestToServer(request.getBook().new Request(Book.RequestType.REJECT, request.getFromUser(), request.getToUser(),request.getCreatedAt()), request);
+                            // Created at changed to Calendar.getInstance() because the new process has been created at the moment.
+                            Book.Request createdRequest = clickedRequest.getBook().new Request(Book.RequestType.REJECT, clickedRequest.getFromUser(), clickedRequest.getToUser(), Calendar.getInstance());
+
+                            Log.i(TAG, "Clicked request: " + clickedRequest);
+                            Log.i(TAG, "Created request: " + createdRequest);
+
+                            addBookRequestToServer(createdRequest, clickedRequest);
                         }
                     })
                     .setNegativeButton(android.R.string.no, null)
@@ -221,7 +229,7 @@ public class RequestActivity extends AppCompatActivity {
                                             setAcceptedRequestText(r);
 
                                             for (Book.Request request : mRequests){
-                                                if (request.getRequestType() != Book.RequestType.ACCEPT){
+                                                if (request.getRequestType() == Book.RequestType.SEND){
                                                     User tmpUser = request.getFromUser();
                                                     request.setFromUser(request.getToUser());
                                                     request.setToUser(tmpUser);
@@ -242,7 +250,9 @@ public class RequestActivity extends AppCompatActivity {
 
                                     fetchLocations();
 
-                                    Log.i(TAG, "Book requests fetched");
+                                    Log.i(TAG, "Book requests fetched and rearranged");
+
+                                    Log.i(TAG, mRequests.toString());
                                 }else {
                                     Log.e(TAG, "bookRequests is empty. (Request Page Error)");
                                     mRequestAdapter.setError(RequestAdapter.ERROR_TYPE_UNKNOWN_ERROR);
@@ -316,6 +326,8 @@ public class RequestActivity extends AppCompatActivity {
         String password = currentUserDetails.getPassword();
         Call<ResponseBody> addBookRequest = bookApi.addBookRequests(email, password, request.getBook().getID(), request.getFromUser().getID(), request.getToUser().getID(), request.getRequestType().getRequestCode());
 
+        Log.i(TAG, "Adding book request to server: " + request);
+
         addBookRequest.enqueue(new Callback<ResponseBody>() {
             @Override
             public void onResponse(Call<ResponseBody> call, Response<ResponseBody> response) {
@@ -335,10 +347,12 @@ public class RequestActivity extends AppCompatActivity {
                                     mRequestAdapter.notifyItemRemoved(index);
 
                                     for (Book.Request r : mRequests) {
-                                        User tmpUser = r.getToUser();
-                                        r.setToUser(r.getFromUser());
-                                        r.setFromUser(tmpUser);
-                                        r.setRequestType(Book.RequestType.REJECT);
+                                        if (r.getRequestType() != Book.RequestType.REJECT) {
+                                            User tmpUser = r.getToUser();
+                                            r.setToUser(r.getFromUser());
+                                            r.setFromUser(tmpUser);
+                                            r.setRequestType(Book.RequestType.REJECT);
+                                        }
                                     }
 
                                     mRequestAdapter.notifyDataSetChanged();

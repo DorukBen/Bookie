@@ -125,10 +125,14 @@ public class BookActivity extends AppCompatActivity {
                         .setPositiveButton(R.string.accept, new DialogInterface.OnClickListener() {
                             @Override
                             public void onClick(DialogInterface dialog, int which) {
-                                bookProcessToServer(mBookDetails.getBook().new Request(Book.RequestType.SEND,
-                                                                                       mBookDetails.getBook().getOwner(),
-                                                                                       SessionManager.getCurrentUser(BookActivity.this),
-                                                                                       Calendar.getInstance()));
+                                Book.Request request = mBookDetails.getBook().new Request(Book.RequestType.SEND,
+                                                                                          mBookDetails.getBook().getOwner(),
+                                                                                          SessionManager.getCurrentUser(BookActivity.this),
+                                                                                          Calendar.getInstance());
+
+                                Log.i(TAG, "New request \"SEND\" has been created: " + request);
+
+                                bookProcessToServer(request);
                             }
                         })
                         .setNegativeButton(android.R.string.no, null)
@@ -299,12 +303,15 @@ public class BookActivity extends AppCompatActivity {
                         Notification notification = intent.getParcelableExtra(BookieIntentFilters.EXTRA_NOTIFICATION);
                         if (mBookDetails != null){
                             if (notification.getBook().equals(mBookDetails.getBook())){
-                                mBookDetails.getBookProcesses().add(mBookDetails.getBook().new Request(
-                                        Book.RequestType.SEND,
-                                        mBookDetails.getBook().getOwner(),
-                                        notification.getOppositeUser(),
-                                        notification.getCreatedAt()));
+                                Book.Request request = mBookDetails.getBook().new Request(
+                                    Book.RequestType.SEND,
+                                    SessionManager.getCurrentUser(context),
+                                    notification.getOppositeUser(),
+                                    notification.getCreatedAt());
+                                mBookDetails.getBookProcesses().add(request);
                                 mBookTimelineAdapter.notifyDataSetChanged();
+
+                                Log.i(TAG, "Request object \"SEND\" added to adapter: " + request);
                             }
                         }
                     }
@@ -313,12 +320,18 @@ public class BookActivity extends AppCompatActivity {
                         Notification notification = intent.getParcelableExtra(BookieIntentFilters.EXTRA_NOTIFICATION);
                         if (mBookDetails != null){
                             if (notification.getBook().equals(mBookDetails.getBook())){
-                                mBookDetails.getBookProcesses().add(mBookDetails.getBook().new Request(
-                                        Book.RequestType.REJECT,
-                                        notification.getOppositeUser(),
-                                        mBookDetails.getBook().getOwner(),
-                                        notification.getCreatedAt()));
+                                Book.Request request = mBookDetails.getBook().new Request(
+                                    Book.RequestType.REJECT,
+                                    // (To user) is current user because current user is not the owner of the book yet
+                                    // and the broadcast arrives for the processes that only
+                                    // between current user and the opposite user
+                                    SessionManager.getCurrentUser(context),
+                                    notification.getOppositeUser(),
+                                    notification.getCreatedAt());
+                                mBookDetails.getBookProcesses().add(request);
                                 mBookTimelineAdapter.notifyDataSetChanged();
+
+                                Log.i(TAG, "Request object \"REJECT\" added to adapter: " + request);
                             }
                         }
                     }
@@ -327,23 +340,33 @@ public class BookActivity extends AppCompatActivity {
                         Notification notification = intent.getParcelableExtra(BookieIntentFilters.EXTRA_NOTIFICATION);
                         if (mBookDetails != null){
                             if (notification.getBook().equals(mBookDetails.getBook())){
-                                mBookDetails.getBookProcesses().add(mBookDetails.getBook().new Request(
-                                        Book.RequestType.ACCEPT,
-                                        // (To user) is current user because current user is not the owner of the book yet
-                                        // and the broadcast arrives for the processes that only
-                                        // between current user and the opposite user
-                                        SessionManager.getCurrentUser(context),
-                                        notification.getOppositeUser(),
-                                        notification.getCreatedAt()));
+                                Book.Request request = mBookDetails.getBook().new Request(
+                                    Book.RequestType.ACCEPT,
+                                    // (To user) is current user because current user is not the owner of the book yet
+                                    // and the broadcast arrives for the processes that only
+                                    // between current user and the opposite user
+                                    SessionManager.getCurrentUser(context),
+                                    notification.getOppositeUser(),
+                                    notification.getCreatedAt());
+                                mBookDetails.getBookProcesses().add(request);
 
-                                mBookDetails.getBookProcesses().add(mBookDetails.getBook().new Transaction(
-                                        mBookDetails.getBook().getOwner(),
-                                        Book.TransactionType.DISPACTH,
-                                        SessionManager.getCurrentUser(context),
-                                        notification.getCreatedAt()));
+                                Log.i(TAG, "Request object \"ACCEPT\" added to adapter: " + request);
+
+                                Book.Transaction transaction = mBookDetails.getBook().new Transaction(
+                                    mBookDetails.getBook().getOwner(),
+                                    Book.TransactionType.DISPACTH,
+                                    SessionManager.getCurrentUser(context),
+                                    notification.getCreatedAt());
+                                mBookDetails.getBookProcesses().add(transaction);
+
+                                Log.i(TAG, "Transaction object \"DISPATCH\" added to adapter: " + transaction);
+
+                                Log.i(TAG, "Book state changed to " + Book.State.ON_ROAD + " from " + mBook.getState());
 
                                 mBookDetails.getBook().setState(Book.State.ON_ROAD);
                                 mBook.setState(Book.State.ON_ROAD);
+
+
                                 mBookTimelineAdapter.notifyDataSetChanged();
                             }
                         }
@@ -352,6 +375,8 @@ public class BookActivity extends AppCompatActivity {
                     if (intent.getParcelableExtra(BookieIntentFilters.EXTRA_NOTIFICATION) != null){
                         if (mBookDetails != null){
                             fetchBookPageArguments();
+
+                            Log.i(TAG, "Owner changed");
                         }
                     }
                 }
@@ -689,11 +714,11 @@ public class BookActivity extends AppCompatActivity {
                                 mBookTimelineAdapter.setError(BookTimelineAdapter.ERROR_TYPE_UNKNOWN_ERROR);
                             }
                         }else{
-                            Log.e(TAG, "Response body is null. (Book Page Error)");
+                            Log.e(TAG, "Response body is null on fetchBookPageArguments(). (Book Page Error)");
                             mBookTimelineAdapter.setError(BookTimelineAdapter.ERROR_TYPE_UNKNOWN_ERROR);
                         }
                     }else {
-                        Log.e(TAG, "Response object is null. (Book Page Error)");
+                        Log.e(TAG, "Response object is null on fetchBookPageArguments. (Book Page Error)");
                         mBookTimelineAdapter.setError(BookTimelineAdapter.ERROR_TYPE_UNKNOWN_ERROR);
                     }
                 } catch (IOException | JSONException e) {
@@ -794,12 +819,12 @@ public class BookActivity extends AppCompatActivity {
                                 Toast.makeText(BookActivity.this, getString(R.string.unknown_error), Toast.LENGTH_SHORT).show();
                             }
                         }else{
-                            Log.e(TAG, "Response body is null. (Book Page Error)");
+                            Log.e(TAG, "Response body is null addBookInteractionToServer(). (Book Page Error)");
                             comfortableProgressDialog.dismiss();
                             Toast.makeText(BookActivity.this, getString(R.string.unknown_error), Toast.LENGTH_SHORT).show();
                         }
                     }else {
-                        Log.e(TAG, "Response object is null. (Book Page Error)");
+                        Log.e(TAG, "Response object is null addBookInteractionToServer(). (Book Page Error)");
                         comfortableProgressDialog.dismiss();
                         Toast.makeText(BookActivity.this, getString(R.string.unknown_error), Toast.LENGTH_SHORT).show();
                     }
@@ -870,12 +895,12 @@ public class BookActivity extends AppCompatActivity {
                                 Toast.makeText(BookActivity.this, getString(R.string.unknown_error), Toast.LENGTH_SHORT).show();
                             }
                         }else{
-                            Log.e(TAG, "Response body is null. (Book Page Error)");
+                            Log.e(TAG, "Response body is null addBookRequestToServer(). (Book Page Error)");
                             comfortableProgressDialog.dismiss();
                             Toast.makeText(BookActivity.this, getString(R.string.unknown_error), Toast.LENGTH_SHORT).show();
                         }
                     }else {
-                        Log.e(TAG, "Response object is null. (Book Page Error)");
+                        Log.e(TAG, "Response object is null addBookRequestToServer(). (Book Page Error)");
                         comfortableProgressDialog.dismiss();
                         Toast.makeText(BookActivity.this, getString(R.string.unknown_error), Toast.LENGTH_SHORT).show();
                     }
