@@ -25,7 +25,6 @@ import com.karambit.bookie.PhotoViewerActivity;
 import com.karambit.bookie.ProfileActivity;
 import com.karambit.bookie.R;
 import com.karambit.bookie.adapter.ProfileTimelineAdapter;
-import com.karambit.bookie.database.DBHelper;
 import com.karambit.bookie.database.DBManager;
 import com.karambit.bookie.helper.ElevationScrollListener;
 import com.karambit.bookie.helper.SessionManager;
@@ -150,6 +149,7 @@ public class ProfileFragment extends Fragment {
                 Button addBookButton = (Button) dialogView.findViewById(R.id.addYourBook);
                 Button searchBookButton = (Button) dialogView.findViewById(R.id.searchYourBook);
                 Button existingBook = (Button) dialogView.findViewById(R.id.existingBook);
+                View existingBookDivider = dialogView.findViewById(R.id.existingBookDivider);
 
                 addBookButton.setOnClickListener(new View.OnClickListener() {
                     @Override
@@ -170,6 +170,7 @@ public class ProfileFragment extends Fragment {
                 if (mUserDetails.getBooksOnHandCount() > 0) {
 
                     existingBook.setVisibility(View.VISIBLE);
+                    existingBookDivider.setVisibility(View.VISIBLE);
 
                     existingBook.setOnClickListener(new View.OnClickListener() {
                         @Override
@@ -186,6 +187,7 @@ public class ProfileFragment extends Fragment {
 
                 } else {
                     existingBook.setVisibility(View.GONE);
+                    existingBookDivider.setVisibility(View.GONE);
                 }
 
                 startReadingDialog.show();

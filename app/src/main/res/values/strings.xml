@@ -207,7 +207,7 @@
     <string name="profile">Profile</string>
     <string name="logout_message">Log out of Bookie?</string>
     <string name="add_location">Add location</string>
-    <string name="no_location_info">You have not added any location info. This is required for all book transactions…</string>
+    <string name="no_location_info">You have not added any location info. This is required for requesting or adding books</string>
     <string name="change_location">Change location</string>
     <string name="change_password">Change password</string>
     <string name="old_password">Old password…</string>
@@ -256,11 +256,17 @@
     <string name="notification">notification</string>
     <string name="thanks_for_feedback">Thanks for your feedback!!</string>
     <string name="password_changed">Password Changed Successfully</string>
-    <string name="thaks_for_your_report">Thanks for your  report!</string>
+    <string name="thaks_for_your_report">Thanks for your report!</string>
     <string name="user_blocked">%s blocked!</string>
     <string name="notification_multiple_messages">%1$d new messages from %2$d chats</string>
     <string name="notification_new_messages">%d new messages</string>
     <string name="notification_new_message">%d new message</string>
     <string name="notification_new_notifications">%d new notifications</string>
     <string name="notification_new_notification">%d new notification</string>
+    <string name="loved_genres">Loved genres</string>
+    <string name="resend_verification_code">Resend verification code</string>
+    <string name="verification_code_sent">Verification code sent!</string>
+    <string name="verification">Verification</string>
+    <string name="verification_sent_info">Your verification code has sent to your email. Check your email and click the verification link.</string>
+    <string name="unverified_email_info">Your email has not been verified yet! You can\'t request or add any books. Check your email and click verification link. If the code has not been sent to your email, you can request new verification code.</string>
 </resources>

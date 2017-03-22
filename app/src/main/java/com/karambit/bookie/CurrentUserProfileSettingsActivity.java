@@ -24,6 +24,7 @@ import android.view.View;
 import android.view.ViewTreeObserver;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.ImageView;
 import android.widget.ScrollView;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -33,7 +34,6 @@ import com.google.android.gms.maps.model.LatLng;
 import com.karambit.bookie.database.DBManager;
 import com.karambit.bookie.helper.CircleImageView;
 import com.karambit.bookie.helper.ComfortableProgressDialog;
-import com.karambit.bookie.database.DBHelper;
 import com.karambit.bookie.helper.ElevationScrollListener;
 import com.karambit.bookie.helper.SessionManager;
 import com.karambit.bookie.helper.TypefaceSpan;
@@ -92,8 +92,16 @@ public class CurrentUserProfileSettingsActivity extends AppCompatActivity {
             actionBar.setTitle(s);
 
             actionBar.setDisplayHomeAsUpEnabled(true);
-            actionBar.setHomeAsUpIndicator(R.drawable.ic_arrow_back_black_24dp);
+            actionBar.setHomeAsUpIndicator(R.drawable.ic_close_primary_text_color);
         }
+
+        mScrollView.getViewTreeObserver().addOnScrollChangedListener(new ViewTreeObserver.OnScrollChangedListener() {
+            @Override
+            public void onScrollChanged() {
+                int scrollY = mScrollView.getScrollY();
+                actionBar.setElevation(ElevationScrollListener.getActionbarElevation(scrollY));
+            }
+        });
 
         mDbManager = new DBManager(this);
         mDbManager.open();
@@ -101,16 +109,6 @@ public class CurrentUserProfileSettingsActivity extends AppCompatActivity {
         if (BookieApplication.hasNetwork()) {
 
             mCurrentUserDetails = SessionManager.getCurrentUserDetails(this);
-
-            mScrollView.getViewTreeObserver().addOnScrollChangedListener(new ViewTreeObserver.OnScrollChangedListener() {
-                @Override
-                public void onScrollChanged() {
-                    int scrollY = mScrollView.getScrollY();
-                    if (actionBar != null) {
-                        actionBar.setElevation(ElevationScrollListener.getActionbarElevation(scrollY));
-                    }
-                }
-            });
 
             mUsernameEditText = (EditText) findViewById(R.id.userNameEditText);
             mUsernameEditText.setText(mCurrentUserDetails.getUser().getName());
@@ -164,6 +162,34 @@ public class CurrentUserProfileSettingsActivity extends AppCompatActivity {
 
             fetchLocation();
 
+            Button lovedGenresButton = (Button) findViewById(R.id.lovedGenresButton);
+            lovedGenresButton.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    startActivity(new Intent(CurrentUserProfileSettingsActivity.this, LovedGenresActivity.class));
+                }
+            });
+
+            View verificationContainer = findViewById(R.id.verificationContainer);
+
+            if (!mCurrentUserDetails.isVerified()) {
+                verificationContainer.setVisibility(View.VISIBLE);
+
+                final ImageView verificationImageView = (ImageView) findViewById(R.id.resendVerificationCodeImageView);
+                final TextView verificationInfoTextView = (TextView) findViewById(R.id.verificationInfoTextView);
+
+                final Button resendVerificationCodeButton = (Button) findViewById(R.id.resendVerificationCodeButton);
+                resendVerificationCodeButton.setOnClickListener(new View.OnClickListener() {
+                    @Override
+                    public void onClick(View v) {
+
+                        resendVerificationCode(resendVerificationCodeButton, verificationImageView, verificationInfoTextView);
+                    }
+                });
+            } else {
+                verificationContainer.setVisibility(View.GONE);
+            }
+
             final Button feedbackSendButton = (Button) findViewById(R.id.feedbackSendButton);
             feedbackSendButton.setClickable(false);
             feedbackSendButton.setTextColor(ContextCompat.getColor(CurrentUserProfileSettingsActivity.this, R.color.secondaryTextColor));
@@ -205,7 +231,6 @@ public class CurrentUserProfileSettingsActivity extends AppCompatActivity {
 
                                 feedbackEditText.clearFocus();
                                 feedbackEditText.setText("");
-                                feedbackSendButton.setVisibility(View.GONE);
                             }
                         })
                         .setNegativeButton(android.R.string.cancel, null)
@@ -240,6 +265,22 @@ public class CurrentUserProfileSettingsActivity extends AppCompatActivity {
             noConnectionView.setVisibility(View.VISIBLE);
             ((TextView) noConnectionView.findViewById(R.id.emptyStateTextView)).setText(R.string.no_internet_connection);
         }
+    }
+
+    private void resendVerificationCode(Button resendVerificationCodeButton, ImageView verificationImageView, TextView verificationInfoTextView) {
+
+        ComfortableProgressDialog progressDialog = new ComfortableProgressDialog(this);
+        progressDialog.setMessage(R.string.please_wait);
+        progressDialog.setCancelable(false);
+        progressDialog.show();
+
+
+        // TODO resend verification code server
+        resendVerificationCodeButton.setClickable(false);
+        resendVerificationCodeButton.setText(R.string.verification_code_sent);
+        verificationImageView.setImageResource(R.drawable.ic_done_white_24dp);
+        verificationInfoTextView.setText(R.string.verification_sent_info);
+        progressDialog.dismiss();
     }
 
     @Override
