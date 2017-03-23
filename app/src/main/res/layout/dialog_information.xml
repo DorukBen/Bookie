@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+              android:layout_width="match_parent"
+              android:layout_height="match_parent"
+              android:background="@color/colorPrimary"
+              android:gravity="center_horizontal"
+              android:orientation="vertical">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center"
+        android:padding="24dp"
+        android:background="@color/colorAccent">
+
+        <ImageView
+            android:id="@+id/dialogInformationInfoImage"
+            android:layout_width="56dp"
+            android:layout_height="56dp"
+            android:src="@drawable/ic_error_outline_white_48dp"/>
+
+    </LinearLayout>
+
+    <TextView
+        android:id="@+id/dialogInformationMessagePrimary"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:paddingBottom="8dp"
+        android:paddingLeft="24dp"
+        android:paddingRight="24dp"
+        android:paddingTop="16dp"
+        android:text="@string/unverified_email_info"
+        android:textColor="@color/primaryTextColor"
+        android:textSize="16sp"/>
+
+    <TextView
+        android:id="@+id/dialogInformationMessageSecondary"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:paddingBottom="8dp"
+        android:paddingLeft="24dp"
+        android:paddingRight="24dp"
+        android:text="@string/unverified_email_info"
+        android:textColor="@color/secondaryTextColor"
+        android:textSize="16sp"/>
+
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:paddingLeft="8dp"
+        android:paddingRight="8dp">
+
+        <Button
+            android:id="@+id/dialogInformationMoreInfo"
+            style="@style/Widget.AppCompat.ActionButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/more_info"
+            android:textAllCaps="true"
+            android:textColor="@color/colorAccent"/>
+
+        <Button
+            android:id="@+id/dialogInformationExtraButton"
+            style="@style/Widget.AppCompat.ActionButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_toLeftOf="@+id/dialogInformationOk"
+            android:text="EXTRA"
+            android:textAllCaps="true"
+            android:textColor="@color/colorAccent"
+            android:visibility="visible"/>
+
+        <Button
+            android:id="@+id/dialogInformationOk"
+            style="@style/Widget.AppCompat.ActionButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentRight="true"
+            android:text="@android:string/ok"
+            android:textAllCaps="true"
+            android:textColor="@color/colorAccent"/>
+
+    </RelativeLayout>
+
+</LinearLayout>

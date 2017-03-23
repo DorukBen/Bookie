@@ -125,39 +125,24 @@ public class BookActivity extends AppCompatActivity {
 
                 // TODO /////////////////////////////////////////////////////////////////////////////////////
 
-                if (currentUserDetails.getBookCounter() > 0) {
-                    new android.app.AlertDialog.Builder(BookActivity.this)
-                        .setMessage(getString(R.string.send_request_to_x, mBook.getOwner().getName()))
-                        .setPositiveButton(R.string.accept, new DialogInterface.OnClickListener() {
-                            @Override
-                            public void onClick(DialogInterface dialog, int which) {
-                                Book.Request request = mBookDetails.getBook().new Request(Book.RequestType.SEND,
-                                                                                          mBookDetails.getBook().getOwner(),
-                                                                                          SessionManager.getCurrentUser(BookActivity.this),
-                                                                                          Calendar.getInstance());
+                new android.app.AlertDialog.Builder(BookActivity.this)
+                    .setMessage(getString(R.string.send_request_to_x, mBook.getOwner().getName()))
+                    .setPositiveButton(R.string.accept, new DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(DialogInterface dialog, int which) {
+                            Book.Request request = mBookDetails.getBook().new Request(Book.RequestType.SEND,
+                                                                                      mBookDetails.getBook().getOwner(),
+                                                                                      SessionManager.getCurrentUser(BookActivity.this),
+                                                                                      Calendar.getInstance());
 
-                                Log.i(TAG, "New request \"SEND\" has been created: " + request);
+                            Log.i(TAG, "New request \"SEND\" has been created: " + request);
 
-                                bookProcessToServer(request);
-                            }
-                        })
-                        .setNegativeButton(android.R.string.no, null)
-                        .create()
-                        .show();
-                } else {
-                    new android.app.AlertDialog.Builder(BookActivity.this)
-                        .setMessage(getString(R.string.send_request_to_x, mBook.getOwner().getName()))
-                        .setPositiveButton(android.R.string.ok, null)
-                        .setNeutralButton(R.string.more_info, new DialogInterface.OnClickListener() {
-                            @Override
-                            public void onClick(DialogInterface dialog, int which) {
-
-                                // TODO InfoActivity
-                            }
-                        })
-                        .create()
-                        .show();
-                }
+                            bookProcessToServer(request);
+                        }
+                    })
+                    .setNegativeButton(android.R.string.no, null)
+                    .create()
+                    .show();
             }
 
             @Override
