@@ -49,11 +49,11 @@ public class SearchBookDataSource {
     }
 
     public void saveBook(Book book){
-        if (mSearchBookUserDataSource.insertUser(book.getOwner())){
+        if (!mSearchBookUserDataSource.isUserExists(book.getOwner())){
             mSearchBookUserDataSource.insertUser(book.getOwner());
         }
 
-        if (isBookExists(book)){
+        if (!isBookExists(book)){
             insertBook(book);
         }
     }

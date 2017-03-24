@@ -43,7 +43,7 @@ public class SearchUserDataSource {
     }
 
     public void saveUser(User user){
-        if (isUserExists(user)){
+        if (!isUserExists(user)){
             insertUser(user);
         }
     }
