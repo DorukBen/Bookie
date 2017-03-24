@@ -1,20 +1,20 @@
 package com.karambit.bookie;
 
+import android.os.Bundle;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.ActionBar;
 import android.support.v7.app.AppCompatActivity;
-import android.os.Bundle;
 import android.text.Spannable;
 import android.text.SpannableString;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
+
 import com.google.android.gms.common.api.Status;
 import com.google.android.gms.location.places.AutocompleteFilter;
 import com.google.android.gms.location.places.Place;
 import com.google.android.gms.location.places.ui.PlaceSelectionListener;
 import com.google.android.gms.location.places.ui.SupportPlaceAutocompleteFragment;
-import com.karambit.bookie.database.DBHelper;
 import com.karambit.bookie.database.DBManager;
 import com.karambit.bookie.helper.SessionManager;
 import com.karambit.bookie.helper.TypefaceSpan;
@@ -42,7 +42,7 @@ public class LocationActivity extends AppCompatActivity {
         if (actionBar != null){
             SpannableString s = new SpannableString(getString(R.string.select_location));
             s.setSpan(new TypefaceSpan(this, MainActivity.FONT_GENERAL_TITLE), 0, s.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
-            float elevation = getResources().getDimension(R.dimen.actionbar_title_size);
+            float elevation = getResources().getDimension(R.dimen.actionbar_starting_elevation);
             actionBar.setElevation(elevation);
         }
 
@@ -98,6 +98,7 @@ public class LocationActivity extends AppCompatActivity {
             public void onClick(View view) {
                 mDbManager.getUserDataSource().updateUserLocation(mLatitude, mLongitude);
                 SessionManager.updateCurrentUserFromDB(LocationActivity.this);
+                SessionManager.setLocationText(null);
                 getIntent().putExtra(EXTRA_LATITUDE, mLatitude);
                 getIntent().putExtra(EXTRA_LONGITUDE, mLongitude);
                 setResult(RESULT_LOCATION_UPDATED, getIntent());

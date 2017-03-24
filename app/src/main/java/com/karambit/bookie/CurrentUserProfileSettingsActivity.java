@@ -556,12 +556,12 @@ public class CurrentUserProfileSettingsActivity extends AppCompatActivity {
 
                             String subAdminArea = addresses.get(0).getSubAdminArea();
                             if (!TextUtils.isEmpty(subAdminArea) && !subAdminArea.equals("null")) {
-                                locationString += subAdminArea;
+                                locationString += subAdminArea + " / ";
                             }
 
                             String adminArea = addresses.get(0).getAdminArea();
                             if (!TextUtils.isEmpty(adminArea) && !adminArea.equals("null")) {
-                                locationString +=  " / " + adminArea;
+                                locationString +=  adminArea;
                             }
 
                             final String finalLocationString = locationString;
@@ -681,6 +681,7 @@ public class CurrentUserProfileSettingsActivity extends AppCompatActivity {
         } else {
 
             uploadUserParamsToServer(nameLabel, bioLabel, mCurrentUserDetails.getUser().getLocation(), progressDialog);
+            SessionManager.setLocationText("");
         }
     }
 

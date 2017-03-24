@@ -268,7 +268,6 @@
     <string name="verification_code_sent">Verification code sent!</string>
     <string name="verification">Verification</string>
     <string name="verification_sent_info">Your verification code has sent to your email. Check your email and click the verification link.</string>
-    <string name="unverified_email_info">Your email has not been verified yet! You can\'t request or add any books. Check your email and click verification link. If the code has not been sent to your email, you can request new verification code.</string>
     <string name="feedback_info">Our team always consider your ideas and our developer team makes the dreamwork. Keep sharing your thoughts and complaints. Thanks in advance!</string>
     <string name="transactions">Transactions</string>
     <string name="who_are_we">Who are we?</string>
@@ -278,8 +277,22 @@
     <string name="point_info">Book point is key element of trustworthiness across the whole app. Your point changes depends on your actions.\n\nAdding book is 2 points\nFinishing a book is 1 point\nGiving a book successfully is 5 points\nGetting a book is 3 points\n\nIf you lost a book you will lose 20 points\nIf your book lost while it is on road. Both of transaction users will lose 20 points.</string>
     <string name="credit_info">We are a group of developers who want to make the world better. With Mantreads our goal is getting closer to us. Each of shared book is prevents the book waste and saves one more tree.\n\nThank you for helping us, helping the world…</string>
     <string name="more_info">More info</string>
-    <string name="unverified_email_info_short">Your email has not been verified!</string>
     <string name="choose_email_app">Choose email app</string>
     <string name="check_email">Check email</string>
+    <string name="set_location">Set location</string>
+    <string name="you_can_add_book">You can add your book now!</string>
+    <string name="null_location_info_short">No location info!</string>
+    <string name="null_location_add_book_info">Please set your location info in your profile settings to add your books.</string>
+    <string name="null_location_request_info">Please set your location info in your profile settings to requesting books from another user.</string>
+    <string name="unverified_email_info">Please check your email and click the verification link.</string>
+    <string name="unverified_email_request_info">Please set your location info in your profile settings to requesting books from another user.</string>
+    <string name="unverified_email_and_null_location_info_short">Unverified email and no location info!</string>
+    <string name="unverified_email_and_null_location_add_book_info">Please check your email and click the verification link and set your location in your profile settings to add your books.</string>
+    <string name="unverified_email_message_info">Please check your email and click the verification link to sending message to another user.</string>
+    <string name="unverified_email_add_book_info">Please check your email and click the verification link to add your book.</string>
+    <string name="unverified_email_info_short">Unverified email!</string>
+    <string name="blocked_request_info">You can not interact with this user</string>
+    <string name="insufficient_book_count_info_short">Time to give some books!</string>
+    <string name="insufficient_book_count_info">Share your book to increase your book taking limit. You can request for books after a book shared shared succesfully by you.</string>
 
 </resources>

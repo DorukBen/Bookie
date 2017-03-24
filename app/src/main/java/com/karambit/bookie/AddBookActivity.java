@@ -32,6 +32,8 @@ import com.karambit.bookie.helper.FileNameGenerator;
 import com.karambit.bookie.helper.GenrePickerDialog;
 import com.karambit.bookie.helper.ImagePicker;
 import com.karambit.bookie.helper.ImageScaler;
+import com.karambit.bookie.helper.InformationDialog;
+import com.karambit.bookie.helper.IntentHelper;
 import com.karambit.bookie.helper.SessionManager;
 import com.karambit.bookie.helper.TypefaceSpan;
 import com.karambit.bookie.helper.UploadFileTask;
@@ -55,6 +57,7 @@ public class AddBookActivity extends AppCompatActivity {
 
     public static final int RESULT_BOOK_CREATED = 1;
     private static final int REQUEST_CODE_CUSTOM_PERMISSIONS = 2;
+    private static final int REQUEST_CODE_LOCATION = 3;
 
     private int mScreenHeight;
     private int mScreenWidth;
@@ -69,11 +72,106 @@ public class AddBookActivity extends AppCompatActivity {
 
     private File mSavedBookImageFile;
     private ProgressDialog mProgressDialog;
+    private InformationDialog mInformationDialog;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_add_book);
+
+        User.Details currentUserDetails = SessionManager.getCurrentUserDetails(this);
+
+        // Information dialog for unverified user or user without location
+        if (!currentUserDetails.isVerified() && currentUserDetails.getUser().getLocation() == null) {
+
+            final InformationDialog informationDialog = new InformationDialog(this);
+            informationDialog.setCancelable(false);
+            informationDialog.setPrimaryMessage(R.string.unverified_email_and_null_location_info_short);
+            informationDialog.setSecondaryMessage(R.string.unverified_email_and_null_location_add_book_info);
+            informationDialog.setDefaultClickListener(new InformationDialog.DefaultClickListener() {
+                @Override
+                public void onOkClick() {
+                    informationDialog.dismiss();
+                    finish();
+                }
+
+                @Override
+                public void onMoreInfoClick() {
+                    Intent intent = new Intent(AddBookActivity.this, InfoActivity.class);
+                    // TODO Put related header extras array
+                    startActivity(intent);
+                }
+            });
+
+            // Verification much more important than location.
+            informationDialog.setExtraButtonClickListener(R.string.check_email, new InformationDialog.ExtraButtonClickListener() {
+                @Override
+                public void onExtraButtonClick() {
+                    IntentHelper.openEmailClient(AddBookActivity.this);
+                }
+            });
+
+            informationDialog.show();
+
+        } else if (!currentUserDetails.isVerified()) {
+
+            final InformationDialog informationDialog = new InformationDialog(this);
+            informationDialog.setCancelable(false);
+            informationDialog.setPrimaryMessage(R.string.unverified_email_info_short);
+            informationDialog.setSecondaryMessage(R.string.unverified_email_add_book_info);
+            informationDialog.setDefaultClickListener(new InformationDialog.DefaultClickListener() {
+                @Override
+                public void onOkClick() {
+                    informationDialog.dismiss();
+                    finish();
+                }
+
+                @Override
+                public void onMoreInfoClick() {
+                    Intent intent = new Intent(AddBookActivity.this, InfoActivity.class);
+                    // TODO Put related header extras array
+                    startActivity(intent);
+                }
+            });
+            informationDialog.setExtraButtonClickListener(R.string.check_email, new InformationDialog.ExtraButtonClickListener() {
+                @Override
+                public void onExtraButtonClick() {
+                    IntentHelper.openEmailClient(AddBookActivity.this);
+                }
+            });
+
+            informationDialog.show();
+
+        } else if (currentUserDetails.getUser().getLocation() == null) {
+
+            mInformationDialog = new InformationDialog(this);
+            mInformationDialog.setCancelable(false);
+            mInformationDialog.setPrimaryMessage(R.string.null_location_info_short);
+            mInformationDialog.setSecondaryMessage(R.string.null_location_add_book_info);
+            mInformationDialog.setDefaultClickListener(new InformationDialog.DefaultClickListener() {
+                @Override
+                public void onOkClick() {
+                    mInformationDialog.dismiss();
+                    finish();
+                }
+
+                @Override
+                public void onMoreInfoClick() {
+                    Intent intent = new Intent(AddBookActivity.this, InfoActivity.class);
+                    // TODO Put related header extras array
+                    startActivity(intent);
+                }
+            });
+            mInformationDialog.setExtraButtonClickListener(R.string.set_location, new InformationDialog.ExtraButtonClickListener() {
+                @Override
+                public void onExtraButtonClick() {
+                    Intent intent = new Intent(AddBookActivity.this, LocationActivity.class);
+                    // TODO Location must send to server in this section
+                    startActivityForResult(intent, REQUEST_CODE_LOCATION);
+                }
+            });
+            mInformationDialog.show();
+        }
 
         //Changes action bar font style by getting font.ttf from assets/fonts action bars font style doesn't
         // change from styles.xml
@@ -216,7 +314,7 @@ public class AddBookActivity extends AppCompatActivity {
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
 
-        if (requestCode == 1) {
+        if (requestCode == 1) { // TODO constant variable
             if (resultCode == RESULT_OK) {
                 Bitmap bitmap = ImagePicker.getImageFromResult(getBaseContext(), resultCode, data);
                 Bitmap croppedBitmap = ImageScaler.cropImage(bitmap, 72 / 96f);
@@ -230,6 +328,11 @@ public class AddBookActivity extends AppCompatActivity {
 
                 findViewById(R.id.parallaxLayout).getLayoutParams().height = mScreenWidth * 96 / 72;
                 findViewById(R.id.parallaxLayout).requestLayout();
+            }
+        } else if (requestCode == REQUEST_CODE_LOCATION && mInformationDialog.isShowing()) {
+            if (resultCode == LocationActivity.RESULT_LOCATION_UPDATED) {
+                Toast.makeText(this, R.string.you_can_add_book, Toast.LENGTH_SHORT).show();
+                mInformationDialog.dismiss();
             }
         }
     }

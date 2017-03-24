@@ -78,34 +78,37 @@ public class InfoActivity extends AppCompatActivity {
         // Expanded info titles on beginning of activity
         int[] infoCodes = getIntent().getIntArrayExtra("info_codes");
 
-        for (int code : infoCodes) {
+        if (infoCodes != null) {
 
-            switch (code) {
+            for (int code : infoCodes) {
 
-                case INFO_CODE_REQUESTS:
-                    infoDropDown_1.setImageResource(R.drawable.ic_keyboard_arrow_up_black_24dp);
-                    infoContent_1.setVisibility(View.VISIBLE);
-                    break;
+                switch (code) {
 
-                case INFO_CODE_TRANSACTIONS:
-                    infoDropDown_0.setImageResource(R.drawable.ic_keyboard_arrow_up_black_24dp);
-                    infoContent_0.setVisibility(View.VISIBLE);
-                    break;
+                    case INFO_CODE_REQUESTS:
+                        infoDropDown_1.setImageResource(R.drawable.ic_keyboard_arrow_up_black_24dp);
+                        infoContent_1.setVisibility(View.VISIBLE);
+                        break;
 
-                case INFO_CODE_POINT:
-                    infoDropDown_2.setImageResource(R.drawable.ic_keyboard_arrow_up_black_24dp);
-                    infoContent_2.setVisibility(View.VISIBLE);
-                    break;
+                    case INFO_CODE_TRANSACTIONS:
+                        infoDropDown_0.setImageResource(R.drawable.ic_keyboard_arrow_up_black_24dp);
+                        infoContent_0.setVisibility(View.VISIBLE);
+                        break;
 
-                case INFO_CODE_FEEDBACK:
-                    infoDropDown_3.setImageResource(R.drawable.ic_keyboard_arrow_up_black_24dp);
-                    infoContent_3.setVisibility(View.VISIBLE);
-                    break;
+                    case INFO_CODE_POINT:
+                        infoDropDown_2.setImageResource(R.drawable.ic_keyboard_arrow_up_black_24dp);
+                        infoContent_2.setVisibility(View.VISIBLE);
+                        break;
 
-                case INFO_CODE_CREDITS:
-                    infoDropDown_4.setImageResource(R.drawable.ic_keyboard_arrow_up_black_24dp);
-                    infoContent_4.setVisibility(View.VISIBLE);
-                    break;
+                    case INFO_CODE_FEEDBACK:
+                        infoDropDown_3.setImageResource(R.drawable.ic_keyboard_arrow_up_black_24dp);
+                        infoContent_3.setVisibility(View.VISIBLE);
+                        break;
+
+                    case INFO_CODE_CREDITS:
+                        infoDropDown_4.setImageResource(R.drawable.ic_keyboard_arrow_up_black_24dp);
+                        infoContent_4.setVisibility(View.VISIBLE);
+                        break;
+                }
             }
         }
 

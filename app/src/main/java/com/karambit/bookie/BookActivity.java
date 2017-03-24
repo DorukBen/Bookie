@@ -32,6 +32,8 @@ import com.karambit.bookie.adapter.BookTimelineAdapter;
 import com.karambit.bookie.adapter.ProfileTimelineAdapter;
 import com.karambit.bookie.helper.ComfortableProgressDialog;
 import com.karambit.bookie.helper.ElevationScrollListener;
+import com.karambit.bookie.helper.InformationDialog;
+import com.karambit.bookie.helper.IntentHelper;
 import com.karambit.bookie.helper.SessionManager;
 import com.karambit.bookie.helper.TypefaceSpan;
 import com.karambit.bookie.helper.pull_refresh_layout.PullRefreshLayout;
@@ -61,6 +63,7 @@ public class BookActivity extends AppCompatActivity {
     public static final int RESULT_BOOK_PROCESS_CHANGED = 1;
     private static final int REQUEST_CODE_REQUEST_CHANGED = 2;
     private static final int REQUEST_CODE_EDIT_BOOK = 3;
+    private static final int REQUEST_CODE_LOCATION = 4;
 
     public static final String EXTRA_BOOK = "book";
 
@@ -69,6 +72,7 @@ public class BookActivity extends AppCompatActivity {
     private Book.Details mBookDetails;
     private PullRefreshLayout mPullRefreshLayout;
     private BroadcastReceiver mMessageReceiver;
+    private InformationDialog mLocationInfoDialog;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -120,10 +124,6 @@ public class BookActivity extends AppCompatActivity {
         mBookTimelineAdapter.setOtherUserClickListeners(new BookTimelineAdapter.StateOtherUserClickListeners() {
             @Override
             public void onRequestButtonClick(Book.Details details) {
-
-                User.Details currentUserDetails = SessionManager.getCurrentUserDetails(BookActivity.this);
-
-                // TODO /////////////////////////////////////////////////////////////////////////////////////
 
                 new android.app.AlertDialog.Builder(BookActivity.this)
                     .setMessage(getString(R.string.send_request_to_x, mBook.getOwner().getName()))
@@ -455,6 +455,12 @@ public class BookActivity extends AppCompatActivity {
         } else if (requestCode == REQUEST_CODE_EDIT_BOOK) {
             if (resultCode == BookSettingsActivity.RESULT_BOOK_UPDATED) {
                 fetchBookPageArguments();
+            }
+        } else if (requestCode == REQUEST_CODE_LOCATION) {
+            if (resultCode == LocationActivity.RESULT_LOCATION_UPDATED) {
+                if (mLocationInfoDialog != null && mLocationInfoDialog.isShowing()) {
+                    mLocationInfoDialog.dismiss();
+                }
             }
         }
     }
@@ -894,12 +900,105 @@ public class BookActivity extends AppCompatActivity {
                                     Log.e(TAG, "Invalid email. (Book Page Error)");
                                 }else if (errorCode == ErrorCodes.USER_NOT_VALID){
                                     Log.e(TAG, "User not valid. (Book Page Error)");
+
+                                    // Unverified email information dialog
+
+                                    final InformationDialog informationDialog = new InformationDialog(BookActivity.this);
+                                    informationDialog.setCancelable(false);
+                                    informationDialog.setPrimaryMessage(R.string.unverified_email_info_short);
+                                    informationDialog.setSecondaryMessage(R.string.unverified_email_request_info);
+                                    informationDialog.setDefaultClickListener(new InformationDialog.DefaultClickListener() {
+                                        @Override
+                                        public void onOkClick() {
+                                            informationDialog.dismiss();
+                                            finish();
+                                        }
+
+                                        @Override
+                                        public void onMoreInfoClick() {
+                                            Intent intent = new Intent(BookActivity.this, InfoActivity.class);
+                                            // TODO Put related header extras array
+                                            startActivity(intent);
+                                        }
+                                    });
+                                    informationDialog.setExtraButtonClickListener(R.string.check_email, new InformationDialog.ExtraButtonClickListener() {
+                                        @Override
+                                        public void onExtraButtonClick() {
+                                            IntentHelper.openEmailClient(BookActivity.this);
+                                        }
+                                    });
+
+                                    informationDialog.show();
+
                                 }else if (errorCode == ErrorCodes.USER_BLOCKED){
                                     Log.e(TAG, "User blocked. (Book Page Error)");
+                                    Toast.makeText(BookActivity.this, R.string.blocked_request_info, Toast.LENGTH_SHORT).show();
+
                                 }else if (errorCode == ErrorCodes.LOCATION_NOT_FOUND){
                                     Log.e(TAG, "Location not found. (Book Page Error)");
+
+                                    // Null location information dialog
+
+                                    mLocationInfoDialog = new InformationDialog(BookActivity.this);
+                                    mLocationInfoDialog.setCancelable(false);
+                                    mLocationInfoDialog.setPrimaryMessage(R.string.null_location_info_short);
+                                    mLocationInfoDialog.setSecondaryMessage(R.string.null_location_request_info);
+                                    mLocationInfoDialog.setDefaultClickListener(new InformationDialog.DefaultClickListener() {
+                                        @Override
+                                        public void onOkClick() {
+                                            mLocationInfoDialog.dismiss();
+                                            finish();
+                                        }
+
+                                        @Override
+                                        public void onMoreInfoClick() {
+                                            Intent intent = new Intent(BookActivity.this, InfoActivity.class);
+                                            // TODO Put related header extras array
+                                            startActivity(intent);
+                                        }
+                                    });
+                                    mLocationInfoDialog.setExtraButtonClickListener(R.string.set_location, new InformationDialog.ExtraButtonClickListener() {
+                                        @Override
+                                        public void onExtraButtonClick() {
+                                            Intent intent = new Intent(BookActivity.this, LocationActivity.class);
+                                            // TODO Location must send to server in this section
+                                            startActivityForResult(intent, REQUEST_CODE_LOCATION);                                        }
+                                    });
+
+                                    mLocationInfoDialog.show();
+
                                 }else if (errorCode == ErrorCodes.BOOK_COUNT_INSUFFICIENT){
                                     Log.e(TAG, "Book count insufficient. (Book Page Error)");
+
+                                    // Insufficient book count git
+
+                                    final InformationDialog informationDialog = new InformationDialog(BookActivity.this);
+                                    informationDialog.setCancelable(false);
+                                    informationDialog.setPrimaryMessage(R.string.insufficient_book_count_info_short);
+                                    informationDialog.setSecondaryMessage(R.string.insufficient_book_count_info);
+                                    informationDialog.setDefaultClickListener(new InformationDialog.DefaultClickListener() {
+                                        @Override
+                                        public void onOkClick() {
+                                            informationDialog.dismiss();
+                                            finish();
+                                        }
+
+                                        @Override
+                                        public void onMoreInfoClick() {
+                                            Intent intent = new Intent(BookActivity.this, InfoActivity.class);
+                                            // TODO Put related header extras array
+                                            startActivity(intent);
+                                        }
+                                    });
+                                    informationDialog.setExtraButtonClickListener(R.string.check_email, new InformationDialog.ExtraButtonClickListener() {
+                                        @Override
+                                        public void onExtraButtonClick() {
+                                            IntentHelper.openEmailClient(BookActivity.this);
+                                        }
+                                    });
+
+                                    informationDialog.show();
+
                                 }else if (errorCode == ErrorCodes.UNKNOWN){
                                     Log.e(TAG, "onResponse: errorCode = " + errorCode);
                                 }

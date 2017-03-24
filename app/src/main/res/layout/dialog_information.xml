@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
               android:layout_width="match_parent"
-              android:layout_height="match_parent"
+              android:layout_height="wrap_content"
               android:background="@color/colorPrimary"
               android:gravity="center_horizontal"
               android:orientation="vertical">
@@ -29,7 +29,7 @@
         android:paddingLeft="24dp"
         android:paddingRight="24dp"
         android:paddingTop="16dp"
-        android:text="@string/unverified_email_info"
+        android:text="Primary message text"
         android:textColor="@color/primaryTextColor"
         android:textSize="16sp"/>
 
@@ -40,7 +40,7 @@
         android:paddingBottom="8dp"
         android:paddingLeft="24dp"
         android:paddingRight="24dp"
-        android:text="@string/unverified_email_info"
+        android:text="Secondary message text"
         android:textColor="@color/secondaryTextColor"
         android:textSize="16sp"/>
 

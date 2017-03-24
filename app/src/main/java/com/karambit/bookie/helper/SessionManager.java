@@ -3,7 +3,6 @@ package com.karambit.bookie.helper;
 import android.content.Context;
 import android.content.SharedPreferences;
 
-import com.karambit.bookie.database.DBHelper;
 import com.karambit.bookie.database.DBManager;
 import com.karambit.bookie.model.User;
 
@@ -14,6 +13,8 @@ import com.karambit.bookie.model.User;
 public class SessionManager {
 
     private static User.Details mUserDetails;
+
+    private static String mLocationText;
 
     public static final String TAG = SessionManager.class.getSimpleName();
 
@@ -90,5 +91,13 @@ public class SessionManager {
         dbManager.open();
         boolean result =  dbManager.getLovedGenreDataSource().isGenresSelected(getCurrentUser(context));
         return result;
+    }
+
+    public static String getLocationText() {
+        return mLocationText;
+    }
+
+    public static void setLocationText(String locationText) {
+        mLocationText = locationText;
     }
 }
