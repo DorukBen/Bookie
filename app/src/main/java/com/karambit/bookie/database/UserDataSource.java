@@ -274,7 +274,7 @@ public class UserDataSource {
 
             mSqLiteDatabase.update(USER_TABLE_NAME, cv, null, null);
         }finally {
-            Log.i(TAG, "User's location updated");
+            Log.i(TAG, "User's location updated: lat = " + latitude + " long = " + longitude);
         }
     }
 

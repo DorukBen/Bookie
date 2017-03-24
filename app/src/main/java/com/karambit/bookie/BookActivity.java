@@ -961,7 +961,6 @@ public class BookActivity extends AppCompatActivity {
                                         @Override
                                         public void onExtraButtonClick() {
                                             Intent intent = new Intent(BookActivity.this, LocationActivity.class);
-                                            // TODO Location must send to server in this section
                                             startActivityForResult(intent, REQUEST_CODE_LOCATION);                                        }
                                     });
 

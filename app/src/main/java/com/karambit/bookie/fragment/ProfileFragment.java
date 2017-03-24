@@ -419,6 +419,15 @@ public class ProfileFragment extends Fragment {
                                     JSONObject userObject = responseObject.getJSONObject("userDetails");
                                     mUserDetails = User.jsonObjectToUserDetails(userObject);
 
+                                    // Updating local database
+                                    User currentUser = SessionManager.getCurrentUser(getContext());
+                                    if (mUser.equals(currentUser)) {
+                                        // Update user info from fetched user
+                                        mUser = mUserDetails.getUser();
+                                        mDbManager.getUserDataSource().updateUserDetails(mUserDetails);
+                                        SessionManager.updateCurrentUser(mUserDetails);
+                                    }
+
                                     if (!responseObject.isNull("currentlyReading")){
                                         if (mUserDetails != null) {
                                             mUserDetails.setCurrentlyReading(Book.jsonArrayToBookList(responseObject.getJSONArray("currentlyReading")));
@@ -435,14 +444,6 @@ public class ProfileFragment extends Fragment {
                                         if (mUserDetails != null) {
                                             mUserDetails.setReadBooks(Book.jsonArrayToBookList(responseObject.getJSONArray("readBooks")));
                                         }
-                                    }
-
-                                    // Updating local database
-                                    User currentUser = SessionManager.getCurrentUser(getContext());
-                                    if (mUser.equals(currentUser)) {
-
-                                        mDbManager.getUserDataSource().updateUserDetails(mUserDetails);
-                                        SessionManager.updateCurrentUser(mUserDetails);
                                     }
 
                                     if (!responseObject.isNull("onRoadBooks")){

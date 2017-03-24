@@ -1,7 +1,5 @@
 package com.karambit.bookie.rest_api;
 
-import android.support.annotation.Nullable;
-
 import okhttp3.ResponseBody;
 import retrofit2.Call;
 import retrofit2.http.Field;
@@ -55,6 +53,13 @@ public interface UserApi {
                                          @Field("password") String password,
                                          @Field("name") String name,
                                          @Field("bio") String bio);
+
+    @FormUrlEncoded
+    @POST("UserUpdateLocation")
+    Call<ResponseBody> updateUserLocation(@Field("email") String email,
+                                         @Field("password") String password,
+                                         @Field("latitude") double latitude,
+                                         @Field("longitude") double longitude);
 
     @FormUrlEncoded
     @POST("Feedback")

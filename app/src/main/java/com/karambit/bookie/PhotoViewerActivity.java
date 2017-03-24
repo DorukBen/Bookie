@@ -546,13 +546,6 @@ public class PhotoViewerActivity extends AppCompatActivity implements View.OnTou
             public void onProgressCompleted() {
                 Log.w(TAG, "Image upload is OK");
                 mProgressDialog.dismiss();
-
-                /*
-                    TODO Update Current user on database.
-                    This may be done in another Profile Activity or Main Activity
-                    Just check DBHelper for update current profile picture or update all the user details
-                  */
-
                 setResult(RESULT_PROFILE_PICTURE_UPDATED);
                 finish();
             }
