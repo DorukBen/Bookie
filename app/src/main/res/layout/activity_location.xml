@@ -1,83 +1,83 @@
 <?xml version="1.0" encoding="utf-8"?>
 <RelativeLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/colorPrimary"
+    android:background="@color/colorPrimaryDarker"
+    android:gravity="center_horizontal"
+    android:orientation="vertical"
     tools:context="com.karambit.bookie.LocationActivity">
 
     <ImageView
         android:id="@+id/locationImage"
-        android:layout_width="wrap_content"
-        android:layout_height="200dp"
-        android:layout_centerHorizontal="true"
-        android:layout_marginTop="36dp"
-        android:alpha="0.48"
-        android:src="@drawable/google_location_icon_16"
-        android:tint="@color/primaryTextColor"/>
-
-    <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:layout_below="@+id/locationImage"
-        android:gravity="center"
-        android:orientation="vertical">
+        android:layout_above="@+id/pickerContainer"
+        android:padding="64dp"
+        android:src="@drawable/google_location_icon_16"
+        android:tint="@color/colorPrimary"/>
 
-        <TextView
-            android:id="@+id/locationText"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_alignWithParentIfMissing="false"
-            android:layout_below="@+id/locationImage"
-            android:layout_centerHorizontal="true"
-            android:layout_marginLeft="16dp"
-            android:layout_marginRight="16dp"
-            android:layout_marginTop="12dp"
-            android:alpha="0.72"
-            android:text="Select your location for getting better result from your book searchs. Other users can see your books location to get better results."
-            android:textAlignment="center"
-            android:textColor="@color/primaryTextColor"
-            android:textSize="18sp"/>
+    <android.support.v7.widget.CardView
+        android:id="@+id/pickerContainer"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_above="@+id/infoContainer"
+        android:layout_margin="12dp"
+        app:cardElevation="2dp"
+        app:cardUseCompatPadding="true">
+
 
         <LinearLayout
-            android:id="@+id/googleSearchLinear"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="36dp"
+            android:background="@color/colorPrimary"
             android:orientation="vertical">
-
-            <View
-                android:layout_width="match_parent"
-                android:layout_height="1dp"
-                android:alpha="0.32"
-                android:background="@color/primaryTextColor"/>
 
             <fragment
                 android:id="@+id/place_autocomplete_fragment"
                 android:name="com.google.android.gms.location.places.ui.SupportPlaceAutocompleteFragment"
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                />
+                android:layout_height="56dp"/>
 
-            <View
-                android:layout_width="match_parent"
-                android:layout_height="1dp"
-                android:alpha="0.32"
-                android:background="@color/primaryTextColor"/>
         </LinearLayout>
 
+    </android.support.v7.widget.CardView>
+
+    <LinearLayout
+        android:id="@+id/infoContainer"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true"
+        android:background="@color/colorPrimary"
+        android:elevation="8dp"
+        android:orientation="vertical"
+        android:paddingBottom="8dp"
+        android:paddingLeft="12dp"
+        android:paddingRight="12dp"
+        android:paddingTop="16dp">
+
+        <TextView
+            android:id="@+id/infoText"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:paddingLeft="12dp"
+            android:paddingRight="12dp"
+            android:text="Select your location for getting better result from your book searchs. Other users can see your books location to get better results."
+            android:textColor="@color/secondaryTextColor"
+            android:textSize="16sp"/>
+
         <Button
-            android:id="@+id/locationOKButton"
+            android:id="@+id/locationMoreInfo"
             style="@style/Base.Widget.AppCompat.ActionButton"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_gravity="right"
-            android:layout_margin="8dp"
-            android:text="@string/ok"
-            android:textColor="@color/colorAccent"
-            android:textSize="18sp"/>
-    </LinearLayout>
+            android:layout_marginTop="8dp"
+            android:text="@string/more_info"
+            android:textAllCaps="true"
+            android:textColor="@color/colorAccent"/>
 
+    </LinearLayout>
 
 </RelativeLayout>

@@ -536,56 +536,74 @@ public class CurrentUserProfileSettingsActivity extends AppCompatActivity {
 
     private void fetchLocation() {
 
-        new Thread(new Runnable() {
-            @Override
-            public void run() {
+        if (TextUtils.isEmpty(SessionManager.getLocationText())) {
 
-                LatLng userLocation = mCurrentUserDetails.getUser().getLocation();
+            new Thread(new Runnable() {
+                @Override
+                public void run() {
 
-                if (userLocation != null) {
+                    LatLng userLocation = mCurrentUserDetails.getUser().getLocation();
 
-                    try {
-                        Geocoder geocoder = new Geocoder(CurrentUserProfileSettingsActivity.this, Locale.getDefault());
-                        List<Address> addresses = geocoder.getFromLocation(userLocation.latitude, userLocation.longitude, 1);
+                    if (userLocation != null) {
 
-                        // Admin area equals Istanbul
-                        // Subadmin are equals Bahçelievler
+                        try {
+                            Geocoder geocoder = new Geocoder(CurrentUserProfileSettingsActivity.this, Locale.getDefault());
+                            List<Address> addresses = geocoder.getFromLocation(userLocation.latitude, userLocation.longitude, 1);
 
-                        if (addresses.size() > 0) {
-                            String locationString = "";
+                            // Admin area equals Istanbul
+                            // Subadmin are equals Bahçelievler
 
-                            String subAdminArea = addresses.get(0).getSubAdminArea();
-                            if (!TextUtils.isEmpty(subAdminArea) && !subAdminArea.equals("null")) {
-                                locationString += subAdminArea + " / ";
-                            }
+                            if (addresses.size() > 0) {
+                                String locationString = "";
 
-                            String adminArea = addresses.get(0).getAdminArea();
-                            if (!TextUtils.isEmpty(adminArea) && !adminArea.equals("null")) {
-                                locationString +=  adminArea;
-                            }
+                                String subAdminArea = addresses.get(0).getSubAdminArea();
+                                if (!TextUtils.isEmpty(subAdminArea) && !subAdminArea.equals("null")) {
+                                    locationString += subAdminArea + " / ";
+                                }
 
-                            final String finalLocationString = locationString;
-                            runOnUiThread(
-                                new Runnable() {
-                                    @Override
-                                    public void run() {
+                                String adminArea = addresses.get(0).getAdminArea();
+                                if (!TextUtils.isEmpty(adminArea) && !adminArea.equals("null")) {
+                                    locationString += adminArea;
+                                }
 
-                                        if (!TextUtils.isEmpty(finalLocationString)) {
-                                            mLocationTextView.setText(finalLocationString);
-                                            mChangeLocationButton.setText(R.string.change_location);
+                                final String finalLocationString = locationString;
+                                runOnUiThread(
+                                    new Runnable() {
+                                        @Override
+                                        public void run() {
 
-                                        } else {
+                                            if (!TextUtils.isEmpty(finalLocationString)) {
+                                                mLocationTextView.setText(finalLocationString);
+                                                mChangeLocationButton.setText(R.string.change_location);
+
+                                            } else {
+                                                mLocationTextView.setText(R.string.no_location_info);
+                                                mChangeLocationButton.setText(R.string.add_location);
+                                            }
+                                            mChangeLocationButton.setVisibility(View.VISIBLE);
+                                            mLocationTextView.setTextColor(ContextCompat.getColor(CurrentUserProfileSettingsActivity.this,
+                                                                                                  R.color.primaryTextColor));
+                                        }
+                                    }
+                                );
+
+                            } else {
+                                runOnUiThread(
+                                    new Runnable() {
+                                        @Override
+                                        public void run() {
                                             mLocationTextView.setText(R.string.no_location_info);
                                             mChangeLocationButton.setText(R.string.add_location);
+                                            mChangeLocationButton.setVisibility(View.VISIBLE);
+                                            mLocationTextView.setTextColor(ContextCompat.getColor(CurrentUserProfileSettingsActivity.this,
+                                                                                                  R.color.primaryTextColor));
                                         }
-                                        mChangeLocationButton.setVisibility(View.VISIBLE);
-                                        mLocationTextView.setTextColor(ContextCompat.getColor(CurrentUserProfileSettingsActivity.this,
-                                                                                              R.color.primaryTextColor));
                                     }
-                                }
-                            );
+                                );
+                            }
+                        } catch (IOException e) {
+                            e.printStackTrace();
 
-                        } else {
                             runOnUiThread(
                                 new Runnable() {
                                     @Override
@@ -599,9 +617,7 @@ public class CurrentUserProfileSettingsActivity extends AppCompatActivity {
                                 }
                             );
                         }
-                    } catch (IOException e) {
-                        e.printStackTrace();
-
+                    } else {
                         runOnUiThread(
                             new Runnable() {
                                 @Override
@@ -615,22 +631,16 @@ public class CurrentUserProfileSettingsActivity extends AppCompatActivity {
                             }
                         );
                     }
-                } else {
-                    runOnUiThread(
-                        new Runnable() {
-                            @Override
-                            public void run() {
-                                mLocationTextView.setText(R.string.no_location_info);
-                                mChangeLocationButton.setText(R.string.add_location);
-                                mChangeLocationButton.setVisibility(View.VISIBLE);
-                                mLocationTextView.setTextColor(ContextCompat.getColor(CurrentUserProfileSettingsActivity.this,
-                                                                                      R.color.primaryTextColor));
-                            }
-                        }
-                    );
                 }
-            }
-        }).start();
+            }).start();
+
+        } else {
+            mLocationTextView.setText(SessionManager.getLocationText());
+            mChangeLocationButton.setText(R.string.change_location);
+            mChangeLocationButton.setVisibility(View.VISIBLE);
+            mLocationTextView.setTextColor(ContextCompat.getColor(CurrentUserProfileSettingsActivity.this,
+                                                                  R.color.primaryTextColor));
+        }
     }
 
     @Override
