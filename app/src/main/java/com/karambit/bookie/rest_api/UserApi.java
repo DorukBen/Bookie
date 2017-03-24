@@ -87,4 +87,10 @@ public interface UserApi {
     Call<ResponseBody> uploadUserBlock (@Field("email") String email,
                                          @Field("password") String password,
                                          @Field("userID") int userId);
+
+    @FormUrlEncoded
+    @POST("DeleteMessage")
+    Call<ResponseBody> deleteMessages (@Field("email") String email,
+                                        @Field("password") String password,
+                                        @Field("messageIDs") String messageIDs);
 }

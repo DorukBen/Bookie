@@ -38,6 +38,7 @@ import com.karambit.bookie.model.User;
 import com.karambit.bookie.rest_api.BookieClient;
 import com.karambit.bookie.rest_api.ErrorCodes;
 import com.karambit.bookie.rest_api.FcmApi;
+import com.karambit.bookie.rest_api.UserApi;
 import com.karambit.bookie.service.BookieFirebaseMessagingService;
 import com.karambit.bookie.service.BookieIntentFilters;
 
@@ -615,7 +616,77 @@ public class ConversationActivity extends AppCompatActivity {
 
     private void deleteMessagesOnServer(int[] selectedMessageIds) {
 
-        // TODO Server delete notify (selectedMessageIds[])
+        final UserApi userApi = BookieClient.getClient().create(UserApi.class);
+
+        User.Details currentUserDetails = SessionManager.getCurrentUserDetails(this);
+
+        String email = currentUserDetails.getEmail();
+        String password = currentUserDetails.getPassword();
+
+        String deletedMessageIds;
+
+        int i = 0;
+
+        StringBuilder builder = new StringBuilder();
+        for (Integer genreCode: selectedMessageIds){
+            builder.append(genreCode);
+            if (i < selectedMessageIds.length - 1){
+                builder.append("_");
+            }
+            i++;
+        }
+        deletedMessageIds = builder.toString();
+
+        Call<ResponseBody> setLovedGenres = userApi.deleteMessages(email, password, deletedMessageIds);
+
+        setLovedGenres.enqueue(new Callback<ResponseBody>() {
+            @Override
+            public void onResponse(Call<ResponseBody> call, Response<ResponseBody> response) {
+
+                try {
+                    if (response != null){
+                        if (response.body() != null){
+                            String json = response.body().string();
+
+                            JSONObject responseObject = new JSONObject(json);
+                            boolean error = responseObject.getBoolean("error");
+
+                            if (!error) {
+                                Log.i(TAG, "Messages deleted from server!");
+                            } else {
+
+                                int errorCode = responseObject.getInt("errorCode");
+
+                                if (errorCode == ErrorCodes.EMPTY_POST){
+                                    Log.e(TAG, "Post is empty. (Conversation Error)");
+                                }else if (errorCode == ErrorCodes.MISSING_POST_ELEMENT){
+                                    Log.e(TAG, "Post element missing. (Conversation Error)");
+                                }else if (errorCode == ErrorCodes.INVALID_REQUEST){
+                                    Log.e(TAG, "Invalid request. (Conversation Error)");
+                                }else if (errorCode == ErrorCodes.INVALID_EMAIL){
+                                    Log.e(TAG, "Invalid email. (Conversation Error)");
+                                }else if (errorCode == ErrorCodes.UNKNOWN){
+                                    Log.e(TAG, "onResponse: errorCode = " + errorCode);
+                                }
+
+                            }
+                        }else{
+                            Log.e(TAG, "Response body is null. (Conversation Error)");
+                        }
+                    }else{
+                        Log.e(TAG, "Response object is null. (Conversation Error)");
+                    }
+                } catch (IOException | JSONException e) {
+                    e.printStackTrace();
+                }
+            }
+
+            @Override
+            public void onFailure(Call<ResponseBody> call, Throwable t) {
+
+                Log.e(TAG, "Conversation onFailure: " + t.getMessage());
+            }
+        });
     }
 
     /**

@@ -198,12 +198,12 @@ public class LovedGenresActivity extends AppCompatActivity {
 
                             }
                         }else{
-                            Log.e(TAG, "Response body is null. (Login Error)");
+                            Log.e(TAG, "Response body is null. (Loved Genres Error)");
                             mProgressDialog.dismiss();
                             Toast.makeText(LovedGenresActivity.this, R.string.unknown_error, Toast.LENGTH_SHORT).show();
                         }
                     }else{
-                        Log.e(TAG, "Response object is null. (Login Error)");
+                        Log.e(TAG, "Response object is null. (Loved Genres Error)");
                         mProgressDialog.dismiss();
                         Toast.makeText(LovedGenresActivity.this, R.string.unknown_error, Toast.LENGTH_SHORT).show();
                     }
@@ -219,7 +219,7 @@ public class LovedGenresActivity extends AppCompatActivity {
             public void onFailure(Call<ResponseBody> call, Throwable t) {
                 mProgressDialog.dismiss();
 
-                Log.e(TAG, "Login onFailure: " + t.getMessage());
+                Log.e(TAG, "Loved Genres onFailure: " + t.getMessage());
 
                 Toast.makeText(LovedGenresActivity.this, R.string.unknown_error, Toast.LENGTH_SHORT).show();
             }
