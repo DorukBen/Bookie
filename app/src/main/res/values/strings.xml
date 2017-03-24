@@ -294,5 +294,6 @@
     <string name="blocked_request_info">You can not interact with this user</string>
     <string name="insufficient_book_count_info_short">Time to give some books!</string>
     <string name="insufficient_book_count_info">Share your book to increase your book taking limit. You can request for books after a book shared shared succesfully by you.</string>
+    <string name="null_location_search_info">For better searching please set your location info in your profile settings. Our search algorithm works best with location info.</string>
 
 </resources>
