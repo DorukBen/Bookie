@@ -366,6 +366,7 @@ public class RequestActivity extends AppCompatActivity {
                                     User tmpUser = oldRequest.getToUser();
                                     oldRequest.setToUser(oldRequest.getFromUser());
                                     oldRequest.setFromUser(tmpUser);
+                                    oldRequest.setCreatedAt(Calendar.getInstance());
                                     Collections.sort(mRequests);
                                     int indexAfter = mRequests.indexOf(oldRequest) + 1; // Subtitle
                                     mRequestAdapter.notifyItemMoved(indexBefore, indexAfter);
