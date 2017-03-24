@@ -55,11 +55,34 @@ public class MessageDataSource {
      *
      * @return boolean value if insertion successful returns true else returns false.
      */
-    public boolean saveMessage(Message message, User currentUser){
+    public boolean saveMessage(Message message, User currentUser) {
         if (!mMessageUserDataSource.isUserExists(message.getOppositeUser(currentUser))) {
             mMessageUserDataSource.insertUser(message.getOppositeUser(currentUser));
         }
-        return insertMessage(message);
+        return !isMessageExists(message) && insertMessage(message);
+    }
+
+    /**
+     * Checks database for given message id's existence.<br>
+     *
+     * @param message {@link Message message}
+     *
+     * @return  boolean value. If message {@link Message message} exist returns true else returns false.
+     */
+    public boolean isMessageExists(Message message) {
+        Cursor res = null;
+
+        try {
+            res = mSqLiteDatabase.rawQuery("SELECT * FROM " + MESSAGE_TABLE_NAME + " WHERE " + MESSAGE_COLUMN_ID  + " = " + message.getID(), null);
+            res.moveToFirst();
+
+            return res.getCount() > 0;
+
+        }finally {
+            if (res != null) {
+                res.close();
+            }
+        }
     }
 
     /**

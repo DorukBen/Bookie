@@ -18,8 +18,10 @@ import android.view.LayoutInflater;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Toast;
 
 import com.karambit.bookie.ConversationActivity;
+import com.karambit.bookie.LovedGenresActivity;
 import com.karambit.bookie.MainActivity;
 import com.karambit.bookie.R;
 import com.karambit.bookie.adapter.LastMessageAdapter;
@@ -30,10 +32,22 @@ import com.karambit.bookie.helper.SessionManager;
 import com.karambit.bookie.helper.pull_refresh_layout.PullRefreshLayout;
 import com.karambit.bookie.model.Message;
 import com.karambit.bookie.model.User;
+import com.karambit.bookie.rest_api.BookieClient;
+import com.karambit.bookie.rest_api.ErrorCodes;
+import com.karambit.bookie.rest_api.UserApi;
 import com.karambit.bookie.service.BookieIntentFilters;
 
+import org.json.JSONException;
+import org.json.JSONObject;
+
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
+
+import okhttp3.ResponseBody;
+import retrofit2.Call;
+import retrofit2.Callback;
+import retrofit2.Response;
 
 /**
  * A simple {@link Fragment} subclass.
@@ -55,6 +69,7 @@ public class MessageFragment extends Fragment {
     private PullRefreshLayout mPullRefreshLayout;
     private SparseIntArray mUnseenCounts;
     private BroadcastReceiver mMessageReceiver;
+    private boolean isFirstFetch = true;
 
     public MessageFragment() {
         // Required empty public constructor
@@ -265,17 +280,161 @@ public class MessageFragment extends Fragment {
         return rootView;
     }
 
+    private void fetchMessagesFromServer() {
+
+        final UserApi userApi = BookieClient.getClient().create(UserApi.class);
+
+        final User.Details currentUserDetails = SessionManager.getCurrentUserDetails(getContext());
+
+        String email = currentUserDetails.getEmail();
+        String password = currentUserDetails.getPassword();
+
+        String lastMessageUserIds;
+
+        int i = 0;
+
+        StringBuilder builder = new StringBuilder();
+        for (Message message: mLastMessages){
+            builder.append(message.getOppositeUser(currentUserDetails.getUser()).getID());
+            if (i < mLastMessages.size() - 1){
+                builder.append("_");
+            }
+            i++;
+        }
+        lastMessageUserIds = builder.toString();
+
+        Call<ResponseBody> fetchMessages = userApi.fetchMessages(email, password, lastMessageUserIds);
+
+        fetchMessages.enqueue(new Callback<ResponseBody>() {
+            @Override
+            public void onResponse(Call<ResponseBody> call, Response<ResponseBody> response) {
+
+                try {
+                    if (response != null){
+                        if (response.body() != null){
+                            String json = response.body().string();
+
+                            JSONObject responseObject = new JSONObject(json);
+                            boolean error = responseObject.getBoolean("error");
+
+                            if (!error) {
+                                ArrayList<Message> messages = Message.jsonObjectToMessageList(responseObject);
+                                for (Message message: messages){
+                                    mDBManager.getMessageDataSource().saveMessage(message, currentUserDetails.getUser());
+                                }
+
+                                mLastMessages = mDBManager.getMessageDataSource().getLastMessages(SessionManager.getCurrentUser(getContext()));
+                                Collections.sort(mLastMessages);
+                                mLastMessageAdapter.setLastMessages(mLastMessages);
+                                fetchUnseenCounts();
+
+                                isFirstFetch = false;
+                            } else {
+
+                                int errorCode = responseObject.getInt("errorCode");
+
+                                if (errorCode == ErrorCodes.EMPTY_POST){
+                                    Log.e(TAG, "Post is empty. (Message Fragment Error)");
+                                }else if (errorCode == ErrorCodes.MISSING_POST_ELEMENT){
+                                    Log.e(TAG, "Post element missing. (Message Fragment Error)");
+                                }else if (errorCode == ErrorCodes.INVALID_REQUEST){
+                                    Log.e(TAG, "Invalid request. (Message Fragment Error)");
+                                }else if (errorCode == ErrorCodes.INVALID_EMAIL){
+                                    Log.e(TAG, "Invalid email. (Message Fragment Error)");
+                                }else if (errorCode == ErrorCodes.UNKNOWN){
+                                    Log.e(TAG, "onResponse: errorCode = " + errorCode);
+                                }
+                            }
+                        }else{
+                            Log.e(TAG, "Response body is null. (Message Fragment Error)");
+                        }
+                    }else{
+                        Log.e(TAG, "Response object is null. (Message Fragment Error)");
+                    }
+                } catch (IOException | JSONException e) {
+                    e.printStackTrace();
+
+                    Log.e(TAG, "onResponse: errorCode = " + e.getMessage());
+                }
+                mPullRefreshLayout.setRefreshing(false);
+            }
+            @Override
+            public void onFailure(Call<ResponseBody> call, Throwable t) {
+                Log.e(TAG, "Message Fragment onFailure: " + t.getMessage());
+
+                mPullRefreshLayout.setRefreshing(false);
+            }
+        });
+    }
+
     private void deleteMessageUserOnServer(User oppositeUser) {
         int userId = oppositeUser.getID();
 
-        // TODO Server delete message user
+        final UserApi userApi = BookieClient.getClient().create(UserApi.class);
+
+        User.Details currentUserDetails = SessionManager.getCurrentUserDetails(getContext());
+
+        String email = currentUserDetails.getEmail();
+        String password = currentUserDetails.getPassword();
+        final Call<ResponseBody> deleteConversation = userApi.deleteConversation(email, password, userId);
+
+        deleteConversation.enqueue(new Callback<ResponseBody>() {
+            @Override
+            public void onResponse(Call<ResponseBody> call, Response<ResponseBody> response) {
+
+                try {
+                    if (response != null){
+                        if (response.body() != null){
+                            String json = response.body().string();
+
+                            JSONObject responseObject = new JSONObject(json);
+                            boolean error = responseObject.getBoolean("error");
+
+                            if (!error) {
+                                Log.i(TAG, "Conversation deleted from server!");
+                            } else {
+                                int errorCode = responseObject.getInt("errorCode");
+
+                                if (errorCode == ErrorCodes.EMPTY_POST){
+                                    Log.e(TAG, "Post is empty. (Message Fragment Error)");
+                                }else if (errorCode == ErrorCodes.MISSING_POST_ELEMENT){
+                                    Log.e(TAG, "Post element missing. (Message Fragment Error)");
+                                }else if (errorCode == ErrorCodes.INVALID_EMAIL){
+                                    Log.e(TAG, "Invalid email. (Message Fragment Error)");
+                                }else if (errorCode == ErrorCodes.INVALID_REQUEST){
+                                    Log.e(TAG, "Invalid request. (Message Fragment Error)");
+                                }else if (errorCode == ErrorCodes.UNKNOWN){
+                                    Log.e(TAG, "onResponse: errorCode = " + errorCode);
+                                }
+                            }
+                        }else{
+                            Log.e(TAG, "Response body is null. (Message Fragment Error)");
+                        }
+                    }else {
+                        Log.e(TAG, "Response object is null. (Message Fragment Error)");
+                    }
+                } catch (IOException | JSONException e) {
+                    e.printStackTrace();
+                }
+
+                mPullRefreshLayout.setRefreshing(false);
+            }
+
+            @Override
+            public void onFailure(Call<ResponseBody> call, Throwable t) {
+
+                mPullRefreshLayout.setRefreshing(false);
+                Log.e(TAG, "Message Fragment onFailure: " + t.getMessage());
+            }
+        });
     }
 
     @Override
     public void onResume() {
         super.onResume();
-
-        fetchMessages();
+        if (SessionManager.isLoggedIn(getContext())){
+            fetchMessages();
+        }
     }
 
     @Override
@@ -285,12 +444,16 @@ public class MessageFragment extends Fragment {
     }
 
     public void fetchMessages() {
-        mLastMessages = mDBManager.getMessageDataSource().getLastMessages(SessionManager.getCurrentUser(getContext()));
-        Collections.sort(mLastMessages);
+        if (isFirstFetch){
+            mLastMessages = mDBManager.getMessageDataSource().getLastMessages(SessionManager.getCurrentUser(getContext()));
+            fetchMessagesFromServer();
 
-        mLastMessageAdapter.setLastMessages(mLastMessages);
-        mPullRefreshLayout.setRefreshing(false);
-        fetchUnseenCounts();
+            Collections.sort(mLastMessages);
+            mLastMessageAdapter.setLastMessages(mLastMessages);
+            fetchUnseenCounts();
+        }else {
+            fetchMessagesFromServer();
+        }
     }
 
     // Last messages should be sorted

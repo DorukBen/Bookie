@@ -89,8 +89,20 @@ public interface UserApi {
                                          @Field("userID") int userId);
 
     @FormUrlEncoded
+    @POST("MessageFetch")
+    Call<ResponseBody> fetchMessages (@Field("email") String email,
+                                           @Field("password") String password,
+                                           @Field("userIDs") String userIds);
+
+    @FormUrlEncoded
     @POST("DeleteMessage")
     Call<ResponseBody> deleteMessages (@Field("email") String email,
                                         @Field("password") String password,
                                         @Field("messageIDs") String messageIDs);
+
+    @FormUrlEncoded
+    @POST("DeleteConversation")
+    Call<ResponseBody> deleteConversation (@Field("email") String email,
+                                       @Field("password") String password,
+                                       @Field("userID") int userId);
 }
