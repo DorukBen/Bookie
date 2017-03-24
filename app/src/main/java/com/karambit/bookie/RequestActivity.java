@@ -387,6 +387,14 @@ public class RequestActivity extends AppCompatActivity {
                                     Log.e(TAG, "Invalid request. (Book Page Error)");
                                 }else if (errorCode == ErrorCodes.INVALID_EMAIL){
                                     Log.e(TAG, "Invalid email. (Book Page Error)");
+                                }else if (errorCode == ErrorCodes.USER_NOT_VALID){
+                                    Log.e(TAG, "User not valid. (Book Page Error)");
+                                }else if (errorCode == ErrorCodes.USER_BLOCKED){
+                                    Log.e(TAG, "User blocked. (Book Page Error)");
+                                }else if (errorCode == ErrorCodes.LOCATION_NOT_FOUND){
+                                    Log.e(TAG, "Location not found. (Book Page Error)");
+                                }else if (errorCode == ErrorCodes.BOOK_COUNT_INSUFFICIENT){
+                                    Log.e(TAG, "Book count insufficient. (Book Page Error)");
                                 }else if (errorCode == ErrorCodes.UNKNOWN){
                                     Log.e(TAG, "onResponse: errorCode = " + errorCode);
                                 }

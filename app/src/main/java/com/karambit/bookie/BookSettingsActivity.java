@@ -420,6 +420,8 @@ public class BookSettingsActivity extends AppCompatActivity {
                                     Log.e(TAG, "Invalid email. (Book Settings Page Error)");
                                 }else if (errorCode == ErrorCodes.INVALID_REQUEST){
                                     Log.e(TAG, "Invalid request. (Book Settings Page Error)");
+                                }else if (errorCode == ErrorCodes.USER_NOT_VALID){
+                                    Log.e(TAG, "User not valid. (Book Settings Page Error)");
                                 }else if (errorCode == ErrorCodes.UNKNOWN){
                                     Log.e(TAG, "onResponse: errorCode = " + errorCode);
                                 }
