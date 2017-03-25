@@ -265,6 +265,14 @@ public class ProfileFragment extends Fragment {
                         mProfileTimelineAdapter.setUserDetails(mUserDetails);
                         Log.i(TAG, notification.getBook().getName() + " owner changed (removed from BooksOnHand)");
                     }
+                } else if (intent.getAction().equalsIgnoreCase(BookieIntentFilters.INTENT_FILTER_BOOK_LOST)){
+                    if (intent.getParcelableExtra(BookieIntentFilters.EXTRA_NOTIFICATION) != null){
+                        Notification notification = intent.getParcelableExtra(BookieIntentFilters.EXTRA_NOTIFICATION);
+                        mUserDetails.getOnRoadBooks().remove(notification.getBook());
+                        mUserDetails.setPoint(mUserDetails.getPoint() - 20);
+                        mProfileTimelineAdapter.setUserDetails(mUserDetails);
+                        Log.i(TAG, notification.getBook().getName() + " book lost (removed from OnRoadBooks)");
+                    }
                 } else if (intent.getAction().equalsIgnoreCase(BookieIntentFilters.INTENT_FILTER_BOOK_STATE_CHANGED)){
                     if (mUserDetails != null){
                         Book book = intent.getParcelableExtra(BookieIntentFilters.EXTRA_BOOK);
@@ -372,14 +380,19 @@ public class ProfileFragment extends Fragment {
                             Log.e(TAG, "Null book in intent extra");
                         }
                     }
+                }else if (intent.getAction().equalsIgnoreCase(BookieIntentFilters.INTENT_FILTER_USER_VERIFIED)){
+                    //TODO When user verified
                 }
             }
         };
+
         LocalBroadcastManager.getInstance(getContext()).registerReceiver(mMessageReceiver, new IntentFilter(BookieIntentFilters.INTENT_FILTER_SENT_REQUEST_RECEIVED));
         LocalBroadcastManager.getInstance(getContext()).registerReceiver(mMessageReceiver, new IntentFilter(BookieIntentFilters.INTENT_FILTER_REJECTED_REQUEST_RECEIVED));
         LocalBroadcastManager.getInstance(getContext()).registerReceiver(mMessageReceiver, new IntentFilter(BookieIntentFilters.INTENT_FILTER_ACCEPTED_REQUEST_RECEIVED));
         LocalBroadcastManager.getInstance(getContext()).registerReceiver(mMessageReceiver, new IntentFilter(BookieIntentFilters.INTENT_FILTER_BOOK_OWNER_CHANGED_RECEIVED));
         LocalBroadcastManager.getInstance(getContext()).registerReceiver(mMessageReceiver, new IntentFilter(BookieIntentFilters.INTENT_FILTER_BOOK_STATE_CHANGED));
+        LocalBroadcastManager.getInstance(getContext()).registerReceiver(mMessageReceiver, new IntentFilter(BookieIntentFilters.INTENT_FILTER_USER_VERIFIED));
+        LocalBroadcastManager.getInstance(getContext()).registerReceiver(mMessageReceiver, new IntentFilter(BookieIntentFilters.INTENT_FILTER_BOOK_LOST));
 
         return rootView;
     }

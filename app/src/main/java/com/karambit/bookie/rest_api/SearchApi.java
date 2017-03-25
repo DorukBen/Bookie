@@ -18,5 +18,5 @@ public interface SearchApi {
             @Field("password") String password,
             @Field("searchString") String searchString,
             @Field("searchGenre") int searchGenre,
-            @Field("searchPressed") int searchPressed);
+            @Field("searchPressed") boolean searchPressed);
 }

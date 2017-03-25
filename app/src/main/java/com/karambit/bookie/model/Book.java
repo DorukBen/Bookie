@@ -599,8 +599,6 @@ public class Book implements Parcelable {
 
     /**
      * This class contains all user generator methods
-     * <p/>
-     * TODO The "ImageLinkSource.java" must be added to project
      */
     public static class GENERATOR {
 

@@ -100,7 +100,6 @@ public class ProfileActivity extends AppCompatActivity {
         if (requestCode == REQUEST_CODE_OTHER_USER_SETTINGS) {
             if (resultCode == OtherUserProfileSettingsActivity.RESULT_USER_BLOCKED) {
 
-                // TODO Block user
                 Log.i(TAG, mUser.getName() + " blocked");
                 finish();
             }

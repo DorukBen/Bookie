@@ -105,4 +105,9 @@ public interface UserApi {
     Call<ResponseBody> deleteConversation (@Field("email") String email,
                                        @Field("password") String password,
                                        @Field("userID") int userId);
+
+    @FormUrlEncoded
+    @POST("ResendEmailVerification")
+    Call<ResponseBody> resendEmailVerificationCode (@Field("email") String email,
+                                           @Field("password") String password);
 }

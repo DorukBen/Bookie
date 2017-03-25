@@ -18,5 +18,7 @@ public class BookieIntentFilters {
     public static final String INTENT_FILTER_REJECTED_REQUEST_RECEIVED = "com.karambit.bookie.REJECTED_REQUEST_RECEIVED";
     public static final String INTENT_FILTER_ACCEPTED_REQUEST_RECEIVED = "com.karambit.bookie.ACCEPTED_REQUEST_RECEIVED";
     public static final String INTENT_FILTER_BOOK_OWNER_CHANGED_RECEIVED = "com.karambit.bookie.BOOK_OWNER_CHANGED_DATA_RECEIVED";
+    public static final String INTENT_FILTER_BOOK_LOST = "com.karambit.bookie.BOOK_LOST";
     public static final String INTENT_FILTER_BOOK_STATE_CHANGED = "com.karambit.bookie.BOOK_STATE_CHANGED";
+    public static final String INTENT_FILTER_USER_VERIFIED = "com.karambit.bookie.USER_VERIFIED";
 }

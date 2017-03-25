@@ -12,4 +12,6 @@ public class FcmDataTypes {
     public static final int FCM_DATA_TYPE_REQUEST_REJECTED = 4;
     public static final int FCM_DATA_TYPE_REQUEST_ACCEPTED = 5;
     public static final int FCM_DATA_TYPE_TRANSACTION_COME_TO_HAND = 6;
+    public static final int FCM_DATA_TYPE_TRANSACTION_BOOK_LOST = 7;
+    public static final int FCM_DATA_TYPE_USER_VERIFIED = 8;
 }

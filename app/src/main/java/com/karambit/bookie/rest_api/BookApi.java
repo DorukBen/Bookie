@@ -70,4 +70,10 @@ public interface BookApi {
                                          @Field("author") String author,
                                          @Field("genreCode") int genreCode);
 
+    @FormUrlEncoded
+    @POST("SetBookStateLost")
+    Call<ResponseBody> setBookStateLost (@Field("email") String email,
+                                          @Field("password") String password,
+                                          @Field("bookID") int bookId);
+
 }

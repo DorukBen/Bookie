@@ -1,7 +1,6 @@
 <resources>
     <string name="app_name">Mantreads</string>
 
-    <!-- TODO: Remove or change this placeholder text -->
     <string name="hello_blank_fragment">Hello blank fragment</string>
     <string name="x_books_read">"%s books read"</string>
     <string name="x_books_on_hand">"%s books on hand"</string>
@@ -269,4 +268,5 @@
     <string name="verification">Verification</string>
     <string name="verification_sent_info">Your verification code has sent to your email. Check your email and click the verification link.</string>
     <string name="unverified_email_info">Your email has not been verified yet! You can\'t request or add any books. Check your email and click verification link. If the code has not been sent to your email, you can request new verification code.</string>
+    <string name="book_lost">You lost the book!</string>
 </resources>

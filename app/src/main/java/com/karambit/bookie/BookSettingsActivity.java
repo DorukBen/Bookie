@@ -366,10 +366,81 @@ public class BookSettingsActivity extends AppCompatActivity {
 
     private void lostProcesses() {
 
-        // TODO Server
+        sendBookTransactionLost();
+    }
 
-        setResult(RESULT_LOST);
-        finish();
+    private void sendBookTransactionLost() {
+        final ComfortableProgressDialog comfortableProgressDialog = new ComfortableProgressDialog(BookSettingsActivity.this);
+        comfortableProgressDialog.setMessage(getString(R.string.updating_process));
+        comfortableProgressDialog.show();
+
+        final BookApi bookApi = BookieClient.getClient().create(BookApi.class);
+
+        User.Details currentUserDetails = SessionManager.getCurrentUserDetails(this);
+
+        String email = currentUserDetails.getEmail();
+        String password = currentUserDetails.getPassword();
+        Call<ResponseBody> bookStateLost = bookApi.setBookStateLost(email, password, mBook.getID());
+
+        bookStateLost.enqueue(new Callback<ResponseBody>() {
+            @Override
+            public void onResponse(Call<ResponseBody> call, Response<ResponseBody> response) {
+
+                try {
+                    if (response != null){
+                        if (response.body() != null){
+                            String json = response.body().string();
+
+                            JSONObject responseObject = new JSONObject(json);
+                            boolean error = responseObject.getBoolean("error");
+
+                            if (!error) {
+                                comfortableProgressDialog.dismiss();
+                                Toast.makeText(BookSettingsActivity.this, getString(R.string.book_lost), Toast.LENGTH_SHORT).show();
+                                setResult(RESULT_LOST);
+                                finish();
+                            } else {
+                                int errorCode = responseObject.getInt("errorCode");
+
+                                if (errorCode == ErrorCodes.EMPTY_POST){
+                                    Log.e(TAG, "Post is empty. (Book Settings Page Error)");
+                                }else if (errorCode == ErrorCodes.MISSING_POST_ELEMENT){
+                                    Log.e(TAG, "Post element missing. (Book Settings Page Error)");
+                                }else if (errorCode == ErrorCodes.INVALID_REQUEST){
+                                    Log.e(TAG, "Invalid request. (Book Settings Page Error)");
+                                }else if (errorCode == ErrorCodes.INVALID_EMAIL){
+                                    Log.e(TAG, "Invalid email. (Book Settings Page Error)");
+                                }else if (errorCode == ErrorCodes.UNKNOWN){
+                                    Log.e(TAG, "onResponse: errorCode = " + errorCode);
+                                }
+
+                                comfortableProgressDialog.dismiss();
+                                Toast.makeText(BookSettingsActivity.this, getString(R.string.unknown_error), Toast.LENGTH_SHORT).show();
+                            }
+                        }else{
+                            Log.e(TAG, "Response body is null. (Book Settings Page Error)");
+                            comfortableProgressDialog.dismiss();
+                            Toast.makeText(BookSettingsActivity.this, getString(R.string.unknown_error), Toast.LENGTH_SHORT).show();
+                        }
+                    }else {
+                        Log.e(TAG, "Response object is null. (Book Settings Page Error)");
+                        comfortableProgressDialog.dismiss();
+                        Toast.makeText(BookSettingsActivity.this, getString(R.string.unknown_error), Toast.LENGTH_SHORT).show();
+                    }
+                } catch (IOException | JSONException e) {
+                    e.printStackTrace();
+                    comfortableProgressDialog.dismiss();
+                    Toast.makeText(BookSettingsActivity.this, getString(R.string.unknown_error), Toast.LENGTH_SHORT).show();
+                }
+            }
+
+            @Override
+            public void onFailure(Call<ResponseBody> call, Throwable t) {
+                Log.e(TAG, "Book Settings Page onFailure: " + t.getMessage());
+                comfortableProgressDialog.dismiss();
+                Toast.makeText(BookSettingsActivity.this, getString(R.string.unknown_error), Toast.LENGTH_SHORT).show();
+            }
+        });
     }
 
     private void sendReport() {
@@ -420,7 +491,7 @@ public class BookSettingsActivity extends AppCompatActivity {
                                     Log.e(TAG, "Invalid email. (Book Settings Page Error)");
                                 }else if (errorCode == ErrorCodes.INVALID_REQUEST){
                                     Log.e(TAG, "Invalid request. (Book Settings Page Error)");
-                                }else if (errorCode == ErrorCodes.USER_NOT_VALID){
+                                }else if (errorCode == ErrorCodes.USER_NOT_VERIFIED){
                                     Log.e(TAG, "User not valid. (Book Settings Page Error)");
                                 }else if (errorCode == ErrorCodes.UNKNOWN){
                                     Log.e(TAG, "onResponse: errorCode = " + errorCode);

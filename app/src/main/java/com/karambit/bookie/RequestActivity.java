@@ -427,7 +427,7 @@ public class RequestActivity extends AppCompatActivity {
                                     Log.e(TAG, "Invalid request. (Book Page Error)");
                                 }else if (errorCode == ErrorCodes.INVALID_EMAIL){
                                     Log.e(TAG, "Invalid email. (Book Page Error)");
-                                }else if (errorCode == ErrorCodes.USER_NOT_VALID){
+                                }else if (errorCode == ErrorCodes.USER_NOT_VERIFIED){
                                     Log.e(TAG, "User not valid. (Book Page Error)");
                                 }else if (errorCode == ErrorCodes.USER_BLOCKED){
                                     Log.e(TAG, "User blocked. (Book Page Error)");

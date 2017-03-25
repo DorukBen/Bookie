@@ -383,10 +383,6 @@ public class BookTimelineAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
 
                     String[] genres = mContext.getResources().getStringArray(R.array.genre_types);
 
-                    if (mBookDetails.getBook().getGenreCode() >= genres.length) { // TODO Remove this section
-                        mBookDetails.getBook().setGenreCode(new Random().nextInt(genres.length));
-                    }
-
                     headerViewHolder.mGenre.setText(genres[mBookDetails.getBook().getGenreCode()]);
                 }else if(mBook != null){
                     HeaderViewHolder headerViewHolder = (HeaderViewHolder) holder;
@@ -416,10 +412,6 @@ public class BookTimelineAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
 
 
                     String[] genres = mContext.getResources().getStringArray(R.array.genre_types);
-
-                    if (mBook.getGenreCode() >= genres.length) { // TODO Remove this section
-                        mBook.setGenreCode(new Random().nextInt(genres.length));
-                    }
 
                     headerViewHolder.mGenre.setText(genres[mBook.getGenreCode()]);
                 }

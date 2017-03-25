@@ -63,7 +63,7 @@ public class SearchFragment extends Fragment {
     private ArrayList<User> mUsers = new ArrayList<>();
 
     private int mFetchGenreCode = -1;
-    private int mFetchSearchButtonPressed = 0; // TODO Change type to boolean
+    private boolean mFetchSearchButtonPressed = false;
     private SearchAdapter mSearchAdapter;
     private DBManager mDbManager;
 
@@ -140,7 +140,7 @@ public class SearchFragment extends Fragment {
         rootView.findViewById(R.id.searchButton).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-            mFetchSearchButtonPressed = 1;
+            mFetchSearchButtonPressed = true;
             getSearchResults(searchEditText.getText().toString());
             }
         });
@@ -219,7 +219,7 @@ public class SearchFragment extends Fragment {
                                 }
 
                                 mFetchGenreCode = -1;
-                                mFetchSearchButtonPressed = 0;
+                                mFetchSearchButtonPressed = false;
                             } else {
 
                                 int errorCode = responseObject.getInt("errorCode");

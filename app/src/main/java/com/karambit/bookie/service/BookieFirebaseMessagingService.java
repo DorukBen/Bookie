@@ -57,6 +57,7 @@ import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
 
+import static com.karambit.bookie.model.Notification.Type.BOOK_LOST;
 import static com.karambit.bookie.model.Notification.Type.BOOK_OWNER_CHANGED;
 import static com.karambit.bookie.model.Notification.Type.REQUESTED;
 
@@ -88,7 +89,6 @@ public class BookieFirebaseMessagingService extends com.google.firebase.messagin
         // messages. For more see: https://firebase.google.com/docs/cloud-messaging/concept-options
         // [END_EXCLUDE]
 
-        // TODO(developer): Handle FCM messages here.
         // Not getting messages here? See why this may be: https://goo.gl/39bRNJ
         Log.d(TAG, "From: " + remoteMessage.getFrom());
 
@@ -96,7 +96,7 @@ public class BookieFirebaseMessagingService extends com.google.firebase.messagin
         if (remoteMessage.getData().size() > 0) {
             Log.d(TAG, "Message data payload: " + remoteMessage.getData());
             if (remoteMessage.getData().containsKey("fcmDataType")) {
-                if (Integer.parseInt(remoteMessage.getData().get("fcmDataType")) == FcmDataTypes.FCM_DATA_TYPE_SENT_MESSAGE) {
+                if (Integer.parseInt(remoteMessage.getData().get("fcmDataType")) == FcmDataTypes.FCM_DATA_TYPE_SENT_MESSAGE && SessionManager.isLoggedIn(getApplicationContext())) {
                     if (remoteMessage.getData().containsKey("messageID") && remoteMessage.getData().containsKey("message") && remoteMessage.getData().containsKey("sender")) {
                         try {
                             JSONObject jsonObject = new JSONObject(remoteMessage.getData().get("sender"));
@@ -127,7 +127,7 @@ public class BookieFirebaseMessagingService extends com.google.firebase.messagin
                             e.printStackTrace();
                         }
                     }
-                } else if (Integer.parseInt(remoteMessage.getData().get("fcmDataType")) == FcmDataTypes.FCM_DATA_TYPE_DELIVERED_MESSAGE) {
+                } else if (Integer.parseInt(remoteMessage.getData().get("fcmDataType")) == FcmDataTypes.FCM_DATA_TYPE_DELIVERED_MESSAGE && SessionManager.isLoggedIn(getApplicationContext())) {
                     if (remoteMessage.getData().containsKey("messageID")) {
 
                         DBManager dbManager = new DBManager(getApplicationContext());
@@ -141,7 +141,7 @@ public class BookieFirebaseMessagingService extends com.google.firebase.messagin
                         intent.putExtras(bundle);
                         LocalBroadcastManager.getInstance(this).sendBroadcast(intent);
                     }
-                } else if (Integer.parseInt(remoteMessage.getData().get("fcmDataType")) == FcmDataTypes.FCM_DATA_TYPE_SEEN_MESSAGE) {
+                } else if (Integer.parseInt(remoteMessage.getData().get("fcmDataType")) == FcmDataTypes.FCM_DATA_TYPE_SEEN_MESSAGE && SessionManager.isLoggedIn(getApplicationContext())) {
 
                     DBManager dbManager = new DBManager(getApplicationContext());
                     dbManager.open();
@@ -152,7 +152,7 @@ public class BookieFirebaseMessagingService extends com.google.firebase.messagin
                     bundle.putInt(BookieIntentFilters.EXTRA_MESSAGE_ID, Integer.parseInt(remoteMessage.getData().get("messageID")));
                     intent.putExtras(bundle);
                     LocalBroadcastManager.getInstance(this).sendBroadcast(intent);
-                } else if (Integer.parseInt(remoteMessage.getData().get("fcmDataType")) == FcmDataTypes.FCM_DATA_TYPE_REQUEST_SENT) {
+                } else if (Integer.parseInt(remoteMessage.getData().get("fcmDataType")) == FcmDataTypes.FCM_DATA_TYPE_REQUEST_SENT && SessionManager.isLoggedIn(getApplicationContext())) {
                     if (remoteMessage.getData().containsKey("book") && remoteMessage.getData().containsKey("sender")) {
                         try {
                             JSONObject userJsonObject = new JSONObject(remoteMessage.getData().get("sender"));
@@ -186,7 +186,7 @@ public class BookieFirebaseMessagingService extends com.google.firebase.messagin
                             e.printStackTrace();
                         }
                     }
-                } else if (Integer.parseInt(remoteMessage.getData().get("fcmDataType")) == FcmDataTypes.FCM_DATA_TYPE_REQUEST_REJECTED) {
+                } else if (Integer.parseInt(remoteMessage.getData().get("fcmDataType")) == FcmDataTypes.FCM_DATA_TYPE_REQUEST_REJECTED && SessionManager.isLoggedIn(getApplicationContext())) {
                     if (remoteMessage.getData().containsKey("book") && remoteMessage.getData().containsKey("sender")) {
                         try {
                             JSONObject userJsonObject = new JSONObject(remoteMessage.getData().get("sender"));
@@ -217,7 +217,7 @@ public class BookieFirebaseMessagingService extends com.google.firebase.messagin
                             e.printStackTrace();
                         }
                     }
-                } else if (Integer.parseInt(remoteMessage.getData().get("fcmDataType")) == FcmDataTypes.FCM_DATA_TYPE_REQUEST_ACCEPTED) {
+                } else if (Integer.parseInt(remoteMessage.getData().get("fcmDataType")) == FcmDataTypes.FCM_DATA_TYPE_REQUEST_ACCEPTED && SessionManager.isLoggedIn(getApplicationContext())) {
                     if (remoteMessage.getData().containsKey("book") && remoteMessage.getData().containsKey("sender")) {
                         try {
                             JSONObject userJsonObject = new JSONObject(remoteMessage.getData().get("sender"));
@@ -248,7 +248,7 @@ public class BookieFirebaseMessagingService extends com.google.firebase.messagin
                             e.printStackTrace();
                         }
                     }
-                } else if (Integer.parseInt(remoteMessage.getData().get("fcmDataType")) == FcmDataTypes.FCM_DATA_TYPE_TRANSACTION_COME_TO_HAND) {
+                } else if (Integer.parseInt(remoteMessage.getData().get("fcmDataType")) == FcmDataTypes.FCM_DATA_TYPE_TRANSACTION_COME_TO_HAND && SessionManager.isLoggedIn(getApplicationContext())) {
                     if (remoteMessage.getData().containsKey("book") && remoteMessage.getData().containsKey("sender")) {
                         try {
                             JSONObject userJsonObject = new JSONObject(remoteMessage.getData().get("sender"));
@@ -279,6 +279,40 @@ public class BookieFirebaseMessagingService extends com.google.firebase.messagin
                             e.printStackTrace();
                         }
                     }
+                } else if (Integer.parseInt(remoteMessage.getData().get("fcmDataType")) == FcmDataTypes.FCM_DATA_TYPE_TRANSACTION_BOOK_LOST && SessionManager.isLoggedIn(getApplicationContext())) {
+                    if (remoteMessage.getData().containsKey("book") && remoteMessage.getData().containsKey("sender")) {
+                        try {
+                            JSONObject userJsonObject = new JSONObject(remoteMessage.getData().get("sender"));
+                            User sender = User.jsonObjectToUser(userJsonObject);
+
+                            JSONObject bookJsonObject = new JSONObject(remoteMessage.getData().get("book"));
+                            Book book = Book.jsonObjectToBook(bookJsonObject);
+
+
+                            final Notification notification = new Notification(BOOK_LOST,
+                                    Calendar.getInstance(),
+                                    book,
+                                    sender,
+                                    false);
+
+                            sendNotification(notification);
+
+                            DBManager dbManager = new DBManager(getApplicationContext());
+                            dbManager.open();
+                            dbManager.getNotificationDataSource().saveNotificationToDatabase(notification);
+
+                            Intent intent = new Intent(BookieIntentFilters.INTENT_FILTER_BOOK_LOST);
+                            Bundle bundle = new Bundle();
+                            bundle.putParcelable(BookieIntentFilters.EXTRA_NOTIFICATION, notification);
+                            intent.putExtras(bundle);
+                            LocalBroadcastManager.getInstance(this).sendBroadcast(intent);
+                        } catch (JSONException e) {
+                            e.printStackTrace();
+                        }
+                    }
+                } else if (Integer.parseInt(remoteMessage.getData().get("fcmDataType")) == FcmDataTypes.FCM_DATA_TYPE_USER_VERIFIED && SessionManager.isLoggedIn(getApplicationContext())) {
+                    Intent intent = new Intent(BookieIntentFilters.INTENT_FILTER_USER_VERIFIED);
+                    LocalBroadcastManager.getInstance(this).sendBroadcast(intent);
                 }
             }
 

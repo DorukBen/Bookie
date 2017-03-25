@@ -20,8 +20,9 @@ public class ErrorCodes {
     public static final int INVALID_REQUEST = 11;
     public static final int VERIFICATION_HASH_NOT_FOUND = 12;
     public static final int BOOK_COUNT_INSUFFICIENT = 13;
-    public static final int USER_NOT_VALID = 14;
+    public static final int USER_NOT_VERIFIED = 14;
     public static final int USER_BLOCKED = 15;
+    public static final int USER_ALREADY_VERIFIED = 16;
     public static final int UNKNOWN = -1;
 
 }

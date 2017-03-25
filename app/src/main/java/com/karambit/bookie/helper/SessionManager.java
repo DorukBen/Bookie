@@ -41,6 +41,8 @@ public class SessionManager {
         dbManager.getMessageDataSource().deleteAllMessages();
         dbManager.getUserDataSource().deleteUser();
         dbManager.getNotificationDataSource().deleteAllNotifications();
+        dbManager.getSearchUserDataSource().deleteAllUsers();
+        dbManager.getSearchBookDataSource().deleteAllBooks();
         changeLoginStatus(context, false);
         mUserDetails = null;
     }

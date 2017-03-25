@@ -10,7 +10,6 @@ import android.support.v7.app.AppCompatActivity;
 import android.text.Editable;
 import android.text.Spannable;
 import android.text.SpannableString;
-import android.text.TextUtils;
 import android.text.TextWatcher;
 import android.text.style.AbsoluteSizeSpan;
 import android.util.Log;
@@ -333,7 +332,7 @@ public class OtherUserProfileSettingsActivity extends AppCompatActivity {
                                     Log.e(TAG, "Invalid email. (Other User Settings Page Error)");
                                 }else if (errorCode == ErrorCodes.INVALID_REQUEST){
                                     Log.e(TAG, "Invalid request. (Other User Settings Page Error)");
-                                }else if (errorCode == ErrorCodes.USER_NOT_VALID){
+                                }else if (errorCode == ErrorCodes.USER_NOT_VERIFIED){
                                     Log.e(TAG, "User not valid. (Other User Settings Page Error)");
                                 }else if (errorCode == ErrorCodes.UNKNOWN){
                                     Log.e(TAG, "onResponse: errorCode = " + errorCode);

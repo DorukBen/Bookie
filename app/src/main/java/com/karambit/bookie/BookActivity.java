@@ -379,6 +379,32 @@ public class BookActivity extends AppCompatActivity {
                             Log.i(TAG, "Owner changed");
                         }
                     }
+                }else if (intent.getAction().equalsIgnoreCase(BookieIntentFilters.INTENT_FILTER_BOOK_LOST)){
+                    if (intent.getParcelableExtra(BookieIntentFilters.EXTRA_NOTIFICATION) != null){
+                        Notification notification = intent.getParcelableExtra(BookieIntentFilters.EXTRA_NOTIFICATION);
+                        if (mBookDetails != null){
+                            if (notification.getBook().equals(mBookDetails.getBook())){
+                                Book.Transaction transaction = mBookDetails.getBook().new Transaction(
+                                        notification.getOppositeUser(),
+                                        // (To user) is current user because current user is not the owner of the book yet
+                                        // and the broadcast arrives for the processes that only
+                                        // between current user and the opposite user
+                                        Book.TransactionType.LOST,
+                                        SessionManager.getCurrentUser(context),
+                                        notification.getCreatedAt());
+                                mBookDetails.getBookProcesses().add(transaction);
+
+                                Log.i(TAG, "Transaction object \"LOST\" added to adapter: " + transaction);
+
+                                Log.i(TAG, "Book state changed to " + Book.State.LOST + " from " + mBook.getState());
+
+                                mBookDetails.getBook().setState(Book.State.LOST);
+                                mBook.setState(Book.State.LOST);
+
+                                mBookTimelineAdapter.notifyDataSetChanged();
+                            }
+                        }
+                    }
                 }
             }
         };
@@ -387,6 +413,7 @@ public class BookActivity extends AppCompatActivity {
         LocalBroadcastManager.getInstance(this).registerReceiver(mMessageReceiver, new IntentFilter(BookieIntentFilters.INTENT_FILTER_REJECTED_REQUEST_RECEIVED));
         LocalBroadcastManager.getInstance(this).registerReceiver(mMessageReceiver, new IntentFilter(BookieIntentFilters.INTENT_FILTER_ACCEPTED_REQUEST_RECEIVED));
         LocalBroadcastManager.getInstance(this).registerReceiver(mMessageReceiver, new IntentFilter(BookieIntentFilters.INTENT_FILTER_BOOK_OWNER_CHANGED_RECEIVED));
+        LocalBroadcastManager.getInstance(this).registerReceiver(mMessageReceiver, new IntentFilter(BookieIntentFilters.INTENT_FILTER_BOOK_LOST));
     }
 
     @Override
@@ -449,6 +476,8 @@ public class BookActivity extends AppCompatActivity {
             }
         } else if (requestCode == REQUEST_CODE_EDIT_BOOK) {
             if (resultCode == BookSettingsActivity.RESULT_BOOK_UPDATED) {
+                fetchBookPageArguments();
+            } else if (resultCode == BookSettingsActivity.RESULT_LOST){
                 fetchBookPageArguments();
             }
         }
@@ -887,7 +916,7 @@ public class BookActivity extends AppCompatActivity {
                                     Log.e(TAG, "Invalid request. (Book Page Error)");
                                 }else if (errorCode == ErrorCodes.INVALID_EMAIL){
                                     Log.e(TAG, "Invalid email. (Book Page Error)");
-                                }else if (errorCode == ErrorCodes.USER_NOT_VALID){
+                                }else if (errorCode == ErrorCodes.USER_NOT_VERIFIED){
                                     Log.e(TAG, "User not valid. (Book Page Error)");
                                 }else if (errorCode == ErrorCodes.USER_BLOCKED){
                                     Log.e(TAG, "User blocked. (Book Page Error)");
