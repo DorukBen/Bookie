@@ -17,11 +17,13 @@ import android.widget.EditText;
 
 import com.karambit.bookie.BookActivity;
 import com.karambit.bookie.BookieApplication;
+import com.karambit.bookie.InfoActivity;
+import com.karambit.bookie.LocationActivity;
 import com.karambit.bookie.ProfileActivity;
 import com.karambit.bookie.R;
 import com.karambit.bookie.adapter.SearchAdapter;
-import com.karambit.bookie.database.DBHelper;
 import com.karambit.bookie.database.DBManager;
+import com.karambit.bookie.helper.InformationDialog;
 import com.karambit.bookie.helper.SessionManager;
 import com.karambit.bookie.helper.string_similarity.JaroWinkler;
 import com.karambit.bookie.model.Book;
@@ -36,9 +38,11 @@ import org.json.JSONObject;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.concurrent.TimeUnit;
 
 import okhttp3.ResponseBody;
 import retrofit2.Call;
@@ -56,6 +60,8 @@ public class SearchFragment extends Fragment {
     public static final int VIEW_PAGER_INDEX = 1;
     public static final String TAB_SPEC = "tab_search";
     public static final String TAB_INDICATOR = "tab1";
+
+    public static final long INTERVAL_LOCATION_REMINDER_MILLIS = TimeUnit.DAYS.toMillis(2);
 
     private String[] mAllGenres ;
     private ArrayList<Integer> mGenreCodes = new ArrayList<>();
@@ -161,6 +167,51 @@ public class SearchFragment extends Fragment {
             @Override
             public void afterTextChanged(Editable s) {
 
+            }
+        });
+
+        searchEditText.setOnFocusChangeListener(new View.OnFocusChangeListener() {
+            @Override
+            public void onFocusChange(View v, boolean hasFocus) {
+                if(hasFocus){
+                    if (SessionManager.getCurrentUser(getContext()).getLocation() == null) {
+                        Calendar lastRemindedAt = SessionManager.getLastLocationReminderTime(getContext());
+                        if (Calendar.getInstance().getTimeInMillis() - lastRemindedAt.getTimeInMillis() > INTERVAL_LOCATION_REMINDER_MILLIS) {
+
+                            // Unverified email information dialog
+
+                            final InformationDialog informationDialog = new InformationDialog(getContext());
+                            informationDialog.setCancelable(false);
+                            informationDialog.setPrimaryMessage(R.string.null_location_info_short);
+                            informationDialog.setSecondaryMessage(R.string.null_location_search_info);
+                            informationDialog.setDefaultClickListener(new InformationDialog.DefaultClickListener() {
+                                @Override
+                                public void onOkClick() {
+                                    informationDialog.dismiss();
+                                }
+
+                                @Override
+                                public void onMoreInfoClick() {
+                                    Intent intent = new Intent(getActivity(), InfoActivity.class);
+                                    // TODO Put related header extras array
+                                    startActivity(intent);
+                                }
+                            });
+                            informationDialog.setExtraButtonClickListener(R.string.set_location, new InformationDialog.ExtraButtonClickListener() {
+                                @Override
+                                public void onExtraButtonClick() {
+                                    // No need for result because searching can be done without location
+                                    startActivity(new Intent(getActivity(), LocationActivity.class));
+                                    informationDialog.dismiss();
+                                }
+                            });
+
+                            informationDialog.show();
+
+                            SessionManager.notifyLocationReminded(getContext());
+                        }
+                    }
+                }
             }
         });
 

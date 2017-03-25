@@ -15,7 +15,9 @@ import android.view.MenuItem;
 
 import com.karambit.bookie.database.DBManager;
 import com.karambit.bookie.fragment.ProfileFragment;
-import com.karambit.bookie.database.DBHelper;
+import com.karambit.bookie.helper.InformationDialog;
+import com.karambit.bookie.helper.IntentHelper;
+import com.karambit.bookie.helper.SessionManager;
 import com.karambit.bookie.helper.TypefaceSpan;
 import com.karambit.bookie.model.User;
 
@@ -82,12 +84,45 @@ public class ProfileActivity extends AppCompatActivity {
                 startActivityForResult(data, REQUEST_CODE_OTHER_USER_SETTINGS);
                 return true;
 
-            case R.id.action_message:
-                Bundle bundle = getIntent().getExtras();
-                Intent intent = new Intent(this,ConversationActivity.class);
-                intent.putExtra(ConversationActivity.EXTRA_USER, bundle.getParcelable(EXTRA_USER));
-                startActivityForResult(intent, REQUEST_CODE_MESSAGE_PROCESS);
+            case R.id.action_message: {
+
+                // Verification control for messaging
+
+                if (SessionManager.getCurrentUserDetails(this).isVerified()) {
+                    Bundle bundle = getIntent().getExtras();
+                    Intent intent = new Intent(this, ConversationActivity.class);
+                    intent.putExtra(ConversationActivity.EXTRA_USER, bundle.getParcelable(EXTRA_USER));
+                    startActivityForResult(intent, REQUEST_CODE_MESSAGE_PROCESS);
+
+                } else {
+                    final InformationDialog informationDialog = new InformationDialog(this);
+                    informationDialog.setCancelable(false);
+                    informationDialog.setPrimaryMessage(R.string.unverified_email_info_short);
+                    informationDialog.setSecondaryMessage(R.string.unverified_email_message_info);
+                    informationDialog.setDefaultClickListener(new InformationDialog.DefaultClickListener() {
+                        @Override
+                        public void onOkClick() {
+                            informationDialog.dismiss();
+                        }
+
+                        @Override
+                        public void onMoreInfoClick() {
+                            Intent intent = new Intent(ProfileActivity.this, InfoActivity.class);
+                            // TODO Put related header extras array
+                            startActivity(intent);
+                        }
+                    });
+                    informationDialog.setExtraButtonClickListener(R.string.check_email, new InformationDialog.ExtraButtonClickListener() {
+                        @Override
+                        public void onExtraButtonClick() {
+                            IntentHelper.openEmailClient(ProfileActivity.this);
+                        }
+                    });
+                    informationDialog.show();
+                }
+
                 return true;
+            }
 
             default:
                 return super.onOptionsItemSelected(item);

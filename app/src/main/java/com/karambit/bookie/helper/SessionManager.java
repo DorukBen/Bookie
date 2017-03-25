@@ -3,9 +3,10 @@ package com.karambit.bookie.helper;
 import android.content.Context;
 import android.content.SharedPreferences;
 
-import com.karambit.bookie.database.DBHelper;
 import com.karambit.bookie.database.DBManager;
 import com.karambit.bookie.model.User;
+
+import java.util.Calendar;
 
 /**
  * Created by orcan on 11/13/16.
@@ -15,11 +16,14 @@ public class SessionManager {
 
     private static User.Details mUserDetails;
 
+    private static String mLocationText;
+
     public static final String TAG = SessionManager.class.getSimpleName();
 
     private static final String NAME_SHARED_PREFERENCES = "bookie_general_sp";
 
     private static final String IS_LOGGED_IN = "is_logged_in";
+    private static final String LAST_LOCATION_REMINDER = "last_reminded";
 
     public static boolean isLoggedIn(Context context) {
         SharedPreferences sharedPreferences = context.getSharedPreferences(NAME_SHARED_PREFERENCES, Context.MODE_PRIVATE);
@@ -92,5 +96,29 @@ public class SessionManager {
         dbManager.open();
         boolean result =  dbManager.getLovedGenreDataSource().isGenresSelected(getCurrentUser(context));
         return result;
+    }
+
+    public static String getLocationText() {
+        return mLocationText;
+    }
+
+    public static void setLocationText(String locationText) {
+        mLocationText = locationText;
+    }
+
+    public static Calendar getLastLocationReminderTime(Context context) {
+        SharedPreferences sharedPreferences = context.getSharedPreferences(NAME_SHARED_PREFERENCES, Context.MODE_PRIVATE);
+        long timeInMillis = sharedPreferences.getLong(LAST_LOCATION_REMINDER, -1);
+        Calendar calendar = Calendar.getInstance();
+        calendar.setTimeInMillis(timeInMillis);
+        return calendar;
+    }
+
+    public static void notifyLocationReminded(Context context) {
+        SharedPreferences sharedPreferences = context.getSharedPreferences(NAME_SHARED_PREFERENCES, Context.MODE_PRIVATE);
+        SharedPreferences.Editor editor = sharedPreferences.edit();
+        editor.putLong(LAST_LOCATION_REMINDER, Calendar.getInstance().getTimeInMillis());
+        editor.apply();
+        editor.commit();
     }
 }

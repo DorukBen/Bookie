@@ -74,7 +74,6 @@ public class ProfileTimelineAdapter extends RecyclerView.Adapter<RecyclerView.Vi
 
     private boolean mProgressBarActive;
     private HorizontalPagerAdapter mHorizontalPagerAdapter;
-    private String mFetchedLocation;
 
     public ProfileTimelineAdapter(Context context, User.Details userDetails) {
         mContext = context;
@@ -702,7 +701,7 @@ public class ProfileTimelineAdapter extends RecyclerView.Adapter<RecyclerView.Vi
                 // Location
                 //
 
-                if (TextUtils.isEmpty(mFetchedLocation)) {
+                if (TextUtils.isEmpty(SessionManager.getLocationText())) {
                     if (mUserDetails.getUser().getLocation() != null && BookieApplication.hasNetwork()) {
                         new Thread(new Runnable() {
                             @Override
@@ -749,7 +748,7 @@ public class ProfileTimelineAdapter extends RecyclerView.Adapter<RecyclerView.Vi
                                                 headerViewHolder.mLocation.setVisibility(View.GONE);
                                             } else {
 
-                                                mFetchedLocation = locationString;
+                                                SessionManager.setLocationText(locationString);
 
                                                 headerViewHolder.mLocation.setText(locationString);
                                                 headerViewHolder.mLocation.setVisibility(View.VISIBLE);
@@ -765,7 +764,7 @@ public class ProfileTimelineAdapter extends RecyclerView.Adapter<RecyclerView.Vi
                         headerViewHolder.mLocation.setVisibility(View.GONE);
                     }
                 } else {
-                    headerViewHolder.mLocation.setText(mFetchedLocation);
+                    headerViewHolder.mLocation.setText(SessionManager.getLocationText());
                 }
 
                 headerViewHolder.mReadBooks.setText(String.valueOf(mUserDetails.getReadBooksCount()));

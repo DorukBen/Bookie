@@ -2,23 +2,28 @@ package com.karambit.bookie;
 
 import android.app.ProgressDialog;
 import android.content.Intent;
+import android.graphics.Typeface;
+import android.os.Build;
 import android.os.Bundle;
+import android.support.v4.content.ContextCompat;
+import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
-import android.text.Spannable;
-import android.text.SpannableString;
 import android.text.TextUtils;
 import android.util.Log;
 import android.util.Patterns;
+import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import com.karambit.bookie.database.DBHelper;
 import com.karambit.bookie.database.DBManager;
+import com.karambit.bookie.helper.ComfortableProgressDialog;
+import com.karambit.bookie.helper.InformationDialog;
+import com.karambit.bookie.helper.IntentHelper;
 import com.karambit.bookie.helper.SessionManager;
-import com.karambit.bookie.helper.TypefaceSpan;
 import com.karambit.bookie.introduction.IntroductionActivity;
 import com.karambit.bookie.introduction.IntroductionPrefManager;
 import com.karambit.bookie.model.User;
@@ -67,22 +72,94 @@ public class LoginRegisterActivity extends AppCompatActivity {
             getSupportActionBar().hide();
         }
 
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+            getWindow().setStatusBarColor(ContextCompat.getColor(this, R.color.colorAccentDark));
+        }
+
+        // BookieApplication font
+        final TextView appNameTextView = (TextView) findViewById(R.id.app_name);
+        appNameTextView.setTypeface(Typeface.createFromAsset(getAssets(), "fonts/" + MainActivity.FONT_APP_NAME_TITLE));
+
+        ((TextView) findViewById(R.id.motto)).setTypeface(Typeface.createFromAsset(getAssets(), "fonts/" + MainActivity.FONT_GENERAL_TITLE));
+
+        final Button signInUpButton = (Button) findViewById(R.id.startReadingButton);
+        final TextView forgotPassword = (TextView) findViewById(R.id.forgotPasswordTextView);
+
         mNameEditText = (EditText) findViewById(R.id.nameEditText);
         mSurnameEditText = (EditText) findViewById(R.id.surnameEditText);
         mEmailEditText = (EditText) findViewById(R.id.emailEditText);
         mPasswordEditText = (EditText) findViewById(R.id.passwordEditText);
         mRePasswordEditText = (EditText) findViewById(R.id.repasswordEditText);
 
-        Button startReadingButton = (Button) findViewById(R.id.startReadingButton);
+        mNameEditText.setOnFocusChangeListener(new View.OnFocusChangeListener() {
+            @Override
+            public void onFocusChange(View v, boolean hasFocus) {
 
+                ImageView nameImage = (ImageView) findViewById(R.id.nameImage);
 
-        // BookieApplication font
-        SpannableString s = new SpannableString(getResources().getString(R.string.app_name));
-        s.setSpan(new TypefaceSpan(this, MainActivity.FONT_APP_NAME_TITLE), 0, s.length(),
-                Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+                if (hasFocus) {
+                    nameImage.setAlpha(1f);
+                } else if (mNameEditText.length() == 0) {
+                    nameImage.setAlpha(0.8f);
+                }
+            }
+        });
 
-        ((TextView) findViewById(R.id.app_name)).setText(s);
+        mSurnameEditText.setOnFocusChangeListener(new View.OnFocusChangeListener() {
+            @Override
+            public void onFocusChange(View v, boolean hasFocus) {
 
+                ImageView surnameImage = (ImageView) findViewById(R.id.surnameImage);
+
+                if (hasFocus) {
+                    surnameImage.setAlpha(1f);
+                } else if (mSurnameEditText.length() == 0) {
+                    surnameImage.setAlpha(0.8f);
+                }
+            }
+        });
+
+        mEmailEditText.setOnFocusChangeListener(new View.OnFocusChangeListener() {
+            @Override
+            public void onFocusChange(View v, boolean hasFocus) {
+
+                ImageView emailImage = (ImageView) findViewById(R.id.emailImage);
+
+                if (hasFocus) {
+                    emailImage.setAlpha(1f);
+                } else if (mEmailEditText.length() == 0) {
+                    emailImage.setAlpha(0.8f);
+                }
+            }
+        });
+
+        mPasswordEditText.setOnFocusChangeListener(new View.OnFocusChangeListener() {
+            @Override
+            public void onFocusChange(View v, boolean hasFocus) {
+
+                ImageView lockImage = (ImageView) findViewById(R.id.lockImage);
+
+                if (hasFocus) {
+                    lockImage.setAlpha(1f);
+                } else if (mPasswordEditText.length() == 0) {
+                    lockImage.setAlpha(0.8f);
+                }
+            }
+        });
+
+        mRePasswordEditText.setOnFocusChangeListener(new View.OnFocusChangeListener() {
+            @Override
+            public void onFocusChange(View v, boolean hasFocus) {
+
+                ImageView reLockImage = (ImageView) findViewById(R.id.relockImage);
+
+                if (hasFocus) {
+                    reLockImage.setAlpha(1f);
+                } else if (mRePasswordEditText.length() == 0){
+                    reLockImage.setAlpha(0.8f);
+                }
+            }
+        });
 
         // Switch UI process
         findViewById(R.id.createNewAccountContainer).setOnClickListener(new View.OnClickListener() {
@@ -94,9 +171,11 @@ public class LoginRegisterActivity extends AppCompatActivity {
                     findViewById(R.id.surnameContainer).setVisibility(View.VISIBLE);
                     findViewById(R.id.repasswordContainer).setVisibility(View.VISIBLE);
 
-                    ((TextView) findViewById(R.id.createNewAccountTextView)).setText(getResources().getString(R.string.login));
+                    ((TextView) findViewById(R.id.createNewAccountTextView)).setText(getResources().getString(R.string.sign_in));
                     ((TextView) findViewById(R.id.noAccountYetTextView)).setText(getResources().getString(R.string.already_have_account));
-                    findViewById(R.id.forgotPasswordTextView).setVisibility(View.GONE);
+                    forgotPassword.setVisibility(View.GONE);
+
+                    signInUpButton.setText(R.string.sign_up);
 
                     mIsLogin = false;
 
@@ -107,7 +186,9 @@ public class LoginRegisterActivity extends AppCompatActivity {
 
                     ((TextView) findViewById(R.id.createNewAccountTextView)).setText(getResources().getString(R.string.create_new_account));
                     ((TextView) findViewById(R.id.noAccountYetTextView)).setText(getResources().getString(R.string.no_account_yet));
-                    findViewById(R.id.forgotPasswordTextView).setVisibility(View.VISIBLE);
+                    forgotPassword.setVisibility(View.VISIBLE);
+
+                    signInUpButton.setText(R.string.sign_in);
 
                     mIsLogin = true;
                 }
@@ -115,7 +196,7 @@ public class LoginRegisterActivity extends AppCompatActivity {
         });
 
 
-        startReadingButton.setOnClickListener(new View.OnClickListener() {
+        signInUpButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
 
@@ -132,6 +213,107 @@ public class LoginRegisterActivity extends AppCompatActivity {
                 }
             }
         });
+
+        forgotPassword.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                showEmailDialog();
+            }
+        });
+    }
+
+    private void showEmailDialog() {
+
+        final AlertDialog emailDialog = new AlertDialog.Builder(this).create();
+
+        View emailDialogView = LayoutInflater.from(this).inflate(R.layout.dialog_email, null);
+
+        final EditText emailEditText = (EditText) emailDialogView.findViewById(R.id.emailEditText);
+
+        Button ok = (Button) emailDialogView.findViewById(R.id.emailOkButton);
+        Button cancel = (Button) emailDialogView.findViewById(R.id.emailCancelButton);
+
+        ok.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+
+                String email = emailEditText.getText().toString().trim();
+
+                if (Patterns.EMAIL_ADDRESS.matcher(email).matches()) {
+
+                    ComfortableProgressDialog progressDialog = new ComfortableProgressDialog(LoginRegisterActivity.this);
+                    progressDialog.setMessage(R.string.please_wait);
+                    progressDialog.setCancelable(false);
+                    progressDialog.show();
+
+                    sendResetPasswordRequest(email, progressDialog);
+
+                    emailDialog.dismiss();
+
+                } else {
+                    emailEditText.setError(getString(R.string.invalid_email_address));
+                }
+            }
+        });
+
+        cancel.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                emailDialog.dismiss();
+            }
+        });
+
+        emailDialog.setView(emailDialogView);
+        emailDialog.show();
+    }
+
+    private void sendResetPasswordRequest(String email, final ComfortableProgressDialog progressDialog) {
+
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    Thread.sleep(3000);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        progressDialog.dismiss();
+
+                        final InformationDialog informationDialog = new InformationDialog(LoginRegisterActivity.this);
+                        informationDialog.setCancelable(true);
+                        informationDialog.setPrimaryMessage(R.string.new_password_sent_info_short);
+                        informationDialog.setSecondaryMessage(R.string.new_password_sent_info);
+                        informationDialog.setDefaultClickListener(new InformationDialog.DefaultClickListener() {
+                            @Override
+                            public void onOkClick() {
+                                informationDialog.dismiss();
+                            }
+
+                            @Override
+                            public void onMoreInfoClick() {
+                                Intent intent = new Intent(LoginRegisterActivity.this, InfoActivity.class);
+                                // TODO Put related header extras array
+                                startActivity(intent);
+                            }
+                        });
+                        informationDialog.setExtraButtonClickListener(R.string.check_email, new InformationDialog.ExtraButtonClickListener() {
+                            @Override
+                            public void onExtraButtonClick() {
+                                IntentHelper.openEmailClient(LoginRegisterActivity.this);
+                            }
+                        });
+
+                        informationDialog.show();
+                    }
+                });
+
+
+            }
+        }).start();
     }
 
     private boolean areAllInputsValid() {
@@ -202,7 +384,7 @@ public class LoginRegisterActivity extends AppCompatActivity {
 
     private void attemptRegister() {
         final ProgressDialog progressDialog = new ProgressDialog(this);
-        progressDialog.setMessage(getString(R.string.please_wait));
+        progressDialog.setMessage(getString(R.string.signing_up));
         progressDialog.setIndeterminate(true);
         progressDialog.setCancelable(false);
         progressDialog.show();
@@ -298,7 +480,7 @@ public class LoginRegisterActivity extends AppCompatActivity {
     private void attemptLogin() {
 
         final ProgressDialog progressDialog = new ProgressDialog(this);
-        progressDialog.setMessage(getString(R.string.please_wait));
+        progressDialog.setMessage(getString(R.string.signing_in));
         progressDialog.setIndeterminate(true);
         progressDialog.setCancelable(false);
         progressDialog.show();

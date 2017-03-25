@@ -92,7 +92,6 @@ public class RequestActivity extends AppCompatActivity {
 
         if (actionBar != null) {
             actionBar.setDisplayHomeAsUpEnabled(true);
-            actionBar.setHomeAsUpIndicator(R.drawable.ic_messaging_cancel_selection);
 
             SpannableString s = new SpannableString(getResources().getString(R.string.request_activity_title));
             s.setSpan(new TypefaceSpan(this, MainActivity.FONT_GENERAL_TITLE), 0, s.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
@@ -103,6 +102,8 @@ public class RequestActivity extends AppCompatActivity {
 
             float elevation = getResources().getDimension(R.dimen.actionbar_starting_elevation);
             actionBar.setElevation(elevation);
+            actionBar.setHomeAsUpIndicator(R.drawable.ic_arrow_back_primary_text_color);
+            actionBar.setElevation(0);
         }
 
         mBook = getIntent().getParcelableExtra(EXTRA_BOOK);
