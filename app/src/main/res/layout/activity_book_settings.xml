@@ -37,7 +37,7 @@
                 android:visibility="visible">
 
                 <LinearLayout
-                    android:id="@+id/profilePictureContainer"
+                    android:id="@+id/bookPictureContainer"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_gravity="center_horizontal"
@@ -127,108 +127,116 @@
 
             </LinearLayout>
 
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="56dp"
-                android:gravity="center_vertical"
-                android:text="@string/report"
-                android:textAllCaps="true"
-                android:textColor="@color/primaryTextColor"
-                android:textSize="14sp"/>
-
-            <RadioGroup
-                android:id="@+id/reportBookRadioGroup"
+            <LinearLayout
+                android:id="@+id/reportBookContainer"
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content">
+                android:layout_height="wrap_content"
+                android:orientation="vertical">
 
-                <RadioButton
-                    android:id="@+id/reportBookWrongName"
+                <TextView
                     android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:buttonTint="@color/secondaryTextColor"
-                    android:padding="8dp"
-                    android:text="@string/report_book_wrong_name"
-                    android:textColor="@color/primaryTextColor"
-                    android:textSize="16sp"/>
-
-                <RadioButton
-                    android:id="@+id/reportBookWrongAuthor"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:buttonTint="@color/secondaryTextColor"
-                    android:padding="8dp"
-                    android:text="@string/report_book_wrong_author"
-                    android:textColor="@color/primaryTextColor"
-                    android:textSize="16sp"/>
-
-                <RadioButton
-                    android:id="@+id/reportBookWrongGenre"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:buttonTint="@color/secondaryTextColor"
-                    android:padding="8dp"
-                    android:text="@string/report_book_wrong_genre"
-                    android:textColor="@color/primaryTextColor"
-                    android:textSize="16sp"/>
-
-                <RadioButton
-                    android:id="@+id/reportBookWrongPhoto"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:buttonTint="@color/secondaryTextColor"
-                    android:padding="8dp"
-                    android:text="@string/report_book_wrong_photo"
-                    android:textColor="@color/primaryTextColor"
-                    android:textSize="16sp"/>
-
-                <RadioButton
-                    android:id="@+id/reportBookTooDamaged"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:buttonTint="@color/secondaryTextColor"
-                    android:padding="8dp"
-                    android:text="@string/report_book_too_damaged"
-                    android:textColor="@color/primaryTextColor"
-                    android:textSize="16sp"/>
-
-                <RadioButton
-                    android:id="@+id/reportBookOther"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:buttonTint="@color/secondaryTextColor"
-                    android:padding="8dp"
-                    android:text="@string/not_any_of_above"
-                    android:textColor="@color/primaryTextColor"
-                    android:textSize="16sp"/>
-
-                <EditText
-                    android:id="@+id/reportBookEditText"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="8dp"
-                    android:background="@color/colorPrimaryDark"
-                    android:gravity="top"
-                    android:hint="@string/report_hint_book_additional_info"
-                    android:inputType="textCapSentences|textMultiLine"
-                    android:minLines="3"
-                    android:padding="12dp"
-                    android:textColor="@color/primaryTextColor"
-                    android:textColorHint="@color/secondaryTextColor"
-                    android:textSize="16sp"/>
-
-                <Button
-                    android:id="@+id/reportSendButton"
-                    style="@style/Widget.AppCompat.ActionButton"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_gravity="right"
-                    android:clickable="false"
-                    android:text="@string/send"
+                    android:layout_height="56dp"
+                    android:gravity="center_vertical"
+                    android:text="@string/report"
                     android:textAllCaps="true"
-                    android:textColor="@color/secondaryTextColor"
-                    android:visibility="visible"/>
+                    android:textColor="@color/primaryTextColor"
+                    android:textSize="14sp"/>
 
-            </RadioGroup>
+                <RadioGroup
+                    android:id="@+id/reportBookRadioGroup"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content">
+
+                    <RadioButton
+                        android:id="@+id/reportBookWrongName"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:buttonTint="@color/secondaryTextColor"
+                        android:padding="8dp"
+                        android:text="@string/report_book_wrong_name"
+                        android:textColor="@color/primaryTextColor"
+                        android:textSize="16sp"/>
+
+                    <RadioButton
+                        android:id="@+id/reportBookWrongAuthor"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:buttonTint="@color/secondaryTextColor"
+                        android:padding="8dp"
+                        android:text="@string/report_book_wrong_author"
+                        android:textColor="@color/primaryTextColor"
+                        android:textSize="16sp"/>
+
+                    <RadioButton
+                        android:id="@+id/reportBookWrongGenre"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:buttonTint="@color/secondaryTextColor"
+                        android:padding="8dp"
+                        android:text="@string/report_book_wrong_genre"
+                        android:textColor="@color/primaryTextColor"
+                        android:textSize="16sp"/>
+
+                    <RadioButton
+                        android:id="@+id/reportBookWrongPhoto"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:buttonTint="@color/secondaryTextColor"
+                        android:padding="8dp"
+                        android:text="@string/report_book_wrong_photo"
+                        android:textColor="@color/primaryTextColor"
+                        android:textSize="16sp"/>
+
+                    <RadioButton
+                        android:id="@+id/reportBookTooDamaged"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:buttonTint="@color/secondaryTextColor"
+                        android:padding="8dp"
+                        android:text="@string/report_book_too_damaged"
+                        android:textColor="@color/primaryTextColor"
+                        android:textSize="16sp"/>
+
+                    <RadioButton
+                        android:id="@+id/reportBookOther"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:buttonTint="@color/secondaryTextColor"
+                        android:padding="8dp"
+                        android:text="@string/not_any_of_above"
+                        android:textColor="@color/primaryTextColor"
+                        android:textSize="16sp"/>
+
+                    <EditText
+                        android:id="@+id/reportBookEditText"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp"
+                        android:background="@color/colorPrimaryDark"
+                        android:gravity="top"
+                        android:hint="@string/report_hint_book_additional_info"
+                        android:inputType="textCapSentences|textMultiLine"
+                        android:minLines="3"
+                        android:padding="12dp"
+                        android:textColor="@color/primaryTextColor"
+                        android:textColorHint="@color/secondaryTextColor"
+                        android:textSize="16sp"/>
+
+                    <Button
+                        android:id="@+id/reportSendButton"
+                        style="@style/Widget.AppCompat.ActionButton"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_gravity="right"
+                        android:clickable="false"
+                        android:text="@string/send"
+                        android:textAllCaps="true"
+                        android:textColor="@color/secondaryTextColor"
+                        android:visibility="visible"/>
+
+                </RadioGroup>
+
+            </LinearLayout>
 
             <LinearLayout
                 android:id="@+id/lostContainer"

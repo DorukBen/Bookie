@@ -348,13 +348,7 @@ public class Book implements Parcelable {
         return "Book{" +
                 "mID=" + mID +
                 ", mName='" + mName + '\'' +
-                ", mImageURL='" + mImageURL + '\'' +
-                ", mThumbnailURL='" + mThumbnailURL + '\'' +
-                ", mAuthor='" + mAuthor + '\'' +
-                ", mState=" + mState +
-                ", mGenreCode=" + mGenreCode +
-                ", mOwner=" + mOwner +
-                '}';
+                ", mState=" + mState + '}';
     }
 
     public class Details {
@@ -489,11 +483,11 @@ public class Book implements Parcelable {
 
         @Override
         public String toString() {
-            return Book.this.toString() + ".Transaction{" +
+            return Book.this.getName() + ".Transaction{" +
                     "mTransactionType=" + mTransactionType +
-                    ", mFromUser=" + mFromUser +
-                    ", mToUser=" + mToUser +
-                    ", mCreatedAt=" + mCreatedAt + '}';
+                    ", mFromUser=" + mFromUser.getName() +
+                    ", mToUser=" + mToUser.getName() +
+                    ", mCreatedAt=" + mCreatedAt.getTimeInMillis() + '}';
         }
 
         @Override
@@ -562,11 +556,11 @@ public class Book implements Parcelable {
 
         @Override
         public String toString() {
-            return Book.this.toString() + ".Request{" +
+            return Book.this.getName() + ".Request{" +
                     "mRequestType=" + mRequestType +
-                    ", mFromUser=" + mFromUser +
-                    ", mToUser=" + mToUser +
-                    ", mCreatedAt=" + mCreatedAt + '}';
+                    ", mFromUser=" + mFromUser.getName() +
+                    ", mToUser=" + mToUser.getName() +
+                    ", mCreatedAt=" + mCreatedAt.getTimeInMillis() + '}';
         }
 
         @Override
@@ -605,8 +599,6 @@ public class Book implements Parcelable {
 
     /**
      * This class contains all user generator methods
-     * <p/>
-     * TODO The "ImageLinkSource.java" must be added to project
      */
     public static class GENERATOR {
 

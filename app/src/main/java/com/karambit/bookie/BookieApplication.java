@@ -5,13 +5,15 @@ import android.content.Context;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 
+import com.karambit.bookie.helper.SessionManager;
+
 /**
  * Created by doruk on 16.02.2017.
  */
 
-public class Bookie extends Application {
+public class BookieApplication extends Application {
 
-    private static Bookie instance;
+    private static BookieApplication instance;
 
     @Override
     public void onCreate()
@@ -21,7 +23,7 @@ public class Bookie extends Application {
         instance = this;
     }
 
-    public static Bookie getInstance ()
+    public static BookieApplication getInstance ()
     {
         return instance;
     }

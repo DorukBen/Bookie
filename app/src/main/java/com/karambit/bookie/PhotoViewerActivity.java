@@ -50,12 +50,18 @@ import java.io.IOException;
 
 public class PhotoViewerActivity extends AppCompatActivity implements View.OnTouchListener {
 
+    private static final int REQUEST_CODE_CUSTOM_PERMISSIONS = 1;
+    private static final int REQUEST_CODE_SELECT_IMAGE = 2;
+    public static final int RESULT_PROFILE_PICTURE_UPDATED = 3;
 
-    private static final int CUSTOM_PERMISSIONS_REQUEST_CODE = 123;
 
-    private static final int SELECT_IMAGE_REQUEST_CODE = 1;
-    public static final int RESULT_PROFILE_PICTURE_UPDATED = 1002;
-    private static final String UPLOAD_IMAGE_URL = "ProfilePictureUpload";
+    private static final String UPLOAD_USER_IMAGE_URL = "ProfilePictureUpload";
+    private static final String UPLOAD_BOOK_IMAGE_URL = "BookUpdatePicture";
+
+    public static final String EXTRA_USER = "user";
+    public static final String EXTRA_CAN_EDIT_BOOK_IMAGE = "can_edit_book_image";
+    public static final String EXTRA_IMAGE = "image";
+    public static final String EXTRA_BOOK_ID = "book_id";
 
     // these matrices will be used to move and zoom image
     private Matrix mMatrix = new Matrix();
@@ -81,6 +87,7 @@ public class PhotoViewerActivity extends AppCompatActivity implements View.OnTou
     private ImageButton mCloseButton;
     private ImageButton mUploadButton;
 
+    private File mSavedUserImageFile;
     private File mSavedBookImageFile;
 
     private static final String TAG = PhotoViewerActivity.class.getSimpleName();
@@ -120,17 +127,17 @@ public class PhotoViewerActivity extends AppCompatActivity implements View.OnTou
 
         bringFrontPhotoForGlide();
 
-        User photoUser = getIntent().getParcelableExtra("user");
+        User photoUser = getIntent().getParcelableExtra(EXTRA_USER);
         User currentUser =  SessionManager.getCurrentUser(this);
 
-        if (photoUser != null && photoUser.equals(currentUser)){
+        if (photoUser != null && photoUser.equals(currentUser) || getIntent().getBooleanExtra(EXTRA_CAN_EDIT_BOOK_IMAGE, false)){
             mEditPhotoButton.setVisibility(View.VISIBLE);
 
             mEditPhotoButton.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
                     if (checkPermissions()) {
-                        startActivityForResult(ImagePicker.getPickImageIntent(getBaseContext()), SELECT_IMAGE_REQUEST_CODE);
+                        startActivityForResult(ImagePicker.getPickImageIntent(getBaseContext()), REQUEST_CODE_SELECT_IMAGE);
 
                         Log.i(TAG, "Permissions OK!");
                     } else {
@@ -140,7 +147,7 @@ public class PhotoViewerActivity extends AppCompatActivity implements View.OnTou
                                 Manifest.permission.CAMERA
                         };
 
-                        ActivityCompat.requestPermissions(PhotoViewerActivity.this, permissions, CUSTOM_PERMISSIONS_REQUEST_CODE);
+                        ActivityCompat.requestPermissions(PhotoViewerActivity.this, permissions, REQUEST_CODE_CUSTOM_PERMISSIONS);
 
                         Log.i(TAG, "Permissions NOT OK!");
                     }
@@ -150,7 +157,11 @@ public class PhotoViewerActivity extends AppCompatActivity implements View.OnTou
             mUploadButton.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
-                    attemptUploadProfilePicture();
+                    if (getIntent().getBooleanExtra(EXTRA_CAN_EDIT_BOOK_IMAGE, false)){
+                        attemptUploadBookPicture();
+                    }else {
+                        attemptUploadProfilePicture();
+                    }
                 }
             });
         }else {
@@ -159,7 +170,7 @@ public class PhotoViewerActivity extends AppCompatActivity implements View.OnTou
 
 
         Glide.with(PhotoViewerActivity.this)
-                .load(getIntent().getStringExtra("image"))
+                .load(getIntent().getStringExtra(EXTRA_IMAGE))
                 .asBitmap()
                 .diskCacheStrategy(DiskCacheStrategy.SOURCE)
                 .error(ContextCompat.getDrawable(this, R.drawable.error_192dp))
@@ -387,10 +398,14 @@ public class PhotoViewerActivity extends AppCompatActivity implements View.OnTou
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
 
-        if (requestCode == SELECT_IMAGE_REQUEST_CODE) {
+        if (requestCode == REQUEST_CODE_SELECT_IMAGE) {
             if (resultCode == Activity.RESULT_OK) {
                 Bitmap bitmap = ImagePicker.getImageFromResult(getBaseContext(), resultCode, data);
                 Bitmap croppedBitmap = ImageScaler.cropImage(bitmap, 72 / 72f);
+
+                if (getIntent().getBooleanExtra(EXTRA_CAN_EDIT_BOOK_IMAGE, false)){
+                    croppedBitmap = ImageScaler.cropImage(bitmap, 72 / 96f);
+                }
 
                 savedMatrix = new Matrix();
                 savedMatrix.reset();
@@ -404,7 +419,12 @@ public class PhotoViewerActivity extends AppCompatActivity implements View.OnTou
 
                 bringFrontPhotoForEdit();
                 mEditPhotoView.setImageBitmap(croppedBitmap);
-                mSavedBookImageFile = saveBitmap(croppedBitmap);
+                if (getIntent().getBooleanExtra(EXTRA_CAN_EDIT_BOOK_IMAGE, false)){
+                    mSavedBookImageFile = saveBitmap(croppedBitmap);
+                }else {
+                    mSavedUserImageFile = saveBitmap(croppedBitmap);
+                }
+
 
                 mImageWidth = croppedBitmap.getWidth();
                 mImageHeight = croppedBitmap.getHeight();
@@ -460,7 +480,7 @@ public class PhotoViewerActivity extends AppCompatActivity implements View.OnTou
     @Override
     public void onRequestPermissionsResult(int requestCode, @NonNull String permissions[], @NonNull int[] grantResults) {
         switch (requestCode) {
-            case CUSTOM_PERMISSIONS_REQUEST_CODE: {
+            case REQUEST_CODE_CUSTOM_PERMISSIONS: {
                 // If request is cancelled, the result arrays are empty.
                 if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
 
@@ -502,8 +522,8 @@ public class PhotoViewerActivity extends AppCompatActivity implements View.OnTou
         mProgressDialog.show();
 
         // Upload Book image
-        String path = mSavedBookImageFile.getPath();
-        String name = mSavedBookImageFile.getName();
+        String path = mSavedUserImageFile.getPath();
+        String name = mSavedUserImageFile.getName();
 
         User.Details currentUserDetails = SessionManager.getCurrentUserDetails(this);
 
@@ -511,7 +531,7 @@ public class PhotoViewerActivity extends AppCompatActivity implements View.OnTou
                 + "&password=" + currentUserDetails.getPassword()
                 + "&imageName=" + name;
 
-        String imageUrlString = BookieClient.BASE_URL + UPLOAD_IMAGE_URL + serverArgsString;
+        String imageUrlString = BookieClient.BASE_URL + UPLOAD_USER_IMAGE_URL + serverArgsString;
 
 
         final UploadFileTask uftImage = new UploadFileTask(path, imageUrlString, name);
@@ -527,11 +547,56 @@ public class PhotoViewerActivity extends AppCompatActivity implements View.OnTou
                 Log.w(TAG, "Image upload is OK");
                 mProgressDialog.dismiss();
 
-                /*
-                    TODO Update Current user on database.
-                    This may be done in another Profile Activity or Main Activity
-                    Just check DBHandler for update current profile picture or update all the user details
-                  */
+                setResult(RESULT_PROFILE_PICTURE_UPDATED);
+                finish();
+            }
+
+            @Override
+            public void onProgressError() {
+                mProgressDialog.dismiss();
+                Log.e(TAG, "Image upload ERROR");
+                Toast.makeText(PhotoViewerActivity.this, R.string.unknown_error, Toast.LENGTH_SHORT).show();
+            }
+        });
+
+        uftImage.execute();
+    }
+
+    private void attemptUploadBookPicture() {
+
+        mProgressDialog = new ProgressDialog(this);
+        mProgressDialog.setMessage(getString(R.string.uploading_image));
+        mProgressDialog.setCancelable(false);
+        mProgressDialog.setCanceledOnTouchOutside(false);
+        mProgressDialog.setIndeterminate(true);
+        mProgressDialog.show();
+
+        // Upload Book image
+        String path = mSavedBookImageFile.getPath();
+        String name = mSavedBookImageFile.getName();
+
+        User.Details currentUserDetails = SessionManager.getCurrentUserDetails(this);
+
+        String serverArgsString = "?email=" + currentUserDetails.getEmail()
+                + "&password=" + currentUserDetails.getPassword()
+                + "&imageName=" + name
+                + "&bookID=" + getIntent().getIntExtra(EXTRA_BOOK_ID,-1);
+
+        String imageUrlString = BookieClient.BASE_URL + UPLOAD_BOOK_IMAGE_URL + serverArgsString;
+
+
+        final UploadFileTask uftImage = new UploadFileTask(path, imageUrlString, name);
+
+        uftImage.setUploadProgressListener(new UploadFileTask.UploadProgressChangedListener() {
+            @Override
+            public void onProgressChanged(int progress) {
+                Log.i(TAG, "Image upload progress => " + progress + " / 100");
+            }
+
+            @Override
+            public void onProgressCompleted() {
+                Log.w(TAG, "Image upload is OK");
+                mProgressDialog.dismiss();
 
                 setResult(RESULT_PROFILE_PICTURE_UPDATED);
                 finish();

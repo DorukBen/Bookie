@@ -1,11 +1,8 @@
 package com.karambit.bookie.adapter;
 
 import android.content.Context;
-import android.content.Intent;
 import android.graphics.Bitmap;
-import android.support.v4.content.ContextCompat;
 import android.support.v7.widget.RecyclerView;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -19,9 +16,7 @@ import com.bumptech.glide.request.target.SimpleTarget;
 import com.karambit.bookie.BookActivity;
 import com.karambit.bookie.R;
 import com.karambit.bookie.helper.ImageScaler;
-import com.karambit.bookie.helper.NetworkChecker;
 import com.karambit.bookie.helper.infinite_viewpager.HorizontalInfiniteCycleViewPager;
-import com.karambit.bookie.helper.infinite_viewpager.InfiniteCyclePagerAdapter;
 import com.karambit.bookie.helper.pull_refresh_layout.SmartisanProgressBarDrawable;
 import com.karambit.bookie.model.Book;
 

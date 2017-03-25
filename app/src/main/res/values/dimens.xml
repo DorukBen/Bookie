@@ -15,4 +15,11 @@
     <dimen name="slide_title">30dp</dimen>
     <dimen name="slide_desc">16dp</dimen>
     <dimen name="desc_padding">40dp</dimen>
+
+    <dimen name="actionbar_app_name_title_size">18dp</dimen>
+    <dimen name="actionbar_title_size">18dp</dimen>
+
+    <dimen name="actionbar_starting_elevation">0dp</dimen>
+    <dimen name="tab_host_item_elevation">8dp</dimen>
+
 </resources>

@@ -3,10 +3,17 @@ package com.karambit.bookie.model;
 import android.os.Parcel;
 import android.os.Parcelable;
 import android.support.annotation.NonNull;
+import android.text.TextUtils;
 
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
+
+import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Collections;
+import java.util.Date;
 import java.util.Random;
 
 /**
@@ -82,6 +89,43 @@ public class Message implements Parcelable, Comparable<Message> {
         } else {
             throw new IllegalArgumentException("Invalid current user: " + currentUser);
         }
+    }
+
+    public static Message jsonObjectToMessage(JSONObject messageObject) {
+        try {
+            if (messageObject != null){
+                Timestamp timestamp = Timestamp.valueOf(messageObject.isNull("createdAt")|| TextUtils.isEmpty(messageObject.getString("createdAt"))? null: messageObject.getString("createdAt"));
+                Calendar calendar = Calendar.getInstance();
+                calendar.setTime(timestamp);
+                return new Message(messageObject.isNull("messageID")? -1: messageObject.getInt("messageID"),
+                        messageObject.isNull("messageText")|| TextUtils.isEmpty(messageObject.getString("messageText"))? null: messageObject.getString("messageText"),
+                        messageObject.isNull("fromUser")? null: User.jsonObjectToUser(messageObject.getJSONObject("fromUser")),
+                        messageObject.isNull("toUser")? null: User.jsonObjectToUser(messageObject.getJSONObject("toUser")),
+                        calendar,
+                        State.values()[messageObject.isNull("messageState")? 2: messageObject.getInt("messageState")]);
+            }else {
+                return null;
+            }
+        } catch (JSONException e) {
+            e.printStackTrace();
+            return null;
+        }
+    }
+
+    public static ArrayList<Message> jsonObjectToMessageList(JSONObject jsonObject){
+        ArrayList<Message> messages = new ArrayList<>();
+        try {
+            if (!jsonObject.isNull("Messages")){
+                JSONArray jsonArray = jsonObject.getJSONArray("Messages");
+                for (int i = 0; i < jsonArray.length(); i++){
+                    messages.add(jsonObjectToMessage(jsonArray.getJSONObject(i)));
+                }
+            }
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+        return messages;
+
     }
 
     public int getID() {

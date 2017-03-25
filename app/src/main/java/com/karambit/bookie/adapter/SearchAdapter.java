@@ -6,7 +6,6 @@ import android.support.v4.content.ContextCompat;
 import android.support.v4.view.ViewCompat;
 import android.support.v7.widget.CardView;
 import android.support.v7.widget.RecyclerView;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -16,10 +15,7 @@ import android.widget.ProgressBar;
 import android.widget.TextView;
 
 import com.bumptech.glide.Glide;
-import com.bumptech.glide.request.animation.GlideAnimation;
-import com.bumptech.glide.request.target.SimpleTarget;
 import com.karambit.bookie.R;
-import com.karambit.bookie.helper.ImageScaler;
 import com.karambit.bookie.helper.LayoutUtils;
 import com.karambit.bookie.helper.pull_refresh_layout.SmartisanProgressBarDrawable;
 import com.karambit.bookie.model.Book;
@@ -550,15 +546,10 @@ public class SearchAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder>
                 Glide.with(mContext)
                         .load(book.getThumbnailURL())
                         .asBitmap()
+                        .centerCrop()
                         .placeholder(R.drawable.placeholder_88dp)
                         .error(R.drawable.error_88dp)
-                        .into(new SimpleTarget<Bitmap>() {
-                            @Override
-                            public void onResourceReady(Bitmap resource, GlideAnimation<? super Bitmap> glideAnimation) {
-                                Bitmap croppedBitmap = ImageScaler.cropImage(resource, 72 / 96f);
-                                bookHolder.mBookImage.setImageBitmap(croppedBitmap);
-                            }
-                        });
+                        .into(bookHolder.mBookImage);
                 break;
             }
 
@@ -586,15 +577,10 @@ public class SearchAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder>
                 Glide.with(mContext)
                         .load(user.getThumbnailUrl())
                         .asBitmap()
+                        .centerCrop()
                         .placeholder(R.drawable.placeholder_88dp)
                         .error(R.drawable.error_88dp)
-                        .into(new SimpleTarget<Bitmap>() {
-                            @Override
-                            public void onResourceReady(Bitmap resource, GlideAnimation<? super Bitmap> glideAnimation) {
-                                Bitmap croppedBitmap = ImageScaler.cropImage(resource, 72 / 96f);
-                                userViewHolder.mProfilePictureImageView.setImageBitmap(croppedBitmap);
-                            }
-                        });
+                        .into(userViewHolder.mProfilePictureImageView);
                 break;
             }
             case TYPE_NO_CONNECTION: {
@@ -756,6 +742,8 @@ public class SearchAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder>
 
     public void setShowHistory(boolean showHistory){
         mShowHistory = showHistory;
+        setError(ERROR_TYPE_NONE);
+        setWarning(WARNING_TYPE_NONE);
         setProgressBarActive(false);
 
         notifyDataSetChanged();

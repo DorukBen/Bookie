@@ -1,8 +1,6 @@
 package com.karambit.bookie;
 
-import android.content.Context;
 import android.content.Intent;
-import android.content.res.Resources;
 import android.os.Bundle;
 import android.support.v4.app.FragmentTransaction;
 import android.support.v7.app.ActionBar;
@@ -10,14 +8,16 @@ import android.support.v7.app.AppCompatActivity;
 import android.text.Spannable;
 import android.text.SpannableString;
 import android.text.style.AbsoluteSizeSpan;
-import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
 
+import com.karambit.bookie.database.DBManager;
 import com.karambit.bookie.fragment.ProfileFragment;
-import com.karambit.bookie.helper.DBHandler;
+import com.karambit.bookie.helper.InformationDialog;
+import com.karambit.bookie.helper.IntentHelper;
+import com.karambit.bookie.helper.SessionManager;
 import com.karambit.bookie.helper.TypefaceSpan;
 import com.karambit.bookie.model.User;
 
@@ -25,13 +25,15 @@ public class ProfileActivity extends AppCompatActivity {
 
     private static final String TAG = ProfileActivity.class.getSimpleName();
 
-    public final static String USER = "user";
-    private static final int REQUEST_OTHER_USER_SETTINGS = 111;
-    public final static int MESSAGE_PROCESS_REQUEST_CODE = 1006;
+    public final static String EXTRA_USER = "user";
+
+    private static final int REQUEST_CODE_OTHER_USER_SETTINGS = 1;
+    public final static int REQUEST_CODE_MESSAGE_PROCESS = 2;
+
+    private DBManager mDbManager;
 
     private ActionBar mActionBar;
     private User mUser;
-
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -43,18 +45,22 @@ public class ProfileActivity extends AppCompatActivity {
         //Changes action bar font style by getting font.ttf from assets/fonts action bars font style doesn't
         // change from styles.xml
         SpannableString s = new SpannableString(getResources().getString(R.string.app_name));
-        s.setSpan(new TypefaceSpan(this, "comfortaa.ttf"), 0, s.length(),
-                Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
-        s.setSpan(new AbsoluteSizeSpan((int)convertDpToPixel(18, this)), 0, s.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+        s.setSpan(new TypefaceSpan(this, MainActivity.FONT_APP_NAME_TITLE), 0, s.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+        float titleSize = getResources().getDimension(R.dimen.actionbar_app_name_title_size);
+        s.setSpan(new AbsoluteSizeSpan((int) titleSize), 0, s.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
 
         // Update the action bar title with the TypefaceSpan instance
         if(mActionBar != null){
             mActionBar.setTitle(s);
-            mActionBar.setElevation(0);
+            float elevation = getResources().getDimension(R.dimen.actionbar_starting_elevation);
+            mActionBar.setElevation(elevation);
         }
 
+        mDbManager = new DBManager(this);
+        mDbManager.open();
+
         Bundle bundle = getIntent().getExtras();
-        mUser = bundle.getParcelable(USER);
+        mUser = bundle.getParcelable(EXTRA_USER);
         ProfileFragment profileFragment = ProfileFragment.newInstance(mUser);
         FragmentTransaction transaction = getSupportFragmentManager().beginTransaction();
         transaction.add(R.id.profileFragmentFrame, profileFragment );
@@ -74,17 +80,49 @@ public class ProfileActivity extends AppCompatActivity {
         switch (item.getItemId()) {
             case R.id.action_more:
                 Intent data = new Intent(this, OtherUserProfileSettingsActivity.class);
-                data.putExtra("user", mUser);
-                startActivityForResult(data, REQUEST_OTHER_USER_SETTINGS);
+                data.putExtra(OtherUserProfileSettingsActivity.EXTRA_USER, mUser);
+                startActivityForResult(data, REQUEST_CODE_OTHER_USER_SETTINGS);
                 return true;
 
-            case R.id.action_message:
-                Bundle bundle = getIntent().getExtras();
+            case R.id.action_message: {
 
-                Intent intent = new Intent(this,ConversationActivity.class);
-                intent.putExtra(USER, bundle.getParcelable(USER));
-                startActivityForResult(intent, MESSAGE_PROCESS_REQUEST_CODE);
+                // Verification control for messaging
+
+                if (SessionManager.getCurrentUserDetails(this).isVerified()) {
+                    Bundle bundle = getIntent().getExtras();
+                    Intent intent = new Intent(this, ConversationActivity.class);
+                    intent.putExtra(ConversationActivity.EXTRA_USER, bundle.getParcelable(EXTRA_USER));
+                    startActivityForResult(intent, REQUEST_CODE_MESSAGE_PROCESS);
+
+                } else {
+                    final InformationDialog informationDialog = new InformationDialog(this);
+                    informationDialog.setCancelable(false);
+                    informationDialog.setPrimaryMessage(R.string.unverified_email_info_short);
+                    informationDialog.setSecondaryMessage(R.string.unverified_email_message_info);
+                    informationDialog.setDefaultClickListener(new InformationDialog.DefaultClickListener() {
+                        @Override
+                        public void onOkClick() {
+                            informationDialog.dismiss();
+                        }
+
+                        @Override
+                        public void onMoreInfoClick() {
+                            Intent intent = new Intent(ProfileActivity.this, InfoActivity.class);
+                            // TODO Put related header extras array
+                            startActivity(intent);
+                        }
+                    });
+                    informationDialog.setExtraButtonClickListener(R.string.check_email, new InformationDialog.ExtraButtonClickListener() {
+                        @Override
+                        public void onExtraButtonClick() {
+                            IntentHelper.openEmailClient(ProfileActivity.this);
+                        }
+                    });
+                    informationDialog.show();
+                }
+
                 return true;
+            }
 
             default:
                 return super.onOptionsItemSelected(item);
@@ -94,37 +132,20 @@ public class ProfileActivity extends AppCompatActivity {
     @Override
     public void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
-        if (requestCode == REQUEST_OTHER_USER_SETTINGS) {
+        if (requestCode == REQUEST_CODE_OTHER_USER_SETTINGS) {
             if (resultCode == OtherUserProfileSettingsActivity.RESULT_USER_BLOCKED) {
 
-                // TODO Block user
                 Log.i(TAG, mUser.getName() + " blocked");
                 finish();
             }
-        }else if (requestCode == MESSAGE_PROCESS_REQUEST_CODE){
-            if (resultCode == ConversationActivity.ALL_MESSAGES_DELETED){
-                DBHandler dbHandler = DBHandler.getInstance(this);
-                dbHandler.deleteMessageUser((User) data.getParcelableExtra("opposite_user"));
-                dbHandler.deleteMessageUsersConversation((User) data.getParcelableExtra("opposite_user"));
+        }else if (requestCode == REQUEST_CODE_MESSAGE_PROCESS){
+            if (resultCode == ConversationActivity.RESULT_ALL_MESSAGES_DELETED){
+                mDbManager.getMessageDataSource().deleteConversation((User) data.getParcelableExtra(ConversationActivity.EXTRA_OPPOSITE_USER));
             }
         }
     }
 
     public void setActionBarElevation(float dp) {
         mActionBar.setElevation(dp);
-    }
-
-    /**
-     * This method converts dp unit to equivalent pixels, depending on device density.
-     *
-     * @param dp A value in dp (density independent pixels) unit. Which we need to convert into pixels
-     * @param context Context to get resources and device specific display metrics
-     * @return A float value to represent px equivalent to dp depending on device density
-     */
-    public static float convertDpToPixel(float dp, Context context){
-        Resources resources = context.getResources();
-        DisplayMetrics metrics = resources.getDisplayMetrics();
-        float px = dp * ((float)metrics.densityDpi / DisplayMetrics.DENSITY_DEFAULT);
-        return px;
     }
 }

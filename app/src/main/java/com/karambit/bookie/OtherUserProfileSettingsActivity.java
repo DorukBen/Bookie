@@ -10,8 +10,9 @@ import android.support.v7.app.AppCompatActivity;
 import android.text.Editable;
 import android.text.Spannable;
 import android.text.SpannableString;
-import android.text.TextUtils;
 import android.text.TextWatcher;
+import android.text.style.AbsoluteSizeSpan;
+import android.util.Log;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewTreeObserver;
@@ -21,12 +22,26 @@ import android.widget.EditText;
 import android.widget.RadioGroup;
 import android.widget.ScrollView;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.karambit.bookie.helper.ComfortableProgressDialog;
 import com.karambit.bookie.helper.ElevationScrollListener;
-import com.karambit.bookie.helper.NetworkChecker;
+import com.karambit.bookie.helper.SessionManager;
 import com.karambit.bookie.helper.TypefaceSpan;
 import com.karambit.bookie.model.User;
+import com.karambit.bookie.rest_api.BookieClient;
+import com.karambit.bookie.rest_api.ErrorCodes;
+import com.karambit.bookie.rest_api.UserApi;
+
+import org.json.JSONException;
+import org.json.JSONObject;
+
+import java.io.IOException;
+
+import okhttp3.ResponseBody;
+import retrofit2.Call;
+import retrofit2.Callback;
+import retrofit2.Response;
 
 public class OtherUserProfileSettingsActivity extends AppCompatActivity {
 
@@ -41,6 +56,8 @@ public class OtherUserProfileSettingsActivity extends AppCompatActivity {
     public static final int REPORT_USER_NOT_BOOK_GIVER = 4;
     public static final int REPORT_USER_OTHER = 5;
 
+    public static final String EXTRA_USER = "user";
+
     private User mUser;
     private EditText mReportEditText;
     private Button mSendReportButton;
@@ -51,18 +68,19 @@ public class OtherUserProfileSettingsActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_other_user_profile_settings);
 
-        mUser = getIntent().getParcelableExtra("user");
+        mUser = getIntent().getParcelableExtra(EXTRA_USER);
 
         final ActionBar actionBar = getSupportActionBar();
         if (actionBar != null) {
-            actionBar.setElevation(0);
+            actionBar.setElevation(getResources().getDimension(R.dimen.actionbar_starting_elevation));
             SpannableString s = new SpannableString(mUser.getName());
-            s.setSpan(new TypefaceSpan(this, "montserrat_regular.ttf"), 0, s.length(),
-                      Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+            s.setSpan(new TypefaceSpan(this, MainActivity.FONT_GENERAL_TITLE), 0, s.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+            float titleSize = getResources().getDimension(R.dimen.actionbar_title_size);
+            s.setSpan(new AbsoluteSizeSpan((int) titleSize), 0, s.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
             actionBar.setTitle(s);
 
             actionBar.setDisplayHomeAsUpEnabled(true);
-            actionBar.setHomeAsUpIndicator(R.drawable.ic_messaging_cancel_selection);
+            actionBar.setHomeAsUpIndicator(R.drawable.ic_arrow_back_primary_text_color);
         }
 
         final ScrollView scrollView = (ScrollView) findViewById(R.id.settingsScrollView);
@@ -77,7 +95,7 @@ public class OtherUserProfileSettingsActivity extends AppCompatActivity {
             }
         });
 
-        if (NetworkChecker.isNetworkAvailable(this)) {
+        if (BookieApplication.hasNetwork()) {
 
             mSendReportButton = (Button) findViewById(R.id.reportSendButton);
 
@@ -206,10 +224,9 @@ public class OtherUserProfileSettingsActivity extends AppCompatActivity {
                             @Override
                             public void onClick(DialogInterface dialogInterface, int i) {
 
-                                mReportEditText.setText("");
-
                                 sendReport();
 
+                                mReportEditText.setText("");
                                 mReportRadioGroup.clearCheck();
                                 mSendReportButton.setClickable(false);
                                 mSendReportButton.setTextColor(ContextCompat.getColor(OtherUserProfileSettingsActivity.this, R.color.secondaryTextColor));
@@ -230,6 +247,12 @@ public class OtherUserProfileSettingsActivity extends AppCompatActivity {
                         .setPositiveButton(R.string.block, new DialogInterface.OnClickListener() {
                             @Override
                             public void onClick(DialogInterface dialogInterface, int i) {
+                                ComfortableProgressDialog progressDialog = new ComfortableProgressDialog(OtherUserProfileSettingsActivity.this);
+                                progressDialog.setMessage(R.string.please_wait);
+                                progressDialog.setCancelable(false);
+                                progressDialog.show();
+
+                                uploadBlock(mUser.getID(), progressDialog);
                                 setResult(RESULT_USER_BLOCKED);
                                 finish();
                             }
@@ -266,22 +289,144 @@ public class OtherUserProfileSettingsActivity extends AppCompatActivity {
         ComfortableProgressDialog progressDialog = new ComfortableProgressDialog(this);
         progressDialog.setMessage(R.string.please_wait);
         progressDialog.setCancelable(false);
-        // TODO progressDialog.show();
+        progressDialog.show();
 
         String reportInfo = mReportEditText.getText().toString();
 
         int checkedRadioButtonId = mReportRadioGroup.getCheckedRadioButtonId();
         int reportCode = getCheckedReportCode(checkedRadioButtonId);
 
+        uploadReport(reportCode, reportInfo, progressDialog);
+    }
 
-        if (!TextUtils.isEmpty(reportInfo)) {
+    private void uploadReport(int reportCode, String reportInfo, final ComfortableProgressDialog progressDialog) {
+        final UserApi userApi = BookieClient.getClient().create(UserApi.class);
 
-            // TODO reportInfo can be empty
+        String email = SessionManager.getCurrentUserDetails(this).getEmail();
+        String password = SessionManager.getCurrentUserDetails(this).getPassword();
+        Call<ResponseBody> uploadUserReport = userApi.uploadUserReport(email, password, mUser.getID(), reportCode, reportInfo);
 
-        }
 
-        // TODO Server
+        uploadUserReport.enqueue(new Callback<ResponseBody>() {
+            @Override
+            public void onResponse(Call<ResponseBody> call, Response<ResponseBody> response) {
 
+                try {
+                    if (response != null){
+                        if (response.body() != null){
+                            String json = response.body().string();
+
+                            JSONObject responseObject = new JSONObject(json);
+                            boolean error = responseObject.getBoolean("error");
+
+                            if (!error) {
+                                Toast.makeText(OtherUserProfileSettingsActivity.this, getString(R.string.thaks_for_your_report), Toast.LENGTH_SHORT).show();
+                            } else {
+                                int errorCode = responseObject.getInt("errorCode");
+
+                                if (errorCode == ErrorCodes.EMPTY_POST){
+                                    Log.e(TAG, "Post is empty. (Other User Settings Page Error)");
+                                }else if (errorCode == ErrorCodes.MISSING_POST_ELEMENT){
+                                    Log.e(TAG, "Post element missing. (Other User Settings Page Error)");
+                                }else if (errorCode == ErrorCodes.INVALID_EMAIL){
+                                    Log.e(TAG, "Invalid email. (Other User Settings Page Error)");
+                                }else if (errorCode == ErrorCodes.INVALID_REQUEST){
+                                    Log.e(TAG, "Invalid request. (Other User Settings Page Error)");
+                                }else if (errorCode == ErrorCodes.USER_NOT_VERIFIED){
+                                    Log.e(TAG, "User not valid. (Other User Settings Page Error)");
+                                }else if (errorCode == ErrorCodes.UNKNOWN){
+                                    Log.e(TAG, "onResponse: errorCode = " + errorCode);
+                                }
+
+                                Toast.makeText(OtherUserProfileSettingsActivity.this, getString(R.string.unknown_error), Toast.LENGTH_SHORT).show();
+                            }
+                        }else{
+                            Log.e(TAG, "Response body is null. (Other User Settings Page Error)");
+                            Toast.makeText(OtherUserProfileSettingsActivity.this, getString(R.string.unknown_error), Toast.LENGTH_SHORT).show();
+                        }
+                    }else {
+                        Log.e(TAG, "Response object is null. (Other User Settings Page Error)");
+                        Toast.makeText(OtherUserProfileSettingsActivity.this, getString(R.string.unknown_error), Toast.LENGTH_SHORT).show();
+                    }
+                } catch (IOException | JSONException e) {
+                    e.printStackTrace();
+
+                    Toast.makeText(OtherUserProfileSettingsActivity.this, getString(R.string.unknown_error), Toast.LENGTH_SHORT).show();
+                }
+                progressDialog.dismiss();
+            }
+
+            @Override
+            public void onFailure(Call<ResponseBody> call, Throwable t) {
+                progressDialog.dismiss();
+                Toast.makeText(OtherUserProfileSettingsActivity.this, getString(R.string.unknown_error), Toast.LENGTH_SHORT).show();
+                Log.e(TAG, "Other User Settings onFailure: " + t.getMessage());
+            }
+        });
+    }
+
+    private void uploadBlock(int userId, final ComfortableProgressDialog progressDialog) {
+        final UserApi userApi = BookieClient.getClient().create(UserApi.class);
+
+        String email = SessionManager.getCurrentUserDetails(this).getEmail();
+        String password = SessionManager.getCurrentUserDetails(this).getPassword();
+        Call<ResponseBody> uploadUserBlock = userApi.uploadUserBlock(email, password, userId);
+
+
+        uploadUserBlock.enqueue(new Callback<ResponseBody>() {
+            @Override
+            public void onResponse(Call<ResponseBody> call, Response<ResponseBody> response) {
+
+                try {
+                    if (response != null){
+                        if (response.body() != null){
+                            String json = response.body().string();
+
+                            JSONObject responseObject = new JSONObject(json);
+                            boolean error = responseObject.getBoolean("error");
+
+                            if (!error) {
+                                Toast.makeText(OtherUserProfileSettingsActivity.this, getString(R.string.user_blocked, mUser.getName()), Toast.LENGTH_SHORT).show();
+                            } else {
+                                int errorCode = responseObject.getInt("errorCode");
+
+                                if (errorCode == ErrorCodes.EMPTY_POST){
+                                    Log.e(TAG, "Post is empty. (Other User Settings Page Error)");
+                                }else if (errorCode == ErrorCodes.MISSING_POST_ELEMENT){
+                                    Log.e(TAG, "Post element missing. (Other User Settings Page Error)");
+                                }else if (errorCode == ErrorCodes.INVALID_EMAIL){
+                                    Log.e(TAG, "Invalid email. (Other User Settings Page Error)");
+                                }else if (errorCode == ErrorCodes.INVALID_REQUEST){
+                                    Log.e(TAG, "Invalid request. (Other User Settings Page Error)");
+                                }else if (errorCode == ErrorCodes.UNKNOWN){
+                                    Log.e(TAG, "onResponse: errorCode = " + errorCode);
+                                }
+
+                                Toast.makeText(OtherUserProfileSettingsActivity.this, getString(R.string.unknown_error), Toast.LENGTH_SHORT).show();
+                            }
+                        }else{
+                            Log.e(TAG, "Response body is null. (Other User Settings Page Error)");
+                            Toast.makeText(OtherUserProfileSettingsActivity.this, getString(R.string.unknown_error), Toast.LENGTH_SHORT).show();
+                        }
+                    }else {
+                        Log.e(TAG, "Response object is null. (Other User Settings Page Error)");
+                        Toast.makeText(OtherUserProfileSettingsActivity.this, getString(R.string.unknown_error), Toast.LENGTH_SHORT).show();
+                    }
+                } catch (IOException | JSONException e) {
+                    e.printStackTrace();
+
+                    Toast.makeText(OtherUserProfileSettingsActivity.this, getString(R.string.unknown_error), Toast.LENGTH_SHORT).show();
+                }
+                progressDialog.dismiss();
+            }
+
+            @Override
+            public void onFailure(Call<ResponseBody> call, Throwable t) {
+                progressDialog.dismiss();
+                Toast.makeText(OtherUserProfileSettingsActivity.this, getString(R.string.unknown_error), Toast.LENGTH_SHORT).show();
+                Log.e(TAG, "Other User Settings onFailure: " + t.getMessage());
+            }
+        });
     }
 
     private int getCheckedReportCode(int id) {

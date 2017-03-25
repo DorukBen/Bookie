@@ -31,6 +31,9 @@ import com.karambit.bookie.model.User;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.Locale;
 
 
@@ -49,6 +52,12 @@ public class NotificationAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
 
     public NotificationAdapter(Context context, ArrayList<Notification> notifications) {
         mContext = context;
+        Collections.sort(notifications, new Comparator<Notification>() {
+            @Override
+            public int compare(Notification o1, Notification o2) {
+                return o2.getCreatedAt().compareTo(o1.getCreatedAt());
+            }
+        });
         mNotifications = notifications;
     }
 
@@ -345,6 +354,12 @@ public class NotificationAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
     }
 
     public void setNotifications(ArrayList<Notification> notifications) {
+        Collections.sort(notifications, new Comparator<Notification>() {
+            @Override
+            public int compare(Notification o1, Notification o2) {
+                return o2.getCreatedAt().compareTo(o1.getCreatedAt());
+            }
+        });
         mNotifications = notifications;
         notifyDataSetChanged();
     }

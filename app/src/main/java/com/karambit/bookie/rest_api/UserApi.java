@@ -28,7 +28,7 @@ public interface UserApi {
                                 @Field("nameSurname") String nameSurname);
 
     @FormUrlEncoded
-    @POST("addLovedGenre")
+    @POST("AddLovedGenre")
     Call<ResponseBody> setLovedGenres(@Field("email") String email,
                                       @Field("password") String password,
                                       @Field("genreCodes") String lovedGenres);
@@ -37,4 +37,82 @@ public interface UserApi {
     Call<ResponseBody> getUserProfilePageComponents(@Query("email") String email,
                                                     @Query("password") String password,
                                                     @Query("userID") int anotherUserId);
+
+    @FormUrlEncoded
+    @POST("UpdateUserDetails")
+    Call<ResponseBody> updateUserDetails(@Field("email") String email,
+                                      @Field("password") String password,
+                                      @Field("name") String name,
+                                      @Field("bio") String bio,
+                                      @Field("latitude") double latitude,
+                                      @Field("longitude") double longitude);
+
+    @FormUrlEncoded
+    @POST("UpdateUserDetails")
+    Call<ResponseBody> updateUserDetails(@Field("email") String email,
+                                         @Field("password") String password,
+                                         @Field("name") String name,
+                                         @Field("bio") String bio);
+
+    @FormUrlEncoded
+    @POST("UserUpdateLocation")
+    Call<ResponseBody> updateUserLocation(@Field("email") String email,
+                                         @Field("password") String password,
+                                         @Field("latitude") double latitude,
+                                         @Field("longitude") double longitude);
+
+    @FormUrlEncoded
+    @POST("Feedback")
+    Call<ResponseBody> uploadFeedBack (@Field("email") String email,
+                                         @Field("password") String password,
+                                         @Field("feedback") String name);
+
+    @FormUrlEncoded
+    @POST("UserValidation")
+    Call<ResponseBody> isPasswordCorrect (@Field("email") String email,
+                                       @Field("password") String password,
+                                       @Field("givenPassword") String givenPassword);
+
+    @FormUrlEncoded
+    @POST("UserChangePassword")
+    Call<ResponseBody> uploadNewPassword (@Field("email") String email,
+                                          @Field("password") String password,
+                                          @Field("newPassword") String newPassword);
+
+    @FormUrlEncoded
+    @POST("ReportUser")
+    Call<ResponseBody> uploadUserReport (@Field("email") String email,
+                                         @Field("password") String password,
+                                         @Field("userID") int userId,
+                                         @Field("reportCode") int reportCode,
+                                         @Field("reportInfo") String reportInfo);
+
+    @FormUrlEncoded
+    @POST("BlockUser")
+    Call<ResponseBody> uploadUserBlock (@Field("email") String email,
+                                         @Field("password") String password,
+                                         @Field("userID") int userId);
+
+    @FormUrlEncoded
+    @POST("MessageFetch")
+    Call<ResponseBody> fetchMessages (@Field("email") String email,
+                                           @Field("password") String password,
+                                           @Field("userIDs") String userIds);
+
+    @FormUrlEncoded
+    @POST("DeleteMessage")
+    Call<ResponseBody> deleteMessages (@Field("email") String email,
+                                        @Field("password") String password,
+                                        @Field("messageIDs") String messageIDs);
+
+    @FormUrlEncoded
+    @POST("DeleteConversation")
+    Call<ResponseBody> deleteConversation (@Field("email") String email,
+                                       @Field("password") String password,
+                                       @Field("userID") int userId);
+
+    @FormUrlEncoded
+    @POST("ResendEmailVerification")
+    Call<ResponseBody> resendEmailVerificationCode (@Field("email") String email,
+                                           @Field("password") String password);
 }

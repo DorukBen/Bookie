@@ -1,14 +1,18 @@
 package com.karambit.bookie;
 
 import android.app.AlertDialog;
+import android.content.BroadcastReceiver;
+import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.graphics.Color;
 import android.graphics.Typeface;
 import android.location.Address;
 import android.location.Geocoder;
 import android.os.Bundle;
 import android.support.v4.content.ContextCompat;
+import android.support.v4.content.LocalBroadcastManager;
 import android.support.v4.view.ViewCompat;
 import android.support.v7.app.ActionBar;
 import android.support.v7.app.AppCompatActivity;
@@ -20,6 +24,7 @@ import android.text.Spanned;
 import android.text.TextPaint;
 import android.text.TextUtils;
 import android.text.method.LinkMovementMethod;
+import android.text.style.AbsoluteSizeSpan;
 import android.text.style.ClickableSpan;
 import android.text.style.ForegroundColorSpan;
 import android.text.style.StyleSpan;
@@ -33,20 +38,23 @@ import com.karambit.bookie.adapter.RequestAdapter;
 import com.karambit.bookie.helper.ComfortableProgressDialog;
 import com.karambit.bookie.helper.ElevationScrollListener;
 import com.karambit.bookie.helper.LayoutUtils;
-import com.karambit.bookie.helper.NetworkChecker;
 import com.karambit.bookie.helper.SessionManager;
+import com.karambit.bookie.helper.TypefaceSpan;
 import com.karambit.bookie.helper.pull_refresh_layout.PullRefreshLayout;
 import com.karambit.bookie.model.Book;
+import com.karambit.bookie.model.Notification;
 import com.karambit.bookie.model.User;
 import com.karambit.bookie.rest_api.BookApi;
 import com.karambit.bookie.rest_api.BookieClient;
 import com.karambit.bookie.rest_api.ErrorCodes;
+import com.karambit.bookie.service.BookieIntentFilters;
 
 import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.Collections;
 import java.util.Hashtable;
 import java.util.List;
@@ -61,8 +69,10 @@ public class RequestActivity extends AppCompatActivity {
 
     private static final String TAG = RequestActivity.class.getSimpleName();
 
-    public static final int REQUESTS_MODIFIED = 1005;
-    public static int REQUEST_ACCEPTED = 1007;
+    public static final int RESULT_REQUESTS_MODIFIED = 1;
+    public static final int RESULT_REQUEST_ACCEPTED = 2;
+
+    public static final String EXTRA_BOOK = "book";
 
     private Book mBook;
     private ArrayList<Book.Request> mRequests = new ArrayList<>();
@@ -71,6 +81,7 @@ public class RequestActivity extends AppCompatActivity {
     private RecyclerView mRequestRecyclerView;
     private TextView mAcceptedRequestTextView;
     private Hashtable<Book.Request, String> mLocations;
+    private BroadcastReceiver mMessageReceiver;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -80,13 +91,22 @@ public class RequestActivity extends AppCompatActivity {
         final ActionBar actionBar = getSupportActionBar();
 
         if (actionBar != null) {
-            actionBar.setTitle(R.string.request_activity_title);
             actionBar.setDisplayHomeAsUpEnabled(true);
-            actionBar.setHomeAsUpIndicator(R.drawable.ic_messaging_cancel_selection);
+
+            SpannableString s = new SpannableString(getResources().getString(R.string.request_activity_title));
+            s.setSpan(new TypefaceSpan(this, MainActivity.FONT_GENERAL_TITLE), 0, s.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+            float titleSize = getResources().getDimension(R.dimen.actionbar_title_size);
+            s.setSpan(new AbsoluteSizeSpan((int) titleSize), 0, s.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+
+            actionBar.setTitle(s);
+
+            float elevation = getResources().getDimension(R.dimen.actionbar_starting_elevation);
+            actionBar.setElevation(elevation);
+            actionBar.setHomeAsUpIndicator(R.drawable.ic_arrow_back_primary_text_color);
             actionBar.setElevation(0);
         }
 
-        mBook = getIntent().getParcelableExtra("book");
+        mBook = getIntent().getParcelableExtra(EXTRA_BOOK);
 
         mPullRefreshLayout = (PullRefreshLayout) findViewById(R.id.swipeRefreshLayout);
         mPullRefreshLayout.setRefreshing(true);
@@ -126,47 +146,54 @@ public class RequestActivity extends AppCompatActivity {
             @Override
             public void onUserClick(User user) {
                 Intent intent = new Intent(RequestActivity.this, ProfileActivity.class);
-                intent.putExtra(ProfileActivity.USER, user);
+                intent.putExtra(ProfileActivity.EXTRA_USER, user);
                 startActivity(intent);
             }
 
             @Override
-            public void onAcceptClick(final Book.Request request) {
+            public void onAcceptClick(final Book.Request clickedRequest) {
+
+                String message;
+
                 if (mBook.getState() == Book.State.READING){
-                    new AlertDialog.Builder(RequestActivity.this)
-                            .setMessage(getString(R.string.accept_request_prompt_when_state_reading, request.getFromUser().getName()))
-                            .setPositiveButton(R.string.accept, new DialogInterface.OnClickListener() {
-                                @Override
-                                public void onClick(DialogInterface dialog, int which) {
-                                    addBookRequestToServer(request.getBook().new Request(Book.RequestType.ACCEPT, request.getFromUser(), request.getToUser(),request.getCreatedAt()), request);
-                                }
-                            })
-                            .setNegativeButton(android.R.string.no, null)
-                            .create()
-                            .show();
+                    message = getString(R.string.accept_request_prompt_when_state_reading, clickedRequest.getFromUser().getName());
                 }else {
-                    new AlertDialog.Builder(RequestActivity.this)
-                            .setMessage(getString(R.string.accept_request_prompt, request.getFromUser().getName()))
-                            .setPositiveButton(R.string.accept, new DialogInterface.OnClickListener() {
-                                @Override
-                                public void onClick(DialogInterface dialog, int which) {
-                                    addBookRequestToServer(request.getBook().new Request(Book.RequestType.ACCEPT, request.getFromUser(), request.getToUser(),request.getCreatedAt()), request);
-                                }
-                            })
-                            .setNegativeButton(android.R.string.no, null)
-                            .create()
-                            .show();
+                    message = getString(R.string.accept_request_prompt, clickedRequest.getFromUser().getName());
                 }
+
+                // Created at changed to Calendar.getInstance() because the new process has been created at the moment.
+                new AlertDialog.Builder(RequestActivity.this)
+                    .setMessage(message)
+                    .setPositiveButton(R.string.accept, new DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(DialogInterface dialog, int which) {
+                            Book.Request createdRequest = clickedRequest.getBook().new Request(Book.RequestType.ACCEPT, clickedRequest.getFromUser(), clickedRequest.getToUser(), Calendar.getInstance());
+
+                            Log.i(TAG, "Clicked request: " + clickedRequest);
+                            Log.i(TAG, "Created request: " + createdRequest);
+
+                            addBookRequestToServer(createdRequest, clickedRequest);
+                        }
+                    })
+                    .setNegativeButton(android.R.string.no, null)
+                    .create()
+                    .show();
             }
 
             @Override
-            public void onRejectClick(final Book.Request request) {
+            public void onRejectClick(final Book.Request clickedRequest) {
                 new AlertDialog.Builder(RequestActivity.this)
-                    .setMessage(getString(R.string.reject_request_prompt, request.getFromUser().getName()))
+                    .setMessage(getString(R.string.reject_request_prompt, clickedRequest.getFromUser().getName()))
                     .setPositiveButton(R.string.reject, new DialogInterface.OnClickListener() {
                         @Override
                         public void onClick(DialogInterface dialog, int which) {
-                            addBookRequestToServer(request.getBook().new Request(Book.RequestType.REJECT, request.getFromUser(), request.getToUser(),request.getCreatedAt()), request);
+                            // Created at changed to Calendar.getInstance() because the new process has been created at the moment.
+                            Book.Request createdRequest = clickedRequest.getBook().new Request(Book.RequestType.REJECT, clickedRequest.getFromUser(), clickedRequest.getToUser(), Calendar.getInstance());
+
+                            Log.i(TAG, "Clicked request: " + clickedRequest);
+                            Log.i(TAG, "Created request: " + createdRequest);
+
+                            addBookRequestToServer(createdRequest, clickedRequest);
                         }
                     })
                     .setNegativeButton(android.R.string.no, null)
@@ -175,7 +202,39 @@ public class RequestActivity extends AppCompatActivity {
             }
         });
 
+        mMessageReceiver = new BroadcastReceiver() {
+            @Override
+            public void onReceive(Context context, Intent intent) {
+                if (intent.getAction().equalsIgnoreCase(BookieIntentFilters.INTENT_FILTER_SENT_REQUEST_RECEIVED)){
+                    if (intent.getParcelableExtra(BookieIntentFilters.EXTRA_NOTIFICATION) != null){
+                        Notification notification = intent.getParcelableExtra(BookieIntentFilters.EXTRA_NOTIFICATION);
+
+                        if (notification.getBook().equals(mBook)){
+                            Book.Request request = mBook.new Request(
+                                    Book.RequestType.SEND,
+                                    SessionManager.getCurrentUser(context),
+                                    notification.getOppositeUser(),
+                                    notification.getCreatedAt());
+
+                            mRequests.add(request);
+                            Collections.sort(mRequests);
+                            mRequestAdapter.notifyDataSetChanged();
+                        }
+                    }
+                }
+            }
+        };
+
+        LocalBroadcastManager.getInstance(this).registerReceiver(mMessageReceiver, new IntentFilter(BookieIntentFilters.INTENT_FILTER_SENT_REQUEST_RECEIVED));
+
         fetchRequests();
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+
+        LocalBroadcastManager.getInstance(this).unregisterReceiver(mMessageReceiver);
     }
 
     private void fetchRequests() {
@@ -203,6 +262,23 @@ public class RequestActivity extends AppCompatActivity {
                                     mRequests.clear();
                                     mRequests.addAll(Book.jsonObjectToBookRequests(responseObject, mBook));
 
+                                    Log.i(TAG, mRequests.toString());
+
+                                    for (Book.Request r : mRequests) {
+                                        if (r.getRequestType() == Book.RequestType.ACCEPT) {
+                                            setAcceptedRequestText(r);
+
+                                            for (Book.Request request : mRequests){
+                                                if (request.getRequestType() == Book.RequestType.SEND){
+                                                    User tmpUser = request.getFromUser();
+                                                    request.setFromUser(request.getToUser());
+                                                    request.setToUser(tmpUser);
+                                                    request.setRequestType(Book.RequestType.REJECT);
+                                                }
+                                            }
+                                        }
+                                    }
+
                                     mRequestAdapter.setError(RequestAdapter.ERROR_TYPE_NONE);
                                     mRequestAdapter.setRequests(mRequests);
                                     mRequestAdapter.notifyDataSetChanged();
@@ -214,13 +290,9 @@ public class RequestActivity extends AppCompatActivity {
 
                                     fetchLocations();
 
-                                    for (Book.Request r : mRequests) {
-                                        if (r.getRequestType() == Book.RequestType.ACCEPT) {
-                                            setAcceptedRequestText(r);
-                                        }
-                                    }
+                                    Log.i(TAG, "Book requests fetched and rearranged");
 
-                                    Log.i(TAG, "Book requests fetched");
+                                    Log.i(TAG, mRequests.toString());
                                 }else {
                                     Log.e(TAG, "bookRequests is empty. (Request Page Error)");
                                     mRequestAdapter.setError(RequestAdapter.ERROR_TYPE_UNKNOWN_ERROR);
@@ -256,7 +328,7 @@ public class RequestActivity extends AppCompatActivity {
                 } catch (IOException | JSONException e) {
                     e.printStackTrace();
 
-                    if (NetworkChecker.isNetworkAvailable(RequestActivity.this)){
+                    if (BookieApplication.hasNetwork()){
                         mRequestAdapter.setError(RequestAdapter.ERROR_TYPE_UNKNOWN_ERROR);
                     }else {
                         mRequestAdapter.setError(RequestAdapter.ERROR_TYPE_NO_CONNECTION);
@@ -269,7 +341,7 @@ public class RequestActivity extends AppCompatActivity {
             @Override
             public void onFailure(Call<ResponseBody> call, Throwable t) {
                 Log.e(TAG, "Home Page book fetch onFailure: " + t.getMessage());
-                if (NetworkChecker.isNetworkAvailable(RequestActivity.this)){
+                if (BookieApplication.hasNetwork()){
                     mRequestAdapter.setError(RequestAdapter.ERROR_TYPE_UNKNOWN_ERROR);
                 }else {
                     mRequestAdapter.setError(RequestAdapter.ERROR_TYPE_NO_CONNECTION);
@@ -294,6 +366,8 @@ public class RequestActivity extends AppCompatActivity {
         String password = currentUserDetails.getPassword();
         Call<ResponseBody> addBookRequest = bookApi.addBookRequests(email, password, request.getBook().getID(), request.getFromUser().getID(), request.getToUser().getID(), request.getRequestType().getRequestCode());
 
+        Log.i(TAG, "Adding book request to server: " + request);
+
         addBookRequest.enqueue(new Callback<ResponseBody>() {
             @Override
             public void onResponse(Call<ResponseBody> call, Response<ResponseBody> response) {
@@ -313,29 +387,33 @@ public class RequestActivity extends AppCompatActivity {
                                     mRequestAdapter.notifyItemRemoved(index);
 
                                     for (Book.Request r : mRequests) {
-                                        User tmpUser = r.getToUser();
-                                        r.setToUser(r.getFromUser());
-                                        r.setFromUser(tmpUser);
-                                        r.setRequestType(Book.RequestType.REJECT);
+                                        if (r.getRequestType() != Book.RequestType.REJECT) {
+                                            User tmpUser = r.getToUser();
+                                            r.setToUser(r.getFromUser());
+                                            r.setFromUser(tmpUser);
+                                            r.setRequestType(Book.RequestType.REJECT);
+                                        }
                                     }
 
                                     mRequestAdapter.notifyDataSetChanged();
 
                                     setAcceptedRequestText(oldRequest);
 
-                                    setResult(REQUEST_ACCEPTED); // for refreshing previous page
+                                    setResult(RESULT_REQUEST_ACCEPTED); // for refreshing previous page
                                 }else if (request.getRequestType() == Book.RequestType.REJECT){
                                     int indexBefore = mRequests.indexOf(oldRequest);
                                     oldRequest.setRequestType(Book.RequestType.REJECT);
                                     User tmpUser = oldRequest.getToUser();
                                     oldRequest.setToUser(oldRequest.getFromUser());
                                     oldRequest.setFromUser(tmpUser);
+                                    oldRequest.setCreatedAt(Calendar.getInstance());
                                     Collections.sort(mRequests);
                                     int indexAfter = mRequests.indexOf(oldRequest) + 1; // Subtitle
                                     mRequestAdapter.notifyItemMoved(indexBefore, indexAfter);
-                                    mRequestAdapter.notifyItemChanged(mRequestAdapter.getSentRequestCount() - 1);
+                                    Log.i(TAG, "Item moved: " + indexBefore + " -> " + indexAfter);
+                                    //mRequestAdapter.notifyItemChanged(mRequestAdapter.getSentRequestCount() - 1);
 
-                                    setResult(REQUESTS_MODIFIED); // for refreshing previous page
+                                    setResult(RESULT_REQUESTS_MODIFIED); // for refreshing previous page
                                 }
 
                                 comfortableProgressDialog.dismiss();
@@ -350,6 +428,14 @@ public class RequestActivity extends AppCompatActivity {
                                     Log.e(TAG, "Invalid request. (Book Page Error)");
                                 }else if (errorCode == ErrorCodes.INVALID_EMAIL){
                                     Log.e(TAG, "Invalid email. (Book Page Error)");
+                                }else if (errorCode == ErrorCodes.USER_NOT_VERIFIED){
+                                    Log.e(TAG, "User not valid. (Book Page Error)");
+                                }else if (errorCode == ErrorCodes.USER_BLOCKED){
+                                    Log.e(TAG, "User blocked. (Book Page Error)");
+                                }else if (errorCode == ErrorCodes.LOCATION_NOT_FOUND){
+                                    Log.e(TAG, "Location not found. (Book Page Error)");
+                                }else if (errorCode == ErrorCodes.BOOK_COUNT_INSUFFICIENT){
+                                    Log.e(TAG, "Book count insufficient. (Book Page Error)");
                                 }else if (errorCode == ErrorCodes.UNKNOWN){
                                     Log.e(TAG, "onResponse: errorCode = " + errorCode);
                                 }
@@ -398,7 +484,7 @@ public class RequestActivity extends AppCompatActivity {
             @Override
             public void onClick(View widget) {
                 Intent intent = new Intent(RequestActivity.this, ProfileActivity.class);
-                intent.putExtra(ProfileActivity.USER, request.getFromUser());
+                intent.putExtra(ProfileActivity.EXTRA_USER, request.getFromUser());
                 startActivity(intent);
             }
 
@@ -417,7 +503,7 @@ public class RequestActivity extends AppCompatActivity {
         mAcceptedRequestTextView.setHighlightColor(Color.TRANSPARENT);
         mAcceptedRequestTextView.setText(spanAcceptRequest);
 
-        getSupportActionBar().setElevation(0);
+        getSupportActionBar().setElevation(getResources().getDimension(R.dimen.actionbar_starting_elevation));
         mRequestRecyclerView.setOnScrollListener(null);
 
         ViewCompat.setElevation(mAcceptedRequestTextView, 8f * LayoutUtils.DP);
@@ -448,13 +534,8 @@ public class RequestActivity extends AppCompatActivity {
                         final double longitude = fromUser.getLocation().longitude;
 
                         try {
-                            List<Address> addresses;
                             Geocoder geocoder = new Geocoder(RequestActivity.this, Locale.getDefault());
-                            if (latitude > -90 && latitude < 90 && longitude > -90 && longitude < 90) {
-                                addresses = geocoder.getFromLocation(latitude, longitude, 1);
-                            } else {
-                                addresses = new ArrayList<>();
-                            }
+                            List<Address> addresses = geocoder.getFromLocation(latitude, longitude, 1);
 
                             // Admin area equals Istanbul
                             // Subadmin are equals Bahçelievler

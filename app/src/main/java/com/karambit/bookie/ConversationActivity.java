@@ -8,6 +8,7 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.os.Bundle;
+import android.support.v4.content.LocalBroadcastManager;
 import android.support.v7.app.ActionBar;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.LinearLayoutManager;
@@ -29,7 +30,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.karambit.bookie.adapter.ConversationAdapter;
-import com.karambit.bookie.helper.DBHandler;
+import com.karambit.bookie.database.DBManager;
 import com.karambit.bookie.helper.SessionManager;
 import com.karambit.bookie.helper.TypefaceSpan;
 import com.karambit.bookie.model.Message;
@@ -37,7 +38,9 @@ import com.karambit.bookie.model.User;
 import com.karambit.bookie.rest_api.BookieClient;
 import com.karambit.bookie.rest_api.ErrorCodes;
 import com.karambit.bookie.rest_api.FcmApi;
-import com.karambit.bookie.service.MyFirebaseMessagingService;
+import com.karambit.bookie.rest_api.UserApi;
+import com.karambit.bookie.service.BookieFirebaseMessagingService;
+import com.karambit.bookie.service.BookieIntentFilters;
 
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -45,6 +48,7 @@ import org.json.JSONObject;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Collections;
 import java.util.Iterator;
@@ -55,19 +59,21 @@ import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
 
-import static com.karambit.bookie.MainActivity.convertDpToPixel;
-
 public class ConversationActivity extends AppCompatActivity {
 
     private static final String TAG = ConversationActivity.class.getSimpleName();
 
-    public static final int MESSAGE_INSERTED = 1;
-    public static final int ALL_MESSAGES_DELETED = 2;
+    public static final int RESULT_MESSAGE_INSERTED = 1;
+    public static final int RESULT_ALL_MESSAGES_DELETED = 2;
+
+    public static final String EXTRA_USER = "user";
+    public static final String EXTRA_LAST_MESSAGE = "last_message";
+    public static final String EXTRA_OPPOSITE_USER = "opposite_user";
 
     public static Integer currentConversationUserId = -1;
 
     private User mOppositeUser;
-    private DBHandler mDbHandler;
+    private DBManager mDbManager;
     private ConversationAdapter mConversationAdapter;
     private ImageButton mSendMessageButton;
     private EditText mMessageEditText;
@@ -81,17 +87,18 @@ public class ConversationActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_conversation);
 
-        mOppositeUser = getIntent().getExtras().getParcelable("user");
+        mOppositeUser = getIntent().getExtras().getParcelable(EXTRA_USER);
 
         SpannableString s = new SpannableString(mOppositeUser.getName());
-        s.setSpan(new TypefaceSpan(this, "comfortaa.ttf"), 0, s.length(),
+        s.setSpan(new TypefaceSpan(this, MainActivity.FONT_GENERAL_TITLE), 0, s.length(),
                 Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
-        s.setSpan(new AbsoluteSizeSpan((int) convertDpToPixel(18, this)), 0, s.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+        final float titleSize = getResources().getDimension(R.dimen.actionbar_title_size);
+        s.setSpan(new AbsoluteSizeSpan((int) titleSize), 0, s.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
         getSupportActionBar().setTitle(s);
 
-        final User currentUser = SessionManager.getCurrentUser(this);
-        mDbHandler = DBHandler.getInstance(this);
-        mMessages = mDbHandler.getConversationMessages(mOppositeUser, currentUser);
+        mDbManager = new DBManager(this);
+        mDbManager.open();
+        mMessages = mDbManager.getMessageDataSource().getConversation(mOppositeUser, SessionManager.getCurrentUser(this));
 
         mMessageEditText = (EditText) findViewById(R.id.messageEditText);
         mSendMessageButton = (ImageButton) findViewById(R.id.messageSendButton);
@@ -168,6 +175,8 @@ public class ConversationActivity extends AppCompatActivity {
 
                     if (!selectedIndexes.contains(position)) {
 
+                        Log.i(TAG, "Message " + position + " selected");
+
                         if (selectedIndexes.size() == 0) {
                             setSelectionMode(true);
                         }
@@ -178,6 +187,8 @@ public class ConversationActivity extends AppCompatActivity {
                         setActionBarTitle(selectedTitle);
 
                     } else {
+
+                        Log.i(TAG, "Message " + position + " unselected");
 
                         selectedIndexes.remove((Integer) position);
 
@@ -200,6 +211,8 @@ public class ConversationActivity extends AppCompatActivity {
 
                 if (!selectedIndexes.contains(position)) {
 
+                    Log.i(TAG, "Message " + position + " selected");
+
                     if (selectedIndexes.size() == 0) {
                         setSelectionMode(true);
                     }
@@ -210,6 +223,9 @@ public class ConversationActivity extends AppCompatActivity {
                     setActionBarTitle(selectedTitle);
 
                 } else {
+
+                    Log.i(TAG, "Message " + position + " unselected");
+
                     selectedIndexes.remove((Integer) position);
 
                     if (selectedIndexes.isEmpty()) {
@@ -260,6 +276,7 @@ public class ConversationActivity extends AppCompatActivity {
         mSendMessageButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+
                 String messageText = mMessageEditText.getText().toString();
                 messageText = messageText.trim();
 
@@ -268,19 +285,22 @@ public class ConversationActivity extends AppCompatActivity {
                     messageText = trimInnerNewLines(messageText);
 
                     int id = createTemporaryMessageID();
-                    Message message = new Message(id, messageText, currentUser,
-                                                  mOppositeUser, Calendar.getInstance(), Message.State.PENDING);
+                    final Message message = new Message(id, messageText, SessionManager.getCurrentUser(ConversationActivity.this),
+                            mOppositeUser, Calendar.getInstance(), Message.State.PENDING);
 
-                    if (mDbHandler.saveMessageToDataBase(message)){
-                        mMessageEditText.setText("");
-                        toggleSendButton(false);
-                        sendMessageToServer(message);
-                        insertMessage(message);
-                    }else {
-                        Log.e(TAG, "Message Insertion Failed!");
-                        Toast.makeText(ConversationActivity.this, getString(R.string.unknown_error), Toast.LENGTH_SHORT).show();
-                    }
+                                if (mDbManager.getMessageDataSource().saveMessage(message, SessionManager.getCurrentUser(ConversationActivity.this))){
+
+                                    mMessageEditText.setText("");
+                                    toggleSendButton(false);
+                                    sendMessageToServer(message);
+                                    insertMessage(message);
+                                }else {
+                                    Log.e(TAG, "Message Insertion Failed!");
+                                    Toast.makeText(ConversationActivity.this, getString(R.string.unknown_error), Toast.LENGTH_SHORT).show();
+                                }
+
                 }
+
             }
         });
     }
@@ -290,7 +310,7 @@ public class ConversationActivity extends AppCompatActivity {
         super.onResume();
         currentConversationUserId = mOppositeUser.getID();
 
-        Iterator<Message> iterator = MyFirebaseMessagingService.mNotificationMessages.iterator();
+        Iterator<Message> iterator = BookieFirebaseMessagingService.mNotificationMessages.iterator();
 
         while (iterator.hasNext()){
             Message message = iterator.next();
@@ -300,11 +320,12 @@ public class ConversationActivity extends AppCompatActivity {
         }
 
 
-        if (MyFirebaseMessagingService.mNotificationUserIds.contains(currentConversationUserId)){
-            MyFirebaseMessagingService.mNotificationUserIds.remove(currentConversationUserId);
+        if (BookieFirebaseMessagingService.mNotificationUserIds.contains(currentConversationUserId)){
+            BookieFirebaseMessagingService.mNotificationUserIds.remove(currentConversationUserId);
 
             NotificationManager notificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
-            notificationManager.cancel(getString(R.string.app_name), MyFirebaseMessagingService.MESSAGE_NOTIFICATION_ID);
+
+            notificationManager.cancel(getString(R.string.message_notification), BookieFirebaseMessagingService.MESSAGE_NOTIFICATION_ID);
         }
 
         final User currentUser = SessionManager.getCurrentUser(this);
@@ -312,50 +333,58 @@ public class ConversationActivity extends AppCompatActivity {
         mMessageReceiver = new BroadcastReceiver() {
             @Override
             public void onReceive(Context context, Intent intent) {
-                if (intent.getAction().equalsIgnoreCase("com.karambit.bookie.MESSAGE_RECEIVED")){
-                    if (intent.getParcelableExtra("message") != null){
-                        Message message = intent.getParcelableExtra("message");
+                if (intent.getAction().equalsIgnoreCase(BookieIntentFilters.INTENT_FILTER_MESSAGE_RECEIVED)){
+                    Message message = intent.getParcelableExtra(BookieIntentFilters.EXTRA_MESSAGE);
+                    if (message != null){
                         if(message.getOppositeUser(currentUser).equals(mOppositeUser)){
                             insertMessage(message);
 
                             fetchSeenMessages();
                         }
                     }
-                } else if (intent.getAction().equalsIgnoreCase("com.karambit.bookie.MESSAGE_DELIVERED")){
-                    if (intent.getIntExtra("message_id",-1) > 0){
-                        changeMessageState(intent.getIntExtra("message_id",-1), Message.State.DELIVERED);
+                } else if (intent.getAction().equalsIgnoreCase(BookieIntentFilters.INTENT_FILTER_MESSAGE_DELIVERED)){
+                    final int messageId = intent.getIntExtra(BookieIntentFilters.EXTRA_MESSAGE_ID, -1);
+                    if (messageId > 0){
+
+                        changeMessageState(messageId, Message.State.DELIVERED);
                     }
-                } else if (intent.getAction().equalsIgnoreCase("com.karambit.bookie.MESSAGE_SEEN")){
-                    if (intent.getIntExtra("message_id",-1) > 0){
-                        Message changedMessage = changeMessageState(intent.getIntExtra("message_id",-1), Message.State.SEEN);
+                } else if (intent.getAction().equalsIgnoreCase(BookieIntentFilters.INTENT_FILTER_MESSAGE_SEEN)){
+                    final int messageId = intent.getIntExtra(BookieIntentFilters.EXTRA_MESSAGE_ID, -1);
+                    if (messageId > 0){
+
+                        Message changedMessage = changeMessageState(messageId, Message.State.SEEN);
                         if (changedMessage != null){
-                            for (Message message: mMessages){
+                            for (final Message message: mMessages){
 
                                 if (message.getSender().equals(currentUser) && message.getState() == Message.State.DELIVERED &&
-                                    message.getCreatedAt().getTimeInMillis() <= changedMessage.getCreatedAt().getTimeInMillis()){
-
+                                        message.getCreatedAt().getTimeInMillis() <= changedMessage.getCreatedAt().getTimeInMillis()){
                                     changeMessageState(message.getID(), Message.State.SEEN);
+
                                 }
                             }
                         }
+
                     }
                 }
             }
         };
 
-        registerReceiver(mMessageReceiver, new IntentFilter("com.karambit.bookie.MESSAGE_RECEIVED"));
-        registerReceiver(mMessageReceiver, new IntentFilter("com.karambit.bookie.MESSAGE_DELIVERED"));
-        registerReceiver(mMessageReceiver, new IntentFilter("com.karambit.bookie.MESSAGE_SEEN"));
+        LocalBroadcastManager.getInstance(this).registerReceiver(mMessageReceiver, new IntentFilter(BookieIntentFilters.INTENT_FILTER_MESSAGE_RECEIVED));
+        LocalBroadcastManager.getInstance(this).registerReceiver(mMessageReceiver, new IntentFilter(BookieIntentFilters.INTENT_FILTER_MESSAGE_DELIVERED));
+        LocalBroadcastManager.getInstance(this).registerReceiver(mMessageReceiver, new IntentFilter(BookieIntentFilters.INTENT_FILTER_MESSAGE_SEEN));
 
         fetchSeenMessages();
     }
 
     private void fetchSeenMessages() {
 
-        User currentUser = SessionManager.getCurrentUser(this);
+        User currentUser = SessionManager.getCurrentUser(ConversationActivity.this);
 
-        for (Message message: mMessages){
+        Iterator<Message> messageIterator = mMessages.iterator();
+        while (messageIterator.hasNext()){
+            final Message message = messageIterator.next();
             if (message.getReceiver().equals(currentUser) && message.getState() != Message.State.SEEN){
+
                 changeMessageState(message.getID(), Message.State.SEEN);
             }
         }
@@ -366,11 +395,11 @@ public class ConversationActivity extends AppCompatActivity {
         super.onPause();
 
         currentConversationUserId = -1;
-        unregisterReceiver(mMessageReceiver);
+        LocalBroadcastManager.getInstance(this).unregisterReceiver(mMessageReceiver);
     }
 
     public int createTemporaryMessageID() {
-        int minimum = mDbHandler.getMinimumMessageId();
+        int minimum = mDbManager.getMessageDataSource().getMinimumMessageId();
 
         if (minimum >= 0) {
             return -1;
@@ -379,7 +408,10 @@ public class ConversationActivity extends AppCompatActivity {
         }
     }
 
-    public void insertMessage(Message newMessage) {
+    public void insertMessage(final Message newMessage) {
+
+        Log.i(TAG, "Message inserted: " + newMessage.getText());
+
         mMessages.add(0, newMessage);
         mConversationAdapter.notifyItemInserted(0);
 
@@ -395,19 +427,25 @@ public class ConversationActivity extends AppCompatActivity {
         }
 
         if (newMessage.getSender().getID() != currentUser.getID()) {
+
             changeMessageState(newMessage.getID(), Message.State.SEEN);
         }
 
-        setResult(MESSAGE_INSERTED, getIntent().putExtra("last_message", mMessages.get(0)));
+        ArrayList<Integer> selectedIndexes = mConversationAdapter.getSelectedIndexes();
+        for (int i = 0; i < selectedIndexes.size(); i++) {
+            selectedIndexes.set(i, selectedIndexes.get(i) + 1);
+        }
+
+        setResult(RESULT_MESSAGE_INSERTED, getIntent().putExtra(EXTRA_LAST_MESSAGE, mMessages.get(0)));
     }
 
     public Message changeMessageState(int messageID, Message.State state) {
-        for (Message message : mMessages) {
+        for (final Message message : mMessages) {
             if (message.getID() == messageID) {
                 if (message.getState() != Message.State.SEEN) {
                     message.setState(state);
                     mConversationAdapter.notifyItemChanged(mMessages.indexOf(message));
-                    mDbHandler.updateMessageState(message, state);
+                    mDbManager.getMessageDataSource().updateMessageState(message, state);
 
                     if (message.getSender().getID() != SessionManager.getCurrentUser(getApplicationContext()).getID()){
                         uploadMessageStateToServer(message);
@@ -417,7 +455,7 @@ public class ConversationActivity extends AppCompatActivity {
                     if (state == Message.State.SEEN){
                         message.setState(state);
                         mConversationAdapter.notifyItemChanged(mMessages.indexOf(message));
-                        mDbHandler.updateMessageState(message, state);
+                        mDbManager.getMessageDataSource().updateMessageState(message, state);
 
                         if (message.getSender().getID() != SessionManager.getCurrentUser(getApplicationContext()).getID()){
                             uploadMessageStateToServer(message);
@@ -436,19 +474,11 @@ public class ConversationActivity extends AppCompatActivity {
         for (Message message : mMessages) {
             if (message.getID() == oldMessageID) {
                 message.setID(newMessageID);
-                mDbHandler.updateMessageId(oldMessageID, newMessageID);
+                mDbManager.getMessageDataSource().updateMessageId(oldMessageID, newMessageID);
                 return true;
             }
         }
         return false;
-    }
-
-    private void clearSelections() {
-        ArrayList<Integer> selectedIndexes = new ArrayList<>(mConversationAdapter.getSelectedIndexes());
-        mConversationAdapter.getSelectedIndexes().clear();
-        for (int i : selectedIndexes) {
-            mConversationAdapter.notifyItemChanged(i);
-        }
     }
 
     private void setSelectionMode(boolean toggle) {
@@ -459,15 +489,19 @@ public class ConversationActivity extends AppCompatActivity {
             setActionBarTitle(selectedTitle);
 
             actionBar.setDisplayHomeAsUpEnabled(true);
-            actionBar.setHomeAsUpIndicator(R.drawable.ic_messaging_cancel_selection);
+            actionBar.setHomeAsUpIndicator(R.drawable.ic_arrow_back_primary_text_color);
 
             mDeleteMenuItem.setVisible(true);
+
+            Log.i(TAG, "Message selection mode on");
         } else {
             setActionBarTitle(mOppositeUser.getName());
 
             actionBar.setDisplayHomeAsUpEnabled(false);
 
             mDeleteMenuItem.setVisible(false);
+
+            Log.i(TAG, "Message selection mode off");
         }
     }
 
@@ -475,9 +509,10 @@ public class ConversationActivity extends AppCompatActivity {
         ActionBar actionBar = getSupportActionBar();
 
         SpannableString title = new SpannableString(selectedTitle);
-        title.setSpan(new TypefaceSpan(this, "montserrat_regular.ttf"), 0, title.length(),
+        title.setSpan(new TypefaceSpan(this, MainActivity.FONT_GENERAL_TITLE), 0, title.length(),
                       Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
-        title.setSpan(new AbsoluteSizeSpan(60), 0, title.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+        float titleSize = getResources().getDimension(R.dimen.actionbar_title_size);
+        title.setSpan(new AbsoluteSizeSpan((int) titleSize), 0, title.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
 
         // Update the action bar title with the TypefaceSpan instance
         actionBar.setTitle(title);
@@ -517,28 +552,33 @@ public class ConversationActivity extends AppCompatActivity {
 
                             ArrayList<Integer> selectedIndexes = mConversationAdapter.getSelectedIndexes();
 
-                            Log.d(TAG, selectedIndexes.toString());
-
                             Collections.sort(selectedIndexes);
                             Collections.reverse(selectedIndexes);
 
-                            for (int index : selectedIndexes) {
+                            int[] selectedMessageIds = new int[selectedIndexes.size()];
+
+                            for (int i = 0; i < selectedIndexes.size(); i++) {
+                                int index = selectedIndexes.get(i);
                                 Message message = mMessages.get(index);
+                                selectedMessageIds[i] = message.getID();
                                 mMessages.remove(index);
-                                mDbHandler.deleteMessage(message);
+                                mDbManager.getMessageDataSource().deleteMessage(message);
                             }
+
+                            deleteMessagesOnServer(selectedMessageIds);
+
+                            Log.i(TAG, "Deleted message indexes: " + selectedIndexes.toString());
+                            Log.i(TAG, "Deleted message IDs: " + Arrays.toString(selectedMessageIds));
 
                             selectedIndexes.clear();
                             setSelectionMode(false);
                             mConversationAdapter.notifyDataSetChanged();
 
                             if (!mMessages.isEmpty()) {
-                                setResult(MESSAGE_INSERTED, getIntent().putExtra("last_message", mMessages.get(0)));
+                                setResult(RESULT_MESSAGE_INSERTED, getIntent().putExtra(EXTRA_LAST_MESSAGE, mMessages.get(0)));
                             } else {
-                                setResult(ALL_MESSAGES_DELETED, getIntent().putExtra("opposite_user", mOppositeUser));
+                                setResult(RESULT_ALL_MESSAGES_DELETED, getIntent().putExtra(EXTRA_OPPOSITE_USER, mOppositeUser));
                             }
-
-                            // TODO Server delete notify
                         }
                     })
                     .setNegativeButton(android.R.string.cancel, null)
@@ -572,6 +612,81 @@ public class ConversationActivity extends AppCompatActivity {
 
             mSendMessageButton.setClickable(false);
         }
+    }
+
+    private void deleteMessagesOnServer(int[] selectedMessageIds) {
+
+        final UserApi userApi = BookieClient.getClient().create(UserApi.class);
+
+        User.Details currentUserDetails = SessionManager.getCurrentUserDetails(this);
+
+        String email = currentUserDetails.getEmail();
+        String password = currentUserDetails.getPassword();
+
+        String deletedMessageIds;
+
+        int i = 0;
+
+        StringBuilder builder = new StringBuilder();
+        for (Integer genreCode: selectedMessageIds){
+            builder.append(genreCode);
+            if (i < selectedMessageIds.length - 1){
+                builder.append("_");
+            }
+            i++;
+        }
+        deletedMessageIds = builder.toString();
+
+        Call<ResponseBody> setLovedGenres = userApi.deleteMessages(email, password, deletedMessageIds);
+
+        setLovedGenres.enqueue(new Callback<ResponseBody>() {
+            @Override
+            public void onResponse(Call<ResponseBody> call, Response<ResponseBody> response) {
+
+                try {
+                    if (response != null){
+                        if (response.body() != null){
+                            String json = response.body().string();
+
+                            JSONObject responseObject = new JSONObject(json);
+                            boolean error = responseObject.getBoolean("error");
+
+                            if (!error) {
+                                Log.i(TAG, "Messages deleted from server!");
+                            } else {
+
+                                int errorCode = responseObject.getInt("errorCode");
+
+                                if (errorCode == ErrorCodes.EMPTY_POST){
+                                    Log.e(TAG, "Post is empty. (Conversation Error)");
+                                }else if (errorCode == ErrorCodes.MISSING_POST_ELEMENT){
+                                    Log.e(TAG, "Post element missing. (Conversation Error)");
+                                }else if (errorCode == ErrorCodes.INVALID_REQUEST){
+                                    Log.e(TAG, "Invalid request. (Conversation Error)");
+                                }else if (errorCode == ErrorCodes.INVALID_EMAIL){
+                                    Log.e(TAG, "Invalid email. (Conversation Error)");
+                                }else if (errorCode == ErrorCodes.UNKNOWN){
+                                    Log.e(TAG, "onResponse: errorCode = " + errorCode);
+                                }
+
+                            }
+                        }else{
+                            Log.e(TAG, "Response body is null. (Conversation Error)");
+                        }
+                    }else{
+                        Log.e(TAG, "Response object is null. (Conversation Error)");
+                    }
+                } catch (IOException | JSONException e) {
+                    e.printStackTrace();
+                }
+            }
+
+            @Override
+            public void onFailure(Call<ResponseBody> call, Throwable t) {
+
+                Log.e(TAG, "Conversation onFailure: " + t.getMessage());
+            }
+        });
     }
 
     /**
@@ -645,13 +760,24 @@ public class ConversationActivity extends AppCompatActivity {
                         if (response.body() != null){
                             String json = response.body().string();
 
-                            JSONObject responseObject = new JSONObject(json);
+                            final JSONObject responseObject = new JSONObject(json);
                             boolean error = responseObject.getBoolean("error");
 
                             if (!error) {
                                 if (!responseObject.isNull("oldMessageID") && !responseObject.isNull("newMessageID")){
-                                    changeMessageID(responseObject.getInt("oldMessageID"), responseObject.getInt("newMessageID"));
-                                    changeMessageState(responseObject.getInt("newMessageID"), Message.State.SENT);
+
+                                    try {
+                                        changeMessageID(responseObject.getInt("oldMessageID"), responseObject.getInt("newMessageID"));
+                                    } catch (JSONException e) {
+                                        e.printStackTrace();
+                                    }
+
+                                    try {
+                                        changeMessageState(responseObject.getInt("newMessageID"), Message.State.SENT);
+                                    } catch (JSONException e) {
+                                        e.printStackTrace();
+                                    }
+
                                 }
 
                             } else {

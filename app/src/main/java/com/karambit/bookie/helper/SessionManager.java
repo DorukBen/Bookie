@@ -3,7 +3,10 @@ package com.karambit.bookie.helper;
 import android.content.Context;
 import android.content.SharedPreferences;
 
+import com.karambit.bookie.database.DBManager;
 import com.karambit.bookie.model.User;
+
+import java.util.Calendar;
 
 /**
  * Created by orcan on 11/13/16.
@@ -11,15 +14,16 @@ import com.karambit.bookie.model.User;
 
 public class SessionManager {
 
-    private static User mUser;
-
     private static User.Details mUserDetails;
+
+    private static String mLocationText;
 
     public static final String TAG = SessionManager.class.getSimpleName();
 
     private static final String NAME_SHARED_PREFERENCES = "bookie_general_sp";
 
     private static final String IS_LOGGED_IN = "is_logged_in";
+    private static final String LAST_LOCATION_REMINDER = "last_reminded";
 
     public static boolean isLoggedIn(Context context) {
         SharedPreferences sharedPreferences = context.getSharedPreferences(NAME_SHARED_PREFERENCES, Context.MODE_PRIVATE);
@@ -35,32 +39,41 @@ public class SessionManager {
     }
 
     public static void logout(Context context) {
-        DBHandler dbHandler = DBHandler.getInstance(context);
-        dbHandler.resetLovedGenres(getCurrentUser(context));
-        dbHandler.deleteAllMessages();
-        dbHandler.deleteCurrentUser();
+        DBManager dbManager = new DBManager(context);
+        dbManager.open();
+        dbManager.getLovedGenreDataSource().resetGenres(getCurrentUser(context));
+        dbManager.getMessageDataSource().deleteAllMessages();
+        dbManager.getUserDataSource().deleteUser();
+        dbManager.getNotificationDataSource().deleteAllNotifications();
+        dbManager.getSearchUserDataSource().deleteAllUsers();
+        dbManager.getSearchBookDataSource().deleteAllBooks();
         changeLoginStatus(context, false);
         mUserDetails = null;
-        mUser = null;
     }
 
     public static void login(Context context, User.Details userDetails) {
-        DBHandler dbHandler = DBHandler.getInstance(context);
-        dbHandler.insertCurrentUser(userDetails);
+        DBManager dbManager = new DBManager(context);
+        dbManager.open();
+        dbManager.getUserDataSource().saveUser(userDetails);
         changeLoginStatus(context, true);
         mUserDetails = userDetails;
-        mUser = userDetails.getUser();
     }
 
     public static void updateCurrentUserFromDB(Context context){
-        DBHandler dbHandler = DBHandler.getInstance(context);
-        mUserDetails = dbHandler.getCurrentUserDetails();
-        mUser = dbHandler.getCurrentUser();
+        DBManager dbManager = new DBManager(context);
+        dbManager.open();
+        mUserDetails = dbManager.getUserDataSource().getUserDetails();
+    }
+
+    public static void updateCurrentUser(User.Details userDetails){
+        mUserDetails = userDetails;
     }
 
     public static User.Details getCurrentUserDetails(Context context) {
         if (mUserDetails == null){
-            mUserDetails = DBHandler.getInstance(context).getCurrentUserDetails();
+            DBManager dbManager = new DBManager(context);
+            dbManager.open();
+            mUserDetails = dbManager.getUserDataSource().getUserDetails();
             return mUserDetails;
         }else {
             return mUserDetails;
@@ -68,16 +81,44 @@ public class SessionManager {
     }
 
     public static User getCurrentUser(Context context) {
-        if (mUser == null){
-            mUser = DBHandler.getInstance(context).getCurrentUser();
-            return mUser;
+        if (mUserDetails == null){
+            DBManager dbManager = new DBManager(context);
+            dbManager.open();
+            mUserDetails = dbManager.getUserDataSource().getUserDetails();
+            return mUserDetails.getUser();
         }else {
-            return mUser;
+            return mUserDetails.getUser();
         }
     }
 
     public static boolean isLovedGenresSelectedLocal(Context context) {
-        DBHandler dbHandler = DBHandler.getInstance(context);
-        return dbHandler.isLovedGenresSelected(getCurrentUser(context));
+        DBManager dbManager = new DBManager(context);
+        dbManager.open();
+        boolean result =  dbManager.getLovedGenreDataSource().isGenresSelected(getCurrentUser(context));
+        return result;
+    }
+
+    public static String getLocationText() {
+        return mLocationText;
+    }
+
+    public static void setLocationText(String locationText) {
+        mLocationText = locationText;
+    }
+
+    public static Calendar getLastLocationReminderTime(Context context) {
+        SharedPreferences sharedPreferences = context.getSharedPreferences(NAME_SHARED_PREFERENCES, Context.MODE_PRIVATE);
+        long timeInMillis = sharedPreferences.getLong(LAST_LOCATION_REMINDER, -1);
+        Calendar calendar = Calendar.getInstance();
+        calendar.setTimeInMillis(timeInMillis);
+        return calendar;
+    }
+
+    public static void notifyLocationReminded(Context context) {
+        SharedPreferences sharedPreferences = context.getSharedPreferences(NAME_SHARED_PREFERENCES, Context.MODE_PRIVATE);
+        SharedPreferences.Editor editor = sharedPreferences.edit();
+        editor.putLong(LAST_LOCATION_REMINDER, Calendar.getInstance().getTimeInMillis());
+        editor.apply();
+        editor.commit();
     }
 }

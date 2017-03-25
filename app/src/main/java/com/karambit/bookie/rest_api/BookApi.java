@@ -52,4 +52,28 @@ public interface BookApi {
             @Field("email") String email,
             @Field("password") String password,
             @Field("bookID") int bookId);
+
+    @FormUrlEncoded
+    @POST("ReportBook")
+    Call<ResponseBody> uploadBookReport (@Field("email") String email,
+                                         @Field("password") String password,
+                                         @Field("bookID") int bookId,
+                                         @Field("reportCode") int reportCode,
+                                         @Field("reportInfo") String reportInfo);
+
+    @FormUrlEncoded
+    @POST("UpdateBookDetails")
+    Call<ResponseBody> updateBookDetails (@Field("email") String email,
+                                         @Field("password") String password,
+                                         @Field("bookID") int bookId,
+                                         @Field("bookName") String name,
+                                         @Field("author") String author,
+                                         @Field("genreCode") int genreCode);
+
+    @FormUrlEncoded
+    @POST("SetBookStateLost")
+    Call<ResponseBody> setBookStateLost (@Field("email") String email,
+                                          @Field("password") String password,
+                                          @Field("bookID") int bookId);
+
 }

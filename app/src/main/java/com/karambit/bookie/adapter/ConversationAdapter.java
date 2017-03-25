@@ -132,7 +132,7 @@ public class ConversationAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
     }
 
     @Override
-    public void onBindViewHolder(RecyclerView.ViewHolder holder, int position) {
+    public void onBindViewHolder(final RecyclerView.ViewHolder holder, int position) {
 
         final int finalPosition = position;
 
@@ -149,13 +149,13 @@ public class ConversationAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
         View.OnLongClickListener onLongClickListener = new View.OnLongClickListener() {
             @Override
             public boolean onLongClick(View v) {
-                return mOnMessageClickListener.onMessageLongClick(message, finalPosition);
+                return mOnMessageClickListener.onMessageLongClick(message, holder.getAdapterPosition());
             }
         };
         View.OnClickListener onClickListener = new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                mOnMessageClickListener.onMessageClick(message, finalPosition);
+                mOnMessageClickListener.onMessageClick(message, holder.getAdapterPosition());
             }
         };
         switch (getItemViewType(position)) {
@@ -197,7 +197,7 @@ public class ConversationAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
                         currentUserHolder.mError.setOnClickListener(new View.OnClickListener() {
                             @Override
                             public void onClick(View v) {
-                                mOnMessageClickListener.onMessageErrorClick(message, finalPosition);
+                                mOnMessageClickListener.onMessageErrorClick(message, holder.getAdapterPosition());
                                 v.setVisibility(View.GONE);
                             }
                         });

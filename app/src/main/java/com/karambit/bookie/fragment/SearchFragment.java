@@ -16,11 +16,14 @@ import android.view.ViewGroup;
 import android.widget.EditText;
 
 import com.karambit.bookie.BookActivity;
+import com.karambit.bookie.BookieApplication;
+import com.karambit.bookie.InfoActivity;
+import com.karambit.bookie.LocationActivity;
 import com.karambit.bookie.ProfileActivity;
 import com.karambit.bookie.R;
 import com.karambit.bookie.adapter.SearchAdapter;
-import com.karambit.bookie.helper.DBHandler;
-import com.karambit.bookie.helper.NetworkChecker;
+import com.karambit.bookie.database.DBManager;
+import com.karambit.bookie.helper.InformationDialog;
 import com.karambit.bookie.helper.SessionManager;
 import com.karambit.bookie.helper.string_similarity.JaroWinkler;
 import com.karambit.bookie.model.Book;
@@ -35,9 +38,11 @@ import org.json.JSONObject;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.concurrent.TimeUnit;
 
 import okhttp3.ResponseBody;
 import retrofit2.Call;
@@ -49,8 +54,14 @@ import retrofit2.Response;
  */
 public class SearchFragment extends Fragment {
 
-
     private static final String TAG = SearchFragment.class.getSimpleName();
+
+    public static final int TAB_INDEX = 1;
+    public static final int VIEW_PAGER_INDEX = 1;
+    public static final String TAB_SPEC = "tab_search";
+    public static final String TAB_INDICATOR = "tab1";
+
+    public static final long INTERVAL_LOCATION_REMINDER_MILLIS = TimeUnit.DAYS.toMillis(2);
 
     private String[] mAllGenres ;
     private ArrayList<Integer> mGenreCodes = new ArrayList<>();
@@ -58,9 +69,9 @@ public class SearchFragment extends Fragment {
     private ArrayList<User> mUsers = new ArrayList<>();
 
     private int mFetchGenreCode = -1;
-    private int mFetchSearchButtonPressed = 0;
+    private boolean mFetchSearchButtonPressed = false;
     private SearchAdapter mSearchAdapter;
-    private DBHandler mDbHandler;
+    private DBManager mDbManager;
 
     public SearchFragment() {
         // Required empty public constructor
@@ -77,7 +88,8 @@ public class SearchFragment extends Fragment {
         recyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
         final EditText searchEditText = (EditText)rootView.findViewById(R.id.searchEditText);
 
-        mDbHandler = DBHandler.getInstance(getContext());
+        mDbManager = new DBManager(getContext());
+        mDbManager.open();
 
         mAllGenres  = getContext().getResources().getStringArray(R.array.genre_types);
 
@@ -105,14 +117,17 @@ public class SearchFragment extends Fragment {
 
                 Intent intent = new Intent(getContext(), ProfileActivity.class);
                 Bundle bundle = new Bundle();
-                bundle.putParcelable(ProfileActivity.USER, user);
+                bundle.putParcelable(ProfileActivity.EXTRA_USER, user);
                 intent.putExtras(bundle);
                 startActivity(intent);
             }
 
             @Override
             public void onClearHistoryClick() {
-                mDbHandler.clearSearchHistory();
+                //Clear history
+                mDbManager.getSearchBookDataSource().deleteAllBooks();
+                mDbManager.getSearchUserDataSource().deleteAllUsers();
+
                 mSearchAdapter.setWarning(SearchAdapter.WARNING_TYPE_NOTHING_TO_SHOW);
             }
         });
@@ -131,7 +146,7 @@ public class SearchFragment extends Fragment {
         rootView.findViewById(R.id.searchButton).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-            mFetchSearchButtonPressed = 1;
+            mFetchSearchButtonPressed = true;
             getSearchResults(searchEditText.getText().toString());
             }
         });
@@ -152,6 +167,51 @@ public class SearchFragment extends Fragment {
             @Override
             public void afterTextChanged(Editable s) {
 
+            }
+        });
+
+        searchEditText.setOnFocusChangeListener(new View.OnFocusChangeListener() {
+            @Override
+            public void onFocusChange(View v, boolean hasFocus) {
+                if(hasFocus){
+                    if (SessionManager.getCurrentUser(getContext()).getLocation() == null) {
+                        Calendar lastRemindedAt = SessionManager.getLastLocationReminderTime(getContext());
+                        if (Calendar.getInstance().getTimeInMillis() - lastRemindedAt.getTimeInMillis() > INTERVAL_LOCATION_REMINDER_MILLIS) {
+
+                            // Unverified email information dialog
+
+                            final InformationDialog informationDialog = new InformationDialog(getContext());
+                            informationDialog.setCancelable(false);
+                            informationDialog.setPrimaryMessage(R.string.null_location_info_short);
+                            informationDialog.setSecondaryMessage(R.string.null_location_search_info);
+                            informationDialog.setDefaultClickListener(new InformationDialog.DefaultClickListener() {
+                                @Override
+                                public void onOkClick() {
+                                    informationDialog.dismiss();
+                                }
+
+                                @Override
+                                public void onMoreInfoClick() {
+                                    Intent intent = new Intent(getActivity(), InfoActivity.class);
+                                    // TODO Put related header extras array
+                                    startActivity(intent);
+                                }
+                            });
+                            informationDialog.setExtraButtonClickListener(R.string.set_location, new InformationDialog.ExtraButtonClickListener() {
+                                @Override
+                                public void onExtraButtonClick() {
+                                    // No need for result because searching can be done without location
+                                    startActivity(new Intent(getActivity(), LocationActivity.class));
+                                    informationDialog.dismiss();
+                                }
+                            });
+
+                            informationDialog.show();
+
+                            SessionManager.notifyLocationReminded(getContext());
+                        }
+                    }
+                }
             }
         });
 
@@ -210,7 +270,7 @@ public class SearchFragment extends Fragment {
                                 }
 
                                 mFetchGenreCode = -1;
-                                mFetchSearchButtonPressed = 0;
+                                mFetchSearchButtonPressed = false;
                             } else {
 
                                 int errorCode = responseObject.getInt("errorCode");
@@ -240,7 +300,7 @@ public class SearchFragment extends Fragment {
                 } catch (IOException | JSONException e) {
                     e.printStackTrace();
 
-                    if(NetworkChecker.isNetworkAvailable(getContext())){
+                    if(BookieApplication.hasNetwork()){
                         mSearchAdapter.setError(SearchAdapter.ERROR_TYPE_UNKNOWN_ERROR);
                     }else{
                         mSearchAdapter.setError(SearchAdapter.ERROR_TYPE_NO_CONNECTION);
@@ -251,7 +311,7 @@ public class SearchFragment extends Fragment {
 
             @Override
             public void onFailure(Call<ResponseBody> call, Throwable t) {
-                if(NetworkChecker.isNetworkAvailable(getContext())){
+                if(BookieApplication.hasNetwork()){
                     mSearchAdapter.setError(SearchAdapter.ERROR_TYPE_UNKNOWN_ERROR);
                 }else{
                     mSearchAdapter.setError(SearchAdapter.ERROR_TYPE_NO_CONNECTION);
@@ -308,8 +368,8 @@ public class SearchFragment extends Fragment {
     }
 
     private void showSearchHistory(){
-        ArrayList<Book> historyBooks = mDbHandler.getAllSearchBooks(mDbHandler.getAllSearchBookUsers());
-        ArrayList<User> historyUsers = mDbHandler.getAllSearchUsers();
+        ArrayList<Book> historyBooks = mDbManager.getSearchBookDataSource().getAllBooks();
+        ArrayList<User> historyUsers = mDbManager.getSearchUserDataSource().getAllUsers();
 
         if (historyBooks.size() + historyUsers.size() > 0){
             mSearchAdapter.setItems(new ArrayList<Integer>(), historyBooks, historyUsers);
@@ -320,42 +380,34 @@ public class SearchFragment extends Fragment {
     }
 
     private void addBookToSearchHistory(Book book) {
-        ArrayList<Book> historyBooks = mDbHandler.getAllSearchBooks(mDbHandler.getAllSearchBookUsers());
+        ArrayList<Book> historyBooks = mDbManager.getSearchBookDataSource().getAllBooks();
 
         if (historyBooks.size() > 2){
-            mDbHandler.deleteAllSearchBooks();
+            mDbManager.getSearchBookDataSource().deleteAllBooks();
 
             historyBooks.remove(0);
 
             for (Book historyBook: historyBooks){
-                mDbHandler.insertSearchBookUser(historyBook.getOwner());
-                mDbHandler.insertSearchBook(historyBook);
+                mDbManager.getSearchBookDataSource().saveBook(historyBook);
             }
         }
 
-        if (!mDbHandler.isSearchBookUserExists(book.getOwner())){
-            mDbHandler.insertSearchBookUser(book.getOwner());
-        }
-        if (!mDbHandler.isSearchBookExists(book)){
-            mDbHandler.insertSearchBook(book);
-        }
+        mDbManager.getSearchBookDataSource().saveBook(book);
     }
 
     private void addUserToSearchHistory(User user) {
-        ArrayList<User> historyUsers = mDbHandler.getAllSearchUsers();
+        ArrayList<User> historyUsers = mDbManager.getSearchUserDataSource().getAllUsers();
 
         if (historyUsers.size() > 2){
-            mDbHandler.deleteAllSearchUsers();
+            mDbManager.getSearchUserDataSource().deleteAllUsers();
 
             historyUsers.remove(0);
 
             for (User historyUser: historyUsers){
-                mDbHandler.insertSearchUser(historyUser);
+                mDbManager.getSearchUserDataSource().saveUser(historyUser);
             }
         }
 
-        if (!mDbHandler.isSearchUserExists(user)){
-            mDbHandler.insertSearchUser(user);
-        }
+        mDbManager.getSearchUserDataSource().saveUser(user);
     }
 }
