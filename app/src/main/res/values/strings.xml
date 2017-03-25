@@ -296,5 +296,15 @@
     <string name="insufficient_book_count_info">Share your book to increase your book taking limit. You can request for books after a book shared shared succesfully by you.</string>
     <string name="null_location_search_info">For better searching please set your location info in your profile settings. Our search algorithm works best with location info.</string>
     <string name="select_location_warning">Please select a location</string>
+    <string name="location_activity_info">Your location info is required to adding and requesting books. Also our search algorithm finds the best matching books for your location.</string>
+    <string name="login_register_motto">Book is treasure</string>
+    <string name="sign_in">Sign in</string>
+    <string name="sign_up">Sign up</string>
+    <string name="signing_in">Signing in…</string>
+    <string name="signing_up">Signing up…</string>
+    <string name="forgot_password_title">Forgot password?</string>
+    <string name="forgot_password_info">We will send temporary password to your email. Don\'t forget to look your spam mail inbox. You can change your password in your profile settings anytime.</string>
+    <string name="new_password_sent_info_short">Your new password sent!</string>
+    <string name="new_password_sent_info">Please check your email and activate your new password. You can change your password in your profile settings anytime. Don\'t forget to check your spam folder!</string>
 
 </resources>

@@ -64,7 +64,7 @@
             android:layout_height="wrap_content"
             android:paddingLeft="12dp"
             android:paddingRight="12dp"
-            android:text="Select your location for getting better result from your book searchs. Other users can see your books location to get better results."
+            android:text="@string/location_activity_info"
             android:textColor="@color/secondaryTextColor"
             android:textSize="16sp"/>
 
