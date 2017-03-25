@@ -246,9 +246,7 @@ public class LoginRegisterActivity extends AppCompatActivity {
                     progressDialog.setCancelable(false);
                     progressDialog.show();
 
-                    sendResetPasswordRequest(email, progressDialog);
-
-                    emailDialog.dismiss();
+                    sendResetPasswordRequest(email, progressDialog, emailDialog);
 
                 } else {
                     emailEditText.setError(getString(R.string.invalid_email_address));
@@ -267,53 +265,90 @@ public class LoginRegisterActivity extends AppCompatActivity {
         emailDialog.show();
     }
 
-    private void sendResetPasswordRequest(String email, final ComfortableProgressDialog progressDialog) {
+    private void sendResetPasswordRequest(String email, final ComfortableProgressDialog progressDialog, final AlertDialog emailDialog) {
+        final UserApi userApi = BookieClient.getClient().create(UserApi.class);
 
-        new Thread(new Runnable() {
+        Call<ResponseBody> forgotPassword = userApi.forgotPassword(email);
+
+        forgotPassword.enqueue(new Callback<ResponseBody>() {
             @Override
-            public void run() {
+            public void onResponse(Call<ResponseBody> call, Response<ResponseBody> response) {
+
                 try {
-                    Thread.sleep(3000);
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
+                    if (response != null){
+                        if (response.body() != null){
+                            String json = response.body().string();
 
-                runOnUiThread(new Runnable() {
-                    @Override
-                    public void run() {
+                            JSONObject responseObject = new JSONObject(json);
+                            boolean error = responseObject.getBoolean("error");
+
+                            if (!error) {
+                                progressDialog.dismiss();
+                                emailDialog.dismiss();
+
+                                final InformationDialog informationDialog = new InformationDialog(LoginRegisterActivity.this);
+                                informationDialog.setCancelable(true);
+                                informationDialog.setPrimaryMessage(R.string.new_password_sent_info_short);
+                                informationDialog.setSecondaryMessage(R.string.new_password_sent_info);
+                                informationDialog.setDefaultClickListener(new InformationDialog.DefaultClickListener() {
+                                    @Override
+                                    public void onOkClick() {
+                                        informationDialog.dismiss();
+                                    }
+
+                                    @Override
+                                    public void onMoreInfoClick() {
+                                        Intent intent = new Intent(LoginRegisterActivity.this, InfoActivity.class);
+                                        // TODO Put related header extras array
+                                        startActivity(intent);
+                                    }
+                                });
+                                informationDialog.setExtraButtonClickListener(R.string.check_email, new InformationDialog.ExtraButtonClickListener() {
+                                    @Override
+                                    public void onExtraButtonClick() {
+                                        IntentHelper.openEmailClient(LoginRegisterActivity.this);
+                                    }
+                                });
+
+                                informationDialog.show();
+                            } else {
+                                int errorCode = responseObject.getInt("errorCode");
+
+                                if (errorCode == ErrorCodes.EMPTY_POST){
+                                    Log.e(TAG, "Post is empty. (Login Register Page Error)");
+                                }else if (errorCode == ErrorCodes.MISSING_POST_ELEMENT){
+                                    Log.e(TAG, "Post element missing. (Login Register Page Error)");
+                                }else if (errorCode == ErrorCodes.UNKNOWN){
+                                    Log.e(TAG, "onResponse: errorCode = " + errorCode);
+                                }
+
+                                progressDialog.dismiss();
+                                Toast.makeText(LoginRegisterActivity.this, getString(R.string.unknown_error), Toast.LENGTH_SHORT).show();
+                            }
+                        }else{
+                            Log.e(TAG, "Response body is null. (Login Register Page Error)");
+                            progressDialog.dismiss();
+                            Toast.makeText(LoginRegisterActivity.this, getString(R.string.unknown_error), Toast.LENGTH_SHORT).show();
+                        }
+                    }else {
+                        Log.e(TAG, "Response object is null. (Login Register Page Error)");
                         progressDialog.dismiss();
-
-                        final InformationDialog informationDialog = new InformationDialog(LoginRegisterActivity.this);
-                        informationDialog.setCancelable(true);
-                        informationDialog.setPrimaryMessage(R.string.new_password_sent_info_short);
-                        informationDialog.setSecondaryMessage(R.string.new_password_sent_info);
-                        informationDialog.setDefaultClickListener(new InformationDialog.DefaultClickListener() {
-                            @Override
-                            public void onOkClick() {
-                                informationDialog.dismiss();
-                            }
-
-                            @Override
-                            public void onMoreInfoClick() {
-                                Intent intent = new Intent(LoginRegisterActivity.this, InfoActivity.class);
-                                // TODO Put related header extras array
-                                startActivity(intent);
-                            }
-                        });
-                        informationDialog.setExtraButtonClickListener(R.string.check_email, new InformationDialog.ExtraButtonClickListener() {
-                            @Override
-                            public void onExtraButtonClick() {
-                                IntentHelper.openEmailClient(LoginRegisterActivity.this);
-                            }
-                        });
-
-                        informationDialog.show();
+                        Toast.makeText(LoginRegisterActivity.this, getString(R.string.unknown_error), Toast.LENGTH_SHORT).show();
                     }
-                });
-
-
+                } catch (IOException | JSONException e) {
+                    e.printStackTrace();
+                    progressDialog.dismiss();
+                    Toast.makeText(LoginRegisterActivity.this, getString(R.string.unknown_error), Toast.LENGTH_SHORT).show();
+                }
             }
-        }).start();
+
+            @Override
+            public void onFailure(Call<ResponseBody> call, Throwable t) {
+                Log.e(TAG, "Login Register Page onFailure: " + t.getMessage());
+                progressDialog.dismiss();
+                Toast.makeText(LoginRegisterActivity.this, getString(R.string.unknown_error), Toast.LENGTH_SHORT).show();
+            }
+        });
     }
 
     private boolean areAllInputsValid() {

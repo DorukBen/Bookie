@@ -114,5 +114,9 @@ public interface UserApi {
     @FormUrlEncoded
     @POST("ResendEmailVerification")
     Call<ResponseBody> resendEmailVerificationCode (@Field("email") String email,
-                                           @Field("password") String password);
+                                                    @Field("password") String password);
+
+    @FormUrlEncoded
+    @POST("UserForgotPassword")
+    Call<ResponseBody> forgotPassword (@Field("email") String email);
 }
