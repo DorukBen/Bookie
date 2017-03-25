@@ -3,6 +3,7 @@ package com.karambit.bookie.adapter;
 import android.content.Context;
 import android.graphics.Color;
 import android.graphics.Typeface;
+import android.media.Image;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.widget.RecyclerView;
 import android.text.Spannable;
@@ -43,8 +44,9 @@ import java.util.Locale;
 
 public class NotificationAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
 
-    public static final int ITEM_TYPE_USER_PHOTO = 0;
-    public static final int ITEM_TYPE_BOOK_PHOTO = 1;
+    private static final int ITEM_TYPE_USER_PHOTO = 0;
+    private static final int ITEM_TYPE_BOOK_PHOTO = 1;
+    private static final int ITEM_TYPE_EMPTY_STATE = 2;
 
     private Context mContext;
     private ArrayList<Notification> mNotifications;
@@ -78,6 +80,19 @@ public class NotificationAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
         }
     }
 
+    public static class EmptyStateViewHolder extends RecyclerView.ViewHolder {
+
+        private TextView mText;
+        private ImageView mImage;
+
+        public EmptyStateViewHolder(View itemView) {
+            super(itemView);
+
+            mImage = (ImageView) itemView.findViewById(R.id.emptyStateImageView);
+            mText = (TextView) itemView.findViewById(R.id.emptyStateTextView);
+        }
+    }
+
     public static class NotificationBookViewHolder extends RecyclerView.ViewHolder {
         private ImageView mBookImageView;
         private TextView mMessage;
@@ -101,24 +116,32 @@ public class NotificationAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
 
     @Override
     public int getItemCount() {
-        return mNotifications.size();
+        if (mNotifications != null && mNotifications.size() > 0) {
+            return mNotifications.size();
+        } else {
+            return 1; // Empty state
+        }
     }
 
     @Override
     public int getItemViewType(int position) {
-        switch (mNotifications.get(position).getType()) {
-            case REQUESTED:
-                return ITEM_TYPE_USER_PHOTO;
-            case REQUEST_ACCEPTED:
-                return ITEM_TYPE_BOOK_PHOTO;
-            case REQUEST_REJECTED:
-                return ITEM_TYPE_BOOK_PHOTO;
-            case BOOK_OWNER_CHANGED:
-                return ITEM_TYPE_USER_PHOTO;
-            case BOOK_LOST:
-                return ITEM_TYPE_USER_PHOTO;
-            default:
-                throw new IllegalArgumentException("Position WTF?");
+        if (mNotifications != null && mNotifications.size() > 0) {
+            switch (mNotifications.get(position).getType()) {
+                case REQUESTED:
+                    return ITEM_TYPE_USER_PHOTO;
+                case REQUEST_ACCEPTED:
+                    return ITEM_TYPE_BOOK_PHOTO;
+                case REQUEST_REJECTED:
+                    return ITEM_TYPE_BOOK_PHOTO;
+                case BOOK_OWNER_CHANGED:
+                    return ITEM_TYPE_USER_PHOTO;
+                case BOOK_LOST:
+                    return ITEM_TYPE_USER_PHOTO;
+                default:
+                    throw new IllegalArgumentException("Position WTF?");
+            }
+        } else {
+            return ITEM_TYPE_EMPTY_STATE;
         }
     }
 
@@ -126,12 +149,16 @@ public class NotificationAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
     public RecyclerView.ViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
         switch (viewType) {
             case ITEM_TYPE_BOOK_PHOTO:
-                View notificationBookPhotoView = LayoutInflater.from(parent.getContext()).inflate(R.layout.item_notification_book_photo , parent, false);
+                View notificationBookPhotoView = LayoutInflater.from(parent.getContext()).inflate(R.layout.item_notification_book_photo, parent, false);
                 return new NotificationBookViewHolder(notificationBookPhotoView);
 
             case ITEM_TYPE_USER_PHOTO:
-                View notificationUserPhotoView = LayoutInflater.from(parent.getContext()).inflate(R.layout.item_notification_user_photo , parent, false);
+                View notificationUserPhotoView = LayoutInflater.from(parent.getContext()).inflate(R.layout.item_notification_user_photo, parent, false);
                 return new NotificationUserViewHolder(notificationUserPhotoView);
+
+            case ITEM_TYPE_EMPTY_STATE:
+                View emptyStateView = LayoutInflater.from(parent.getContext()).inflate(R.layout.item_empty_state, parent, false);
+                return new EmptyStateViewHolder(emptyStateView);
 
             default:
                 throw new IllegalArgumentException("Unsupported view type");
@@ -141,211 +168,231 @@ public class NotificationAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
     @Override
     public void onBindViewHolder(RecyclerView.ViewHolder holder, int position) {
 
-        final Notification notification = mNotifications.get(position);
-
-        ClickableSpan clickableSpanUserName = new ClickableSpan() {
-            @Override
-            public void onClick(View textView) {
-                mSpanTextClickListeners.onUserNameClick(notification.getOppositeUser());
-            }
-            @Override
-            public void updateDrawState(TextPaint ds) {
-                super.updateDrawState(ds);
-                ds.setUnderlineText(false);
-            }
-        };
-
-        ClickableSpan clickableSpanBookName = new ClickableSpan() {
-            @Override
-            public void onClick(View textView) {
-                mSpanTextClickListeners.onBookNameClick(notification.getBook());
-            }
-            @Override
-            public void updateDrawState(TextPaint ds) {
-                super.updateDrawState(ds);
-                ds.setUnderlineText(false);
-            }
-        };
-
-        int startIndexUserName;
-        int endIndexUserName;
-        int startIndexBookName;
-        int endIndexBookName;
-
         switch (getItemViewType(position)) {
-            case ITEM_TYPE_USER_PHOTO:
-
-                NotificationUserViewHolder userHolder = (NotificationUserViewHolder) holder;
-
-                if (notification.isSeen()) {
-                    userHolder.mNotificationIndicator.setVisibility(View.INVISIBLE);
-                } else {
-                    userHolder.mNotificationIndicator.setVisibility(View.VISIBLE);
-                }
-
-                Glide.with(mContext)
-                        .load(notification.getOppositeUser().getThumbnailUrl())
-                        .asBitmap()
-                        .centerCrop()
-                        .placeholder(R.drawable.placeholder_56dp)
-                        .error(R.drawable.error_56dp)
-                        .into(userHolder.mUserImageView);
-
-                userHolder.mUserImageView.setOnClickListener(new View.OnClickListener() {
-                    @Override
-                    public void onClick(View view) {
-                        mSpanTextClickListeners.onUserPhotoClick(notification.getOppositeUser());
-                    }
-                });
-
-                userHolder.mCreatedAt.setText(calendarToCreatedAt(notification.getCreatedAt()));
-
-                switch (notification.getType()) {
-
-                    case REQUESTED:
-                        String requestedString = mContext.getString(R.string.x_requested_for_y, notification.getOppositeUser().getName(), notification.getBook().getName());
-                        SpannableString spanRequestedString = new SpannableString(requestedString);
-
-                        startIndexUserName = requestedString.indexOf(notification.getOppositeUser().getName());
-                        endIndexUserName = startIndexUserName + notification.getOppositeUser().getName().length();
-
-                        startIndexBookName = requestedString.indexOf(notification.getBook().getName());
-                        endIndexBookName = startIndexBookName + notification.getBook().getName().length();
-
-                        spanRequestedString.setSpan(clickableSpanUserName, startIndexUserName, endIndexUserName, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
-                        spanRequestedString.setSpan(new StyleSpan(Typeface.BOLD), startIndexUserName, endIndexUserName, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
-
-                        spanRequestedString.setSpan(clickableSpanBookName, startIndexBookName, endIndexBookName, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
-                        spanRequestedString.setSpan(new StyleSpan(Typeface.BOLD), startIndexBookName, endIndexBookName, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
-                        spanRequestedString.setSpan(new ForegroundColorSpan(ContextCompat.getColor(mContext, R.color.primaryTextColor)),
-                                0, spanRequestedString.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
-                        userHolder.mMessage.setText(spanRequestedString);
-                        break;
-                    case BOOK_OWNER_CHANGED:
-                        String bookOwnerChangedString = mContext.getString(R.string.x_now_owned_by_y, notification.getBook().getName(), notification.getOppositeUser().getName());
-                        SpannableString spanBookOwnerChangedString = new SpannableString(bookOwnerChangedString);
-
-                        startIndexUserName = bookOwnerChangedString.indexOf(notification.getOppositeUser().getName());
-                        endIndexUserName = startIndexUserName + notification.getOppositeUser().getName().length();
-
-                        startIndexBookName = bookOwnerChangedString.indexOf(notification.getBook().getName());
-                        endIndexBookName = startIndexBookName + notification.getBook().getName().length();
-
-                        spanBookOwnerChangedString.setSpan(clickableSpanUserName, startIndexUserName, endIndexUserName, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
-                        spanBookOwnerChangedString.setSpan(new StyleSpan(Typeface.BOLD), startIndexUserName, endIndexUserName, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
-
-                        spanBookOwnerChangedString.setSpan(clickableSpanBookName, startIndexBookName, endIndexBookName, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
-                        spanBookOwnerChangedString.setSpan(new StyleSpan(Typeface.BOLD), startIndexBookName, endIndexBookName, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
-                        spanBookOwnerChangedString.setSpan(new ForegroundColorSpan(ContextCompat.getColor(mContext, R.color.primaryTextColor)),
-                                0, spanBookOwnerChangedString.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
-                        userHolder.mMessage.setText(spanBookOwnerChangedString);
-                        break;
-                    case BOOK_LOST:
-                        String bookLostString = mContext.getString(R.string.x_lost_y, notification.getOppositeUser().getName(), notification.getBook().getName());
-                        SpannableString spanBookLostString = new SpannableString(bookLostString);
-
-                        startIndexUserName = bookLostString.indexOf(notification.getOppositeUser().getName());
-                        endIndexUserName = startIndexUserName + notification.getOppositeUser().getName().length();
-
-                        startIndexBookName = bookLostString.indexOf(notification.getBook().getName());
-                        endIndexBookName = startIndexBookName + notification.getBook().getName().length();
-
-                        spanBookLostString.setSpan(clickableSpanUserName, startIndexUserName, endIndexUserName, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
-                        spanBookLostString.setSpan(new StyleSpan(Typeface.BOLD), startIndexUserName, endIndexUserName, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
-
-                        spanBookLostString.setSpan(clickableSpanBookName, startIndexBookName, endIndexBookName, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
-                        spanBookLostString.setSpan(new StyleSpan(Typeface.BOLD), startIndexBookName, endIndexBookName, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
-                        spanBookLostString.setSpan(new ForegroundColorSpan(ContextCompat.getColor(mContext, R.color.primaryTextColor)),
-                                0, spanBookLostString.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
-                        userHolder.mMessage.setText(spanBookLostString);
-                        break;
-                    default:
-                        throw new IllegalArgumentException("Invalid notification type");
-                }
-
-                userHolder.mMessage.setMovementMethod(LinkMovementMethod.getInstance());
-                userHolder.mMessage.setHighlightColor(Color.TRANSPARENT);
-
-                break;
 
             case ITEM_TYPE_BOOK_PHOTO:
+            case ITEM_TYPE_USER_PHOTO: {
 
-                NotificationBookViewHolder bookHolder = (NotificationBookViewHolder) holder;
+                final Notification notification = mNotifications.get(position);
 
-                if (notification.isSeen()) {
-                    bookHolder.mNotificationIndicator.setVisibility(View.INVISIBLE);
-                } else {
-                    bookHolder.mNotificationIndicator.setVisibility(View.VISIBLE);
-                }
-
-                Glide.with(mContext)
-                        .load(notification.getBook().getThumbnailURL())
-                        .centerCrop()
-                        .crossFade()
-                        .placeholder(R.drawable.placeholder_56dp)
-                        .error(R.drawable.error_56dp)
-                        .into(bookHolder.mBookImageView);
-
-                bookHolder.mBookImageView.setOnClickListener(new View.OnClickListener() {
+                ClickableSpan clickableSpanUserName = new ClickableSpan() {
                     @Override
-                    public void onClick(View view) {
-                        mSpanTextClickListeners.onBookImageClick(notification.getBook());
+                    public void onClick(View textView) {
+                        mSpanTextClickListeners.onUserNameClick(notification.getOppositeUser());
                     }
-                });
 
-                bookHolder.mCreatedAt.setText(calendarToCreatedAt(notification.getCreatedAt()));
+                    @Override
+                    public void updateDrawState(TextPaint ds) {
+                        super.updateDrawState(ds);
+                        ds.setUnderlineText(false);
+                    }
+                };
 
+                ClickableSpan clickableSpanBookName = new ClickableSpan() {
+                    @Override
+                    public void onClick(View textView) {
+                        mSpanTextClickListeners.onBookNameClick(notification.getBook());
+                    }
 
+                    @Override
+                    public void updateDrawState(TextPaint ds) {
+                        super.updateDrawState(ds);
+                        ds.setUnderlineText(false);
+                    }
+                };
 
-                switch (notification.getType()) {
-                    case REQUEST_ACCEPTED:
-                        String requestAcceptedString = mContext.getString(R.string.x_accepted_your_request_for_y, notification.getOppositeUser().getName(), notification.getBook().getName());
-                        SpannableString spanRequestAcceptedString = new SpannableString(requestAcceptedString);
+                int startIndexUserName;
+                int endIndexUserName;
+                int startIndexBookName;
+                int endIndexBookName;
 
-                        startIndexUserName = requestAcceptedString.indexOf(notification.getOppositeUser().getName());
-                        endIndexUserName = startIndexUserName + notification.getOppositeUser().getName().length();
+                switch (getItemViewType(position)) {
+                    case ITEM_TYPE_USER_PHOTO:
 
-                        startIndexBookName = requestAcceptedString.indexOf(notification.getBook().getName());
-                        endIndexBookName = startIndexBookName + notification.getBook().getName().length();
+                        NotificationUserViewHolder userHolder = (NotificationUserViewHolder) holder;
 
-                        spanRequestAcceptedString.setSpan(clickableSpanUserName, startIndexUserName, endIndexUserName, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
-                        spanRequestAcceptedString.setSpan(new StyleSpan(Typeface.BOLD), startIndexUserName, endIndexUserName, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+                        if (notification.isSeen()) {
+                            userHolder.mNotificationIndicator.setVisibility(View.INVISIBLE);
+                        } else {
+                            userHolder.mNotificationIndicator.setVisibility(View.VISIBLE);
+                        }
 
-                        spanRequestAcceptedString.setSpan(clickableSpanBookName, startIndexBookName, endIndexBookName, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
-                        spanRequestAcceptedString.setSpan(new StyleSpan(Typeface.BOLD), startIndexBookName, endIndexBookName, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
-                        spanRequestAcceptedString.setSpan(new ForegroundColorSpan(ContextCompat.getColor(mContext, R.color.primaryTextColor)),
-                                0, spanRequestAcceptedString.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
-                        bookHolder.mMessage.setText(spanRequestAcceptedString);
+                        Glide.with(mContext)
+                                .load(notification.getOppositeUser().getThumbnailUrl())
+                                .asBitmap()
+                                .centerCrop()
+                                .placeholder(R.drawable.placeholder_56dp)
+                                .error(R.drawable.error_56dp)
+                                .into(userHolder.mUserImageView);
+
+                        userHolder.mUserImageView.setOnClickListener(new View.OnClickListener() {
+                            @Override
+                            public void onClick(View view) {
+                                mSpanTextClickListeners.onUserPhotoClick(notification.getOppositeUser());
+                            }
+                        });
+
+                        userHolder.mCreatedAt.setText(calendarToCreatedAt(notification.getCreatedAt()));
+
+                        switch (notification.getType()) {
+
+                            case REQUESTED:
+                                String requestedString = mContext.getString(R.string.x_requested_for_y, notification.getOppositeUser().getName(), notification.getBook().getName());
+                                SpannableString spanRequestedString = new SpannableString(requestedString);
+
+                                startIndexUserName = requestedString.indexOf(notification.getOppositeUser().getName());
+                                endIndexUserName = startIndexUserName + notification.getOppositeUser().getName().length();
+
+                                startIndexBookName = requestedString.indexOf(notification.getBook().getName());
+                                endIndexBookName = startIndexBookName + notification.getBook().getName().length();
+
+                                spanRequestedString.setSpan(clickableSpanUserName, startIndexUserName, endIndexUserName, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+                                spanRequestedString.setSpan(new StyleSpan(Typeface.BOLD), startIndexUserName, endIndexUserName, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+
+                                spanRequestedString.setSpan(clickableSpanBookName, startIndexBookName, endIndexBookName, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+                                spanRequestedString.setSpan(new StyleSpan(Typeface.BOLD), startIndexBookName, endIndexBookName, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+                                spanRequestedString.setSpan(new ForegroundColorSpan(ContextCompat.getColor(mContext, R.color.primaryTextColor)),
+                                        0, spanRequestedString.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+                                userHolder.mMessage.setText(spanRequestedString);
+                                break;
+                            case BOOK_OWNER_CHANGED:
+                                String bookOwnerChangedString = mContext.getString(R.string.x_now_owned_by_y, notification.getBook().getName(), notification.getOppositeUser().getName());
+                                SpannableString spanBookOwnerChangedString = new SpannableString(bookOwnerChangedString);
+
+                                startIndexUserName = bookOwnerChangedString.indexOf(notification.getOppositeUser().getName());
+                                endIndexUserName = startIndexUserName + notification.getOppositeUser().getName().length();
+
+                                startIndexBookName = bookOwnerChangedString.indexOf(notification.getBook().getName());
+                                endIndexBookName = startIndexBookName + notification.getBook().getName().length();
+
+                                spanBookOwnerChangedString.setSpan(clickableSpanUserName, startIndexUserName, endIndexUserName, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+                                spanBookOwnerChangedString.setSpan(new StyleSpan(Typeface.BOLD), startIndexUserName, endIndexUserName, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+
+                                spanBookOwnerChangedString.setSpan(clickableSpanBookName, startIndexBookName, endIndexBookName, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+                                spanBookOwnerChangedString.setSpan(new StyleSpan(Typeface.BOLD), startIndexBookName, endIndexBookName, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+                                spanBookOwnerChangedString.setSpan(new ForegroundColorSpan(ContextCompat.getColor(mContext, R.color.primaryTextColor)),
+                                        0, spanBookOwnerChangedString.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+                                userHolder.mMessage.setText(spanBookOwnerChangedString);
+                                break;
+                            case BOOK_LOST:
+                                String bookLostString = mContext.getString(R.string.x_lost_y, notification.getOppositeUser().getName(), notification.getBook().getName());
+                                SpannableString spanBookLostString = new SpannableString(bookLostString);
+
+                                startIndexUserName = bookLostString.indexOf(notification.getOppositeUser().getName());
+                                endIndexUserName = startIndexUserName + notification.getOppositeUser().getName().length();
+
+                                startIndexBookName = bookLostString.indexOf(notification.getBook().getName());
+                                endIndexBookName = startIndexBookName + notification.getBook().getName().length();
+
+                                spanBookLostString.setSpan(clickableSpanUserName, startIndexUserName, endIndexUserName, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+                                spanBookLostString.setSpan(new StyleSpan(Typeface.BOLD), startIndexUserName, endIndexUserName, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+
+                                spanBookLostString.setSpan(clickableSpanBookName, startIndexBookName, endIndexBookName, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+                                spanBookLostString.setSpan(new StyleSpan(Typeface.BOLD), startIndexBookName, endIndexBookName, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+                                spanBookLostString.setSpan(new ForegroundColorSpan(ContextCompat.getColor(mContext, R.color.primaryTextColor)),
+                                        0, spanBookLostString.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+                                userHolder.mMessage.setText(spanBookLostString);
+                                break;
+                            default:
+                                throw new IllegalArgumentException("Invalid notification type");
+                        }
+
+                        userHolder.mMessage.setMovementMethod(LinkMovementMethod.getInstance());
+                        userHolder.mMessage.setHighlightColor(Color.TRANSPARENT);
+
                         break;
 
-                    case REQUEST_REJECTED:
-                        String requestRejectedString = mContext.getString(R.string.x_rejected_your_request_for_y, notification.getOppositeUser().getName(), notification.getBook().getName());
-                        SpannableString spanRequestRejectedString = new SpannableString(requestRejectedString);
+                    case ITEM_TYPE_BOOK_PHOTO:
 
-                        startIndexUserName = requestRejectedString.indexOf(notification.getOppositeUser().getName());
-                        endIndexUserName = startIndexUserName + notification.getOppositeUser().getName().length();
+                        NotificationBookViewHolder bookHolder = (NotificationBookViewHolder) holder;
 
-                        startIndexBookName = requestRejectedString.indexOf(notification.getBook().getName());
-                        endIndexBookName = startIndexBookName + notification.getBook().getName().length();
+                        if (notification.isSeen()) {
+                            bookHolder.mNotificationIndicator.setVisibility(View.INVISIBLE);
+                        } else {
+                            bookHolder.mNotificationIndicator.setVisibility(View.VISIBLE);
+                        }
 
-                        spanRequestRejectedString.setSpan(clickableSpanUserName, startIndexUserName, endIndexUserName, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
-                        spanRequestRejectedString.setSpan(new StyleSpan(Typeface.BOLD), startIndexUserName, endIndexUserName, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+                        Glide.with(mContext)
+                                .load(notification.getBook().getThumbnailURL())
+                                .centerCrop()
+                                .crossFade()
+                                .placeholder(R.drawable.placeholder_56dp)
+                                .error(R.drawable.error_56dp)
+                                .into(bookHolder.mBookImageView);
 
-                        spanRequestRejectedString.setSpan(clickableSpanBookName, startIndexBookName, endIndexBookName, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
-                        spanRequestRejectedString.setSpan(new StyleSpan(Typeface.BOLD), startIndexBookName, endIndexBookName, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
-                        spanRequestRejectedString.setSpan(new ForegroundColorSpan(ContextCompat.getColor(mContext, R.color.primaryTextColor)),
-                                0, spanRequestRejectedString.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
-                        bookHolder.mMessage.setText(spanRequestRejectedString);
+                        bookHolder.mBookImageView.setOnClickListener(new View.OnClickListener() {
+                            @Override
+                            public void onClick(View view) {
+                                mSpanTextClickListeners.onBookImageClick(notification.getBook());
+                            }
+                        });
+
+                        bookHolder.mCreatedAt.setText(calendarToCreatedAt(notification.getCreatedAt()));
+
+
+                        switch (notification.getType()) {
+                            case REQUEST_ACCEPTED:
+                                String requestAcceptedString = mContext.getString(R.string.x_accepted_your_request_for_y, notification.getOppositeUser().getName(), notification.getBook().getName());
+                                SpannableString spanRequestAcceptedString = new SpannableString(requestAcceptedString);
+
+                                startIndexUserName = requestAcceptedString.indexOf(notification.getOppositeUser().getName());
+                                endIndexUserName = startIndexUserName + notification.getOppositeUser().getName().length();
+
+                                startIndexBookName = requestAcceptedString.indexOf(notification.getBook().getName());
+                                endIndexBookName = startIndexBookName + notification.getBook().getName().length();
+
+                                spanRequestAcceptedString.setSpan(clickableSpanUserName, startIndexUserName, endIndexUserName, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+                                spanRequestAcceptedString.setSpan(new StyleSpan(Typeface.BOLD), startIndexUserName, endIndexUserName, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+
+                                spanRequestAcceptedString.setSpan(clickableSpanBookName, startIndexBookName, endIndexBookName, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+                                spanRequestAcceptedString.setSpan(new StyleSpan(Typeface.BOLD), startIndexBookName, endIndexBookName, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+                                spanRequestAcceptedString.setSpan(new ForegroundColorSpan(ContextCompat.getColor(mContext, R.color.primaryTextColor)),
+                                        0, spanRequestAcceptedString.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+                                bookHolder.mMessage.setText(spanRequestAcceptedString);
+                                break;
+
+                            case REQUEST_REJECTED:
+                                String requestRejectedString = mContext.getString(R.string.x_rejected_your_request_for_y, notification.getOppositeUser().getName(), notification.getBook().getName());
+                                SpannableString spanRequestRejectedString = new SpannableString(requestRejectedString);
+
+                                startIndexUserName = requestRejectedString.indexOf(notification.getOppositeUser().getName());
+                                endIndexUserName = startIndexUserName + notification.getOppositeUser().getName().length();
+
+                                startIndexBookName = requestRejectedString.indexOf(notification.getBook().getName());
+                                endIndexBookName = startIndexBookName + notification.getBook().getName().length();
+
+                                spanRequestRejectedString.setSpan(clickableSpanUserName, startIndexUserName, endIndexUserName, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+                                spanRequestRejectedString.setSpan(new StyleSpan(Typeface.BOLD), startIndexUserName, endIndexUserName, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+
+                                spanRequestRejectedString.setSpan(clickableSpanBookName, startIndexBookName, endIndexBookName, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+                                spanRequestRejectedString.setSpan(new StyleSpan(Typeface.BOLD), startIndexBookName, endIndexBookName, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+                                spanRequestRejectedString.setSpan(new ForegroundColorSpan(ContextCompat.getColor(mContext, R.color.primaryTextColor)),
+                                        0, spanRequestRejectedString.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+                                bookHolder.mMessage.setText(spanRequestRejectedString);
+                                break;
+
+                            default:
+                                throw new IllegalArgumentException("Invalid notification type");
+                        }
+
+                        bookHolder.mMessage.setMovementMethod(LinkMovementMethod.getInstance());
+                        bookHolder.mMessage.setHighlightColor(Color.TRANSPARENT);
+
                         break;
 
                     default:
-                        throw new IllegalArgumentException("Invalid notification type");
+                        throw new IllegalArgumentException("Invalid view type at position: " + position);
                 }
+            }
 
-                bookHolder.mMessage.setMovementMethod(LinkMovementMethod.getInstance());
-                bookHolder.mMessage.setHighlightColor(Color.TRANSPARENT);
+            case ITEM_TYPE_EMPTY_STATE: {
+
+                EmptyStateViewHolder emptyStateViewHolder = (EmptyStateViewHolder) holder;
+
+                emptyStateViewHolder.mText.setText(R.string.notification_empty_state_text);
 
                 break;
+            }
         }
     }
 
@@ -376,7 +423,7 @@ public class NotificationAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
         return df.format(calendar.getTime());
     }
 
-    public interface SpanTextClickListeners{
+    public interface SpanTextClickListeners {
         void onUserNameClick(User user);
 
         void onBookNameClick(Book book);
@@ -390,11 +437,11 @@ public class NotificationAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
         return mSpanTextClickListeners;
     }
 
-    public void setSpanTextClickListeners(SpanTextClickListeners spanTextClickListeners){
+    public void setSpanTextClickListeners(SpanTextClickListeners spanTextClickListeners) {
         mSpanTextClickListeners = spanTextClickListeners;
     }
 
-    public void addNotification(Notification notification){
+    public void addNotification(Notification notification) {
         mNotifications.add(notification);
     }
 }

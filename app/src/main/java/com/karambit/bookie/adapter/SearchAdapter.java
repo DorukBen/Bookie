@@ -6,6 +6,7 @@ import android.support.v4.content.ContextCompat;
 import android.support.v4.view.ViewCompat;
 import android.support.v7.widget.CardView;
 import android.support.v7.widget.RecyclerView;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -716,6 +717,15 @@ public class SearchAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder>
         notifyDataSetChanged();
     }
 
+    public void setItems(ArrayList<Book> books, ArrayList<User> users){
+        mGenreCodes = new ArrayList<>();
+        mBooks = books;
+        mUsers = users;
+
+        mShowHistory = false;
+        notifyDataSetChanged();
+    }
+
     public void setError(int errorType){
         mErrorType = errorType;
         mWarningType = WARNING_TYPE_NONE;
@@ -740,12 +750,25 @@ public class SearchAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder>
         notifyDataSetChanged();
     }
 
-    public void setShowHistory(boolean showHistory){
-        mShowHistory = showHistory;
+    public void showHistory(ArrayList<Book> historyBooks, ArrayList<User> historyUsers){
+        setItems(historyBooks, historyUsers);
+
         setError(ERROR_TYPE_NONE);
         setWarning(WARNING_TYPE_NONE);
         setProgressBarActive(false);
 
+        mShowHistory = true;
+        notifyDataSetChanged();
+    }
+
+    public void hideHistory(){
+        setItems(new ArrayList<Book>(), new ArrayList<User>());
+
+        setError(ERROR_TYPE_NONE);
+        setWarning(WARNING_TYPE_NONE);
+        setProgressBarActive(false);
+
+        mShowHistory = false;
         notifyDataSetChanged();
     }
 

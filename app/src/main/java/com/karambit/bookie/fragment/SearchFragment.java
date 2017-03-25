@@ -14,6 +14,7 @@ import android.view.KeyEvent;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.WindowManager;
 import android.view.inputmethod.EditorInfo;
 import android.widget.EditText;
 import android.widget.TextView;
@@ -75,6 +76,7 @@ public class SearchFragment extends Fragment {
     private boolean mFetchSearchButtonPressed = false;
     private SearchAdapter mSearchAdapter;
     private DBManager mDbManager;
+    private EditText mSearchEditText;
 
     public SearchFragment() {
         // Required empty public constructor
@@ -89,7 +91,7 @@ public class SearchFragment extends Fragment {
 
         RecyclerView recyclerView = (RecyclerView) rootView.findViewById(R.id.searchResultsRecyclerView);
         recyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
-        final EditText searchEditText = (EditText)rootView.findViewById(R.id.searchEditText);
+        mSearchEditText = (EditText)rootView.findViewById(R.id.searchEditText);
 
         mDbManager = new DBManager(getContext());
         mDbManager.open();
@@ -101,7 +103,7 @@ public class SearchFragment extends Fragment {
             @Override
             public void onGenreClick(int genreCode) {
                 mFetchGenreCode = genreCode;
-                searchEditText.setText(mAllGenres[genreCode]);
+                mSearchEditText.setText(mAllGenres[genreCode]);
                 getSearchResults("");
             }
 
@@ -131,6 +133,7 @@ public class SearchFragment extends Fragment {
                 mDbManager.getSearchBookDataSource().deleteAllBooks();
                 mDbManager.getSearchUserDataSource().deleteAllUsers();
 
+                mSearchAdapter.hideHistory();
                 mSearchAdapter.setWarning(SearchAdapter.WARNING_TYPE_NOTHING_TO_SHOW);
             }
         });
@@ -150,23 +153,23 @@ public class SearchFragment extends Fragment {
             @Override
             public void onClick(View view) {
             mFetchSearchButtonPressed = true;
-            getSearchResults(searchEditText.getText().toString());
+            getSearchResults(mSearchEditText.getText().toString());
             }
         });
 
-        searchEditText.setOnEditorActionListener(new TextView.OnEditorActionListener() {
+        mSearchEditText.setOnEditorActionListener(new TextView.OnEditorActionListener() {
             @Override
             public boolean onEditorAction(TextView v, int actionId, KeyEvent event) {
                 if (actionId == EditorInfo.IME_ACTION_DONE) {
                     mFetchSearchButtonPressed = true;
-                    getSearchResults(searchEditText.getText().toString());
+                    getSearchResults(mSearchEditText.getText().toString());
                     return true;
                 }
                 return false;
             }
         });
 
-        searchEditText.addTextChangedListener(new TextWatcher() {
+        mSearchEditText.addTextChangedListener(new TextWatcher() {
             @Override
             public void beforeTextChanged(CharSequence s, int start, int count, int after) {
 
@@ -174,7 +177,7 @@ public class SearchFragment extends Fragment {
 
             @Override
              public void onTextChanged(CharSequence s, int start, int before, int count) {
-                String string = searchEditText.getText().toString();
+                String string = mSearchEditText.getText().toString();
 
                 getSearchResults(string);
             }
@@ -185,7 +188,7 @@ public class SearchFragment extends Fragment {
             }
         });
 
-        searchEditText.setOnFocusChangeListener(new View.OnFocusChangeListener() {
+        mSearchEditText.setOnFocusChangeListener(new View.OnFocusChangeListener() {
             @Override
             public void onFocusChange(View v, boolean hasFocus) {
                 if(hasFocus){
@@ -387,9 +390,9 @@ public class SearchFragment extends Fragment {
         ArrayList<User> historyUsers = mDbManager.getSearchUserDataSource().getAllUsers();
 
         if (historyBooks.size() + historyUsers.size() > 0){
-            mSearchAdapter.setItems(new ArrayList<Integer>(), historyBooks, historyUsers);
-            mSearchAdapter.setShowHistory(true);
+            mSearchAdapter.showHistory(historyBooks, historyUsers);
         } else {
+            mSearchAdapter.hideHistory();
             mSearchAdapter.setWarning(SearchAdapter.WARNING_TYPE_NOTHING_TO_SHOW);
         }
     }
@@ -424,5 +427,13 @@ public class SearchFragment extends Fragment {
         }
 
         mDbManager.getSearchUserDataSource().saveUser(user);
+    }
+
+    public boolean isSearchEditTextEmpty(){
+        return mSearchEditText.length() == 0;
+    }
+
+    public void clearSearchEditText(){
+        mSearchEditText.setText("");
     }
 }

@@ -578,8 +578,12 @@ public class MainActivity extends AppCompatActivity implements TabHost.OnTabChan
     @Override
     public void onBackPressed() {
         if (mTabHost.getCurrentTab() != HomeFragment.TAB_INDEX){
-            mViewPager.setCurrentItem(HomeFragment.TAB_INDEX, true);
-            mTabHost.setCurrentTab(HomeFragment.TAB_INDEX);
+            if (!mSearchFragment.isSearchEditTextEmpty() && mTabHost.getCurrentTab() == SearchFragment.TAB_INDEX) {
+                mSearchFragment.clearSearchEditText();
+            } else {
+                mViewPager.setCurrentItem(HomeFragment.TAB_INDEX, true);
+                mTabHost.setCurrentTab(HomeFragment.TAB_INDEX);
+            }
         }else {
             if(!mIsBackPressed){
                 Toast.makeText(this, R.string.press_back_again, Toast.LENGTH_SHORT).show();

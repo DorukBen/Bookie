@@ -306,4 +306,5 @@
     <string name="forgot_password_info">We will send temporary password to your email. Don\'t forget to look your spam mail inbox. You can change your password in your profile settings anytime.</string>
     <string name="new_password_sent_info_short">Your new password sent!</string>
     <string name="new_password_sent_info">Please check your email and activate your new password. You can change your password in your profile settings anytime. Don\'t forget to check your spam folder!</string>
+    <string name="notification_empty_state_text">Your notifications will appear here…</string>
 </resources>
