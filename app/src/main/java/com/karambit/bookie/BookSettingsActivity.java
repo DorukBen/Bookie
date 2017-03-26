@@ -5,6 +5,7 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.os.Bundle;
 import android.support.v4.content.ContextCompat;
+import android.support.v4.content.LocalBroadcastManager;
 import android.support.v7.app.ActionBar;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
@@ -41,6 +42,7 @@ import com.karambit.bookie.model.User;
 import com.karambit.bookie.rest_api.BookApi;
 import com.karambit.bookie.rest_api.BookieClient;
 import com.karambit.bookie.rest_api.ErrorCodes;
+import com.karambit.bookie.service.BookieIntentFilters;
 
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -397,7 +399,13 @@ public class BookSettingsActivity extends AppCompatActivity {
                             if (!error) {
                                 comfortableProgressDialog.dismiss();
                                 Toast.makeText(BookSettingsActivity.this, getString(R.string.book_lost), Toast.LENGTH_SHORT).show();
-                                setResult(RESULT_LOST);
+
+                                mBook.setState(Book.State.LOST);
+
+                                Intent intent = new Intent(BookieIntentFilters.INTENT_FILTER_BOOK_LOST);
+                                intent.putExtra(BookieIntentFilters.EXTRA_BOOK, mBook);
+                                LocalBroadcastManager.getInstance(BookSettingsActivity.this).sendBroadcast(intent);
+
                                 finish();
                             } else {
                                 int errorCode = responseObject.getInt("errorCode");
@@ -602,7 +610,7 @@ public class BookSettingsActivity extends AppCompatActivity {
         uploadBookParamsToServer(bookName, author, mSelectedGenre, progressDialog);
     }
 
-    private void uploadBookParamsToServer(String name, String author, int genreCode, final ComfortableProgressDialog progressDialog) {
+    private void uploadBookParamsToServer(final String name, final String author, final int genreCode, final ComfortableProgressDialog progressDialog) {
         final BookApi bookApi = BookieClient.getClient().create(BookApi.class);
 
         String email = SessionManager.getCurrentUserDetails(BookSettingsActivity.this).getEmail();
@@ -624,7 +632,15 @@ public class BookSettingsActivity extends AppCompatActivity {
                             boolean error = responseObject.getBoolean("error");
 
                             if (!error) {
-                                setResult(RESULT_BOOK_UPDATED);
+
+                                mBook.setName(name);
+                                mBook.setAuthor(author);
+                                mBook.setGenreCode(genreCode);
+
+                                Intent intent = new Intent(BookieIntentFilters.INTENT_FILTER_ACCEPTED_REQUEST);
+                                intent.putExtra(BookieIntentFilters.EXTRA_BOOK, mBook);
+                                LocalBroadcastManager.getInstance(BookSettingsActivity.this).sendBroadcast(intent);
+
                                 finish();
                             } else {
                                 int errorCode = responseObject.getInt("errorCode");

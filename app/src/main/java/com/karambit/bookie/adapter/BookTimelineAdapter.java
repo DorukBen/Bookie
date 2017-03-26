@@ -24,10 +24,13 @@ import android.widget.TextView;
 import com.bumptech.glide.Glide;
 import com.karambit.bookie.R;
 import com.karambit.bookie.helper.CircleImageView;
-import com.karambit.bookie.helper.DurationTextUtils;
+import com.karambit.bookie.helper.CreatedAtHelper;
 import com.karambit.bookie.helper.SessionManager;
 import com.karambit.bookie.helper.pull_refresh_layout.SmartisanProgressBarDrawable;
 import com.karambit.bookie.model.Book;
+import com.karambit.bookie.model.Interaction;
+import com.karambit.bookie.model.Request;
+import com.karambit.bookie.model.Transaction;
 import com.karambit.bookie.model.User;
 
 import java.util.ArrayList;
@@ -436,7 +439,7 @@ public class BookTimelineAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
                     /////////////////////////////////////////////////////////////////////////////////////////////
 
                     stateCurrentHolder.mStateDuration.setVisibility(View.VISIBLE);
-                    stateCurrentHolder.mStateDuration.setText(getStateDurationText());
+                    stateCurrentHolder.mStateDuration.setText(CreatedAtHelper.calculateLongDurationText(mContext, mBookDetails.getBookProcesses()));
 
                     /////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -571,8 +574,8 @@ public class BookTimelineAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
                         if (state == Book.State.ON_ROAD) {
                             ArrayList<Book.BookProcess> bookProcesses = mBookDetails.getBookProcesses();
                             Book.BookProcess lastProcess = bookProcesses.get(bookProcesses.size() -1);
-                            if (lastProcess instanceof Book.Transaction) {
-                                Book.Transaction sentTransaction = (Book.Transaction) lastProcess;
+                            if (lastProcess instanceof Transaction) {
+                                Transaction sentTransaction = (Transaction) lastProcess;
 
                                 if (sentTransaction.getToUser().equals(currentUser)) {
                                     stateOtherHolder.mRequest.setText(R.string.arrived);
@@ -598,19 +601,19 @@ public class BookTimelineAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
                             int canSendRequest = 0;
                             for (Book.BookProcess process: mBookDetails.getBookProcesses()){
 
-                                if (process instanceof Book.Request){
+                                if (process instanceof Request){
 
-                                    if (((Book.Request)process).getFromUser().equals(currentUser) &&
-                                        ((Book.Request)process).getToUser().equals(mBookDetails.getBook().getOwner())){
+                                    if (((Request)process).getFromUser().equals(currentUser) &&
+                                        ((Request)process).getToUser().equals(mBookDetails.getBook().getOwner())){
 
-                                        if (((Book.Request)process).getRequestType() == Book.RequestType.SEND){
+                                        if (((Request)process).getType() == Request.Type.SEND){
                                             canSendRequest--;
                                         }
                                     }
-                                    if (((Book.Request)process).getFromUser().equals(mBookDetails.getBook().getOwner()) &&
-                                        ((Book.Request)process).getToUser().equals(currentUser)){
+                                    if (((Request)process).getFromUser().equals(mBookDetails.getBook().getOwner()) &&
+                                        ((Request)process).getToUser().equals(currentUser)){
 
-                                        if (((Book.Request)process).getRequestType() == Book.RequestType.REJECT || ((Book.Request)process).getRequestType() == Book.RequestType.ACCEPT){
+                                        if (((Request)process).getType() == Request.Type.REJECT || ((Request)process).getType() == Request.Type.ACCEPT){
                                             canSendRequest++;
                                         }
                                     }
@@ -647,7 +650,7 @@ public class BookTimelineAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
                     stateOtherHolder.mOwnerName.setText(mBookDetails.getBook().getOwner().getName());
 
 
-                    String durationText = getStateDurationText();
+                    String durationText = CreatedAtHelper.calculateLongDurationText(mContext, mBookDetails.getBookProcesses());
                     String stateAndDuration = bookStateToString(state) + " " + durationText;
                     stateOtherHolder.mBookState.setVisibility(View.VISIBLE);
                     stateOtherHolder.mBookState.setText(stateAndDuration);
@@ -726,21 +729,21 @@ public class BookTimelineAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
                 ArrayList<Book.BookProcess> bookProcesses = mBookDetails.getBookProcesses();
                 final Book.BookProcess item = bookProcesses.get(bookProcesses.size() - position + 2); // - Header - State - Subtitle
 
-                /**
-                 * Decide which Book process. Visitor pattern takes care this.
+                /*
+                  Decide which Book process. Visitor pattern takes care this.
                  */
                 item.accept(new Book.TimelineDisplayableVisitor() { // Visitor interface
 
                     @Override
-                    public void visit(final Book.Interaction interaction) { // If BookProcess is a Book.Interaction object
+                    public void visit(final Interaction interaction) { // If BookProcess is a Book.Interaction object
 
-                        bookProcessHolder.mCreatedAt.setText(DurationTextUtils.getShortDurationString(mContext, interaction.getCreatedAt()));
+                        bookProcessHolder.mCreatedAt.setText(CreatedAtHelper.getShortDurationString(mContext, interaction.getCreatedAt()));
 
                         bookProcessHolder.mProcessImage.setVisibility(View.VISIBLE);
 
                         if (interaction.getUser().equals(currentUser)) {
 
-                            switch (interaction.getInteractionType()) {
+                            switch (interaction.getType()) {
 
                                 case ADD:
                                     bookProcessHolder.mProcessImage.setImageResource(R.drawable.ic_book_timeline_add_book_outline_36dp);
@@ -767,7 +770,7 @@ public class BookTimelineAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
                                     break;
 
                                 default:
-                                    throw new IllegalArgumentException("Invalid interaction type:" + interaction.getInteractionType().name());
+                                    throw new IllegalArgumentException("Invalid interaction type:" + interaction.getType().name());
                             }
                         } else {
 
@@ -786,7 +789,7 @@ public class BookTimelineAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
                                 }
                             };
 
-                            switch (interaction.getInteractionType()) {
+                            switch (interaction.getType()) {
 
                                 case ADD: {
                                     String addBookString = mContext.getString(R.string.x_added, userName);
@@ -874,7 +877,7 @@ public class BookTimelineAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
                                 }
 
                                 default:
-                                    throw new IllegalArgumentException("Invalid interaction type:" + interaction.getInteractionType().name());
+                                    throw new IllegalArgumentException("Invalid interaction type:" + interaction.getType().name());
                             }
 
                             bookProcessHolder.mProcessChange.setMovementMethod(LinkMovementMethod.getInstance());
@@ -884,9 +887,9 @@ public class BookTimelineAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
                     }
 
                     @Override
-                    public void visit(final Book.Transaction transaction) { // If BookProcess is a Book.Transaction object
+                    public void visit(final Transaction transaction) { // If BookProcess is a Book.Transaction object
 
-                        bookProcessHolder.mCreatedAt.setText(DurationTextUtils.getShortDurationString(mContext, transaction.getCreatedAt()));
+                        bookProcessHolder.mCreatedAt.setText(CreatedAtHelper.getShortDurationString(mContext, transaction.getCreatedAt()));
 
                         bookProcessHolder.mProcessImage.setVisibility(View.VISIBLE);
 
@@ -921,7 +924,7 @@ public class BookTimelineAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
 
                         if (transaction.getFromUser().equals(currentUser)) {
 
-                            switch (transaction.getTransactionType()) {
+                            switch (transaction.getType()) {
 
                                 case COME_TO_HAND: {
                                     String comeToHandString = mContext.getString(R.string.x_took, toUserName);
@@ -975,12 +978,12 @@ public class BookTimelineAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
                                 }
 
                                 default:
-                                    throw new IllegalArgumentException("Invalid transaction type:" + transaction.getTransactionType().name());
+                                    throw new IllegalArgumentException("Invalid transaction type:" + transaction.getType().name());
                             }
 
                         } else if (transaction.getToUser().equals(currentUser)) {
 
-                            switch (transaction.getTransactionType()) {
+                            switch (transaction.getType()) {
 
                                 case COME_TO_HAND: {
                                     bookProcessHolder.mProcessChange.setText(R.string.you_took);
@@ -1024,12 +1027,12 @@ public class BookTimelineAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
                                 }
 
                                 default:
-                                    throw new IllegalArgumentException("Invalid transaction type:" + transaction.getTransactionType().name());
+                                    throw new IllegalArgumentException("Invalid transaction type:" + transaction.getType().name());
                             }
 
                         } else {
 
-                            switch (transaction.getTransactionType()) {
+                            switch (transaction.getType()) {
 
                                 case COME_TO_HAND: {
                                     String comeToHandString = mContext.getString(R.string.x_took, toUserName);
@@ -1099,7 +1102,7 @@ public class BookTimelineAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
                                 }
 
                                 default:
-                                    throw new IllegalArgumentException("Invalid transaction type:" + transaction.getTransactionType().name());
+                                    throw new IllegalArgumentException("Invalid transaction type:" + transaction.getType().name());
                             }
                         }
 
@@ -1108,9 +1111,9 @@ public class BookTimelineAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
                     }
 
                     @Override
-                    public void visit(final Book.Request request) { // If BookProcess is a Book.Request object
+                    public void visit(final Request request) { // If BookProcess is a Book.Request object
 
-                        bookProcessHolder.mCreatedAt.setText(DurationTextUtils.getShortDurationString(mContext, request.getCreatedAt()));
+                        bookProcessHolder.mCreatedAt.setText(CreatedAtHelper.getShortDurationString(mContext, request.getCreatedAt()));
 
                         bookProcessHolder.mProcessImage.setVisibility(View.GONE);
 
@@ -1145,7 +1148,7 @@ public class BookTimelineAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
 
                         if (request.getFromUser().equals(currentUser)) {
 
-                            switch (request.getRequestType()) {
+                            switch (request.getType()) {
 
                                 case SEND: {
                                     String sendRequestString = mContext.getString(R.string.you_sent_request, toUserName);
@@ -1197,12 +1200,12 @@ public class BookTimelineAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
                                 }
 
                                 default:
-                                    throw new IllegalArgumentException("Invalid request type:" + request.getRequestType().name());
+                                    throw new IllegalArgumentException("Invalid request type:" + request.getType().name());
                             }
 
                         } else if (request.getToUser().equals(currentUser)) {
 
-                            switch (request.getRequestType()) {
+                            switch (request.getType()) {
 
                                 case SEND: {
                                     String sendRequestString = mContext.getString(R.string.x_sent_request_to_you, fromUserName);
@@ -1254,12 +1257,12 @@ public class BookTimelineAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
                                 }
 
                                 default:
-                                    throw new IllegalArgumentException("Invalid request type:" + request.getRequestType().name());
+                                    throw new IllegalArgumentException("Invalid request type:" + request.getType().name());
                             }
 
                         } else {
 
-                            switch (request.getRequestType()) {
+                            switch (request.getType()) {
 
                                 case SEND: {
                                     String sendRequestString = mContext.getString(R.string.x_sent_request_to_y, fromUserName, toUserName);
@@ -1335,7 +1338,7 @@ public class BookTimelineAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
                                 }
 
                                 default:
-                                    throw new IllegalArgumentException("Invalid request type:" + request.getRequestType().name());
+                                    throw new IllegalArgumentException("Invalid request type:" + request.getType().name());
                             }
                         }
 
@@ -1386,41 +1389,17 @@ public class BookTimelineAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
 
             User currentUser = SessionManager.getCurrentUser(mContext);
 
-            if (process instanceof Book.Request && ((Book.Request) process).getToUser().equals(currentUser)){
-                if (((Book.Request)process).getRequestType() == Book.RequestType.SEND){
+            if (process instanceof Request && ((Request) process).getToUser().equals(currentUser)){
+                if (((Request)process).getType() == Request.Type.SEND){
                     requestCount++;
                 }
-            }else if (process instanceof Book.Request && ((Book.Request) process).getFromUser().equals(currentUser)){
-                if (((Book.Request)process).getRequestType() != Book.RequestType.SEND){
+            }else if (process instanceof Request && ((Request) process).getFromUser().equals(currentUser)){
+                if (((Request)process).getType() != Request.Type.SEND){
                     requestCount--;
                 }
             }
         }
         return requestCount;
-    }
-
-    private String getStateDurationText() {
-        Book.BookProcess lastProcess;
-
-        int i = 0;
-        do {
-            lastProcess = mBookDetails.getBookProcesses().get(mBookDetails.getBookProcesses().size() - 1 - i++);
-        } while (lastProcess instanceof Book.Request || lastProcess == null);
-
-        Calendar createdAt = null;
-        if (lastProcess instanceof Book.Interaction) {
-            createdAt = ((Book.Interaction) lastProcess).getCreatedAt();
-        } else if (lastProcess instanceof Book.Transaction) {
-            createdAt = ((Book.Transaction) lastProcess).getCreatedAt();
-        }
-
-        int dayDiff = DurationTextUtils.calculateDayDiff(createdAt);
-
-        if (dayDiff > 0) {
-            return mContext.getString(R.string.state_duration, dayDiff);
-        } else {
-            return mContext.getString(R.string.state_today);
-        }
     }
 
     private String bookStateToString(Book.State state) {
@@ -1473,23 +1452,9 @@ public class BookTimelineAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
         Collections.sort(bookDetails.getBookProcesses(), new Comparator<Book.BookProcess>() {
             @Override
             public int compare(Book.BookProcess o1, Book.BookProcess o2) {
-                Calendar c1 = null;
-                if (o1 instanceof Book.Interaction){
-                    c1 = ((Book.Interaction) o1).getCreatedAt();
-                } else if (o1 instanceof Book.Request){
-                    c1 = ((Book.Request) o1).getCreatedAt();
-                }else if (o1 instanceof Book.Transaction){
-                    c1 = ((Book.Transaction) o1).getCreatedAt();
-                }
+                Calendar c1 = o1.getCreatedAt();
 
-                Calendar c2 = null;
-                if (o2 instanceof Book.Interaction){
-                    c2 = ((Book.Interaction) o2).getCreatedAt();
-                } else if (o2 instanceof Book.Request){
-                    c2 = ((Book.Request) o2).getCreatedAt();
-                }else if (o2 instanceof Book.Transaction){
-                    c2 = ((Book.Transaction) o2).getCreatedAt();
-                }
+                Calendar c2 = o2.getCreatedAt();
 
                 return c1.compareTo(c2);
             }
@@ -1537,5 +1502,17 @@ public class BookTimelineAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
 
     public void setSpanTextClickListener(SpanTextClickListeners spanTextClickListener) {
         mSpanTextClickListener = spanTextClickListener;
+    }
+
+    public int getHeaderIndex() {
+        return 0;
+    }
+
+    public int getBookStateIndex() {
+        return 1; // Header
+    }
+
+    public int getBeginningOfBookProcessesIndex() {
+        return 3; // Header + State + Subtitle
     }
 }

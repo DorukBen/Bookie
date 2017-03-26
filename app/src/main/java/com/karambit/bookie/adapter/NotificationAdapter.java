@@ -3,19 +3,16 @@ package com.karambit.bookie.adapter;
 import android.content.Context;
 import android.graphics.Color;
 import android.graphics.Typeface;
-import android.media.Image;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.widget.RecyclerView;
 import android.text.Spannable;
 import android.text.SpannableString;
 import android.text.Spanned;
 import android.text.TextPaint;
-import android.text.TextUtils;
 import android.text.method.LinkMovementMethod;
 import android.text.style.ClickableSpan;
 import android.text.style.ForegroundColorSpan;
 import android.text.style.StyleSpan;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -25,17 +22,14 @@ import android.widget.TextView;
 import com.bumptech.glide.Glide;
 import com.karambit.bookie.R;
 import com.karambit.bookie.helper.CircleImageView;
+import com.karambit.bookie.helper.CreatedAtHelper;
 import com.karambit.bookie.model.Book;
 import com.karambit.bookie.model.Notification;
 import com.karambit.bookie.model.User;
 
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Calendar;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
-import java.util.Locale;
 
 
 /**
@@ -232,11 +226,12 @@ public class NotificationAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
                             }
                         });
 
-                        userHolder.mCreatedAt.setText(calendarToCreatedAt(notification.getCreatedAt()));
+                        userHolder.mCreatedAt.setText(CreatedAtHelper.getShortDurationString(mContext, notification.getCreatedAt()));
 
                         switch (notification.getType()) {
 
                             case REQUESTED:
+
                                 String requestedString = mContext.getString(R.string.x_requested_for_y, notification.getOppositeUser().getName(), notification.getBook().getName());
                                 SpannableString spanRequestedString = new SpannableString(requestedString);
 
@@ -255,7 +250,9 @@ public class NotificationAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
                                         0, spanRequestedString.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
                                 userHolder.mMessage.setText(spanRequestedString);
                                 break;
+
                             case BOOK_OWNER_CHANGED:
+
                                 String bookOwnerChangedString = mContext.getString(R.string.x_now_owned_by_y, notification.getBook().getName(), notification.getOppositeUser().getName());
                                 SpannableString spanBookOwnerChangedString = new SpannableString(bookOwnerChangedString);
 
@@ -274,7 +271,9 @@ public class NotificationAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
                                         0, spanBookOwnerChangedString.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
                                 userHolder.mMessage.setText(spanBookOwnerChangedString);
                                 break;
+
                             case BOOK_LOST:
+
                                 String bookLostString = mContext.getString(R.string.x_lost_y, notification.getOppositeUser().getName(), notification.getBook().getName());
                                 SpannableString spanBookLostString = new SpannableString(bookLostString);
 
@@ -293,6 +292,7 @@ public class NotificationAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
                                         0, spanBookLostString.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
                                 userHolder.mMessage.setText(spanBookLostString);
                                 break;
+
                             default:
                                 throw new IllegalArgumentException("Invalid notification type");
                         }
@@ -327,7 +327,7 @@ public class NotificationAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
                             }
                         });
 
-                        bookHolder.mCreatedAt.setText(calendarToCreatedAt(notification.getCreatedAt()));
+                        bookHolder.mCreatedAt.setText(CreatedAtHelper.getShortDurationString(mContext, notification.getCreatedAt()));
 
 
                         switch (notification.getType()) {
@@ -383,6 +383,8 @@ public class NotificationAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
                     default:
                         throw new IllegalArgumentException("Invalid view type at position: " + position);
                 }
+
+                break;
             }
 
             case ITEM_TYPE_EMPTY_STATE: {
@@ -409,18 +411,6 @@ public class NotificationAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
         });
         mNotifications = notifications;
         notifyDataSetChanged();
-    }
-
-    private String calendarToCreatedAt(Calendar calendar) {
-
-        int hour = calendar.get(Calendar.HOUR_OF_DAY);
-
-        int minute = calendar.get(Calendar.MINUTE);
-        String minuteString = minute < 10 ? ("0" + minute) : String.valueOf(minute);
-
-        SimpleDateFormat df = new SimpleDateFormat("kk:mm", Locale.getDefault());
-
-        return df.format(calendar.getTime());
     }
 
     public interface SpanTextClickListeners {

@@ -3,10 +3,8 @@ package com.karambit.bookie.model;
 import android.os.Parcel;
 import android.os.Parcelable;
 
-import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.GregorianCalendar;
-import java.util.Random;
 
 /**
  * Created by doruk on 24.12.2016.
@@ -110,21 +108,6 @@ public class Notification implements Parcelable {
 
     public void setSeen(boolean seen) {
         mSeen = seen;
-    }
-
-    public static class GENERATOR {
-        public static Notification generateNotification() {
-            Type randomType = Type.values()[new Random().nextInt(Type.values().length)];
-            return new Notification(randomType, Calendar.getInstance(), Book.GENERATOR.generateBook(), User.GENERATOR.generateUser(), false);
-        }
-
-        public static ArrayList<Notification> generateNotificationList(int size) {
-            ArrayList<Notification> notifications = new ArrayList<>(size);
-            for (int i = 0; i < size; i++) {
-                notifications.add(generateNotification());
-            }
-            return notifications;
-        }
     }
 
     public static final Parcelable.Creator<Notification> CREATOR = new Parcelable.Creator<Notification>() {

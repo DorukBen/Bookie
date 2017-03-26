@@ -18,10 +18,8 @@ import android.view.LayoutInflater;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.Toast;
 
 import com.karambit.bookie.ConversationActivity;
-import com.karambit.bookie.LovedGenresActivity;
 import com.karambit.bookie.MainActivity;
 import com.karambit.bookie.R;
 import com.karambit.bookie.adapter.LastMessageAdapter;
@@ -236,23 +234,14 @@ public class MessageFragment extends Fragment {
             }
         });
 
-        mLastMessageAdapter.setHasStableIds(true);
-
         recyclerView.setAdapter(mLastMessageAdapter);
 
         recyclerView.setOnScrollListener(new ElevationScrollListener((MainActivity) getActivity(), TAB_INDEX));
 
-        //For improving recyclerviews performance
-        recyclerView.setItemViewCacheSize(20);
-        recyclerView.setDrawingCacheEnabled(true);
-        recyclerView.setDrawingCacheQuality(View.DRAWING_CACHE_QUALITY_HIGH);
-
-        recyclerView.setHasFixedSize(true);
-
         mMessageReceiver = new BroadcastReceiver() {
             @Override
             public void onReceive(Context context, Intent intent) {
-                if (intent.getAction().equalsIgnoreCase(BookieIntentFilters.INTENT_FILTER_MESSAGE_RECEIVED)) {
+                if (intent.getAction().equalsIgnoreCase(BookieIntentFilters.FCM_INTENT_FILTER_MESSAGE_RECEIVED)) {
                     final Message message = intent.getParcelableExtra(BookieIntentFilters.EXTRA_MESSAGE);
                     if (message != null) {
                         if (message.getSender().getID() != ConversationActivity.currentConversationUserId) {
@@ -261,11 +250,11 @@ public class MessageFragment extends Fragment {
                     }
                 } else {
                     int messageID = intent.getIntExtra(BookieIntentFilters.EXTRA_MESSAGE_ID, -1);
-                    if (intent.getAction().equalsIgnoreCase(BookieIntentFilters.INTENT_FILTER_MESSAGE_DELIVERED)) {
+                    if (intent.getAction().equalsIgnoreCase(BookieIntentFilters.FCM_INTENT_FILTER_MESSAGE_DELIVERED)) {
                         if (messageID > 0) {
                             changeMessageState(messageID, Message.State.DELIVERED);
                         }
-                    } else if (intent.getAction().equalsIgnoreCase(BookieIntentFilters.INTENT_FILTER_MESSAGE_SEEN)) {
+                    } else if (intent.getAction().equalsIgnoreCase(BookieIntentFilters.FCM_INTENT_FILTER_MESSAGE_SEEN)) {
                         if (messageID > 0) {
                             changeMessageState(messageID, Message.State.SEEN);
                         }
@@ -274,9 +263,9 @@ public class MessageFragment extends Fragment {
             }
         };
 
-        LocalBroadcastManager.getInstance(getContext()).registerReceiver(mMessageReceiver, new IntentFilter(BookieIntentFilters.INTENT_FILTER_MESSAGE_RECEIVED));
-        LocalBroadcastManager.getInstance(getContext()).registerReceiver(mMessageReceiver, new IntentFilter(BookieIntentFilters.INTENT_FILTER_MESSAGE_DELIVERED));
-        LocalBroadcastManager.getInstance(getContext()).registerReceiver(mMessageReceiver, new IntentFilter(BookieIntentFilters.INTENT_FILTER_MESSAGE_SEEN));
+        LocalBroadcastManager.getInstance(getContext()).registerReceiver(mMessageReceiver, new IntentFilter(BookieIntentFilters.FCM_INTENT_FILTER_MESSAGE_RECEIVED));
+        LocalBroadcastManager.getInstance(getContext()).registerReceiver(mMessageReceiver, new IntentFilter(BookieIntentFilters.FCM_INTENT_FILTER_MESSAGE_DELIVERED));
+        LocalBroadcastManager.getInstance(getContext()).registerReceiver(mMessageReceiver, new IntentFilter(BookieIntentFilters.FCM_INTENT_FILTER_MESSAGE_SEEN));
         return rootView;
     }
 

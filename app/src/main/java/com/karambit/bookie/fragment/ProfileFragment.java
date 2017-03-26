@@ -50,7 +50,6 @@ import retrofit2.Response;
 import static com.karambit.bookie.model.Book.State.CLOSED_TO_SHARE;
 import static com.karambit.bookie.model.Book.State.ON_ROAD;
 import static com.karambit.bookie.model.Book.State.OPENED_TO_SHARE;
-import static com.karambit.bookie.model.Book.State.READING;
 
 /**
  * A simple {@link Fragment} subclass.
@@ -211,8 +210,6 @@ public class ProfileFragment extends Fragment {
             }
         });
 
-        mProfileTimelineAdapter.setHasStableIds(true);
-
         mProfileRecyclerView.setAdapter(mProfileTimelineAdapter);
 
         if (mUser.equals(currentUser)){
@@ -232,46 +229,80 @@ public class ProfileFragment extends Fragment {
             }
         });
 
-        //For improving recyclerviews performance
-        mProfileRecyclerView.setItemViewCacheSize(20);
-        mProfileRecyclerView.setDrawingCacheEnabled(true);
-        mProfileRecyclerView.setDrawingCacheQuality(View.DRAWING_CACHE_QUALITY_HIGH);
-
         mPullRefreshLayout.setRefreshing(true);
         fetchProfilePageArguments();
 
         mMessageReceiver = new BroadcastReceiver() {
             @Override
             public void onReceive(Context context, Intent intent) {
-                if (intent.getAction().equalsIgnoreCase(BookieIntentFilters.INTENT_FILTER_SENT_REQUEST_RECEIVED)){
+                if (intent.getAction().equalsIgnoreCase(BookieIntentFilters.FCM_INTENT_FILTER_ACCEPTED_REQUEST_RECEIVED)){
                     if (intent.getParcelableExtra(BookieIntentFilters.EXTRA_NOTIFICATION) != null){
                         Notification notification = intent.getParcelableExtra(BookieIntentFilters.EXTRA_NOTIFICATION);
+
+                        int onRoadBookCountBeforeAdding = mUserDetails.getOnRoadBooks().size();
+
+                        mUserDetails.getOnRoadBooks().add(0, notification.getBook());
+
+                        mProfileTimelineAdapter.notifyItemInserted(mProfileTimelineAdapter.getFirstOnRoadBookIndex());
+
+                        Log.i(TAG, "Accepted Request Received: notifyItemRemoved called to position " +
+                            mProfileTimelineAdapter.getFirstOnRoadBookIndex() + " for OnRoadBooks");
+
+                        if (onRoadBookCountBeforeAdding == 0) {
+                            mProfileTimelineAdapter.notifyItemInserted(mProfileTimelineAdapter.getOnRoadBookSubtitleIndex(false));
+
+                            Log.i(TAG, "Accepted Request Received: notifyItemInserted called to position " +
+                                mProfileTimelineAdapter.getOnRoadBookSubtitleIndex(false) + " for OnRoadBooks Subtitle");
+                        }
                     }
-                } else if (intent.getAction().equalsIgnoreCase(BookieIntentFilters.INTENT_FILTER_REJECTED_REQUEST_RECEIVED)){
+                } else if (intent.getAction().equalsIgnoreCase(BookieIntentFilters.FCM_INTENT_FILTER_BOOK_OWNER_CHANGED_RECEIVED)){
                     if (intent.getParcelableExtra(BookieIntentFilters.EXTRA_NOTIFICATION) != null){
                         Notification notification = intent.getParcelableExtra(BookieIntentFilters.EXTRA_NOTIFICATION);
-                    }
-                } else if (intent.getAction().equalsIgnoreCase(BookieIntentFilters.INTENT_FILTER_ACCEPTED_REQUEST_RECEIVED)){
-                    if (intent.getParcelableExtra(BookieIntentFilters.EXTRA_NOTIFICATION) != null){
-                        Notification notification = intent.getParcelableExtra(BookieIntentFilters.EXTRA_NOTIFICATION);
-                        mUserDetails.getOnRoadBooks().add(notification.getBook());
-                        mProfileTimelineAdapter.setUserDetails(mUserDetails);
-                        Log.i(TAG, notification.getBook().getName() + " state changed to " + Book.State.ON_ROAD + " (added to OnRoadBooks)");
-                    }
-                } else if (intent.getAction().equalsIgnoreCase(BookieIntentFilters.INTENT_FILTER_BOOK_OWNER_CHANGED_RECEIVED)){
-                    if (intent.getParcelableExtra(BookieIntentFilters.EXTRA_NOTIFICATION) != null){
-                        Notification notification = intent.getParcelableExtra(BookieIntentFilters.EXTRA_NOTIFICATION);
+
+                        int removedBookIndex = mUserDetails.getBooksOnHand().indexOf(notification.getBook());
+                        int firstBookOnHandIndexBeforeRemoving = mProfileTimelineAdapter.getFirstBookOnHandIndex();
+
                         mUserDetails.getBooksOnHand().remove(notification.getBook());
-                        mProfileTimelineAdapter.setUserDetails(mUserDetails);
-                        Log.i(TAG, notification.getBook().getName() + " owner changed (removed from BooksOnHand)");
+                        mUserDetails.setPoint(mUserDetails.getPoint() + User.POINT_SHARE_BOOK);
+                        mUserDetails.setSharedPoint(mUserDetails.getSharedPoint() + 1);
+
+                        mProfileTimelineAdapter.notifyItemRemoved(firstBookOnHandIndexBeforeRemoving + removedBookIndex);
+
+                        Log.i(TAG, "Owner changed: notifyItemRemoved called to position " +
+                            (firstBookOnHandIndexBeforeRemoving + removedBookIndex) + " for BooksOnHand");
+
+                        mProfileTimelineAdapter.notifyItemChanged(mProfileTimelineAdapter.getHeaderIndex());
+
+                        Log.i(TAG, "Owner changed: notifyItemChanged called to position " +
+                            mProfileTimelineAdapter.getHeaderIndex() + " for Header");
+
+                        if (mUserDetails.getBooksOnHand().size() == 0){
+                            mProfileTimelineAdapter.notifyItemRemoved(mProfileTimelineAdapter.getBooksOnHandSubtitleIndex(true));
+                        }
                     }
-                } else if (intent.getAction().equalsIgnoreCase(BookieIntentFilters.INTENT_FILTER_BOOK_LOST)){
+                } else if (intent.getAction().equalsIgnoreCase(BookieIntentFilters.FCM_INTENT_FILTER_BOOK_LOST)){
                     if (intent.getParcelableExtra(BookieIntentFilters.EXTRA_NOTIFICATION) != null){
                         Notification notification = intent.getParcelableExtra(BookieIntentFilters.EXTRA_NOTIFICATION);
+
+                        int removedBookIndex = mUserDetails.getBooksOnHand().indexOf(notification.getBook());
+                        int firstBookOnHandIndexBeforeRemoving = mProfileTimelineAdapter.getFirstBookOnHandIndex();
+
                         mUserDetails.getOnRoadBooks().remove(notification.getBook());
-                        mUserDetails.setPoint(mUserDetails.getPoint() - 20);
-                        mProfileTimelineAdapter.setUserDetails(mUserDetails);
-                        Log.i(TAG, notification.getBook().getName() + " book lost (removed from OnRoadBooks)");
+                        mUserDetails.setPoint(mUserDetails.getPoint() + User.POINT_LOST);
+
+                        mProfileTimelineAdapter.notifyItemRemoved(firstBookOnHandIndexBeforeRemoving + removedBookIndex);
+
+                        Log.i(TAG, "Book lost: notifyItemRemoved called to position " +
+                            (firstBookOnHandIndexBeforeRemoving + removedBookIndex) + " for BooksOnHand");
+
+                        mProfileTimelineAdapter.notifyItemChanged(mProfileTimelineAdapter.getHeaderIndex());
+
+                        Log.i(TAG, "Book lost: notifyItemChanged called to position " +
+                            mProfileTimelineAdapter.getHeaderIndex() + " for Header");
+
+                        if (mUserDetails.getBooksOnHand().size() == 0){
+                            mProfileTimelineAdapter.notifyItemRemoved(mProfileTimelineAdapter.getBooksOnHandSubtitleIndex(true));
+                        }
                     }
                 } else if (intent.getAction().equalsIgnoreCase(BookieIntentFilters.INTENT_FILTER_BOOK_STATE_CHANGED)){
                     if (mUserDetails != null){
@@ -279,120 +310,311 @@ public class ProfileFragment extends Fragment {
                         if (book != null) {
                             if (mUserDetails.getBooksOnHand().contains(book)){
 
-                                int indexOfBook = mUserDetails.getBooksOnHand().indexOf(book);
-
                                 switch (book.getState()){
                                     case READING:{
+                                        int removedBookIndex = mUserDetails.getBooksOnHand().indexOf(book);
+                                        int firstBookOnHandIndexBeforeRemoving = mProfileTimelineAdapter.getFirstBookOnHandIndex();
+
                                         mUserDetails.getBooksOnHand().remove(book);
                                         mUserDetails.getCurrentlyReading().add(book);
-                                        Log.i(TAG, book.getName() + " state changed to " + READING + " from " + OPENED_TO_SHARE + " or " + CLOSED_TO_SHARE + " (removed from BooksOnHand, added to CurrentlyReading)");
+
+                                        mProfileTimelineAdapter.notifyItemRemoved(firstBookOnHandIndexBeforeRemoving + removedBookIndex);
+
+                                        Log.i(TAG, "State change: (OpenedToShare-ClosedToShare) -> Reading. notifyItemRemoved called to position " +
+                                            (firstBookOnHandIndexBeforeRemoving + removedBookIndex) + " for BooksOnHand");
+
+                                        if (mUserDetails.getBooksOnHand().size() == 0) {
+                                            mProfileTimelineAdapter.notifyItemRemoved(mProfileTimelineAdapter.getBooksOnHandSubtitleIndex(true));
+
+                                            Log.i(TAG, "State change: (OpenedToShare-ClosedToShare) -> Reading. notifyItemRemoved called to position " +
+                                                mProfileTimelineAdapter.getBooksOnHandSubtitleIndex(true) + " for BooksOnHand Subtitle");
+                                        }
+
                                         break;
                                     }
 
                                     case OPENED_TO_SHARE:{
-                                        mUserDetails.getBooksOnHand().get(indexOfBook).setState(OPENED_TO_SHARE);
-                                        Log.i(TAG, book.getName() + " state changed to " + Book.State.OPENED_TO_SHARE + " from " + CLOSED_TO_SHARE + " (already in BooksOnHand)");
+                                        int changedBookIndex = mUserDetails.getBooksOnHand().indexOf(book);
+
+                                        mUserDetails.getBooksOnHand().get(changedBookIndex).setState(OPENED_TO_SHARE);
+
+                                        mProfileTimelineAdapter.notifyItemChanged(mProfileTimelineAdapter.getFirstBookOnHandIndex() + changedBookIndex);
+
+                                        Log.i(TAG, "State change: ClosedToShare -> OpenedToShare. notifyItemChanged called to position " +
+                                            (mProfileTimelineAdapter.getFirstBookOnHandIndex() + changedBookIndex) + " for BooksOnHand");
+
                                         break;
                                     }
 
                                     case CLOSED_TO_SHARE:{
-                                        mUserDetails.getBooksOnHand().get(indexOfBook).setState(CLOSED_TO_SHARE);
-                                        Log.i(TAG, book.getName() + " state changed to " + Book.State.CLOSED_TO_SHARE + " from " + OPENED_TO_SHARE + " (already in BooksOnHand)");
+                                        int changedBookIndex = mUserDetails.getBooksOnHand().indexOf(book);
+
+                                        mUserDetails.getBooksOnHand().get(changedBookIndex).setState(CLOSED_TO_SHARE);
+
+                                        mProfileTimelineAdapter.notifyItemChanged(mProfileTimelineAdapter.getFirstBookOnHandIndex() + changedBookIndex);
+
+                                        Log.i(TAG, "State change: OpenedToShare -> ClosedToShare. notifyItemChanged called to position " +
+                                            (mProfileTimelineAdapter.getFirstBookOnHandIndex() + changedBookIndex) + " for BooksOnHand");
+
                                         break;
                                     }
 
                                     case ON_ROAD:{
-                                        mUserDetails.getBooksOnHand().get(indexOfBook).setState(ON_ROAD);
-                                        Log.i(TAG, book.getName() + " state changed to " + Book.State.ON_ROAD + " from " + OPENED_TO_SHARE + " or " + CLOSED_TO_SHARE + " (already in BooksOnHand)");
+                                        int changedBookIndex = mUserDetails.getBooksOnHand().indexOf(book);
+
+                                        mUserDetails.getBooksOnHand().get(changedBookIndex).setState(ON_ROAD);
+
+                                        mProfileTimelineAdapter.notifyItemChanged(mProfileTimelineAdapter.getFirstBookOnHandIndex() + changedBookIndex);
+
+                                        Log.i(TAG, "State change: OpenedToShare -> OnRoad. notifyItemChanged called to position " +
+                                            (mProfileTimelineAdapter.getFirstBookOnHandIndex() + changedBookIndex) + " for BooksOnHand");
+
                                         break;
                                     }
                                 }
                             } else if (mUserDetails.getCurrentlyReading().contains(book)){
 
+                                // Finished reading
+                                mUserDetails.setPoint(mUserDetails.getPoint() + User.POINT_READ_FINISHED);
+
+                                mProfileTimelineAdapter.notifyItemChanged(mProfileTimelineAdapter.getHeaderIndex());
+
                                 switch (book.getState()){
 
                                     case OPENED_TO_SHARE:{
+
+                                        int booksOnHandCountBeforeAdding = mUserDetails.getBooksOnHand().size();
+                                        int firstBookOnHandIndexBeforeRemoving = mProfileTimelineAdapter.getFirstBookOnHandIndex();
+
                                         mUserDetails.getCurrentlyReading().remove(book);
-                                        mUserDetails.getBooksOnHand().add(book);
-                                        if (!mUserDetails.getReadBooks().contains(book)){
-                                            mUserDetails.getReadBooks().add(book);
-                                            Log.i(TAG, book.getName() + " state changed to " + Book.State.OPENED_TO_SHARE + " from " + READING + " (removed from CurrentlyReading, added to BooksOnHand and ReadBooks)");
-                                        } else {
-                                            Log.i(TAG, book.getName() + " state changed to " + Book.State.OPENED_TO_SHARE + " from " + READING + " (removed from CurrentlyReading, added to BooksOnHand, already in ReadBooks)");
+
+                                        mUserDetails.getBooksOnHand().add(0, book);
+
+                                        mProfileTimelineAdapter.notifyItemInserted(firstBookOnHandIndexBeforeRemoving);
+
+                                        Log.i(TAG, "State change: Reading -> OpenedToShare. notifyItemInserted at position " +
+                                            firstBookOnHandIndexBeforeRemoving + " for BooksOnHand");
+
+                                        if (booksOnHandCountBeforeAdding == 0) {
+                                            mProfileTimelineAdapter.notifyItemInserted(mProfileTimelineAdapter.getBooksOnHandSubtitleIndex(false));
+
+                                            Log.i(TAG, "State change: Reading -> OpenedToShare. notifyItemInserted at position " +
+                                                mProfileTimelineAdapter.getBooksOnHandSubtitleIndex(false) + " for BooksOnHand Subtitle");
                                         }
+
+                                        if (!mUserDetails.getReadBooks().contains(book)){
+
+                                            int readBooksCountBeforeAdding = mUserDetails.getReadBooks().size();
+
+                                            mUserDetails.getReadBooks().add(0, book);
+
+                                            mProfileTimelineAdapter.notifyItemInserted(mProfileTimelineAdapter.getFirstReadBookIndex());
+
+                                            Log.i(TAG, "State change: Reading -> OpenedToShare. notifyItemInserted at position " +
+                                                mProfileTimelineAdapter.getFirstReadBookIndex() + " for ReadBooks");
+
+                                            if (readBooksCountBeforeAdding == 0) {
+                                                mProfileTimelineAdapter.notifyItemInserted(mProfileTimelineAdapter.getReadBooksSubtitleIndex(false));
+
+                                                Log.i(TAG, "State change: Reading -> OpenedToShare. notifyItemInserted at position " +
+                                                    mProfileTimelineAdapter.getReadBooksSubtitleIndex(false) + " for ReadBooks Subtitle");
+                                            }
+                                        }
+
                                         break;
                                     }
 
                                     case CLOSED_TO_SHARE:{
+                                        int booksOnHandCountBeforeAdding = mUserDetails.getBooksOnHand().size();
+
                                         mUserDetails.getCurrentlyReading().remove(book);
-                                        mUserDetails.getBooksOnHand().add(book);
+                                        mUserDetails.getBooksOnHand().add(0, book);
+
+                                        mProfileTimelineAdapter.notifyItemInserted(mProfileTimelineAdapter.getFirstBookOnHandIndex());
+
+                                        Log.i(TAG, "State change: Reading -> ClosedToShare. notifyItemInserted at position " +
+                                            mProfileTimelineAdapter.getFirstBookOnHandIndex() + " for BooksOnHand");
+
+
+                                        if (booksOnHandCountBeforeAdding == 0) {
+                                            mProfileTimelineAdapter.notifyItemInserted(mProfileTimelineAdapter.getBooksOnHandSubtitleIndex(false));
+
+                                            Log.i(TAG, "State change: Reading -> ClosedToShare. notifyItemInserted at position " +
+                                                (mProfileTimelineAdapter.getBooksOnHandSubtitleIndex(false)) + " for BooksOnHand Subtitle");
+                                        }
+
                                         if (!mUserDetails.getReadBooks().contains(book)){
-                                            mUserDetails.getReadBooks().add(book);
-                                            Log.i(TAG, book.getName() + " state changed to " + Book.State.CLOSED_TO_SHARE + " from " + READING + " (removed from CurrentlyReading, added to BooksOnHand and ReadBooks)");
-                                        } else {
-                                            Log.i(TAG, book.getName() + " state changed to " + Book.State.CLOSED_TO_SHARE + " from " + READING + " (removed from CurrentlyReading, added to BooksOnHand, already in ReadBooks)");
+
+                                            int readBooksCountBeforeAdding = mUserDetails.getReadBooks().size();
+
+                                            mUserDetails.getReadBooks().add(0, book);
+
+                                            mProfileTimelineAdapter.notifyItemInserted(mProfileTimelineAdapter.getFirstReadBookIndex());
+
+                                            Log.i(TAG, "State change: Reading -> ClosedToShare. notifyItemInserted at position " +
+                                                (mProfileTimelineAdapter.getFirstReadBookIndex() + readBooksCountBeforeAdding) + " for ReadBooks");
+
+                                            if (readBooksCountBeforeAdding == 0) {
+                                                mProfileTimelineAdapter.notifyItemInserted(mProfileTimelineAdapter.getReadBooksSubtitleIndex(false));
+
+                                                Log.i(TAG, "State change: Reading -> ClosedToShare. notifyItemInserted at position " +
+                                                    (mProfileTimelineAdapter.getReadBooksSubtitleIndex(false)) + " for ReadBooks");
+                                            }
                                         }
                                         break;
                                     }
 
                                     case ON_ROAD:{
+                                        int onRoadBooksCountBeforeAdding = mUserDetails.getOnRoadBooks().size();
+
                                         mUserDetails.getCurrentlyReading().remove(book);
-                                        mUserDetails.getOnRoadBooks().add(book);
-                                        if (!mUserDetails.getReadBooks().contains(book)){
-                                            mUserDetails.getReadBooks().add(book);
-                                            Log.i(TAG, book.getName() + " state changed to " + Book.State.ON_ROAD + " from " + READING + " (removed from CurrentlyReading, added to OnRoadBooks and ReadBooks)");
-                                        } else {
-                                            Log.i(TAG, book.getName() + " state changed to " + Book.State.ON_ROAD + " from " + READING + " (removed from CurrentlyReading, added to OnRoadBooks, already in ReadBooks)");
+                                        mUserDetails.getOnRoadBooks().add(0, book);
+
+                                        mProfileTimelineAdapter.notifyItemInserted(mProfileTimelineAdapter.getFirstOnRoadBookIndex());
+
+                                        Log.i(TAG, "State change: Reading -> OnRoad. notifyItemInserted at position " +
+                                            mProfileTimelineAdapter.getFirstOnRoadBookIndex() + " for OnRoadBooks");
+
+                                        if (onRoadBooksCountBeforeAdding == 0) {
+                                            mProfileTimelineAdapter.notifyItemInserted(mProfileTimelineAdapter.getOnRoadBookSubtitleIndex(false));
+
+                                            Log.i(TAG, "State change: Reading -> OnRoad. notifyItemInserted at position " +
+                                                mProfileTimelineAdapter.getOnRoadBookSubtitleIndex(false) + " for OnRoadBooks Subtitle");
                                         }
+
+                                        if (!mUserDetails.getReadBooks().contains(book)){
+                                            int readBooksCountBeforeAdding = mUserDetails.getReadBooks().size();
+
+                                            mUserDetails.getReadBooks().add(0, book);
+
+                                            mProfileTimelineAdapter.notifyItemInserted(mProfileTimelineAdapter.getFirstReadBookIndex());
+
+                                            Log.i(TAG, "State change: Reading -> OnRoad. notifyItemInserted at position " +
+                                                mProfileTimelineAdapter.getFirstReadBookIndex() + " for ReadBooks");
+
+                                            if (readBooksCountBeforeAdding == 0) {
+                                                mProfileTimelineAdapter.notifyItemInserted(mProfileTimelineAdapter.getReadBooksSubtitleIndex(false));
+
+                                                Log.i(TAG, "State change: Reading -> OnRoad. notifyItemInserted at position " +
+                                                    mProfileTimelineAdapter.getReadBooksSubtitleIndex(false) + " for ReadBooks Subtitle");
+                                            }
+                                        }
+
                                         break;
                                     }
                                 }
                             }else if (mUserDetails.getOnRoadBooks().contains(book)){
 
+                                mUserDetails.setPoint(mUserDetails.getPoint() + User.POINT_BOOK_COME_TO_HAND);
+
                                 switch (book.getState()){
+
                                     case READING:{
+                                        int removedBookIndex = mUserDetails.getOnRoadBooks().indexOf(book);
+
+                                        int firstOnRoadBookIndexBeforeRemoving = mProfileTimelineAdapter.getFirstOnRoadBookIndex();
+
                                         mUserDetails.getOnRoadBooks().remove(book);
-                                        mUserDetails.getCurrentlyReading().add(book);
-                                        Log.i(TAG, book.getName() + " state changed to " + READING + " from " + ON_ROAD + " (removed from OnRoadBooks, added to CurrentlyReading)");
+                                        mUserDetails.getCurrentlyReading().add(0, book);
+
+                                        mProfileTimelineAdapter.notifyItemRemoved(firstOnRoadBookIndexBeforeRemoving + removedBookIndex);
+
+                                        Log.i(TAG, "State change: OnRoad -> Reading. notifyItemRemoved at position " +
+                                            (firstOnRoadBookIndexBeforeRemoving + removedBookIndex) + " for OnRoadBooks");
+
+                                        if (mUserDetails.getOnRoadBooks().size() == 0){
+                                            mProfileTimelineAdapter.notifyItemRemoved(mProfileTimelineAdapter.getOnRoadBookSubtitleIndex(true));
+
+                                            Log.i(TAG, "State change: OnRoad -> Reading. notifyItemRemoved at position " +
+                                                (mProfileTimelineAdapter.getOnRoadBookSubtitleIndex(true)) + " for OnRoadBooks Subtitle");
+                                        }
+
                                         break;
                                     }
 
                                     case OPENED_TO_SHARE:{
+                                        int removedBookIndex = mUserDetails.getOnRoadBooks().indexOf(book);
+                                        int booksOnHandCountBeforeAdding = mUserDetails.getBooksOnHand().size();
+                                        int firstOnRoadBookIndexBeforeRemoving = mProfileTimelineAdapter.getFirstOnRoadBookIndex();
+
                                         mUserDetails.getOnRoadBooks().remove(book);
-                                        mUserDetails.getBooksOnHand().add(book);
-                                        Log.i(TAG, book.getName() + " state changed to " + Book.State.OPENED_TO_SHARE + " from " + ON_ROAD + " (removed from OnRoadBooks, added to BooksOnHand)");
+                                        mUserDetails.getBooksOnHand().add(0, book);
+
+                                        mProfileTimelineAdapter.notifyItemMoved(firstOnRoadBookIndexBeforeRemoving + removedBookIndex,
+                                                                                mProfileTimelineAdapter.getFirstBookOnHandIndex());
+
+
+                                        Log.i(TAG, "State change: OnRoad -> OpenToShare. notifyItemMoved from position " +
+                                            (firstOnRoadBookIndexBeforeRemoving + removedBookIndex) + " to position " +
+                                            mProfileTimelineAdapter.getFirstBookOnHandIndex() + " for OnRoadBooks -> BooksOnHand");
+
+                                        if (mUserDetails.getOnRoadBooks().size() == 0){
+                                            mProfileTimelineAdapter.notifyItemRemoved(mProfileTimelineAdapter.getOnRoadBookSubtitleIndex(true));
+
+                                            Log.i(TAG, "State change: OnRoad -> OpenToShare. notifyItemRemoved at position " +
+                                                (mProfileTimelineAdapter.getOnRoadBookSubtitleIndex(true)) + " for OnRoadBooks Subtitle");
+                                        }
+
+                                        if (booksOnHandCountBeforeAdding == 0){
+                                            mProfileTimelineAdapter.notifyItemInserted(mProfileTimelineAdapter.getBooksOnHandSubtitleIndex(false));
+
+                                            Log.i(TAG, "State change: OnRoad -> OpenToShare. notifyItemInserted at position " +
+                                                (mProfileTimelineAdapter.getBooksOnHandSubtitleIndex(false)) + " for BooksOnHand Subtitle");
+                                        }
+
                                         break;
                                     }
 
                                     case CLOSED_TO_SHARE:{
+                                        int removedBookIndex = mUserDetails.getOnRoadBooks().indexOf(book);
+                                        int booksOnHandCountBeforeAdding = mUserDetails.getBooksOnHand().size();
+                                        int firstOnRoadBookIndexBeforeRemoving = mProfileTimelineAdapter.getFirstOnRoadBookIndex();
+
                                         mUserDetails.getOnRoadBooks().remove(book);
                                         mUserDetails.getBooksOnHand().add(book);
-                                        Log.i(TAG, book.getName() + " state changed to " + Book.State.CLOSED_TO_SHARE + " from " + ON_ROAD + " (removed from OnRoadBooks, added to BooksOnHand)");
+
+                                        mProfileTimelineAdapter.notifyItemMoved(firstOnRoadBookIndexBeforeRemoving + removedBookIndex,
+                                                                                mProfileTimelineAdapter.getFirstBookOnHandIndex() + booksOnHandCountBeforeAdding);
+
+                                        Log.i(TAG, "State change: OnRoad -> CloseToShare. notifyItemMoved from position " +
+                                            (firstOnRoadBookIndexBeforeRemoving + removedBookIndex) + " to position " +
+                                            (mProfileTimelineAdapter.getFirstBookOnHandIndex() + booksOnHandCountBeforeAdding) + " for OnRoadBooks -> BooksOnHand");
+
+                                        if (mUserDetails.getOnRoadBooks().size() == 0){
+                                            mProfileTimelineAdapter.notifyItemRemoved(mProfileTimelineAdapter.getOnRoadBookSubtitleIndex(true));
+
+                                            Log.i(TAG, "State change: OnRoad -> OpenToShare. notifyItemRemoved at position " +
+                                                (mProfileTimelineAdapter.getOnRoadBookSubtitleIndex(true)) + " for OnRoadBooks Subtitle");
+                                        }
+
+                                        if (booksOnHandCountBeforeAdding == 0){
+                                            mProfileTimelineAdapter.notifyItemInserted(mProfileTimelineAdapter.getBooksOnHandSubtitleIndex(false));
+
+                                            Log.i(TAG, "State change: OnRoad -> OpenToShare. notifyItemInserted at position " +
+                                                (mProfileTimelineAdapter.getBooksOnHandSubtitleIndex(false)) + " for BooksOnHand Subtitle");
+                                        }
+
                                         break;
                                     }
                                 }
                             } else {
                                 Log.e(TAG, "Invalid book state on state changing!");
                             }
-                            mProfileTimelineAdapter.setUserDetails(mUserDetails);
-                            mProfileTimelineAdapter.notifyDataSetChanged();
                         } else {
                             Log.e(TAG, "Null book in intent extra");
                         }
                     }
-                }else if (intent.getAction().equalsIgnoreCase(BookieIntentFilters.INTENT_FILTER_USER_VERIFIED)){
+                }else if (intent.getAction().equalsIgnoreCase(BookieIntentFilters.FCM_INTENT_FILTER_USER_VERIFIED)){
                     //TODO When user verified
                 }
             }
         };
 
-        LocalBroadcastManager.getInstance(getContext()).registerReceiver(mMessageReceiver, new IntentFilter(BookieIntentFilters.INTENT_FILTER_SENT_REQUEST_RECEIVED));
-        LocalBroadcastManager.getInstance(getContext()).registerReceiver(mMessageReceiver, new IntentFilter(BookieIntentFilters.INTENT_FILTER_REJECTED_REQUEST_RECEIVED));
-        LocalBroadcastManager.getInstance(getContext()).registerReceiver(mMessageReceiver, new IntentFilter(BookieIntentFilters.INTENT_FILTER_ACCEPTED_REQUEST_RECEIVED));
-        LocalBroadcastManager.getInstance(getContext()).registerReceiver(mMessageReceiver, new IntentFilter(BookieIntentFilters.INTENT_FILTER_BOOK_OWNER_CHANGED_RECEIVED));
+        LocalBroadcastManager.getInstance(getContext()).registerReceiver(mMessageReceiver, new IntentFilter(BookieIntentFilters.FCM_INTENT_FILTER_ACCEPTED_REQUEST_RECEIVED));
+        LocalBroadcastManager.getInstance(getContext()).registerReceiver(mMessageReceiver, new IntentFilter(BookieIntentFilters.FCM_INTENT_FILTER_BOOK_OWNER_CHANGED_RECEIVED));
         LocalBroadcastManager.getInstance(getContext()).registerReceiver(mMessageReceiver, new IntentFilter(BookieIntentFilters.INTENT_FILTER_BOOK_STATE_CHANGED));
-        LocalBroadcastManager.getInstance(getContext()).registerReceiver(mMessageReceiver, new IntentFilter(BookieIntentFilters.INTENT_FILTER_USER_VERIFIED));
-        LocalBroadcastManager.getInstance(getContext()).registerReceiver(mMessageReceiver, new IntentFilter(BookieIntentFilters.INTENT_FILTER_BOOK_LOST));
+        LocalBroadcastManager.getInstance(getContext()).registerReceiver(mMessageReceiver, new IntentFilter(BookieIntentFilters.FCM_INTENT_FILTER_USER_VERIFIED));
+        LocalBroadcastManager.getInstance(getContext()).registerReceiver(mMessageReceiver, new IntentFilter(BookieIntentFilters.FCM_INTENT_FILTER_BOOK_LOST));
 
         return rootView;
     }
@@ -532,6 +754,7 @@ public class ProfileFragment extends Fragment {
         if (requestCode == UPDATE_PROFILE_PICTURE_REQUEST_CODE){
             if (resultCode == PhotoViewerActivity.RESULT_PROFILE_PICTURE_UPDATED){
                 refreshProfilePage();
+//                TODO mProfileTimelineAdapter.notifyItemChanged(mProfileTimelineAdapter.getHeaderIndex());
             }
         } else if (resultCode == AddBookActivity.RESULT_BOOK_CREATED) {
             refreshProfilePage();

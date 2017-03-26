@@ -96,7 +96,7 @@ public class ProfileActivity extends AppCompatActivity {
 
                 } else {
                     final InformationDialog informationDialog = new InformationDialog(this);
-                    informationDialog.setCancelable(false);
+                    informationDialog.setCancelable(true);
                     informationDialog.setPrimaryMessage(R.string.unverified_email_info_short);
                     informationDialog.setSecondaryMessage(R.string.unverified_email_message_info);
                     informationDialog.setDefaultClickListener(new InformationDialog.DefaultClickListener() {

@@ -94,6 +94,7 @@ public class HorizontalPagerAdapter extends InfiniteCyclePagerAdapter {
 
     void setBooks(ArrayList<Book> books){
         mBooks = books;
+        notifyDataSetChanged();
         Log.i(TAG, "Books set: " + books);
     }
 

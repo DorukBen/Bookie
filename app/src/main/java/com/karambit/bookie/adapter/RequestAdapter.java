@@ -13,7 +13,7 @@ import com.bumptech.glide.Glide;
 import com.karambit.bookie.R;
 import com.karambit.bookie.helper.CircleImageView;
 import com.karambit.bookie.helper.CreatedAtHelper;
-import com.karambit.bookie.model.Book;
+import com.karambit.bookie.model.Request;
 import com.karambit.bookie.model.User;
 
 import java.util.ArrayList;
@@ -40,26 +40,26 @@ public class RequestAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
     private int mErrorType = ERROR_TYPE_NONE;
 
     private Context mContext;
-    private ArrayList<Book.Request> mRequests;
-    private Hashtable<Book.Request, String> mLocations;
+    private ArrayList<Request> mRequests;
+    private Hashtable<Request, String> mLocations;
     private RequestClickListeners mRequestClickListeners;
     private boolean mIsRequestAccepted;
 
-    public RequestAdapter(Context context, ArrayList<Book.Request> requests, Hashtable<Book.Request, String> locations) {
+    public RequestAdapter(Context context, ArrayList<Request> requests, Hashtable<Request, String> locations) {
         mContext = context;
         mRequests = requests;
         mLocations = locations;
         mIsRequestAccepted = false;
-        for (Book.Request r : requests) {
-            if (r.getRequestType() == Book.RequestType.ACCEPT) {
+        for (Request r : requests) {
+            if (r.getType() == Request.Type.ACCEPT) {
                 mIsRequestAccepted = true;
             }
         }
     }
 
-    public RequestAdapter(Context context) {
+    public RequestAdapter(Context context, ArrayList<Request> requests) {
         mContext = context;
-        mRequests = new ArrayList<>();
+        mRequests = requests;
         mLocations = new Hashtable<>();
         mIsRequestAccepted = false;
     }
@@ -192,7 +192,7 @@ public class RequestAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
                 final RequestViewHolder requestViewHolder = (RequestViewHolder) holder;
 
                 int exactRequestPosition = position <= getSentRequestCount() ? position : position - 1; /*SUBTITLE*/
-                final Book.Request request = mRequests.get(exactRequestPosition);
+                final Request request = mRequests.get(exactRequestPosition);
                 final User anotherUser = (getItemViewType(position) == TYPE_SENT_REQUEST)?request.getFromUser():request.getToUser();
 
                 if (getItemViewType(position) == TYPE_SENT_REQUEST) {
@@ -284,11 +284,11 @@ public class RequestAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
 
     }
 
-    public ArrayList<Book.Request> getRejectedRequests() {
-        ArrayList<Book.Request> rejectedRequests = new ArrayList<>();
+    public ArrayList<Request> getRejectedRequests() {
+        ArrayList<Request> rejectedRequests = new ArrayList<>();
         for (int i = 0; i < mRequests.size(); i++) {
-            Book.Request request = mRequests.get(i);
-            if (request.getRequestType() == Book.RequestType.REJECT) {
+            Request request = mRequests.get(i);
+            if (request.getType() == Request.Type.REJECT) {
                 rejectedRequests.add(request);
             }
         }
@@ -298,19 +298,19 @@ public class RequestAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
     public int getRejectedRequestCount() {
         int count = 0;
         for (int i = 0; i < mRequests.size(); i++) {
-            Book.Request request = mRequests.get(i);
-            if (request.getRequestType() == Book.RequestType.REJECT) {
+            Request request = mRequests.get(i);
+            if (request.getType() == Request.Type.REJECT) {
                 count++;
             }
         }
         return count;
     }
 
-    public ArrayList<Book.Request> getSentRequests() {
-        ArrayList<Book.Request> sentRequests = new ArrayList<>();
+    public ArrayList<Request> getSentRequests() {
+        ArrayList<Request> sentRequests = new ArrayList<>();
         for (int i = 0; i < mRequests.size(); i++) {
-            Book.Request request = mRequests.get(i);
-            if (request.getRequestType() == Book.RequestType.SEND) {
+            Request request = mRequests.get(i);
+            if (request.getType() == Request.Type.SEND) {
                 sentRequests.add(request);
             }
         }
@@ -320,8 +320,8 @@ public class RequestAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
     public int getSentRequestCount() {
         int count = 0;
         for (int i = 0; i < mRequests.size(); i++) {
-            Book.Request request = mRequests.get(i);
-            if (request.getRequestType() == Book.RequestType.SEND) {
+            Request request = mRequests.get(i);
+            if (request.getType() == Request.Type.SEND) {
                 count++;
             }
         }
@@ -330,8 +330,8 @@ public class RequestAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
 
     public interface RequestClickListeners {
         void onUserClick(User user);
-        void onAcceptClick(Book.Request request);
-        void onRejectClick(Book.Request request);
+        void onAcceptClick(Request request);
+        void onRejectClick(Request request);
     }
 
     public RequestClickListeners getRequestClickListeners() {
@@ -342,14 +342,14 @@ public class RequestAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
         mRequestClickListeners = requestClickListeners;
     }
 
-    public ArrayList<Book.Request> getRequests() {
+    public ArrayList<Request> getRequests() {
         return mRequests;
     }
 
-    public void setRequests(ArrayList<Book.Request> requests) {
+    public void setRequests(ArrayList<Request> requests) {
         mRequests = requests;
-        for (Book.Request r : requests) {
-            if (r.getRequestType() == Book.RequestType.ACCEPT) {
+        for (Request r : requests) {
+            if (r.getType() == Request.Type.ACCEPT) {
                 mIsRequestAccepted = true;
             }
         }
@@ -366,11 +366,11 @@ public class RequestAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
         notifyDataSetChanged();
     }
 
-    public Hashtable<Book.Request, String> getLocations() {
+    public Hashtable<Request, String> getLocations() {
         return mLocations;
     }
 
-    public void setLocations(Hashtable<Book.Request, String> locations) {
+    public void setLocations(Hashtable<Request, String> locations) {
         mLocations = locations;
     }
 }

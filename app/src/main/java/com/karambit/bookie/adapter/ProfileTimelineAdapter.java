@@ -778,10 +778,9 @@ public class ProfileTimelineAdapter extends RecyclerView.Adapter<RecyclerView.Vi
 
                 CurrentlyReadingViewHolder currentlyReadingHolder = (CurrentlyReadingViewHolder) holder;
 
-                Log.i(TAG, "mUserDetails.getCurrentlyReading(): " + mUserDetails.getCurrentlyReading());
-
                 if (mHorizontalPagerAdapter != null){
                     mHorizontalPagerAdapter.setBooks(mUserDetails.getCurrentlyReading());
+                    mHorizontalPagerAdapter.notifyDataSetChanged();
                     currentlyReadingHolder.mCycleViewPager.notifyDataSetChanged();
                     currentlyReadingHolder.mCycleViewPager.setInfiniteCyclerManagerPagerAdapter(mHorizontalPagerAdapter);
                 }else{
@@ -1007,6 +1006,8 @@ public class ProfileTimelineAdapter extends RecyclerView.Adapter<RecyclerView.Vi
         return offset;
     }
 
+
+
     private int calculateBooksOnHandOffset() {
         int offset = 1; // Header
 
@@ -1061,8 +1062,48 @@ public class ProfileTimelineAdapter extends RecyclerView.Adapter<RecyclerView.Vi
         return offset + mUserDetails.getOnRoadBooksCount() + mUserDetails.getBooksOnHandCount();
     }
 
+    public int getHeaderIndex() {
+        return 0;
+    }
+
+    public int getCurrentlyReadingIndex() {
+        return 1;
+    }
+
+    public int getOnRoadBookSubtitleIndex(boolean isOnRoadBooksEmpty) {
+        if (isOnRoadBooksEmpty) {
+            return calculateOnRoadBooksOffset();
+        } else {
+            return calculateOnRoadBooksOffset() - 1;
+        }
+    }
+
+    public int getFirstOnRoadBookIndex() {
+        return calculateOnRoadBooksOffset();
+    }
+
+    public int getBooksOnHandSubtitleIndex(boolean isBooksOnHandEmpty) {
+        if (isBooksOnHandEmpty) {
+            return calculateBooksOnHandOffset();
+        } else {
+            return calculateBooksOnHandOffset() - 1;
+        }
+    }
+
     public int getFirstBookOnHandIndex() {
         return calculateBooksOnHandOffset();
+    }
+
+    public int getReadBooksSubtitleIndex(boolean isReadBooksEmpty) {
+        if (isReadBooksEmpty) {
+            return calculateReadBooksOffset();
+        } else {
+            return calculateReadBooksOffset() - 1;
+        }
+    }
+
+    public int getFirstReadBookIndex() {
+        return calculateReadBooksOffset();
     }
 
     public User.Details getUserDetails() {

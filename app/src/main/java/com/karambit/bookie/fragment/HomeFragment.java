@@ -89,8 +89,6 @@ public class HomeFragment extends Fragment {
 
         mHomeTimelineAdapter = new HomeTimelineAdapter(getContext());
 
-        mHomeTimelineAdapter.setHasStableIds(true);
-
         mRecyclerView.setAdapter(mHomeTimelineAdapter);
 
         mHomeTimelineAdapter.setBookClickListener(new HomeTimelineAdapter.BookClickListener() {
@@ -116,11 +114,6 @@ public class HomeFragment extends Fragment {
                 }
             }
         });
-
-        //For improving recyclerviews performance
-        mRecyclerView.setItemViewCacheSize(20);
-        mRecyclerView.setDrawingCacheEnabled(true);
-        mRecyclerView.setDrawingCacheQuality(View.DRAWING_CACHE_QUALITY_HIGH);
 
         ((MainActivity)getActivity()).setDoubleTapHomeButtonListener(new MainActivity.DoubleTapHomeButtonListener() {
             @Override

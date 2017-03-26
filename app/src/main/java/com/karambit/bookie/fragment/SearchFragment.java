@@ -14,7 +14,6 @@ import android.view.KeyEvent;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.view.WindowManager;
 import android.view.inputmethod.EditorInfo;
 import android.widget.EditText;
 import android.widget.TextView;
@@ -138,16 +137,7 @@ public class SearchFragment extends Fragment {
             }
         });
 
-        mSearchAdapter.setHasStableIds(true);
-
         recyclerView.setAdapter(mSearchAdapter);
-
-        //For improving recyclerviews performance
-        recyclerView.setItemViewCacheSize(20);
-        recyclerView.setDrawingCacheEnabled(true);
-        recyclerView.setDrawingCacheQuality(View.DRAWING_CACHE_QUALITY_HIGH);
-
-        recyclerView.setHasFixedSize(true);
 
         rootView.findViewById(R.id.searchButton).setOnClickListener(new View.OnClickListener() {
             @Override

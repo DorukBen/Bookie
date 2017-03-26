@@ -12,9 +12,6 @@ import org.json.JSONObject;
 import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Calendar;
-import java.util.Collections;
-import java.util.Date;
-import java.util.Random;
 
 /**
  * Message model
@@ -174,62 +171,6 @@ public class Message implements Parcelable, Comparable<Message> {
 
     public void setState(State state) {
         mState = state;
-    }
-
-    public static class GENERATOR {
-
-        private static Random RANDOM = new Random();
-        private static int MIN_IN_MILLIS = 60000; // 60 * 1000
-        private static char[] ALPHABET = "abcdefghijklmnopqrstuvwxyz".toCharArray();
-
-        public static ArrayList<Message> generateMessageList(User phoneOwner, User oppositeUser, int count) {
-            ArrayList<Message> messages = new ArrayList<>(count);
-
-            long createdMillis = System.currentTimeMillis() - RANDOM.nextInt(72 * 60 * 60 * 1000);
-
-            for (int i = 0; i < count; i++) {
-
-                User sender = RANDOM.nextBoolean() ? oppositeUser : phoneOwner;
-                User receiver;
-                if (sender != phoneOwner) {
-                    receiver = phoneOwner;
-                } else {
-                    receiver = oppositeUser;
-                }
-
-                Calendar createdAt = Calendar.getInstance();
-                createdAt.setTimeInMillis(createdMillis);
-
-                messages.add(new Message(RANDOM.nextInt(100000), generateRandomText(), sender, receiver, createdAt, State.SEEN));
-
-                // createdMillis -= MIN_IN_MILLIS * RANDOM.nextInt(5);
-
-                createdMillis -= 1000000 * RANDOM.nextInt(5);
-            }
-
-            Collections.sort(messages);
-
-            return messages;
-        }
-
-        public static ArrayList<Message> generateMessageList(User phoneOwner, int count) {
-            return generateMessageList(phoneOwner, User.GENERATOR.generateUser(), count);
-        }
-
-        public static String generateRandomText(int length) {
-            String result = "";
-
-            for (int i = 0; i < length; i++) {
-                result += ALPHABET[RANDOM.nextInt(ALPHABET.length)];
-            }
-
-            return result;
-        }
-
-        public static String generateRandomText() {
-            return generateRandomText(RANDOM.nextInt(38) + 2); // Min 2 characters
-        }
-
     }
 
     @Override
