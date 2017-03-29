@@ -72,7 +72,7 @@ public class RequestAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
         private TextView mLocation;
         private ImageButton mAccept;
         private ImageButton mReject;
-        private View mUserClickContainer;
+        private View mRequesterClickContainer;
         private View mButtonClickContainer;
         private View mDivider;
 
@@ -85,7 +85,7 @@ public class RequestAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
             mLocation = (TextView) requestView.findViewById(R.id.locationRequest);
             mAccept = (ImageButton) requestView.findViewById(R.id.acceptRequest);
             mReject = (ImageButton) requestView.findViewById(R.id.rejectRequest);
-            mUserClickContainer = requestView.findViewById(R.id.fromUserClickContainer);
+            mRequesterClickContainer = requestView.findViewById(R.id.requesterClickContainer);
             mButtonClickContainer = requestView.findViewById(R.id.buttonContainer);
             mDivider = requestView.findViewById(R.id.divider);
         }
@@ -193,7 +193,7 @@ public class RequestAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
 
                 int exactRequestPosition = position <= getSentRequestCount() ? position : position - 1; /*SUBTITLE*/
                 final Request request = mRequests.get(exactRequestPosition);
-                final User anotherUser = (getItemViewType(position) == TYPE_SENT_REQUEST)?request.getFromUser():request.getToUser();
+                final User requester = request.getRequester();
 
                 if (getItemViewType(position) == TYPE_SENT_REQUEST) {
                     requestViewHolder.mButtonClickContainer.setVisibility(View.VISIBLE);
@@ -218,23 +218,23 @@ public class RequestAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
                     requestViewHolder.mButtonClickContainer.setVisibility(View.GONE);
                 }
 
-                requestViewHolder.mUserClickContainer.setOnClickListener(new View.OnClickListener() {
+                requestViewHolder.mRequesterClickContainer.setOnClickListener(new View.OnClickListener() {
                     @Override
                     public void onClick(View v) {
                         if (mRequestClickListeners != null) {
-                            mRequestClickListeners.onUserClick(anotherUser);
+                            mRequestClickListeners.onUserClick(requester);
                         }
                     }
                 });
 
                 Glide.with(mContext)
-                     .load(anotherUser.getThumbnailUrl())
+                     .load(requester.getThumbnailUrl())
                      .asBitmap()
                      .placeholder(R.drawable.placeholder_88dp)
                      .error(R.drawable.error_88dp)
                      .into(requestViewHolder.mProfilePicture);
 
-                requestViewHolder.mUserName.setText(anotherUser.getName());
+                requestViewHolder.mUserName.setText(requester.getName());
 
                 requestViewHolder.mCreatedAt.setText(CreatedAtHelper.createdAtToSimpleString(mContext, request.getCreatedAt()));
 

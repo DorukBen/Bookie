@@ -270,6 +270,7 @@ public class Book implements Parcelable {
         return "Book{" +
             "mID=" + mID +
             ", mName='" + mName + '\'' +
+            ", mOwner='" + mOwner + '\'' +
             ", mState=" + mState + '}';
     }
 

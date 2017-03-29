@@ -48,23 +48,23 @@ public class Request implements Book.BookProcess, Parcelable, Comparable<Request
     }
 
     private Book mBook;
-    private User mFromUser;
-    private User mToUser;
+    private User mRequester;
+    private User mResponder; // Book owner at that moment
     private Type mType;
     private Calendar mCreatedAt;
 
-    public Request(@NonNull Book book, User fromUser, User toUser, Type type, Calendar createdAt) {
+    public Request(@NonNull Book book, User requester, User responder, Type type, Calendar createdAt) {
         mBook = book;
-        mToUser = toUser;
-        mFromUser = fromUser;
+        mResponder = responder;
+        mRequester = requester;
         mType = type;
         mCreatedAt = createdAt;
     }
 
-    public Request(@NonNull Book book, User fromUser, User toUser, Type type, String createdAt) {
+    public Request(@NonNull Book book, User requester, User responder, Type type, String createdAt) {
         mBook = book;
-        mToUser = toUser;
-        mFromUser = fromUser;
+        mResponder = responder;
+        mRequester = requester;
         mType = type;
         Timestamp timestamp = Timestamp.valueOf(createdAt);
         mCreatedAt = Calendar.getInstance();
@@ -75,20 +75,20 @@ public class Request implements Book.BookProcess, Parcelable, Comparable<Request
         return mBook;
     }
 
-    public User getFromUser() {
-        return mFromUser;
+    public User getRequester() {
+        return mRequester;
     }
 
-    public void setFromUser(User fromUser) {
-        mFromUser = fromUser;
+    public void setRequester(User requester) {
+        mRequester = requester;
     }
 
-    public User getToUser() {
-        return mToUser;
+    public User getResponder() {
+        return mResponder;
     }
 
-    public void setToUser(User toUser) {
-        mToUser = toUser;
+    public void setResponder(User responder) {
+        mResponder = responder;
     }
 
     public Type getType() {
@@ -110,8 +110,8 @@ public class Request implements Book.BookProcess, Parcelable, Comparable<Request
 
     public static Request jsonObjectToRequest(@NonNull Book book, @NonNull JSONObject jsonObject) throws JSONException {
         return new Request(book,
-                           User.jsonObjectToUser(jsonObject.getJSONObject("fromUser")),
-                           User.jsonObjectToUser(jsonObject.getJSONObject("toUser")),
+                           User.jsonObjectToUser(jsonObject.getJSONObject("requester")), // TODO Server key change ("fromUser" -> "requester")
+                           User.jsonObjectToUser(jsonObject.getJSONObject("responder")),  // TODO Server key change ("toUser" -> "responder")
                            Type.valueOf(jsonObject.getInt("requestType")),
                            jsonObject.getString("createdAt"));
     }
@@ -130,8 +130,8 @@ public class Request implements Book.BookProcess, Parcelable, Comparable<Request
 
     protected Request(Parcel in) {
         mBook = in.readParcelable(Book.class.getClassLoader());
-        mFromUser = in.readParcelable(User.class.getClassLoader());
-        mToUser = in.readParcelable(User.class.getClassLoader());
+        mRequester = in.readParcelable(User.class.getClassLoader());
+        mResponder = in.readParcelable(User.class.getClassLoader());
         mType = (Type) in.readSerializable();
         long millis = in.readLong();
         Calendar calendar = Calendar.getInstance();
@@ -159,8 +159,8 @@ public class Request implements Book.BookProcess, Parcelable, Comparable<Request
     @Override
     public void writeToParcel(Parcel dest, int flags) {
         dest.writeParcelable(mBook, flags);
-        dest.writeParcelable(mFromUser, flags);
-        dest.writeParcelable(mToUser, flags);
+        dest.writeParcelable(mRequester, flags);
+        dest.writeParcelable(mResponder, flags);
         dest.writeSerializable(mType);
         dest.writeLong(mCreatedAt.getTimeInMillis());
     }
@@ -169,8 +169,8 @@ public class Request implements Book.BookProcess, Parcelable, Comparable<Request
     public String toString() {
         return mBook + ".Request{" +
             "mType=" + mType +
-            ", mFromUser=" + mFromUser.getName() +
-            ", mToUser=" + mToUser.getName() +
+            ", mRequester=" + mRequester.getName() +
+            ", mResponder=" + mResponder.getName() +
             ", mCreatedAt=" + mCreatedAt.getTimeInMillis() + '}';
     }
 

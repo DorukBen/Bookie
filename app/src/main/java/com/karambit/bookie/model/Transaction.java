@@ -48,23 +48,23 @@ public class Transaction implements Book.BookProcess, Parcelable{
     }
 
     private Book mBook;
-    private User mFromUser;
-    private User mToUser;
+    private User mGiver;
+    private User mTaker;
     private Type mType;
     private Calendar mCreatedAt;
 
-    public Transaction(@NonNull Book book, User fromUser, User toUser, Type type, Calendar createdAt) {
+    public Transaction(@NonNull Book book, User giver, User taker, Type type, Calendar createdAt) {
         mBook = book;
-        mFromUser = fromUser;
-        mToUser = toUser;
+        mGiver = giver;
+        mTaker = taker;
         mType = type;
         mCreatedAt = createdAt;
     }
 
-    public Transaction(@NonNull Book book, User fromUser, User toUser, Type type, String createdAt) {
+    public Transaction(@NonNull Book book, User giver, User taker, Type type, String createdAt) {
         mBook = book;
-        mFromUser = fromUser;
-        mToUser = toUser;
+        mGiver = giver;
+        mTaker = taker;
         mType = type;
         Timestamp timestamp = Timestamp.valueOf(createdAt);
         mCreatedAt = Calendar.getInstance();
@@ -75,20 +75,20 @@ public class Transaction implements Book.BookProcess, Parcelable{
         return mBook;
     }
 
-    public User getFromUser() {
-        return mFromUser;
+    public User getGiver() {
+        return mGiver;
     }
 
-    public void setFromUser(User fromUser) {
-        mFromUser = fromUser;
+    public void setGiver(User giver) {
+        mGiver = giver;
     }
 
-    public User getToUser() {
-        return mToUser;
+    public User getTaker() {
+        return mTaker;
     }
 
-    public void setToUser(User toUser) {
-        mToUser = toUser;
+    public void setTaker(User taker) {
+        mTaker = taker;
     }
 
     public Type getType() {
@@ -110,8 +110,8 @@ public class Transaction implements Book.BookProcess, Parcelable{
 
     public static Transaction jsonObjectToTransaction(@NonNull Book book, @NonNull JSONObject jsonObject) throws JSONException {
         return new Transaction(book,
-                               User.jsonObjectToUser(jsonObject.getJSONObject("fromUser")),
-                               User.jsonObjectToUser(jsonObject.getJSONObject("toUser")),
+                               User.jsonObjectToUser(jsonObject.getJSONObject("giver")), // TODO Server key change ("fromUser" -> "giver")
+                               User.jsonObjectToUser(jsonObject.getJSONObject("taker")), // TODO Server key change ("toUser" -> "taker")
                                Type.valueOf(jsonObject.getInt("transactionType")),
                                jsonObject.getString("createdAt"));
     }
@@ -131,8 +131,8 @@ public class Transaction implements Book.BookProcess, Parcelable{
 
     protected Transaction(Parcel in) {
         mBook = in.readParcelable(Book.class.getClassLoader());
-        mFromUser = in.readParcelable(User.class.getClassLoader());
-        mToUser = in.readParcelable(User.class.getClassLoader());
+        mGiver = in.readParcelable(User.class.getClassLoader());
+        mTaker = in.readParcelable(User.class.getClassLoader());
         mType = (Type) in.readSerializable();
         long millis = in.readLong();
         Calendar calendar = Calendar.getInstance();
@@ -160,8 +160,8 @@ public class Transaction implements Book.BookProcess, Parcelable{
     @Override
     public void writeToParcel(Parcel dest, int flags) {
         dest.writeParcelable(mBook, flags);
-        dest.writeParcelable(mFromUser, flags);
-        dest.writeParcelable(mToUser, flags);
+        dest.writeParcelable(mGiver, flags);
+        dest.writeParcelable(mTaker, flags);
         dest.writeSerializable(mType);
         dest.writeLong(mCreatedAt.getTimeInMillis());
     }
@@ -170,8 +170,8 @@ public class Transaction implements Book.BookProcess, Parcelable{
     public String toString() {
         return mBook + ".Transaction{" +
             "mTransactionType=" + mType +
-            ", mFromUser=" + mFromUser.getName() +
-            ", mToUser=" + mToUser.getName() +
+            ", mGiver=" + mGiver.getName() +
+            ", mTaker=" + mTaker.getName() +
             ", mCreatedAt=" + mCreatedAt.getTimeInMillis() + '}';
     }
 

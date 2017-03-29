@@ -157,9 +157,9 @@ public class RequestActivity extends AppCompatActivity {
                 String message;
 
                 if (mBook.getState() == Book.State.READING){
-                    message = getString(R.string.accept_request_prompt_when_state_reading, clickedRequest.getFromUser().getName());
+                    message = getString(R.string.accept_request_prompt_when_state_reading, clickedRequest.getRequester().getName());
                 }else {
-                    message = getString(R.string.accept_request_prompt, clickedRequest.getFromUser().getName());
+                    message = getString(R.string.accept_request_prompt, clickedRequest.getRequester().getName());
                 }
 
                 // Created at changed to Calendar.getInstance() because the new process has been created at the moment.
@@ -169,9 +169,9 @@ public class RequestActivity extends AppCompatActivity {
                         @Override
                         public void onClick(DialogInterface dialog, int which) {
 
-                            Request createdRequest = new Request(clickedRequest.getBook(),
-                                                                 clickedRequest.getToUser(),
-                                                                 clickedRequest.getFromUser(),
+                            Request createdRequest = new Request(mBook,
+                                                                 clickedRequest.getRequester(),
+                                                                 SessionManager.getCurrentUser(RequestActivity.this),
                                                                  Request.Type.ACCEPT,
                                                                  Calendar.getInstance());
 
@@ -189,15 +189,15 @@ public class RequestActivity extends AppCompatActivity {
             @Override
             public void onRejectClick(final Request clickedRequest) {
                 new AlertDialog.Builder(RequestActivity.this)
-                    .setMessage(getString(R.string.reject_request_prompt, clickedRequest.getFromUser().getName()))
+                    .setMessage(getString(R.string.reject_request_prompt, clickedRequest.getRequester().getName()))
                     .setPositiveButton(R.string.reject, new DialogInterface.OnClickListener() {
                         @Override
                         public void onClick(DialogInterface dialog, int which) {
 
                             // Created at changed to Calendar.getInstance() because the new process has been created at the moment.
-                            Request createdRequest = new Request(clickedRequest.getBook(),
-                                                                 clickedRequest.getToUser(),
-                                                                 clickedRequest.getFromUser(),
+                            Request createdRequest = new Request(mBook,
+                                                                 clickedRequest.getRequester(),
+                                                                 SessionManager.getCurrentUser(RequestActivity.this),
                                                                  Request.Type.REJECT,
                                                                  Calendar.getInstance());
 
@@ -231,7 +231,7 @@ public class RequestActivity extends AppCompatActivity {
 
                             mRequests.add(request);
                             Collections.sort(mRequests);
-                            mRequestAdapter.notifyDataSetChanged();
+                            mRequestAdapter.notifyDataSetChanged(); // TODO notifyItemInserted
                         }
                     }
                 }
@@ -280,10 +280,7 @@ public class RequestActivity extends AppCompatActivity {
                                             setAcceptedRequestText(r);
 
                                             for (Request request : mRequests){
-                                                if (request.getType() == Request.Type.SEND){
-                                                    User tmpUser = request.getFromUser();
-                                                    request.setFromUser(request.getToUser());
-                                                    request.setToUser(tmpUser);
+                                                if (request.getType() != Request.Type.ACCEPT) {
                                                     request.setType(Request.Type.REJECT);
                                                 }
                                             }
@@ -373,12 +370,12 @@ public class RequestActivity extends AppCompatActivity {
 
         String email = currentUserDetails.getEmail();
         String password = currentUserDetails.getPassword();
-        Call<ResponseBody> addBookRequest = bookApi.addBookRequests(email,
-                                                                    password,
-                                                                    request.getBook().getID(),
-                                                                    request.getFromUser().getID(),
-                                                                    request.getToUser().getID(),
-                                                                    request.getType().getRequestCode());
+        Call<ResponseBody> addBookRequest = bookApi.addBookRequest(email,
+                                                                   password,
+                                                                   request.getBook().getID(),
+                                                                   request.getRequester().getID(),
+                                                                   request.getResponder().getID(),
+                                                                   request.getType().getRequestCode());
 
         Log.i(TAG, "Adding book request to server: " + request);
 
@@ -398,32 +395,27 @@ public class RequestActivity extends AppCompatActivity {
                                 if (request.getType() == Request.Type.ACCEPT){
                                     int index = mRequests.indexOf(oldRequest);
                                     mRequests.remove(index);
-                                    mRequestAdapter.notifyItemRemoved(index);
 
                                     for (Request r : mRequests) {
                                         if (r.getType() != Request.Type.REJECT) {
-                                            User tmpUser = r.getToUser();
-                                            r.setToUser(r.getFromUser());
-                                            r.setFromUser(tmpUser);
                                             r.setType(Request.Type.REJECT);
                                         }
                                     }
 
+                                    // All the requests changed so its good to use notifyDataSetChanged()
                                     mRequestAdapter.notifyDataSetChanged();
 
-                                    setAcceptedRequestText(oldRequest);
+                                    setAcceptedRequestText(request);
 
                                     Intent intent = new Intent(BookieIntentFilters.INTENT_FILTER_ACCEPTED_REQUEST);
                                     intent.putExtra(BookieIntentFilters.EXTRA_REQUEST, request);
                                     LocalBroadcastManager.getInstance(RequestActivity.this).sendBroadcast(intent);
 
                                 }else if (request.getType() == Request.Type.REJECT){
+                                    // Old request fields changed to new requests field because the adapter move animation notifyItemInserted() works with same object
                                     int indexBefore = mRequests.indexOf(oldRequest);
                                     oldRequest.setType(Request.Type.REJECT);
-                                    User tmpUser = oldRequest.getToUser();
-                                    oldRequest.setToUser(oldRequest.getFromUser());
-                                    oldRequest.setFromUser(tmpUser);
-                                    oldRequest.setCreatedAt(Calendar.getInstance());
+                                    oldRequest.setCreatedAt(request.getCreatedAt());
                                     Collections.sort(mRequests);
                                     int indexAfter = mRequests.indexOf(oldRequest) + 1; // Subtitle
                                     mRequestAdapter.notifyItemMoved(indexBefore, indexAfter);
@@ -491,19 +483,17 @@ public class RequestActivity extends AppCompatActivity {
     private void setAcceptedRequestText(final Request request) {
         mAcceptedRequestTextView.setVisibility(View.VISIBLE);
 
-
-        User currentUser = SessionManager.getCurrentUser(this);
-        String anotherUserName = request.getToUser().equals(currentUser) ? request.getFromUser().getName() : request.getToUser().getName();
-        String acceptRequestString = getString(R.string.you_accepted_request, anotherUserName);
+        String requesterName = request.getRequester().getName();
+        String acceptRequestString = getString(R.string.you_accepted_request, requesterName);
         SpannableString spanAcceptRequest = new SpannableString(acceptRequestString);
-        int startIndex = acceptRequestString.indexOf(anotherUserName);
-        int endIndex = startIndex + anotherUserName.length();
+        int startIndex = acceptRequestString.indexOf(requesterName);
+        int endIndex = startIndex + requesterName.length();
 
         spanAcceptRequest.setSpan(new ClickableSpan() {
             @Override
             public void onClick(View widget) {
                 Intent intent = new Intent(RequestActivity.this, ProfileActivity.class);
-                intent.putExtra(ProfileActivity.EXTRA_USER, request.getFromUser());
+                intent.putExtra(ProfileActivity.EXTRA_USER, request.getRequester());
                 startActivity(intent);
             }
 
@@ -545,12 +535,12 @@ public class RequestActivity extends AppCompatActivity {
 
                 for (int i = 0; i < mRequests.size(); i++) {
                     final Request r = mRequests.get(i);
-                    User fromUser = r.getFromUser();
+                    User requester = r.getRequester();
 
-                    if (fromUser.getLocation() != null) {
+                    if (requester.getLocation() != null) {
 
-                        final double latitude = fromUser.getLocation().latitude;
-                        final double longitude = fromUser.getLocation().longitude;
+                        final double latitude = requester.getLocation().latitude;
+                        final double longitude = requester.getLocation().longitude;
 
                         try {
                             Geocoder geocoder = new Geocoder(RequestActivity.this, Locale.getDefault());

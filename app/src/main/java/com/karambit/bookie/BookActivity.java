@@ -110,16 +110,14 @@ public class BookActivity extends AppCompatActivity {
             @Override
             public void onBookPictureClick(Book book) {
                 Intent intent = new Intent(BookActivity.this, PhotoViewerActivity.class);
-                Bundle bundle = new Bundle();
-                bundle.putString(PhotoViewerActivity.EXTRA_IMAGE, book.getImageURL());
+                intent.putExtra(PhotoViewerActivity.EXTRA_IMAGE, book.getImageURL());
                 if (mBookDetails != null){
                     if (mBookDetails.getAddedBy().getID() == SessionManager.getCurrentUser(BookActivity.this).getID() &&
                             mBookDetails.getBook().getOwner().getID() == SessionManager.getCurrentUser(BookActivity.this).getID()){
-                        bundle.putBoolean(PhotoViewerActivity.EXTRA_CAN_EDIT_BOOK_IMAGE, true);
-                        bundle.putInt(PhotoViewerActivity.EXTRA_BOOK_ID, mBook.getID());
+                        intent.putExtra(PhotoViewerActivity.EXTRA_CAN_EDIT_BOOK_IMAGE, true);
+                        intent.putExtra(PhotoViewerActivity.EXTRA_BOOK_ID, mBook.getID());
                     }
                 }
-                intent.putExtras(bundle);
                 startActivity(intent);
             }
         });
@@ -251,6 +249,7 @@ public class BookActivity extends AppCompatActivity {
 
             @Override
             public void onRequestButtonClick(Book.Details bookDetails) {
+                // TODO When another user who owns a book that I requested, clicks accept to another users request. My rejected does not display in th page and the counter will wrong
 
                 ArrayList<Request> sendRequests = new ArrayList<>();
                 ArrayList<Request> answeredRequests = new ArrayList<>();
@@ -275,15 +274,14 @@ public class BookActivity extends AppCompatActivity {
                 } while
                     (!(bookProcess instanceof Transaction &&
                     ((Transaction) bookProcess).getType() == Transaction.Type.COME_TO_HAND &&
-                    ((Transaction) bookProcess).getToUser().equals(SessionManager.getCurrentUser(BookActivity.this))) &&
+                    ((Transaction) bookProcess).getTaker().equals(SessionManager.getCurrentUser(BookActivity.this))) &&
                     i > 0);
 
                 for (Request answeredRequest: answeredRequests){
                     Iterator<Request> iterator = sendRequests.iterator();
                     while (iterator.hasNext()){
                         Request sendRequest = iterator.next();
-                        if (sendRequest.getFromUser().equals(answeredRequest.getToUser()) &&
-                            sendRequest.getToUser().equals(answeredRequest.getFromUser()) &&
+                        if (sendRequest.getRequester().equals(answeredRequest.getRequester()) &&
                             sendRequest.getCreatedAt().getTimeInMillis() < answeredRequest.getCreatedAt().getTimeInMillis()){
 
                             iterator.remove();
@@ -380,8 +378,9 @@ public class BookActivity extends AppCompatActivity {
                                     // (To user) is current user because current user is not the owner of the book yet
                                     // and the broadcast arrives for the processes that only
                                     // between current user and the opposite user
-                                    notification.getOppositeUser(),
                                     SessionManager.getCurrentUser(context),
+                                    // Requester is current user
+                                    notification.getOppositeUser(),
                                     Request.Type.REJECT,
                                     notification.getCreatedAt());
 
@@ -407,8 +406,9 @@ public class BookActivity extends AppCompatActivity {
                                     // (To user) is current user because current user is not the owner of the book yet
                                     // and the broadcast arrives for the processes that only
                                     // between current user and the opposite user
-                                    notification.getOppositeUser(),
                                     SessionManager.getCurrentUser(context),
+                                    // Requester is current user
+                                    notification.getOppositeUser(),
                                     Request.Type.ACCEPT,
                                     notification.getCreatedAt());
 
@@ -444,10 +444,13 @@ public class BookActivity extends AppCompatActivity {
                         Notification notification = intent.getParcelableExtra(BookieIntentFilters.EXTRA_NOTIFICATION);
                         if (mBookDetails != null){
 
+                            // TODO notification.getBook().getState is always ON_ROAD
+
                             Transaction transaction = new Transaction(
                                 mBookDetails.getBook(),
-                                notification.getOppositeUser(),
+                                // Giver is current user
                                 SessionManager.getCurrentUser(context),
+                                notification.getOppositeUser(),
                                 Transaction.Type.COME_TO_HAND,
                                 notification.getCreatedAt());
 
@@ -489,7 +492,7 @@ public class BookActivity extends AppCompatActivity {
 
                             Log.i(TAG, "Book owner changed from " + SessionManager.getCurrentUser(context) + " to " + notification.getOppositeUser());
 
-                            Log.i(TAG, "Book state changed to " + Book.State.ON_ROAD + " from " + notification.getBook().getState());
+                            Log.i(TAG, "Book state changed to " + notification.getBook().getState() +" from " + mBook.getState());
 
                             mBookDetails.getBook().setState(notification.getBook().getState());
                             mBook.setState(notification.getBook().getState());
@@ -546,7 +549,7 @@ public class BookActivity extends AppCompatActivity {
                                     // and the broadcast arrives for the processes that only
                                     // between current user and the opposite user
                                     SessionManager.getCurrentUser(context),
-                                    request.getToUser(),
+                                    request.getRequester(),
                                     Transaction.Type.DISPACTH,
                                     request.getCreatedAt());
 
@@ -626,7 +629,7 @@ public class BookActivity extends AppCompatActivity {
                                         // and the broadcast arrives for the processes that only
                                         // between current user and the opposite user
                                         SessionManager.getCurrentUser(context),
-                                        lastDispatch.getToUser(),
+                                        lastDispatch.getTaker(),
                                         Transaction.Type.LOST,
                                         Calendar.getInstance());
 
@@ -783,7 +786,7 @@ public class BookActivity extends AppCompatActivity {
 
                     final User currentUser = SessionManager.getCurrentUser(BookActivity.this);
 
-                    if (mBookTimelineAdapter.getRequestCount() > 0) {
+                    if (mBookTimelineAdapter.getPendingRequestCount() > 0) {
 
                         new AlertDialog.Builder(BookActivity.this)
                             .setMessage(R.string.requests_rejected_prompt)
@@ -1138,12 +1141,12 @@ public class BookActivity extends AppCompatActivity {
 
         String email = currentUserDetails.getEmail();
         String password = currentUserDetails.getPassword();
-        Call<ResponseBody> addBookRequest = bookApi.addBookRequests(email,
-                                                                    password,
-                                                                    request.getBook().getID(),
-                                                                    request.getFromUser().getID(),
-                                                                    request.getToUser().getID(),
-                                                                    request.getType().getRequestCode());
+        Call<ResponseBody> addBookRequest = bookApi.addBookRequest(email,
+                                                                   password,
+                                                                   request.getBook().getID(),
+                                                                   request.getRequester().getID(),
+                                                                   request.getResponder().getID(),
+                                                                   request.getType().getRequestCode());
 
         addBookRequest.enqueue(new Callback<ResponseBody>() {
             @Override
@@ -1263,12 +1266,6 @@ public class BookActivity extends AppCompatActivity {
                                             Intent intent = new Intent(BookActivity.this, InfoActivity.class);
                                             // TODO Put related header extras array
                                             startActivity(intent);
-                                        }
-                                    });
-                                    informationDialog.setExtraButtonClickListener(R.string.check_email, new InformationDialog.ExtraButtonClickListener() {
-                                        @Override
-                                        public void onExtraButtonClick() {
-                                            IntentHelper.openEmailClient(BookActivity.this);
                                         }
                                     });
 
