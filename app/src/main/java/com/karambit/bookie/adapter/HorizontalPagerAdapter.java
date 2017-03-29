@@ -2,7 +2,6 @@ package com.karambit.bookie.adapter;
 
 import android.content.Context;
 import android.database.DataSetObserver;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -95,7 +94,6 @@ public class HorizontalPagerAdapter extends InfiniteCyclePagerAdapter {
     void setBooks(ArrayList<Book> books){
         mBooks = books;
         notifyDataSetChanged();
-        Log.i(TAG, "Books set: " + books);
     }
 
     public interface BookClickListener {
