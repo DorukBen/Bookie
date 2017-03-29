@@ -80,7 +80,7 @@ public class BookieClient {
                     @Override
                     public void log (String message)
                     {
-                        Log.d(TAG, message);
+//                        Logger.d(message);
                     }
                 } );
         httpLoggingInterceptor.setLevel( BuildConfig.DEBUG ? HttpLoggingInterceptor.Level.BODY : NONE );

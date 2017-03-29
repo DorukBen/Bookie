@@ -10,8 +10,10 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.sql.Timestamp;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.Locale;
 
 /**
  * Message model
@@ -200,11 +202,16 @@ public class Message implements Parcelable, Comparable<Message> {
 
     @Override
     public String toString() {
-        return "Message{" +
-            "mText='" + mText + '\'' +
-            ", mSender=" + mSender +
-            ", mReceiver=" + mReceiver +
-            ", mState=" + mState +
-            ", mCreatedAt=" + mCreatedAt + '}';
+
+        SimpleDateFormat dateFormat = new SimpleDateFormat("dd/MM/yyyy hh:mm:ss a", Locale.getDefault());
+        String createdAt = dateFormat.format(mCreatedAt.getTime());
+
+        return "\nMessage{" +
+            "\n\tmText='" + mText + "\'," +
+            "\n\tmSender=" + mSender.getName() + "," +
+            "\n\tmReceiver=" + mReceiver + "," +
+            "\n\tmState=" + mState + "," +
+            "\n\tmCreatedAt=" + createdAt +
+            "\n}";
     }
 }

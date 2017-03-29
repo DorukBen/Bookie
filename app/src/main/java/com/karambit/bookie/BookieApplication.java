@@ -5,7 +5,7 @@ import android.content.Context;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 
-import com.karambit.bookie.helper.SessionManager;
+import com.orhanobut.logger.Logger;
 
 /**
  * Created by doruk on 16.02.2017.
@@ -21,6 +21,8 @@ public class BookieApplication extends Application {
         super.onCreate();
 
         instance = this;
+
+        Logger.init("BOOKIE_PRETTYLOGGER").hideThreadInfo();
     }
 
     public static BookieApplication getInstance ()

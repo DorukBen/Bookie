@@ -49,6 +49,7 @@ import com.karambit.bookie.rest_api.BookApi;
 import com.karambit.bookie.rest_api.BookieClient;
 import com.karambit.bookie.rest_api.ErrorCodes;
 import com.karambit.bookie.service.BookieIntentFilters;
+import com.orhanobut.logger.Logger;
 
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -231,6 +232,9 @@ public class RequestActivity extends AppCompatActivity {
 
                             mRequests.add(request);
                             Collections.sort(mRequests);
+
+                            Logger.i("Request fetch from FCM:\n" + request);
+
                             mRequestAdapter.notifyDataSetChanged();
                         }
                     }
@@ -265,6 +269,8 @@ public class RequestActivity extends AppCompatActivity {
                         if (response.body() != null){
                             String json = response.body().string();
 
+                            Logger.json(json);
+
                             JSONObject responseObject = new JSONObject(json);
                             boolean error = responseObject.getBoolean("error");
 
@@ -272,8 +278,6 @@ public class RequestActivity extends AppCompatActivity {
                                 if (!responseObject.isNull("bookRequests")){
                                     mRequests.clear();
                                     mRequests.addAll(Request.jsonArrayToRequestList(mBook, responseObject.getJSONArray("bookRequests")));
-
-                                    Log.i(TAG, mRequests.toString());
 
                                     for (Request r : mRequests) {
                                         if (r.getType() == Request.Type.ACCEPT) {
@@ -290,6 +294,8 @@ public class RequestActivity extends AppCompatActivity {
                                         }
                                     }
 
+                                    Logger.i("Requests fetched:\n" + mRequests);
+
                                     mRequestAdapter.setError(RequestAdapter.ERROR_TYPE_NONE);
                                     mRequestAdapter.setRequests(mRequests);
                                     mRequestAdapter.notifyDataSetChanged();
@@ -299,11 +305,8 @@ public class RequestActivity extends AppCompatActivity {
 
                                     fetchLocations();
 
-                                    Log.i(TAG, "Book requests fetched and rearranged");
-
-                                    Log.i(TAG, mRequests.toString());
                                 }else {
-                                    Log.e(TAG, "bookRequests is empty. (Request Page Error)");
+                                    Logger.e("bookRequests is empty. (Request Page Error)");
                                     mRequestAdapter.setError(RequestAdapter.ERROR_TYPE_UNKNOWN_ERROR);
                                 }
 
@@ -313,25 +316,25 @@ public class RequestActivity extends AppCompatActivity {
                                 int errorCode = responseObject.getInt("errorCode");
 
                                 if (errorCode == ErrorCodes.EMPTY_POST){
-                                    Log.e(TAG, "Post is empty. (Request Page Error)");
+                                    Logger.e("Post is empty. (Request Page Error)");
                                 }else if (errorCode == ErrorCodes.MISSING_POST_ELEMENT){
-                                    Log.e(TAG, "Post element missing. (Request Page Error)");
+                                    Logger.e("Post element missing. (Request Page Error)");
                                 }else if (errorCode == ErrorCodes.INVALID_REQUEST){
-                                    Log.e(TAG, "Invalid request. (Request Page Error)");
+                                    Logger.e("Invalid request. (Request Page Error)");
                                 }else if (errorCode == ErrorCodes.INVALID_EMAIL){
-                                    Log.e(TAG, "Invalid email. (Request Page Error)");
+                                    Logger.e("Invalid email. (Request Page Error)");
                                 }else if (errorCode == ErrorCodes.UNKNOWN){
-                                    Log.e(TAG, "onResponse: errorCode = " + errorCode);
+                                    Logger.e("onResponse: errorCode = " + errorCode);
                                 }
 
                                 mRequestAdapter.setError(RequestAdapter.ERROR_TYPE_UNKNOWN_ERROR);
                             }
                         }else{
-                            Log.e(TAG, "Response body is null. (Home Page Error)");
+                            Logger.e("Response body is null. (Home Page Error)");
                             mRequestAdapter.setError(RequestAdapter.ERROR_TYPE_UNKNOWN_ERROR);
                         }
                     }else {
-                        Log.e(TAG, "Response object is null. (Home Page Error)");
+                        Logger.e("Response object is null. (Home Page Error)");
                         mRequestAdapter.setError(RequestAdapter.ERROR_TYPE_UNKNOWN_ERROR);
                     }
                 } catch (IOException | JSONException e) {
@@ -349,7 +352,7 @@ public class RequestActivity extends AppCompatActivity {
 
             @Override
             public void onFailure(Call<ResponseBody> call, Throwable t) {
-                Log.e(TAG, "Home Page book fetch onFailure: " + t.getMessage());
+                Logger.e("Home Page book fetch onFailure: " + t.getMessage());
                 if (BookieApplication.hasNetwork()){
                     mRequestAdapter.setError(RequestAdapter.ERROR_TYPE_UNKNOWN_ERROR);
                 }else {
@@ -380,7 +383,7 @@ public class RequestActivity extends AppCompatActivity {
                                                                     request.getToUser().getID(),
                                                                     request.getType().getRequestCode());
 
-        Log.i(TAG, "Adding book request to server: " + request);
+        Logger.i("Adding book request to server:\n" + request);
 
         addBookRequest.enqueue(new Callback<ResponseBody>() {
             @Override
@@ -390,6 +393,8 @@ public class RequestActivity extends AppCompatActivity {
                     if (response != null){
                         if (response.body() != null){
                             String json = response.body().string();
+
+                            Logger.json(json);
 
                             JSONObject responseObject = new JSONObject(json);
                             boolean error = responseObject.getBoolean("error");
@@ -435,40 +440,44 @@ public class RequestActivity extends AppCompatActivity {
                                     LocalBroadcastManager.getInstance(RequestActivity.this).sendBroadcast(intent);
                                 }
 
+                                Logger.i("Request added to server:\n" + request);
+
+                                Logger.i("Request list:\n" + mRequests);
+
                                 comfortableProgressDialog.dismiss();
                             } else {
                                 int errorCode = responseObject.getInt("errorCode");
 
                                 if (errorCode == ErrorCodes.EMPTY_POST){
-                                    Log.e(TAG, "Post is empty. (Book Page Error)");
+                                    Logger.e("Post is empty. (Book Page Error)");
                                 }else if (errorCode == ErrorCodes.MISSING_POST_ELEMENT){
-                                    Log.e(TAG, "Post element missing. (Book Page Error)");
+                                    Logger.e("Post element missing. (Book Page Error)");
                                 }else if (errorCode == ErrorCodes.INVALID_REQUEST){
-                                    Log.e(TAG, "Invalid request. (Book Page Error)");
+                                    Logger.e("Invalid request. (Book Page Error)");
                                 }else if (errorCode == ErrorCodes.INVALID_EMAIL){
-                                    Log.e(TAG, "Invalid email. (Book Page Error)");
+                                    Logger.e("Invalid email. (Book Page Error)");
                                 }else if (errorCode == ErrorCodes.USER_NOT_VERIFIED){
-                                    Log.e(TAG, "User not valid. (Book Page Error)");
+                                    Logger.e("User not valid. (Book Page Error)");
                                 }else if (errorCode == ErrorCodes.USER_BLOCKED){
-                                    Log.e(TAG, "User blocked. (Book Page Error)");
+                                    Logger.e("User blocked. (Book Page Error)");
                                 }else if (errorCode == ErrorCodes.LOCATION_NOT_FOUND){
-                                    Log.e(TAG, "Location not found. (Book Page Error)");
+                                    Logger.e("Location not found. (Book Page Error)");
                                 }else if (errorCode == ErrorCodes.BOOK_COUNT_INSUFFICIENT){
-                                    Log.e(TAG, "Book count insufficient. (Book Page Error)");
+                                    Logger.e("Book count insufficient. (Book Page Error)");
                                 }else if (errorCode == ErrorCodes.UNKNOWN){
-                                    Log.e(TAG, "onResponse: errorCode = " + errorCode);
+                                    Logger.e("onResponse: errorCode = " + errorCode);
                                 }
 
                                 comfortableProgressDialog.dismiss();
                                 Toast.makeText(RequestActivity.this, getString(R.string.unknown_error), Toast.LENGTH_SHORT).show();
                             }
                         }else{
-                            Log.e(TAG, "Response body is null. (Book Page Error)");
+                            Logger.e("Response body is null. (Book Page Error)");
                             comfortableProgressDialog.dismiss();
                             Toast.makeText(RequestActivity.this, getString(R.string.unknown_error), Toast.LENGTH_SHORT).show();
                         }
                     }else {
-                        Log.e(TAG, "Response object is null. (Book Page Error)");
+                        Logger.e("Response object is null. (Book Page Error)");
                         comfortableProgressDialog.dismiss();
                         Toast.makeText(RequestActivity.this, getString(R.string.unknown_error), Toast.LENGTH_SHORT).show();
                     }
@@ -481,7 +490,7 @@ public class RequestActivity extends AppCompatActivity {
 
             @Override
             public void onFailure(Call<ResponseBody> call, Throwable t) {
-                Log.e(TAG, "Book Page onFailure: " + t.getMessage());
+                Logger.e("Book Page onFailure: " + t.getMessage());
                 comfortableProgressDialog.dismiss();
                 Toast.makeText(RequestActivity.this, getString(R.string.unknown_error), Toast.LENGTH_SHORT).show();
             }
@@ -490,7 +499,6 @@ public class RequestActivity extends AppCompatActivity {
 
     private void setAcceptedRequestText(final Request request) {
         mAcceptedRequestTextView.setVisibility(View.VISIBLE);
-
 
         User currentUser = SessionManager.getCurrentUser(this);
         String anotherUserName = request.getToUser().equals(currentUser) ? request.getFromUser().getName() : request.getToUser().getName();

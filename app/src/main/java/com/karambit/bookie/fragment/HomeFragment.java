@@ -6,7 +6,6 @@ import android.os.Bundle;
 import android.support.v4.app.Fragment;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -25,6 +24,7 @@ import com.karambit.bookie.model.User;
 import com.karambit.bookie.rest_api.BookApi;
 import com.karambit.bookie.rest_api.BookieClient;
 import com.karambit.bookie.rest_api.ErrorCodes;
+import com.orhanobut.logger.Logger;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -162,6 +162,9 @@ public class HomeFragment extends Fragment {
         String password = currentUserDetails.getPassword();
         Call<ResponseBody> getHomePageBooks = bookApi.getHomePageBooks(email, password, fetchedBookIds);
 
+        Logger.i("getHomePageBooks() API called with parameters: \n" +
+                     "\temail=" + email + ", \n\tpassword=" + password + ", \n\tfetchedBookIds=" + fetchedBookIds);
+
         getHomePageBooks.enqueue(new Callback<ResponseBody>() {
             @Override
             public void onResponse(Call<ResponseBody> call, Response<ResponseBody> response) {
@@ -169,6 +172,8 @@ public class HomeFragment extends Fragment {
                     if (response != null){
                         if (response.body() != null){
                             String json = response.body().string();
+
+                            Logger.json(json);
 
                             JSONObject responseObject = new JSONObject(json);
                             boolean error = responseObject.getBoolean("error");
@@ -198,32 +203,32 @@ public class HomeFragment extends Fragment {
                                     mHomeTimelineAdapter.setHeaderAndFeedBooks(mHeaderBooks, feedBooks);
                                 }
 
-                                Log.i(TAG, "Home page books fetched");
+                                Logger.i("Home page books fetched:\n\nHeader Books:\n" + Book.toShortString(mHeaderBooks) + "\nList books:\n" + Book.toShortString(mListBooks));
 
                             } else {
 
                                 int errorCode = responseObject.getInt("errorCode");
 
                                 if (errorCode == ErrorCodes.EMPTY_POST){
-                                    Log.e(TAG, "Post is empty. (Home Page Error)");
+                                    Logger.e("Post is empty. (Home Page Error)");
                                 }else if (errorCode == ErrorCodes.MISSING_POST_ELEMENT){
-                                    Log.e(TAG, "Post element missing. (Home Page Error)");
+                                    Logger.e("Post element missing. (Home Page Error)");
                                 }else if (errorCode == ErrorCodes.INVALID_REQUEST){
-                                    Log.e(TAG, "Invalid request. (Home Page Error)");
+                                    Logger.e("Invalid request. (Home Page Error)");
                                 }else if (errorCode == ErrorCodes.INVALID_EMAIL){
-                                    Log.e(TAG, "Invalid email. (Home Page Error)");
+                                    Logger.e("Invalid email. (Home Page Error)");
                                 }else if (errorCode == ErrorCodes.UNKNOWN){
-                                    Log.e(TAG, "onResponse: errorCode = " + errorCode);
+                                    Logger.e("onResponse: errorCode = " + errorCode);
                                 }
 
                                 mHomeTimelineAdapter.setError(HomeTimelineAdapter.ERROR_TYPE_UNKNOWN_ERROR);
                             }
                         }else{
-                            Log.e(TAG, "Response body is null. (Home Page Error)");
+                            Logger.e("Response body is null. (Home Page Error)");
                             mHomeTimelineAdapter.setError(HomeTimelineAdapter.ERROR_TYPE_UNKNOWN_ERROR);
                         }
                     }else {
-                        Log.e(TAG, "Response object is null. (Home Page Error)");
+                        Logger.e("Response object is null. (Home Page Error)");
                         mHomeTimelineAdapter.setError(HomeTimelineAdapter.ERROR_TYPE_UNKNOWN_ERROR);
                     }
                 } catch (IOException | JSONException e) {
@@ -250,7 +255,7 @@ public class HomeFragment extends Fragment {
 
             @Override
             public void onFailure(Call<ResponseBody> call, Throwable t) {
-                Log.e(TAG, "Home Page book fetch onFailure: " + t.getMessage());
+                Logger.e("Home Page book fetch onFailure: " + t.getMessage());
 
                 if (BookieApplication.hasNetwork()){
                     if(!isFromTop){

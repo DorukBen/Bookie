@@ -34,6 +34,7 @@ import com.karambit.bookie.rest_api.BookieClient;
 import com.karambit.bookie.rest_api.ErrorCodes;
 import com.karambit.bookie.rest_api.UserApi;
 import com.karambit.bookie.service.BookieIntentFilters;
+import com.orhanobut.logger.Logger;
 
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -294,6 +295,9 @@ public class MessageFragment extends Fragment {
 
         Call<ResponseBody> fetchMessages = userApi.fetchMessages(email, password, lastMessageUserIds);
 
+        Logger.i("fetchMessages() API called with parameters: \n" +
+                     "\temail=" + email + ", \n\tpassword=" + password + ", \n\tlastMessageUserIds=" + lastMessageUserIds);
+
         fetchMessages.enqueue(new Callback<ResponseBody>() {
             @Override
             public void onResponse(Call<ResponseBody> call, Response<ResponseBody> response) {
@@ -318,6 +322,9 @@ public class MessageFragment extends Fragment {
                                 fetchUnseenCounts();
 
                                 isFirstFetch = false;
+
+                                Logger.i("Messages fetched from server:\n\nLast Messages:\n" + mLastMessages);
+
                             } else {
 
                                 int errorCode = responseObject.getInt("errorCode");
