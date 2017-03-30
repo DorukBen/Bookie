@@ -270,13 +270,13 @@ public class Book implements Parcelable {
         return "\nBook{" +
             "\n\tmID=" + mID + "," +
             "\n\tmName='" + mName + "'," +
-            "\n\t\t\tmImageURL='" + mImageURL + "'," +
+            "\n\tmImageURL='" + mImageURL + "'," +
             "\n\tmThumbnailURL='" + mThumbnailURL + "'," +
             "\n\tmAuthor='" + mAuthor + "'," +
             "\n\tmState=" + mState + "," +
             "\n\tmGenreCode=" + mGenreCode + "," +
             "\n\tmOwner=" + mOwner +
-            "\n}";
+            "\n}\n";
     }
 
     public String toShortString() {
@@ -286,13 +286,13 @@ public class Book implements Parcelable {
             "\n\tmState=" + mState + "," +
             "\n\tmOwner=" + mOwner.getName() + "," +
             "\n\tmGenreCode=" + mGenreCode +
-            "\n}";
+            "\n}\n";
     }
 
-    public static String toShortString(ArrayList<Book> books) {
+    public static String listToShortString(ArrayList<Book> books) {
         StringBuilder stringBuilder = new StringBuilder();
 
-        stringBuilder.append("Book[");
+        stringBuilder.append("BookList[");
 
         for (Book book : books) {
             stringBuilder.append(book.toShortString());
@@ -335,10 +335,10 @@ public class Book implements Parcelable {
 
         @Override
         public String toString() {
-            return Book.this.toString() + "\nDetails{" +
+            return "\n" + Book.this.toString() + "\nDetails{" +
                 "\nmAddedBy=" + mAddedBy +
                 "\n, mBookProcesses=" + mBookProcesses +
-                "\n}";
+                "\n}\n";
         }
     }
 

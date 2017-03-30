@@ -9,7 +9,6 @@ import android.support.v4.view.ViewCompat;
 import android.support.v7.widget.CardView;
 import android.support.v7.widget.RecyclerView;
 import android.text.TextUtils;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -31,6 +30,7 @@ import com.karambit.bookie.helper.infinite_viewpager.HorizontalInfiniteCycleView
 import com.karambit.bookie.helper.pull_refresh_layout.SmartisanProgressBarDrawable;
 import com.karambit.bookie.model.Book;
 import com.karambit.bookie.model.User;
+import com.orhanobut.logger.Logger;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -1111,7 +1111,7 @@ public class ProfileTimelineAdapter extends RecyclerView.Adapter<RecyclerView.Vi
     }
 
     public void setUserDetails(User.Details userDetails) {
-        Log.v(TAG, "User.Details changed. Before: \n " + mUserDetails + "\nAfter:\n" + userDetails);
+        Logger.d("User.Details changed. \n\nBefore: \n " + mUserDetails + "\n\nAfter:\n" + userDetails);
         mUserDetails = userDetails;
         setProgressBarActive(false);
         notifyDataSetChanged();

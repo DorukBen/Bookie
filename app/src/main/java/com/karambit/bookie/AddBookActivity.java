@@ -19,7 +19,6 @@ import android.text.Spannable;
 import android.text.SpannableString;
 import android.text.TextUtils;
 import android.text.style.AbsoluteSizeSpan;
-import android.util.Log;
 import android.view.Display;
 import android.view.View;
 import android.view.WindowManager;
@@ -40,6 +39,7 @@ import com.karambit.bookie.helper.UploadFileTask;
 import com.karambit.bookie.model.Book;
 import com.karambit.bookie.model.User;
 import com.karambit.bookie.rest_api.BookieClient;
+import com.orhanobut.logger.Logger;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -273,7 +273,8 @@ public class AddBookActivity extends AppCompatActivity {
                 if (checkPermissions()) {
                     startActivityForResult(ImagePicker.getPickImageIntent(getBaseContext()), 1);
 
-                    Log.i(TAG, "Permissions OK!");
+                    Logger.d("Permissions OK!");
+
                 } else {
                     String[] permissions = {
                             Manifest.permission.WRITE_EXTERNAL_STORAGE,
@@ -283,7 +284,7 @@ public class AddBookActivity extends AppCompatActivity {
 
                     ActivityCompat.requestPermissions(AddBookActivity.this, permissions, REQUEST_CODE_CUSTOM_PERMISSIONS);
 
-                    Log.i(TAG, "Permissions NOT OK!");
+                    Logger.d("Permissions NOT OK!");
                 }
             }
         });
@@ -373,12 +374,14 @@ public class AddBookActivity extends AppCompatActivity {
         uftImage.setUploadProgressListener(new UploadFileTask.UploadProgressChangedListener() {
             @Override
             public void onProgressChanged(int progress) {
-                Log.i(TAG, "Book image upload progress => " + progress + " / 100");
+                Logger.d("Book image upload progress => " + progress + " / 100");
             }
 
             @Override
             public void onProgressCompleted() {
-                Log.w(TAG, "Book image upload is OK");
+
+                Logger.d("Book image upload is OK");
+
                 mProgressDialog.dismiss();
 
                 setResult(RESULT_BOOK_CREATED);
@@ -387,8 +390,10 @@ public class AddBookActivity extends AppCompatActivity {
 
             @Override
             public void onProgressError() {
+
+                Logger.e("Image upload ERROR");
+
                 mProgressDialog.dismiss();
-                Log.e(TAG, "Image upload ERROR");
                 Toast.makeText(AddBookActivity.this, R.string.unknown_error, Toast.LENGTH_SHORT).show();
             }
         });

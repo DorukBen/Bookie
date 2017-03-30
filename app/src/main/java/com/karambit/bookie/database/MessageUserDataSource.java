@@ -3,10 +3,10 @@ package com.karambit.bookie.database;
 import android.content.ContentValues;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
-import android.util.Log;
 
 import com.google.android.gms.maps.model.LatLng;
 import com.karambit.bookie.model.User;
+import com.orhanobut.logger.Logger;
 
 import java.util.ArrayList;
 
@@ -62,7 +62,7 @@ public class MessageUserDataSource {
 
             result = mSqLiteDatabase.insert(MESSAGE_USER_TABLE_NAME, null, contentValues) > 0;
         }finally {
-            Log.i(TAG, "New User insertion successful");
+            Logger.d("New User insertion successful");
         }
         return result;
     }
@@ -163,7 +163,7 @@ public class MessageUserDataSource {
         try{
             mSqLiteDatabase.delete(MESSAGE_USER_TABLE_NAME, MESSAGE_USER_COLUMN_ID + " = ?", new String[] { userID.toString() });
         }finally {
-            Log.i(TAG, "User deleted from database");
+            Logger.d("User deleted from database");
         }
     }
 
@@ -176,7 +176,7 @@ public class MessageUserDataSource {
         try{
             mSqLiteDatabase.delete(MESSAGE_USER_TABLE_NAME, MESSAGE_USER_COLUMN_ID + " = ?", new String[] { ((Integer)user.getID()).toString() });
         }finally {
-            Log.i(TAG, "User deleted from database");
+            Logger.d("User deleted from database");
         }
     }
 
@@ -187,7 +187,7 @@ public class MessageUserDataSource {
         try{
             mSqLiteDatabase.delete(MESSAGE_USER_TABLE_NAME, null, null);
         }finally {
-            Log.i(TAG, "All users deleted from database");
+            Logger.d("All users deleted from database");
         }
     }
 }

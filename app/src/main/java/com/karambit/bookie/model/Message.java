@@ -209,7 +209,7 @@ public class Message implements Parcelable, Comparable<Message> {
         return "\nMessage{" +
             "\n\tmText='" + mText + "\'," +
             "\n\tmSender=" + mSender.getName() + "," +
-            "\n\tmReceiver=" + mReceiver + "," +
+            "\n\tmReceiver=" + mReceiver.getName() + "," +
             "\n\tmState=" + mState + "," +
             "\n\tmCreatedAt=" + createdAt +
             "\n}";

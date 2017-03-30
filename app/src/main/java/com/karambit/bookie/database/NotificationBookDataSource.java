@@ -3,10 +3,10 @@ package com.karambit.bookie.database;
 import android.content.ContentValues;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
-import android.util.Log;
 
 import com.karambit.bookie.model.Book;
 import com.karambit.bookie.model.User;
+import com.orhanobut.logger.Logger;
 
 import java.util.ArrayList;
 
@@ -69,7 +69,7 @@ public class NotificationBookDataSource {
 
             result = mSqLiteDatabase.insert(NOTIFICATION_BOOK_TABLE_NAME, null, contentValues) > 0;
         }finally {
-            Log.i(TAG, "New Book insertion successful");
+            Logger.d("New Book insertion successful");
         }
         return result;
     }
@@ -145,7 +145,7 @@ public class NotificationBookDataSource {
         try{
             mSqLiteDatabase.delete(NOTIFICATION_BOOK_TABLE_NAME, null, null);
         }finally {
-            Log.i(TAG, "All books deleted from database");
+            Logger.d("All books deleted from database");
         }
     }
 }

@@ -3,11 +3,11 @@ package com.karambit.bookie.database;
 import android.content.ContentValues;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
-import android.util.Log;
 
 import com.karambit.bookie.model.Book;
 import com.karambit.bookie.model.Notification;
 import com.karambit.bookie.model.User;
+import com.orhanobut.logger.Logger;
 
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -90,7 +90,7 @@ public class NotificationDataSource {
 
             result = mSqLiteDatabase.insert(NOTIFICATION_TABLE_NAME, null, contentValues) > 0;
         }finally {
-            Log.i(TAG, "New Notification insertion successful");
+            Logger.d("New Notification insertion successful");
         }
         return result;
     }
@@ -200,7 +200,7 @@ public class NotificationDataSource {
 
             mSqLiteDatabase.update(NOTIFICATION_TABLE_NAME, cv,null, null);
         }finally {
-            Log.i(TAG, "Notifications seen updated updated");
+            Logger.d("Notifications seen updated updated");
         }
     }
 
@@ -215,7 +215,7 @@ public class NotificationDataSource {
             mNotificationUserDataSource.deleteAllUsers();
 
         } finally {
-            Log.i(TAG, "All Notification books, notification book users, notification users and notifications deleted from database");
+            Logger.d("All Notification books, notification book users, notification users and notifications deleted from database");
         }
     }
 }

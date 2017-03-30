@@ -7,6 +7,7 @@ import android.util.Log;
 
 import com.google.android.gms.maps.model.LatLng;
 import com.karambit.bookie.model.User;
+import com.orhanobut.logger.Logger;
 
 /**
  * Created by doruk on 19.03.2017.
@@ -172,7 +173,7 @@ public class UserDataSource {
                 res.close();
             }
         }
-        Log.i(TAG, "User: " + user.toString());
+        Logger.d("User: " + user.toString());
         return user;
     }
 
@@ -220,7 +221,7 @@ public class UserDataSource {
                 res.close();
             }
         }
-        Log.i(TAG, "User.Details: " + details.toString());
+        Logger.d("User.Details: " + details.toString());
         return details;
     }
 
@@ -274,7 +275,7 @@ public class UserDataSource {
 
             mSqLiteDatabase.update(USER_TABLE_NAME, cv, null, null);
         }finally {
-            Log.i(TAG, "User's location updated: lat = " + latitude + " long = " + longitude);
+            Logger.d("User's location updated: lat = " + latitude + " long = " + longitude);
         }
     }
 
@@ -290,7 +291,7 @@ public class UserDataSource {
 
             mSqLiteDatabase.update(USER_TABLE_NAME, cv, null, null);
         }finally {
-            Log.i(TAG, "User's password updated");
+            Logger.d("User's password updated");
         }
     }
 
@@ -301,7 +302,7 @@ public class UserDataSource {
         try{
             mSqLiteDatabase.delete(USER_TABLE_NAME, null, null);
         }finally {
-            Log.i(TAG, "User deleted from database.");
+            Logger.d("User deleted from database.");
         }
     }
 }

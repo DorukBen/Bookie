@@ -9,7 +9,6 @@ import android.support.v7.widget.RecyclerView;
 import android.text.Editable;
 import android.text.TextUtils;
 import android.text.TextWatcher;
-import android.util.Log;
 import android.view.KeyEvent;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -32,8 +31,8 @@ import com.karambit.bookie.helper.string_similarity.JaroWinkler;
 import com.karambit.bookie.model.Book;
 import com.karambit.bookie.model.User;
 import com.karambit.bookie.rest_api.BookieClient;
-import com.karambit.bookie.rest_api.ErrorCodes;
 import com.karambit.bookie.rest_api.SearchApi;
+import com.orhanobut.logger.Logger;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -236,6 +235,10 @@ public class SearchFragment extends Fragment {
         String password = currentUserDetails.getPassword();
         Call<ResponseBody> searchResults = searchApi.getSearchResults(email, password, searchString, mFetchGenreCode, mFetchSearchButtonPressed);
 
+        Logger.d("getSearchResults() API called with parameters: \n" +
+                     "\temail=" + email + ", \n\tpassword=" + password + ", \n\tsearchString=" + searchString +
+                     ", \n\tsearchGenre=" + mFetchGenreCode + ", \n\tsearchPressed=" + mFetchSearchButtonPressed);
+
         searchResults.enqueue(new Callback<ResponseBody>() {
             @Override
             public void onResponse(Call<ResponseBody> call, Response<ResponseBody> response) {
@@ -243,6 +246,8 @@ public class SearchFragment extends Fragment {
                     if (response != null){
                         if (response.body() != null){
                             String json = response.body().string();
+
+                            Logger.json(json);
 
                             JSONObject responseObject = new JSONObject(json);
                             boolean error = responseObject.getBoolean("error");
@@ -277,36 +282,30 @@ public class SearchFragment extends Fragment {
                                     }
                                 }
 
+                                Logger.d("Search fetched:" +
+                                             "\n\n" + Book.listToShortString(mBooks) +
+                                             "\n\n" + User.listToShortString(mUsers));
+
                                 mFetchGenreCode = -1;
                                 mFetchSearchButtonPressed = false;
                             } else {
 
                                 int errorCode = responseObject.getInt("errorCode");
 
-                                if (errorCode == ErrorCodes.EMPTY_POST){
-                                    Log.e(TAG, "Post is empty. (Home Page Error)");
-                                }else if (errorCode == ErrorCodes.MISSING_POST_ELEMENT){
-                                    Log.e(TAG, "Post element missing. (Home Page Error)");
-                                }else if (errorCode == ErrorCodes.INVALID_REQUEST){
-                                    Log.e(TAG, "Invalid request. (Home Page Error)");
-                                }else if (errorCode == ErrorCodes.INVALID_EMAIL){
-                                    Log.e(TAG, "Invalid email. (Home Page Error)");
-                                }else if (errorCode == ErrorCodes.UNKNOWN){
-                                    Log.e(TAG, "onResponse: errorCode = " + errorCode);
-                                }
+                                Logger.e("Error true in response: errorCode = " + errorCode);
 
                                 mSearchAdapter.setError(SearchAdapter.ERROR_TYPE_UNKNOWN_ERROR);
                             }
                         }else{
-                            Log.e(TAG, "Response body is null. (Search Page Error)");
+                            Logger.e("Response body is null. (Search Page Error)");
                             mSearchAdapter.setError(SearchAdapter.ERROR_TYPE_UNKNOWN_ERROR);
                         }
                     }else {
-                        Log.e(TAG, "Response object is null. (Search Page Error)");
+                        Logger.e("Response object is null. (Search Page Error)");
                         mSearchAdapter.setError(SearchAdapter.ERROR_TYPE_UNKNOWN_ERROR);
                     }
                 } catch (IOException | JSONException e) {
-                    e.printStackTrace();
+                    Logger.e("IOException or JSONException caught: " + e.getMessage());
 
                     if(BookieApplication.hasNetwork()){
                         mSearchAdapter.setError(SearchAdapter.ERROR_TYPE_UNKNOWN_ERROR);
@@ -325,7 +324,7 @@ public class SearchFragment extends Fragment {
                     mSearchAdapter.setError(SearchAdapter.ERROR_TYPE_NO_CONNECTION);
                 }
 
-                Log.e(TAG, "Search onFailure: " + t.getMessage());
+                Logger.e("getSearchResults Failure: " + t.getMessage());
             }
         });
     }

@@ -19,7 +19,6 @@ import android.text.SpannableString;
 import android.text.TextUtils;
 import android.text.TextWatcher;
 import android.text.style.AbsoluteSizeSpan;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuInflater;
@@ -46,6 +45,7 @@ import com.karambit.bookie.rest_api.BookieClient;
 import com.karambit.bookie.rest_api.ErrorCodes;
 import com.karambit.bookie.rest_api.UserApi;
 import com.karambit.bookie.service.BookieIntentFilters;
+import com.orhanobut.logger.Logger;
 
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -306,7 +306,6 @@ public class CurrentUserProfileSettingsActivity extends AppCompatActivity {
         progressDialog.setCancelable(false);
         progressDialog.show();
 
-
         resendVerificationCode(resendVerificationCodeButton, verificationImageView, verificationInfoTextView, progressDialog);
     }
 
@@ -376,11 +375,15 @@ public class CurrentUserProfileSettingsActivity extends AppCompatActivity {
 
         String email = mCurrentUserDetails.getEmail();
         String password = mCurrentUserDetails.getPassword();
-        Call<ResponseBody> isPasswordValid = userApi.isPasswordCorrect(email, password, givenPassword);
+        Call<ResponseBody> isPasswordCorrect = userApi.isPasswordCorrect(email, password, givenPassword);
 
         final EditText oldPasswordEditText = (EditText) oldPasswordDialog.findViewById(R.id.oldPasswordEditText);
 
-        isPasswordValid.enqueue(new Callback<ResponseBody>() {
+        Logger.d("isPasswordCorrect() API called with parameters: \n" +
+                     "\temail=" + email + ", \n\tpassword=" + password + ", \n\tgivenPassword=" + givenPassword);
+
+
+        isPasswordCorrect.enqueue(new Callback<ResponseBody>() {
             @Override
             public void onResponse(Call<ResponseBody> call, Response<ResponseBody> response) {
 
@@ -389,10 +392,15 @@ public class CurrentUserProfileSettingsActivity extends AppCompatActivity {
                         if (response.body() != null){
                             String json = response.body().string();
 
+                            Logger.json(json);
+
                             JSONObject responseObject = new JSONObject(json);
                             boolean error = responseObject.getBoolean("error");
 
                             if (!error) {
+
+                                Logger.d("Password is correct");
+
                                 if (!responseObject.isNull("isValid")){
                                     if (responseObject.getBoolean("isValid")){
                                         oldPasswordDialog.dismiss();
@@ -406,30 +414,20 @@ public class CurrentUserProfileSettingsActivity extends AppCompatActivity {
                             } else {
                                 int errorCode = responseObject.getInt("errorCode");
 
-                                if (errorCode == ErrorCodes.EMPTY_POST){
-                                    Log.e(TAG, "Post is empty. (Current User Settings Page Error)");
-                                }else if (errorCode == ErrorCodes.MISSING_POST_ELEMENT){
-                                    Log.e(TAG, "Post element missing. (Current User Settings Page Error)");
-                                }else if (errorCode == ErrorCodes.INVALID_EMAIL){
-                                    Log.e(TAG, "Invalid email. (Current User Settings Page Error)");
-                                }else if (errorCode == ErrorCodes.INVALID_REQUEST){
-                                    Log.e(TAG, "Invalid request. (Current User Settings Page Error)");
-                                }else if (errorCode == ErrorCodes.UNKNOWN){
-                                    Log.e(TAG, "onResponse: errorCode = " + errorCode);
-                                }
+                                Logger.e("Error true in response: errorCode = " + errorCode);
 
                                 Toast.makeText(CurrentUserProfileSettingsActivity.this, getString(R.string.unknown_error), Toast.LENGTH_SHORT).show();
                             }
                         }else{
-                            Log.e(TAG, "Response body is null. (Current User Settings Page Error)");
+                            Logger.e("Response body is null. (Current User Settings Page Error)");
                             Toast.makeText(CurrentUserProfileSettingsActivity.this, getString(R.string.unknown_error), Toast.LENGTH_SHORT).show();
                         }
                     }else {
-                        Log.e(TAG, "Response object is null. (Current User Settings Page Error)");
+                        Logger.e("Response object is null. (Current User Settings Page Error)");
                         Toast.makeText(CurrentUserProfileSettingsActivity.this, getString(R.string.unknown_error), Toast.LENGTH_SHORT).show();
                     }
                 } catch (IOException | JSONException e) {
-                    e.printStackTrace();
+                    Logger.e("IOException or JSONException caught: " + e.getMessage());
 
                     Toast.makeText(CurrentUserProfileSettingsActivity.this, getString(R.string.unknown_error), Toast.LENGTH_SHORT).show();
                 }
@@ -440,7 +438,7 @@ public class CurrentUserProfileSettingsActivity extends AppCompatActivity {
             public void onFailure(Call<ResponseBody> call, Throwable t) {
                 progressDialog.dismiss();
                 Toast.makeText(CurrentUserProfileSettingsActivity.this, getString(R.string.unknown_error), Toast.LENGTH_SHORT).show();
-                Log.e(TAG, "Current User Settings onFailure: " + t.getMessage());
+                Logger.e("isPasswordCorrect Failure: " + t.getMessage());
             }
         });
     }
@@ -498,6 +496,8 @@ public class CurrentUserProfileSettingsActivity extends AppCompatActivity {
         String password = mCurrentUserDetails.getPassword();
         Call<ResponseBody> uploadNewPassword = userApi.uploadNewPassword(email, password, newPassword);
 
+        Logger.d("uploadNewPassword() API called with parameters: \n" +
+                     "\temail=" + email + ", \n\tpassword=" + password + ", \n\tnewPassword=" + newPassword);
 
         uploadNewPassword.enqueue(new Callback<ResponseBody>() {
             @Override
@@ -508,46 +508,40 @@ public class CurrentUserProfileSettingsActivity extends AppCompatActivity {
                         if (response.body() != null){
                             String json = response.body().string();
 
+                            Logger.json(json);
+
                             JSONObject responseObject = new JSONObject(json);
                             boolean error = responseObject.getBoolean("error");
 
                             if (!error) {
                                 if (!responseObject.isNull("newPassword")){
+
+                                    Logger.d("Password changed successfully");
+
                                     newPasswordDialog.dismiss();
                                     Toast.makeText(CurrentUserProfileSettingsActivity.this, getString(R.string.password_changed), Toast.LENGTH_SHORT).show();
 
                                     mDbManager.getUserDataSource().updateUserPassword(responseObject.getString("newPassword"));
                                     SessionManager.getCurrentUserDetails(CurrentUserProfileSettingsActivity.this).setPassword(responseObject.getString("newPassword"));
-
                                 }
 
                             } else {
                                 int errorCode = responseObject.getInt("errorCode");
 
-                                if (errorCode == ErrorCodes.EMPTY_POST){
-                                    Log.e(TAG, "Post is empty. (Current User Settings Page Error)");
-                                }else if (errorCode == ErrorCodes.MISSING_POST_ELEMENT){
-                                    Log.e(TAG, "Post element missing. (Current User Settings Page Error)");
-                                }else if (errorCode == ErrorCodes.INVALID_EMAIL){
-                                    Log.e(TAG, "Invalid email. (Current User Settings Page Error)");
-                                }else if (errorCode == ErrorCodes.INVALID_REQUEST){
-                                    Log.e(TAG, "Invalid request. (Current User Settings Page Error)");
-                                }else if (errorCode == ErrorCodes.UNKNOWN){
-                                    Log.e(TAG, "onResponse: errorCode = " + errorCode);
-                                }
+                                Logger.e("Error true in response: errorCode = " + errorCode);
 
                                 Toast.makeText(CurrentUserProfileSettingsActivity.this, getString(R.string.unknown_error), Toast.LENGTH_SHORT).show();
                             }
                         }else{
-                            Log.e(TAG, "Response body is null. (Current User Settings Page Error)");
+                            Logger.e("Response body is null. (Current User Settings Page Error)");
                             Toast.makeText(CurrentUserProfileSettingsActivity.this, getString(R.string.unknown_error), Toast.LENGTH_SHORT).show();
                         }
                     }else {
-                        Log.e(TAG, "Response object is null. (Current User Settings Page Error)");
+                        Logger.e("Response object is null. (Current User Settings Page Error)");
                         Toast.makeText(CurrentUserProfileSettingsActivity.this, getString(R.string.unknown_error), Toast.LENGTH_SHORT).show();
                     }
                 } catch (IOException | JSONException e) {
-                    e.printStackTrace();
+                    Logger.e("IOException or JSONException caught: " + e.getMessage());
 
                     Toast.makeText(CurrentUserProfileSettingsActivity.this, getString(R.string.unknown_error), Toast.LENGTH_SHORT).show();
                 }
@@ -558,7 +552,7 @@ public class CurrentUserProfileSettingsActivity extends AppCompatActivity {
             public void onFailure(Call<ResponseBody> call, Throwable t) {
                 progressDialog.dismiss();
                 Toast.makeText(CurrentUserProfileSettingsActivity.this, getString(R.string.unknown_error), Toast.LENGTH_SHORT).show();
-                Log.e(TAG, "Current User Settings onFailure: " + t.getMessage());
+                Logger.e("uploadNewPassword Failure: " + t.getMessage());
             }
         });
     }
@@ -682,6 +676,9 @@ public class CurrentUserProfileSettingsActivity extends AppCompatActivity {
 
         Call<ResponseBody> resendVerificationCode = userApi.resendEmailVerificationCode(email, password);
 
+        Logger.d("resendEmailVerificationCode() API called with parameters: \n" +
+                     "\temail=" + email + ", \n\tpassword=" + password);
+
         resendVerificationCode.enqueue(new Callback<ResponseBody>() {
             @Override
             public void onResponse(Call<ResponseBody> call, Response<ResponseBody> response) {
@@ -690,6 +687,8 @@ public class CurrentUserProfileSettingsActivity extends AppCompatActivity {
                     if (response != null){
                         if (response.body() != null){
                             String json = response.body().string();
+
+                            Logger.json(json);
 
                             JSONObject responseObject = new JSONObject(json);
                             boolean error = responseObject.getBoolean("error");
@@ -702,32 +701,24 @@ public class CurrentUserProfileSettingsActivity extends AppCompatActivity {
                             } else {
                                 int errorCode = responseObject.getInt("errorCode");
 
-                                if (errorCode == ErrorCodes.EMPTY_POST){
-                                    Log.e(TAG, "Post is empty. (Current User Profile Settings Error)");
-                                }else if (errorCode == ErrorCodes.MISSING_POST_ELEMENT){
-                                    Log.e(TAG, "Post element missing. (Current User Profile Settings Error)");
-                                }else if (errorCode == ErrorCodes.INVALID_REQUEST){
-                                    Log.e(TAG, "Invalid request. (Current User Profile Settings Error)");
-                                }else if (errorCode == ErrorCodes.INVALID_EMAIL){
-                                    Log.e(TAG, "Invalid email. (Current User Profile Settings Error)");
-                                }else if (errorCode == ErrorCodes.USER_ALREADY_VERIFIED){
-                                    Log.e(TAG, "User already . (Current User Profile Settings Error)");
+                                if (errorCode == ErrorCodes.USER_ALREADY_VERIFIED){
+                                    Logger.e("User already verified. (Current User Profile Settings Error)");
                                     //TODO When user already verified
-                                }else if (errorCode == ErrorCodes.UNKNOWN){
-                                    Log.e(TAG, "onResponse: errorCode = " + errorCode);
+                                }else {
+                                    Logger.e("Error true in response: errorCode = " + errorCode);
                                 }
                                 Toast.makeText(CurrentUserProfileSettingsActivity.this, getString(R.string.unknown_error), Toast.LENGTH_SHORT).show();
                             }
                         }else{
-                            Log.e(TAG, "Response body is null. (Current User Profile Settings Error)");
+                            Logger.e("Response body is null. (Current User Profile Settings Error)");
                             Toast.makeText(CurrentUserProfileSettingsActivity.this, getString(R.string.unknown_error), Toast.LENGTH_SHORT).show();
                         }
                     }else {
-                        Log.e(TAG, "Response object is null. (Current User Profile Settings Error)");
+                        Logger.e("Response object is null. (Current User Profile Settings Error)");
                         Toast.makeText(CurrentUserProfileSettingsActivity.this, getString(R.string.unknown_error), Toast.LENGTH_SHORT).show();
                     }
                 } catch (IOException | JSONException e) {
-                    e.printStackTrace();
+                    Logger.e("IOException or JSONException caught: " + e.getMessage());
                     Toast.makeText(CurrentUserProfileSettingsActivity.this, getString(R.string.unknown_error), Toast.LENGTH_SHORT).show();
                 }
 
@@ -737,7 +728,7 @@ public class CurrentUserProfileSettingsActivity extends AppCompatActivity {
 
             @Override
             public void onFailure(Call<ResponseBody> call, Throwable t) {
-                Log.e(TAG, "Current User Profile Settings onFailure: " + t.getMessage());
+                Logger.e("resendEmailVerificationCode Failure: " + t.getMessage());
                 comfortableProgressDialog.dismiss();
                 Toast.makeText(CurrentUserProfileSettingsActivity.this, getString(R.string.unknown_error), Toast.LENGTH_SHORT).show();
             }
@@ -809,8 +800,18 @@ public class CurrentUserProfileSettingsActivity extends AppCompatActivity {
         Call<ResponseBody> uploadUserDetails;
         if (location != null){
             uploadUserDetails = userApi.updateUserDetails(email, password, name, bio, location.latitude, location.longitude);
+
+            Logger.d("getHomePageBooks() API called with parameters: \n" +
+                         "\temail=" + email + ", \n\tpassword=" + password +
+                         ", \n\tname=" + name + ", \n\tbio=" + bio +
+                         ", \n\tlatitude=" + location.latitude + ", \n\tlongitude=" + location.longitude);
+
         }else{
             uploadUserDetails = userApi.updateUserDetails(email, password, name, bio);
+
+            Logger.d("getHomePageBooks() API called with parameters: \n" +
+                         "\temail=" + email + ", \n\tpassword=" + password +
+                         ", \n\tname=" + name + ", \n\tbio=" + bio);
         }
 
         uploadUserDetails.enqueue(new Callback<ResponseBody>() {
@@ -822,6 +823,8 @@ public class CurrentUserProfileSettingsActivity extends AppCompatActivity {
                         if (response.body() != null){
                             String json = response.body().string();
 
+                            Logger.json(json);
+
                             JSONObject responseObject = new JSONObject(json);
                             boolean error = responseObject.getBoolean("error");
 
@@ -831,30 +834,20 @@ public class CurrentUserProfileSettingsActivity extends AppCompatActivity {
                             } else {
                                 int errorCode = responseObject.getInt("errorCode");
 
-                                if (errorCode == ErrorCodes.EMPTY_POST){
-                                    Log.e(TAG, "Post is empty. (Current User Profile Settings Error)");
-                                }else if (errorCode == ErrorCodes.MISSING_POST_ELEMENT){
-                                    Log.e(TAG, "Post element missing. (Current User Profile Settings Error)");
-                                }else if (errorCode == ErrorCodes.INVALID_EMAIL){
-                                    Log.e(TAG, "Invalid email. (Current User Profile Settings Error)");
-                                }else if (errorCode == ErrorCodes.INVALID_REQUEST){
-                                    Log.e(TAG, "Invalid request. (Current User Profile Settings Error)");
-                                }else if (errorCode == ErrorCodes.UNKNOWN){
-                                    Log.e(TAG, "onResponse: errorCode = " + errorCode);
-                                }
+                                Logger.e("Error true in response: errorCode = " + errorCode);
 
                                 Toast.makeText(CurrentUserProfileSettingsActivity.this, getString(R.string.unknown_error), Toast.LENGTH_SHORT).show();
                             }
                         }else{
-                            Log.e(TAG, "Response body is null. (Current User Profile Settings Error)");
+                            Logger.e("Response body is null. (Current User Profile Settings Error)");
                             Toast.makeText(CurrentUserProfileSettingsActivity.this, getString(R.string.unknown_error), Toast.LENGTH_SHORT).show();
                         }
                     }else {
-                        Log.e(TAG, "Response object is null. (Current User Profile Settings Error)");
+                        Logger.e("Response object is null. (Current User Profile Settings Error)");
                         Toast.makeText(CurrentUserProfileSettingsActivity.this, getString(R.string.unknown_error), Toast.LENGTH_SHORT).show();
                     }
                 } catch (IOException | JSONException e) {
-                    e.printStackTrace();
+                    Logger.e("IOException or JSONException caught: " + e.getMessage());
 
                     Toast.makeText(CurrentUserProfileSettingsActivity.this, getString(R.string.unknown_error), Toast.LENGTH_SHORT).show();
                 }
@@ -865,7 +858,7 @@ public class CurrentUserProfileSettingsActivity extends AppCompatActivity {
             public void onFailure(Call<ResponseBody> call, Throwable t) {
                 progressDialog.dismiss();
                 Toast.makeText(CurrentUserProfileSettingsActivity.this, getString(R.string.unknown_error), Toast.LENGTH_SHORT).show();
-                Log.e(TAG, "Current User Profile Settings onFailure: " + t.getMessage());
+                Logger.e("uploadUserDetails Failure: " + t.getMessage());
             }
         });
     }
@@ -887,6 +880,9 @@ public class CurrentUserProfileSettingsActivity extends AppCompatActivity {
         String password = mCurrentUserDetails.getPassword();
         Call<ResponseBody> uploadFeedBack = userApi.uploadFeedBack(email, password, feedBack);
 
+        Logger.d("uploadFeedBack() API called with parameters: \n" +
+                     "\temail=" + email + ", \n\tpassword=" + password + ", \n\tfeedback=" + feedBack);
+
         uploadFeedBack.enqueue(new Callback<ResponseBody>() {
             @Override
             public void onResponse(Call<ResponseBody> call, Response<ResponseBody> response) {
@@ -896,38 +892,31 @@ public class CurrentUserProfileSettingsActivity extends AppCompatActivity {
                         if (response.body() != null){
                             String json = response.body().string();
 
+                            Logger.json(json);
+
                             JSONObject responseObject = new JSONObject(json);
                             boolean error = responseObject.getBoolean("error");
 
                             if (!error) {
+                                Logger.d("Feedback uploaded successfully");
                                 Toast.makeText(CurrentUserProfileSettingsActivity.this, getString(R.string.thanks_for_feedback), Toast.LENGTH_SHORT).show();
                             } else {
                                 int errorCode = responseObject.getInt("errorCode");
 
-                                if (errorCode == ErrorCodes.EMPTY_POST){
-                                    Log.e(TAG, "Post is empty. (Current User Profile Settings Error)");
-                                }else if (errorCode == ErrorCodes.MISSING_POST_ELEMENT){
-                                    Log.e(TAG, "Post element missing. (Current User Profile Settings Error)");
-                                }else if (errorCode == ErrorCodes.INVALID_EMAIL){
-                                    Log.e(TAG, "Invalid email. (Current User Profile Settings Error)");
-                                }else if (errorCode == ErrorCodes.INVALID_REQUEST){
-                                    Log.e(TAG, "Invalid request. (Current User Profile Settings Error)");
-                                }else if (errorCode == ErrorCodes.UNKNOWN){
-                                    Log.e(TAG, "onResponse: errorCode = " + errorCode);
-                                }
+                                Logger.e("Error true in response: errorCode = " + errorCode);
 
                                 Toast.makeText(CurrentUserProfileSettingsActivity.this, getString(R.string.unknown_error), Toast.LENGTH_SHORT).show();
                             }
                         }else{
-                            Log.e(TAG, "Response body is null. (Current User Profile Settings Error)");
+                            Logger.e("Response body is null. (Current User Profile Settings Error)");
                             Toast.makeText(CurrentUserProfileSettingsActivity.this, getString(R.string.unknown_error), Toast.LENGTH_SHORT).show();
                         }
                     }else {
-                        Log.e(TAG, "Response object is null. (Current User Profile Settings Error)");
+                        Logger.e("Response object is null. (Current User Profile Settings Error)");
                         Toast.makeText(CurrentUserProfileSettingsActivity.this, getString(R.string.unknown_error), Toast.LENGTH_SHORT).show();
                     }
                 } catch (IOException | JSONException e) {
-                    e.printStackTrace();
+                    Logger.e("IOException or JSONException caught: " + e.getMessage());
 
                     Toast.makeText(CurrentUserProfileSettingsActivity.this, getString(R.string.unknown_error), Toast.LENGTH_SHORT).show();
                 }
@@ -938,7 +927,7 @@ public class CurrentUserProfileSettingsActivity extends AppCompatActivity {
             public void onFailure(Call<ResponseBody> call, Throwable t) {
                 progressDialog.dismiss();
                 Toast.makeText(CurrentUserProfileSettingsActivity.this, getString(R.string.unknown_error), Toast.LENGTH_SHORT).show();
-                Log.e(TAG, "Current User Profile Settings onFailure: " + t.getMessage());
+                Logger.e("uploadFeedBack Failure: " + t.getMessage());
             }
         });
     }

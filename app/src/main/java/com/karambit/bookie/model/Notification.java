@@ -3,8 +3,10 @@ package com.karambit.bookie.model;
 import android.os.Parcel;
 import android.os.Parcelable;
 
+import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.GregorianCalendar;
+import java.util.Locale;
 
 /**
  * Created by doruk on 24.12.2016.
@@ -136,5 +138,18 @@ public class Notification implements Parcelable {
         dest.writeByte((byte) (mSeen ? 1 : 0));
     }
 
+    @Override
+    public String toString() {
 
+        SimpleDateFormat dateFormat = new SimpleDateFormat("dd/MM/yyyy hh:mm:ss a", Locale.getDefault());
+        String createdAt = dateFormat.format(mCreatedAt.getTime());
+
+        return "Notification{" +
+            "\n\tmType=" + mType + "," +
+            "\n\tmBook=" + mBook.toShortString() + "," +
+            "\n\tmOppositeUser=" + mOppositeUser + "," +
+            "\n\tmSeen=" + mSeen + "," +
+            "\n\tmCreatedAt=" + createdAt +
+            "\n}";
+    }
 }

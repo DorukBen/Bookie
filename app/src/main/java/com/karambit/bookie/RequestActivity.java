@@ -28,7 +28,6 @@ import android.text.style.AbsoluteSizeSpan;
 import android.text.style.ClickableSpan;
 import android.text.style.ForegroundColorSpan;
 import android.text.style.StyleSpan;
-import android.util.Log;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.TextView;
@@ -176,9 +175,6 @@ public class RequestActivity extends AppCompatActivity {
                                                                  Request.Type.ACCEPT,
                                                                  Calendar.getInstance());
 
-                            Log.i(TAG, "Clicked request: " + clickedRequest);
-                            Log.i(TAG, "Created request: " + createdRequest);
-
                             addBookRequestToServer(createdRequest, clickedRequest);
                         }
                     })
@@ -201,9 +197,6 @@ public class RequestActivity extends AppCompatActivity {
                                                                  SessionManager.getCurrentUser(RequestActivity.this),
                                                                  Request.Type.REJECT,
                                                                  Calendar.getInstance());
-
-                            Log.i(TAG, "Clicked request: " + clickedRequest);
-                            Log.i(TAG, "Created request: " + createdRequest);
 
                             addBookRequestToServer(createdRequest, clickedRequest);
                         }
@@ -233,7 +226,7 @@ public class RequestActivity extends AppCompatActivity {
                             mRequests.add(request);
                             Collections.sort(mRequests);
 
-                            Logger.i("Request fetched from FCM:\n" + request);
+                            Logger.d("Request fetched from FCM:\n" + request);
 
                             mRequestAdapter.notifyDataSetChanged();
                         }
@@ -291,7 +284,7 @@ public class RequestActivity extends AppCompatActivity {
                                         }
                                     }
 
-                                    Logger.i("Requests fetched:\n" + mRequests);
+                                    Logger.d("Requests fetched:\n" + mRequests);
 
                                     mRequestAdapter.setError(RequestAdapter.ERROR_TYPE_NONE);
                                     mRequestAdapter.setRequests(mRequests);
@@ -312,17 +305,7 @@ public class RequestActivity extends AppCompatActivity {
 
                                 int errorCode = responseObject.getInt("errorCode");
 
-                                if (errorCode == ErrorCodes.EMPTY_POST){
-                                    Logger.e("Post is empty. (Request Page Error)");
-                                }else if (errorCode == ErrorCodes.MISSING_POST_ELEMENT){
-                                    Logger.e("Post element missing. (Request Page Error)");
-                                }else if (errorCode == ErrorCodes.INVALID_REQUEST){
-                                    Logger.e("Invalid request. (Request Page Error)");
-                                }else if (errorCode == ErrorCodes.INVALID_EMAIL){
-                                    Logger.e("Invalid email. (Request Page Error)");
-                                }else if (errorCode == ErrorCodes.UNKNOWN){
-                                    Logger.e("onResponse: errorCode = " + errorCode);
-                                }
+                                Logger.e("Error true in response: errorCode = " + errorCode);
 
                                 mRequestAdapter.setError(RequestAdapter.ERROR_TYPE_UNKNOWN_ERROR);
                             }
@@ -335,7 +318,7 @@ public class RequestActivity extends AppCompatActivity {
                         mRequestAdapter.setError(RequestAdapter.ERROR_TYPE_UNKNOWN_ERROR);
                     }
                 } catch (IOException | JSONException e) {
-                    e.printStackTrace();
+                    Logger.e("IOException or JSONException caught: " + e.getMessage());
 
                     if (BookieApplication.hasNetwork()){
                         mRequestAdapter.setError(RequestAdapter.ERROR_TYPE_UNKNOWN_ERROR);
@@ -349,7 +332,7 @@ public class RequestActivity extends AppCompatActivity {
 
             @Override
             public void onFailure(Call<ResponseBody> call, Throwable t) {
-                Logger.e("Home Page book fetch onFailure: " + t.getMessage());
+                Logger.e("getBookRequests Failure: " + t.getMessage());
                 if (BookieApplication.hasNetwork()){
                     mRequestAdapter.setError(RequestAdapter.ERROR_TYPE_UNKNOWN_ERROR);
                 }else {
@@ -380,7 +363,11 @@ public class RequestActivity extends AppCompatActivity {
                                                                    request.getResponder().getID(),
                                                                    request.getType().getRequestCode());
 
-        Logger.i("Adding book request to server:\n" + request);
+        Logger.d("addBookRequest() API called with parameters: \n" +
+                     "\temail=" + email + ", \n\tpassword=" + password +
+                     ", \n\trequesterID=" + request.getRequester().getID() +
+                     ", \n\tresponderID=" + request.getResponder().getID() +
+                     ", \n\trequestCode=" + request.getType().getRequestCode());
 
         addBookRequest.enqueue(new Callback<ResponseBody>() {
             @Override
@@ -424,7 +411,7 @@ public class RequestActivity extends AppCompatActivity {
                                     Collections.sort(mRequests);
                                     int indexAfter = mRequests.indexOf(oldRequest) + 1; // Subtitle
                                     mRequestAdapter.notifyItemMoved(indexBefore, indexAfter);
-                                    Log.i(TAG, "Item moved: " + indexBefore + " -> " + indexAfter);
+                                    Logger.d("Item moved: " + indexBefore + " -> " + indexAfter);
                                     //mRequestAdapter.notifyItemChanged(mRequestAdapter.getSentRequestCount() - 1);
 
                                     Intent intent = new Intent(BookieIntentFilters.INTENT_FILTER_REJECTED_REQUEST);
@@ -432,32 +419,24 @@ public class RequestActivity extends AppCompatActivity {
                                     LocalBroadcastManager.getInstance(RequestActivity.this).sendBroadcast(intent);
                                 }
 
-                                Logger.i("Request added to server:\n" + request);
+                                Logger.d("Request added to server:\n" + request);
 
-                                Logger.i("Request list:\n" + mRequests);
+                                Logger.d("Request list:\n" + mRequests);
 
                                 comfortableProgressDialog.dismiss();
                             } else {
                                 int errorCode = responseObject.getInt("errorCode");
 
-                                if (errorCode == ErrorCodes.EMPTY_POST){
-                                    Logger.e("Post is empty. (Book Page Error)");
-                                }else if (errorCode == ErrorCodes.MISSING_POST_ELEMENT){
-                                    Logger.e("Post element missing. (Book Page Error)");
-                                }else if (errorCode == ErrorCodes.INVALID_REQUEST){
-                                    Logger.e("Invalid request. (Book Page Error)");
-                                }else if (errorCode == ErrorCodes.INVALID_EMAIL){
-                                    Logger.e("Invalid email. (Book Page Error)");
-                                }else if (errorCode == ErrorCodes.USER_NOT_VERIFIED){
-                                    Logger.e("User not valid. (Book Page Error)");
+                                if (errorCode == ErrorCodes.USER_NOT_VERIFIED){
+                                    Logger.e("User not verified. (Book Page Error)");
                                 }else if (errorCode == ErrorCodes.USER_BLOCKED){
                                     Logger.e("User blocked. (Book Page Error)");
                                 }else if (errorCode == ErrorCodes.LOCATION_NOT_FOUND){
                                     Logger.e("Location not found. (Book Page Error)");
                                 }else if (errorCode == ErrorCodes.BOOK_COUNT_INSUFFICIENT){
                                     Logger.e("Book count insufficient. (Book Page Error)");
-                                }else if (errorCode == ErrorCodes.UNKNOWN){
-                                    Logger.e("onResponse: errorCode = " + errorCode);
+                                }else {
+                                    Logger.e("Error true in response: errorCode = " + errorCode);
                                 }
 
                                 comfortableProgressDialog.dismiss();
@@ -474,7 +453,7 @@ public class RequestActivity extends AppCompatActivity {
                         Toast.makeText(RequestActivity.this, getString(R.string.unknown_error), Toast.LENGTH_SHORT).show();
                     }
                 } catch (IOException | JSONException e) {
-                    e.printStackTrace();
+                    Logger.e("IOException or JSONException caught: " + e.getMessage());
                     comfortableProgressDialog.dismiss();
                     Toast.makeText(RequestActivity.this, getString(R.string.unknown_error), Toast.LENGTH_SHORT).show();
                 }

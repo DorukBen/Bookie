@@ -48,6 +48,8 @@ public class CreatedAtHelper {
     public static String calculateLongDurationText(Context context, ArrayList<Book.BookProcess> bookProcesses) {
         Book.BookProcess lastProcess;
 
+        // TODO Index failure
+
         int i = 0;
         do {
             lastProcess = bookProcesses.get(bookProcesses.size() - 1 - i++);

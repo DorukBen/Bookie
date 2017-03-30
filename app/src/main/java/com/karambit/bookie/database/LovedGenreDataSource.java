@@ -6,6 +6,7 @@ import android.database.sqlite.SQLiteDatabase;
 import android.util.Log;
 
 import com.karambit.bookie.model.User;
+import com.orhanobut.logger.Logger;
 
 import java.util.Arrays;
 
@@ -57,7 +58,7 @@ public class LovedGenreDataSource {
                 }
             }
         }finally {
-            Log.i(TAG, "Loved genres inserted");
+            Logger.d("Loved genres inserted");
         }
         return true;
     }
@@ -105,7 +106,7 @@ public class LovedGenreDataSource {
         try {
             mSqLiteDatabase.delete(LG_TABLE_NAME, LG_COLUMN_USER_ID + " = " + user.getID(), null);
         }finally {
-            Log.i(TAG, "Loved Genres reset");
+            Logger.d("Loved Genres reset");
         }
     }
 

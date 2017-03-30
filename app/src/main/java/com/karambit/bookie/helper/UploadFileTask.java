@@ -1,7 +1,8 @@
 package com.karambit.bookie.helper;
 
 import android.os.AsyncTask;
-import android.util.Log;
+
+import com.orhanobut.logger.Logger;
 
 import java.io.DataOutputStream;
 import java.io.File;
@@ -148,7 +149,7 @@ public class UploadFileTask extends AsyncTask<Void, Integer, Integer> {
             return serverResponseCode;
 
         } catch (Exception ex) {
-            Log.e(TAG, "Upload failed: " + ex.getMessage());
+            Logger.e("Upload failed: " + ex.getMessage());
 
             return -1;
         }
@@ -163,29 +164,29 @@ public class UploadFileTask extends AsyncTask<Void, Integer, Integer> {
             switch (responseCode) {
 
                 case HttpURLConnection.HTTP_OK:
-                    Log.w(TAG, "UploadFilesTask: OK!");
+                    Logger.d("UploadFilesTask: OK!");
 
                     mUploadProgressChangedListener.onProgressCompleted();
 
                     break;// fine, go on
 
                 case HttpURLConnection.HTTP_GATEWAY_TIMEOUT:
-                    Log.e(TAG, "UploadFilesTask: Gateway timeout");
+                    Logger.e("UploadFilesTask: Gateway timeout");
 
                     mUploadProgressChangedListener.onProgressError();
 
                     break;// retry
 
                 case HttpURLConnection.HTTP_UNAVAILABLE:
-                    Log.e(TAG, "UploadFilesTask: Unavaliable");
+                    Logger.e("UploadFilesTask: Unavaliable");
 
                     mUploadProgressChangedListener.onProgressError();
 
                     break;// retry, server is unstable
 
                 default:
-                    Log.e(TAG, "UploadFilesTask: Unknown reponse code..!");
-                    Log.e(TAG, responseCode.toString());
+                    Logger.e("UploadFilesTask: Unknown reponse code..!");
+                    Logger.e(responseCode.toString());
                     mUploadProgressChangedListener.onProgressError();
 
                     break; // abort

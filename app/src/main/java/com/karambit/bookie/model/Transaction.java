@@ -9,8 +9,10 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.sql.Timestamp;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.Locale;
 
 /**
  * Created by orcan on 3/26/17.
@@ -168,11 +170,16 @@ public class Transaction implements Book.BookProcess, Parcelable{
 
     @Override
     public String toString() {
-        return mBook + ".Transaction{" +
-            "mTransactionType=" + mType +
-            ", mGiver=" + mGiver.getName() +
-            ", mTaker=" + mTaker.getName() +
-            ", mCreatedAt=" + mCreatedAt.getTimeInMillis() + '}';
+
+        SimpleDateFormat dateFormat = new SimpleDateFormat("dd/MM/yyyy hh:mm:ss a", Locale.getDefault());
+        String createdAt = dateFormat.format(mCreatedAt.getTime());
+
+        return mBook.toShortString() + ".Transaction{" +
+            "\n\tmTransactionType=" + mType + "," +
+            "\n\tmGiver=" + mGiver.toShortString() + "," +
+            "\n\tmTaker=" + mTaker.toShortString() + "," +
+            "\n\tmCreatedAt=" + createdAt +
+            "\n}";
     }
 
     @Override

@@ -22,7 +22,8 @@ public class BookieApplication extends Application {
 
         instance = this;
 
-        Logger.init("BOOKIE_PRETTYLOGGER").hideThreadInfo();
+        Logger.init("BOOKIE_LOGGER")
+              .hideThreadInfo();
     }
 
     public static BookieApplication getInstance ()

@@ -23,7 +23,6 @@ import com.karambit.bookie.model.Book;
 import com.karambit.bookie.model.User;
 import com.karambit.bookie.rest_api.BookApi;
 import com.karambit.bookie.rest_api.BookieClient;
-import com.karambit.bookie.rest_api.ErrorCodes;
 import com.orhanobut.logger.Logger;
 
 import org.json.JSONArray;
@@ -162,8 +161,8 @@ public class HomeFragment extends Fragment {
         String password = currentUserDetails.getPassword();
         Call<ResponseBody> getHomePageBooks = bookApi.getHomePageBooks(email, password, fetchedBookIds);
 
-        Logger.i("getHomePageBooks() API called with parameters: \n" +
-                     "\temail=" + email + ", \n\tpassword=" + password + ", \n\tfetchedBookIds=" + fetchedBookIds);
+        Logger.d("getHomePageBooks() API called with parameters: \n" +
+                     "\temail=" + email + ", \n\tpassword=" + password + ", \n\tbookIDs=" + fetchedBookIds);
 
         getHomePageBooks.enqueue(new Callback<ResponseBody>() {
             @Override
@@ -203,23 +202,15 @@ public class HomeFragment extends Fragment {
                                     mHomeTimelineAdapter.setHeaderAndFeedBooks(mHeaderBooks, feedBooks);
                                 }
 
-                                Logger.i("Home page books fetched:\n\nHeader Books:\n" + Book.toShortString(mHeaderBooks) + "\nList books:\n" + Book.toShortString(mListBooks));
+                                Logger.d("Home page books fetched:" +
+                                             "\n\nHeader Books:\n" + Book.listToShortString(mHeaderBooks) +
+                                             "\nList books:\n" + Book.listToShortString(mListBooks));
 
                             } else {
 
                                 int errorCode = responseObject.getInt("errorCode");
 
-                                if (errorCode == ErrorCodes.EMPTY_POST){
-                                    Logger.e("Post is empty. (Home Page Error)");
-                                }else if (errorCode == ErrorCodes.MISSING_POST_ELEMENT){
-                                    Logger.e("Post element missing. (Home Page Error)");
-                                }else if (errorCode == ErrorCodes.INVALID_REQUEST){
-                                    Logger.e("Invalid request. (Home Page Error)");
-                                }else if (errorCode == ErrorCodes.INVALID_EMAIL){
-                                    Logger.e("Invalid email. (Home Page Error)");
-                                }else if (errorCode == ErrorCodes.UNKNOWN){
-                                    Logger.e("onResponse: errorCode = " + errorCode);
-                                }
+                                Logger.e("Error true in response: errorCode = " + errorCode);
 
                                 mHomeTimelineAdapter.setError(HomeTimelineAdapter.ERROR_TYPE_UNKNOWN_ERROR);
                             }
@@ -232,7 +223,7 @@ public class HomeFragment extends Fragment {
                         mHomeTimelineAdapter.setError(HomeTimelineAdapter.ERROR_TYPE_UNKNOWN_ERROR);
                     }
                 } catch (IOException | JSONException e) {
-                    e.printStackTrace();
+                    Logger.e("IOException or JSONException caught: " + e.getMessage());
 
                     if (BookieApplication.hasNetwork()){
                         if(!isFromTop){
@@ -255,7 +246,7 @@ public class HomeFragment extends Fragment {
 
             @Override
             public void onFailure(Call<ResponseBody> call, Throwable t) {
-                Logger.e("Home Page book fetch onFailure: " + t.getMessage());
+                Logger.e("getHomePageBooks Failure: " + t.getMessage());
 
                 if (BookieApplication.hasNetwork()){
                     if(!isFromTop){

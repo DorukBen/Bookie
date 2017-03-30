@@ -9,7 +9,6 @@ import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.text.TextUtils;
-import android.util.Log;
 import android.util.Patterns;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -30,6 +29,7 @@ import com.karambit.bookie.model.User;
 import com.karambit.bookie.rest_api.BookieClient;
 import com.karambit.bookie.rest_api.ErrorCodes;
 import com.karambit.bookie.rest_api.UserApi;
+import com.orhanobut.logger.Logger;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -270,6 +270,8 @@ public class LoginRegisterActivity extends AppCompatActivity {
 
         Call<ResponseBody> forgotPassword = userApi.forgotPassword(email);
 
+        Logger.d("getHomePageBooks() API called with parameters: \n\temail=" + email);
+
         forgotPassword.enqueue(new Callback<ResponseBody>() {
             @Override
             public void onResponse(Call<ResponseBody> call, Response<ResponseBody> response) {
@@ -279,10 +281,15 @@ public class LoginRegisterActivity extends AppCompatActivity {
                         if (response.body() != null){
                             String json = response.body().string();
 
+                            Logger.json(json);
+
                             JSONObject responseObject = new JSONObject(json);
                             boolean error = responseObject.getBoolean("error");
 
                             if (!error) {
+
+                                Logger.d("New password sent");
+
                                 progressDialog.dismiss();
                                 emailDialog.dismiss();
 
@@ -314,29 +321,23 @@ public class LoginRegisterActivity extends AppCompatActivity {
                             } else {
                                 int errorCode = responseObject.getInt("errorCode");
 
-                                if (errorCode == ErrorCodes.EMPTY_POST){
-                                    Log.e(TAG, "Post is empty. (Login Register Page Error)");
-                                }else if (errorCode == ErrorCodes.MISSING_POST_ELEMENT){
-                                    Log.e(TAG, "Post element missing. (Login Register Page Error)");
-                                }else if (errorCode == ErrorCodes.UNKNOWN){
-                                    Log.e(TAG, "onResponse: errorCode = " + errorCode);
-                                }
+                                Logger.e("Error true in response: errorCode = " + errorCode);
 
                                 progressDialog.dismiss();
                                 Toast.makeText(LoginRegisterActivity.this, getString(R.string.unknown_error), Toast.LENGTH_SHORT).show();
                             }
                         }else{
-                            Log.e(TAG, "Response body is null. (Login Register Page Error)");
+                            Logger.e("Response body is null. (Login Register Page Error)");
                             progressDialog.dismiss();
                             Toast.makeText(LoginRegisterActivity.this, getString(R.string.unknown_error), Toast.LENGTH_SHORT).show();
                         }
                     }else {
-                        Log.e(TAG, "Response object is null. (Login Register Page Error)");
+                        Logger.e("Response object is null. (Login Register Page Error)");
                         progressDialog.dismiss();
                         Toast.makeText(LoginRegisterActivity.this, getString(R.string.unknown_error), Toast.LENGTH_SHORT).show();
                     }
                 } catch (IOException | JSONException e) {
-                    e.printStackTrace();
+                    Logger.e("IOException or JSONException caught: " + e.getMessage());
                     progressDialog.dismiss();
                     Toast.makeText(LoginRegisterActivity.this, getString(R.string.unknown_error), Toast.LENGTH_SHORT).show();
                 }
@@ -344,7 +345,7 @@ public class LoginRegisterActivity extends AppCompatActivity {
 
             @Override
             public void onFailure(Call<ResponseBody> call, Throwable t) {
-                Log.e(TAG, "Login Register Page onFailure: " + t.getMessage());
+                Logger.e("forgotPassword Failure: " + t.getMessage());
                 progressDialog.dismiss();
                 Toast.makeText(LoginRegisterActivity.this, getString(R.string.unknown_error), Toast.LENGTH_SHORT).show();
             }
@@ -430,6 +431,9 @@ public class LoginRegisterActivity extends AppCompatActivity {
         String password = mPasswordEditText.getText().toString().trim();
         Call<ResponseBody> register = userApi.register(email, password, nameSurname);
 
+        Logger.d("register() API called with parameters: \n" +
+                     "\temail=" + email + ", \n\tpassword=" + password + ", \n\tnameSurname=" + nameSurname);
+
         register.enqueue(new Callback<ResponseBody>() {
             @Override
             public void onResponse(Call<ResponseBody> call, final Response<ResponseBody> response) {
@@ -438,6 +442,8 @@ public class LoginRegisterActivity extends AppCompatActivity {
                     if (response != null && response.body() != null) {
 
                         String json = response.body().string();
+
+                        Logger.json(json);
 
                         JSONObject responseObject = new JSONObject(json);
                         boolean error = responseObject.getBoolean("error");
@@ -451,9 +457,9 @@ public class LoginRegisterActivity extends AppCompatActivity {
                             SessionManager.login(LoginRegisterActivity.this, userDetails);
 
                             if (userDetails != null) {
-                                Log.i(TAG, userDetails.getUser().getName() + " Registered!");
+                                Logger.d(userDetails.getUser().getName() + " Registered!");
                             } else {
-                                Log.e(TAG, "Error occured while registering new user.");
+                                Logger.e("Error occured while registering new user.");
                             }
 
 
@@ -463,40 +469,35 @@ public class LoginRegisterActivity extends AppCompatActivity {
                         } else {
                             int errorCode = responseObject.getInt("errorCode");
 
-                            if (errorCode == ErrorCodes.EMPTY_POST) {
-                                Log.e(TAG, "Post is empty. (Register Error)");
-                            } else if (errorCode == ErrorCodes.MISSING_POST_ELEMENT) {
-                                Log.e(TAG, "Post element missing. (Register Error)");
-                            } else if (errorCode == ErrorCodes.SHORT_PASSWORD) {
-                                Log.w(TAG, "Short Password. (Register Warning)");
+                            if (errorCode == ErrorCodes.SHORT_PASSWORD) {
+                                Logger.w("Short Password. (Register Warning)");
                                 mPasswordEditText.setError(getString(R.string.short_password));
                             } else if (errorCode == ErrorCodes.LONG_PASSWORD) {
-                                Log.w(TAG, "Long Password. (Register Warning)");
+                                Logger.w("Long Password. (Register Warning)");
                                 mPasswordEditText.setError(getString(R.string.long_password));
                             } else if (errorCode == ErrorCodes.INVALID_EMAIL) {
-                                Log.w(TAG, "Invalid Email. (Register Warning)");
+                                Logger.w("Invalid Email. (Register Warning)");
                                 mEmailEditText.setError(getString(R.string.invalid_email_address));
                             } else if (errorCode == ErrorCodes.INVALID_NAME_SURNAME) {
-                                Log.w(TAG, "Invalid Name Surname. (Register Warning)");
+                                Logger.w("Invalid Name Surname. (Register Warning)");
                                 mNameEditText.setError(getString(R.string.invalid_name_surname));
                                 mSurnameEditText.setError(getString(R.string.invalid_name_surname));
                             } else if (errorCode == ErrorCodes.EMAIL_TAKEN) {
+                                Logger.w("Email taken. (Register Warning)");
                                 mEmailEditText.setError(getString(R.string.email_taken));
-                            } else if (errorCode == ErrorCodes.UNKNOWN) {
+                            } else {
+                                Logger.e("Error true in response: errorCode = " + errorCode);
 
                                 Toast.makeText(LoginRegisterActivity.this, R.string.unknown_error, Toast.LENGTH_SHORT).show();
-                                Log.e(TAG, "onResponse: errorCode = " + errorCode);
                             }
                         }
 
                     } else {
-                        Log.e(TAG, "Response body is null. (Register Error)");
+                        Logger.e("Response body is null. (Register Error)");
                         Toast.makeText(LoginRegisterActivity.this, R.string.unknown_error, Toast.LENGTH_SHORT).show();
                     }
                 } catch (IOException | JSONException e) {
-                    e.printStackTrace();
-
-
+                    Logger.e("IOException or JSONException caught: " + e.getMessage());
                 }
                 progressDialog.dismiss();
             }
@@ -505,7 +506,7 @@ public class LoginRegisterActivity extends AppCompatActivity {
             public void onFailure(Call<ResponseBody> call, Throwable t) {
                 progressDialog.dismiss();
 
-                Log.e(TAG, "Register onFailure: " + t.getMessage());
+                Logger.e("Register onFailure: " + t.getMessage());
 
                 Toast.makeText(LoginRegisterActivity.this, R.string.unknown_error, Toast.LENGTH_SHORT).show();
             }
@@ -525,6 +526,9 @@ public class LoginRegisterActivity extends AppCompatActivity {
         String password = mPasswordEditText.getText().toString();
         Call<ResponseBody> login = userApi.login(email, password);
 
+        Logger.d("getHomePageBooks() API called with parameters: \n" +
+                     "\temail=" + email + ", \n\tpassword=" + password);
+
         login.enqueue(new Callback<ResponseBody>() {
             @Override
             public void onResponse(Call<ResponseBody> call, final Response<ResponseBody> response) {
@@ -534,11 +538,14 @@ public class LoginRegisterActivity extends AppCompatActivity {
 
                         String json = response.body().string();
 
+                        Logger.json(json);
+
                         JSONObject responseObject = new JSONObject(json);
                         boolean error = responseObject.getBoolean("error");
 
                         if (!error) {
                             if (!responseObject.isNull("userLoginModel")) {
+
                                 User.Details userDetails = User.jsonObjectToUserDetails(responseObject.getJSONObject("userLoginModel"));
 
                                 SessionManager.login(LoginRegisterActivity.this, userDetails);
@@ -559,20 +566,20 @@ public class LoginRegisterActivity extends AppCompatActivity {
                                         }
                                     }
                                 } else {
-                                    Log.e(TAG, "lovedGenres is empty. (Login Error)");
+                                    Logger.d("lovedGenres is empty. (Login Error)");
                                     Toast.makeText(LoginRegisterActivity.this, R.string.unknown_error, Toast.LENGTH_SHORT).show();
                                 }
 
                                 if (userDetails != null) {
-                                    Log.i(TAG, userDetails.getUser().getName() + " Logged in!");
+                                    Logger.d("User logged in: " + userDetails);
                                 } else {
-                                    Log.e(TAG, "Error occured while Login.");
+                                    Logger.d("Error occured while logging in.");
                                 }
 
                                 setResult(RESULT_LOGGED_IN);
                                 finish();
                             } else {
-                                Log.e(TAG, "userLoginModel is empty. (Login Error)");
+                                Logger.e("userLoginModel is empty. (Login Error)");
                                 Toast.makeText(LoginRegisterActivity.this, R.string.unknown_error, Toast.LENGTH_SHORT).show();
                             }
 
@@ -580,24 +587,20 @@ public class LoginRegisterActivity extends AppCompatActivity {
 
                             int errorCode = responseObject.getInt("errorCode");
 
-                            if (errorCode == ErrorCodes.EMPTY_POST) {
-                                Log.e(TAG, "Post is empty. (Login Error)");
-                            } else if (errorCode == ErrorCodes.MISSING_POST_ELEMENT) {
-                                Log.e(TAG, "Post element missing. (Login Error)");
-                            } else if (errorCode == ErrorCodes.FALSE_COMBINATION) {
-                                Log.w(TAG, "False combination. (Login Warning)");
+                            if (errorCode == ErrorCodes.FALSE_COMBINATION) {
+                                Logger.w("False combination. (Login Warning)");
                                 mPasswordEditText.setError(getString(R.string.false_combination));
-                            } else if (errorCode == ErrorCodes.UNKNOWN) {
+                            } else {
+                                Logger.e("Error true in response: errorCode = " + errorCode);
                                 Toast.makeText(LoginRegisterActivity.this, R.string.unknown_error, Toast.LENGTH_SHORT).show();
-                                Log.e(TAG, "onResponse: errorCode = " + errorCode);
                             }
                         }
                     } else {
-                        Log.e(TAG, "Response body is null. (Login Error)");
+                        Logger.e("Response body is null. (Login Error)");
                         Toast.makeText(LoginRegisterActivity.this, R.string.unknown_error, Toast.LENGTH_SHORT).show();
                     }
                 } catch (IOException | JSONException e) {
-                    e.printStackTrace();
+                    Logger.e("IOException or JSONException caught: " + e.getMessage());
 
                     Toast.makeText(LoginRegisterActivity.this, R.string.unknown_error, Toast.LENGTH_SHORT).show();
                 }
@@ -608,7 +611,7 @@ public class LoginRegisterActivity extends AppCompatActivity {
             public void onFailure(Call<ResponseBody> call, Throwable t) {
                 progressDialog.dismiss();
 
-                Log.e(TAG, "Login onFailure: " + t.getMessage());
+                Logger.e("Login onFailure: " + t.getMessage());
 
                 Toast.makeText(LoginRegisterActivity.this, R.string.unknown_error, Toast.LENGTH_SHORT).show();
             }

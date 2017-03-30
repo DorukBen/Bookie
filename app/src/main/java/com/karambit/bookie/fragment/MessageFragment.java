@@ -12,7 +12,6 @@ import android.support.v4.app.Fragment;
 import android.support.v4.content.LocalBroadcastManager;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
-import android.util.Log;
 import android.util.SparseIntArray;
 import android.view.LayoutInflater;
 import android.view.MotionEvent;
@@ -31,7 +30,6 @@ import com.karambit.bookie.helper.pull_refresh_layout.PullRefreshLayout;
 import com.karambit.bookie.model.Message;
 import com.karambit.bookie.model.User;
 import com.karambit.bookie.rest_api.BookieClient;
-import com.karambit.bookie.rest_api.ErrorCodes;
 import com.karambit.bookie.rest_api.UserApi;
 import com.karambit.bookie.service.BookieIntentFilters;
 import com.orhanobut.logger.Logger;
@@ -168,11 +166,11 @@ public class MessageFragment extends Fragment {
                 if (previousSelected == position) {
                     mLastMessageAdapter.setSelectedPosition(-1);
 
-                    Log.i(TAG, "Message user unselected at position " + position + ": " + message.getOppositeUser(currentUser).getName());
+                    Logger.d("Message user unselected at position " + position + ": " + message.getOppositeUser(currentUser).getName());
                 } else {
                     mLastMessageAdapter.setSelectedPosition(position);
 
-                    Log.i(TAG, "Message user selected at position " + position + ": " + message.getOppositeUser(currentUser).getName());
+                    Logger.d("Message user selected at position " + position + ": " + message.getOppositeUser(currentUser).getName());
                 }
 
                 mLastMessageAdapter.notifyItemChanged(position);
@@ -202,7 +200,7 @@ public class MessageFragment extends Fragment {
 
                                 deleteMessageUserOnServer(oppositeUser);
 
-                                Log.i(TAG, "Message user deleted: " + oppositeUser.getName());
+                                Logger.d("Message user deleted: " + oppositeUser.getName());
                             }
                         })
                         .setNegativeButton(android.R.string.cancel, new DialogInterface.OnClickListener() {
@@ -295,8 +293,8 @@ public class MessageFragment extends Fragment {
 
         Call<ResponseBody> fetchMessages = userApi.fetchMessages(email, password, lastMessageUserIds);
 
-        Logger.i("fetchMessages() API called with parameters: \n" +
-                     "\temail=" + email + ", \n\tpassword=" + password + ", \n\tlastMessageUserIds=" + lastMessageUserIds);
+        Logger.d("fetchMessages() API called with parameters: \n" +
+                     "\temail=" + email + ", \n\tpassword=" + password + ", \n\tuserIDs=" + lastMessageUserIds);
 
         fetchMessages.enqueue(new Callback<ResponseBody>() {
             @Override
@@ -306,6 +304,8 @@ public class MessageFragment extends Fragment {
                     if (response != null){
                         if (response.body() != null){
                             String json = response.body().string();
+
+                            Logger.json(json);
 
                             JSONObject responseObject = new JSONObject(json);
                             boolean error = responseObject.getBoolean("error");
@@ -323,47 +323,36 @@ public class MessageFragment extends Fragment {
 
                                 isFirstFetch = false;
 
-                                Logger.i("Messages fetched from server:\n\nLast Messages:\n" + mLastMessages);
+                                Logger.d("Messages fetched from server:\n\nLast Messages:\n\n" + mLastMessages);
 
                             } else {
-
                                 int errorCode = responseObject.getInt("errorCode");
 
-                                if (errorCode == ErrorCodes.EMPTY_POST){
-                                    Log.e(TAG, "Post is empty. (Message Fragment Error)");
-                                }else if (errorCode == ErrorCodes.MISSING_POST_ELEMENT){
-                                    Log.e(TAG, "Post element missing. (Message Fragment Error)");
-                                }else if (errorCode == ErrorCodes.INVALID_REQUEST){
-                                    Log.e(TAG, "Invalid request. (Message Fragment Error)");
-                                }else if (errorCode == ErrorCodes.INVALID_EMAIL){
-                                    Log.e(TAG, "Invalid email. (Message Fragment Error)");
-                                }else if (errorCode == ErrorCodes.UNKNOWN){
-                                    Log.e(TAG, "onResponse: errorCode = " + errorCode);
-                                }
+                                Logger.e("Error true in response. errorCode = " + errorCode);
                             }
                         }else{
-                            Log.e(TAG, "Response body is null. (Message Fragment Error)");
+                            Logger.e("Response body is null. (Message Fragment Error)");
                         }
                     }else{
-                        Log.e(TAG, "Response object is null. (Message Fragment Error)");
+                        Logger.e("Response object is null. (Message Fragment Error)");
                     }
                 } catch (IOException | JSONException e) {
                     e.printStackTrace();
 
-                    Log.e(TAG, "onResponse: errorCode = " + e.getMessage());
+                    Logger.e("JSONException or IOException caught: " + e.getMessage());
                 }
                 mPullRefreshLayout.setRefreshing(false);
             }
             @Override
             public void onFailure(Call<ResponseBody> call, Throwable t) {
-                Log.e(TAG, "Message Fragment onFailure: " + t.getMessage());
+                Logger.e("fetchMessages() Failure: " + t.getMessage());
 
                 mPullRefreshLayout.setRefreshing(false);
             }
         });
     }
 
-    private void deleteMessageUserOnServer(User oppositeUser) {
+    private void deleteMessageUserOnServer(final User oppositeUser) {
         int userId = oppositeUser.getID();
 
         final UserApi userApi = BookieClient.getClient().create(UserApi.class);
@@ -374,6 +363,9 @@ public class MessageFragment extends Fragment {
         String password = currentUserDetails.getPassword();
         final Call<ResponseBody> deleteConversation = userApi.deleteConversation(email, password, userId);
 
+        Logger.d("deleteConversation() API called with parameters: \n" +
+                     "\temail=" + email + ", \n\tpassword=" + password + ", \n\tuserID=" + userId);
+
         deleteConversation.enqueue(new Callback<ResponseBody>() {
             @Override
             public void onResponse(Call<ResponseBody> call, Response<ResponseBody> response) {
@@ -383,34 +375,26 @@ public class MessageFragment extends Fragment {
                         if (response.body() != null){
                             String json = response.body().string();
 
+                            Logger.json(json);
+
                             JSONObject responseObject = new JSONObject(json);
                             boolean error = responseObject.getBoolean("error");
 
                             if (!error) {
-                                Log.i(TAG, "Conversation deleted from server!");
+                                Logger.d("Conversation with " + oppositeUser.getName() + " deleted from server!");
                             } else {
                                 int errorCode = responseObject.getInt("errorCode");
 
-                                if (errorCode == ErrorCodes.EMPTY_POST){
-                                    Log.e(TAG, "Post is empty. (Message Fragment Error)");
-                                }else if (errorCode == ErrorCodes.MISSING_POST_ELEMENT){
-                                    Log.e(TAG, "Post element missing. (Message Fragment Error)");
-                                }else if (errorCode == ErrorCodes.INVALID_EMAIL){
-                                    Log.e(TAG, "Invalid email. (Message Fragment Error)");
-                                }else if (errorCode == ErrorCodes.INVALID_REQUEST){
-                                    Log.e(TAG, "Invalid request. (Message Fragment Error)");
-                                }else if (errorCode == ErrorCodes.UNKNOWN){
-                                    Log.e(TAG, "onResponse: errorCode = " + errorCode);
-                                }
+                                Logger.e("Error true in response. errorCode = " + errorCode);
                             }
                         }else{
-                            Log.e(TAG, "Response body is null. (Message Fragment Error)");
+                            Logger.e("Response body is null. (Message Fragment Error)");
                         }
                     }else {
-                        Log.e(TAG, "Response object is null. (Message Fragment Error)");
+                        Logger.e("Response object is null. (Message Fragment Error)");
                     }
                 } catch (IOException | JSONException e) {
-                    e.printStackTrace();
+                    Logger.e("JSONException or IOException caught: " + e.getMessage());
                 }
 
                 mPullRefreshLayout.setRefreshing(false);
@@ -420,7 +404,7 @@ public class MessageFragment extends Fragment {
             public void onFailure(Call<ResponseBody> call, Throwable t) {
 
                 mPullRefreshLayout.setRefreshing(false);
-                Log.e(TAG, "Message Fragment onFailure: " + t.getMessage());
+                Logger.e("deleteConversation() Failure: " + t.getMessage());
             }
         });
     }
@@ -493,7 +477,7 @@ public class MessageFragment extends Fragment {
 
                 mDBManager.getMessageDataSource().deleteConversation(oppositeUser);
 
-                Log.i(TAG, "All messages deleted in ConversationActivity with " + oppositeUser.getName() + " (message user deleted)");
+                Logger.d("All messages deleted in ConversationActivity with " + oppositeUser.getName() + " (message user deleted)");
             }
         }
     }
@@ -566,7 +550,7 @@ public class MessageFragment extends Fragment {
         for (Message message : mLastMessages) {
             if (message.getID() == messageID) {
 
-                Log.i(TAG, "Message state changed to " + state + " from " + message.getState());
+                Logger.d("Message state changed to " + state + " from " + message.getState());
 
                 message.setState(state);
                 mLastMessageAdapter.notifyItemChanged(mLastMessages.indexOf(message));
@@ -591,6 +575,6 @@ public class MessageFragment extends Fragment {
         mLastMessageAdapter.setSelectedPosition(-1);
         mLastMessageAdapter.notifyItemChanged(tempIndex);
 
-        Log.i(TAG, "Message users unselected");
+        Logger.d("Message users unselected");
     }
 }

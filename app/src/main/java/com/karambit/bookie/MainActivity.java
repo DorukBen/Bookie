@@ -43,6 +43,7 @@ import com.karambit.bookie.rest_api.ErrorCodes;
 import com.karambit.bookie.rest_api.FcmApi;
 import com.karambit.bookie.service.BookieIntentFilters;
 import com.karambit.bookie.service.FcmPrefManager;
+import com.orhanobut.logger.Logger;
 
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -352,12 +353,12 @@ public class MainActivity extends AppCompatActivity implements TabHost.OnTabChan
                     mTabHost.setCurrentTab(HomeFragment.TAB_INDEX);
                     mViewPager.setCurrentItem(HomeFragment.TAB_INDEX);
 
-                    Log.d(TAG,"Result ok while returning to MainActivity from LoginRegisterActivity");
+                    Logger.d("Result ok while returning to MainActivity from LoginRegisterActivity");
                 }else if(resultCode == Activity.RESULT_CANCELED){
-                    Log.d(TAG,"Result canceled while returning to MainActivity from LoginRegisterActivity");
+                    Logger.d("Result canceled while returning to MainActivity from LoginRegisterActivity");
                     finish();
                 }else{
-                    Log.e(TAG, "An error occurred while returning to MainActivity from LoginRegisterActivity");
+                    Logger.e("An error occurred while returning to MainActivity from LoginRegisterActivity");
                 }
                 break;
             case REQUEST_CODE_CURRENT_USER_PROFILE_SETTINGS_ACTIVITY:
@@ -534,36 +535,26 @@ public class MainActivity extends AppCompatActivity implements TabHost.OnTabChan
                                 FcmPrefManager fcmPrefManager = new FcmPrefManager(MainActivity.this);
                                 fcmPrefManager.setUploadedToServer(true);
 
-                                Log.i(TAG, "Token sent completed successfuly");
+                                Logger.d("Token sent completed successfuly");
                             } else {
                                 int errorCode = responseObject.getInt("errorCode");
 
-                                if (errorCode == ErrorCodes.EMPTY_POST){
-                                    Log.e(TAG, "Post is empty. (Book Page Error)");
-                                }else if (errorCode == ErrorCodes.MISSING_POST_ELEMENT){
-                                    Log.e(TAG, "Post element missing. (Book Page Error)");
-                                }else if (errorCode == ErrorCodes.INVALID_REQUEST){
-                                    Log.e(TAG, "Invalid request. (Book Page Error)");
-                                }else if (errorCode == ErrorCodes.INVALID_EMAIL){
-                                    Log.e(TAG, "Invalid email. (Book Page Error)");
-                                }else if (errorCode == ErrorCodes.UNKNOWN){
-                                    Log.e(TAG, "onResponse: errorCode = " + errorCode);
-                                }
+                                Logger.e("Error true in response: errorCode = " + errorCode);
                             }
                         }else{
-                            Log.e(TAG, "Response body is null. (Book Page Error)");
+                            Logger.e("Response body is null. (Book Page Error)");
                         }
                     }else {
-                        Log.e(TAG, "Response object is null. (Book Page Error)");
+                        Logger.e("Response object is null. (Book Page Error)");
                     }
                 } catch (IOException | JSONException e) {
-                    e.printStackTrace();
+                    Logger.e("IOException or JSONException caught: " + e.getMessage());
                 }
             }
 
             @Override
             public void onFailure(Call<ResponseBody> call, Throwable t) {
-                Log.e(TAG, "Book Page onFailure: " + t.getMessage());
+                Logger.e("Book Page onFailure: " + t.getMessage());
                 sendRegistrationToServer(token);
             }
         });

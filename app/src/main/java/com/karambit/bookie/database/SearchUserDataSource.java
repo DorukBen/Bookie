@@ -3,10 +3,10 @@ package com.karambit.bookie.database;
 import android.content.ContentValues;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
-import android.util.Log;
 
 import com.google.android.gms.maps.model.LatLng;
 import com.karambit.bookie.model.User;
+import com.orhanobut.logger.Logger;
 
 import java.util.ArrayList;
 
@@ -67,7 +67,7 @@ public class SearchUserDataSource {
 
             result = mSqLiteDatabase.insert(SEARCH_USER_TABLE_NAME, null, contentValues) > 0;
         }finally {
-            Log.i(TAG, "New User insertion successful");
+            Logger.d("New User insertion successful");
         }
         return result;
     }
@@ -143,7 +143,7 @@ public class SearchUserDataSource {
         try{
             mSqLiteDatabase.delete(SEARCH_USER_TABLE_NAME, null, null);
         }finally {
-            Log.i(TAG, "Users deleted from database");
+            Logger.d("Users deleted from database");
         }
     }
 }

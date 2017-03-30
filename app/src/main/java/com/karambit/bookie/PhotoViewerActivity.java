@@ -17,12 +17,12 @@ import android.graphics.RectF;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
 import android.os.Build;
+import android.os.Bundle;
 import android.os.Environment;
 import android.support.annotation.NonNull;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
-import android.os.Bundle;
 import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.MotionEvent;
@@ -43,6 +43,7 @@ import com.karambit.bookie.helper.SessionManager;
 import com.karambit.bookie.helper.UploadFileTask;
 import com.karambit.bookie.model.User;
 import com.karambit.bookie.rest_api.BookieClient;
+import com.orhanobut.logger.Logger;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -139,7 +140,7 @@ public class PhotoViewerActivity extends AppCompatActivity implements View.OnTou
                     if (checkPermissions()) {
                         startActivityForResult(ImagePicker.getPickImageIntent(getBaseContext()), REQUEST_CODE_SELECT_IMAGE);
 
-                        Log.i(TAG, "Permissions OK!");
+                        Logger.d("Permissions OK!");
                     } else {
                         String[] permissions = {
                                 android.Manifest.permission.WRITE_EXTERNAL_STORAGE,
@@ -149,7 +150,7 @@ public class PhotoViewerActivity extends AppCompatActivity implements View.OnTou
 
                         ActivityCompat.requestPermissions(PhotoViewerActivity.this, permissions, REQUEST_CODE_CUSTOM_PERMISSIONS);
 
-                        Log.i(TAG, "Permissions NOT OK!");
+                        Logger.d("Permissions NOT OK!");
                     }
                 }
             });
@@ -534,17 +535,20 @@ public class PhotoViewerActivity extends AppCompatActivity implements View.OnTou
         String imageUrlString = BookieClient.BASE_URL + UPLOAD_USER_IMAGE_URL + serverArgsString;
 
 
+        Logger.d("UploadFileTask called with parameters:\n" +
+                     "\tfilePath=" + path + "\n\tURLString=" + imageUrlString + "\n\tfileName=" + name);
+
         final UploadFileTask uftImage = new UploadFileTask(path, imageUrlString, name);
 
         uftImage.setUploadProgressListener(new UploadFileTask.UploadProgressChangedListener() {
             @Override
             public void onProgressChanged(int progress) {
-                Log.i(TAG, "Image upload progress => " + progress + " / 100");
+                Logger.d("Image upload progress => " + progress + " / 100");
             }
 
             @Override
             public void onProgressCompleted() {
-                Log.w(TAG, "Image upload is OK");
+                Logger.d("Image upload is OK");
                 mProgressDialog.dismiss();
 
                 setResult(RESULT_PROFILE_PICTURE_UPDATED);
@@ -554,7 +558,7 @@ public class PhotoViewerActivity extends AppCompatActivity implements View.OnTou
             @Override
             public void onProgressError() {
                 mProgressDialog.dismiss();
-                Log.e(TAG, "Image upload ERROR");
+                Logger.e("Image upload ERROR");
                 Toast.makeText(PhotoViewerActivity.this, R.string.unknown_error, Toast.LENGTH_SHORT).show();
             }
         });
@@ -584,18 +588,20 @@ public class PhotoViewerActivity extends AppCompatActivity implements View.OnTou
 
         String imageUrlString = BookieClient.BASE_URL + UPLOAD_BOOK_IMAGE_URL + serverArgsString;
 
+        Logger.d("UploadFileTask called with parameters:\n" +
+                     "\tfilePath=" + path + "\n\tURLString=" + imageUrlString + "\n\tfileName=" + name);
 
         final UploadFileTask uftImage = new UploadFileTask(path, imageUrlString, name);
 
         uftImage.setUploadProgressListener(new UploadFileTask.UploadProgressChangedListener() {
             @Override
             public void onProgressChanged(int progress) {
-                Log.i(TAG, "Image upload progress => " + progress + " / 100");
+                Logger.d("Image upload progress => " + progress + " / 100");
             }
 
             @Override
             public void onProgressCompleted() {
-                Log.w(TAG, "Image upload is OK");
+                Logger.d("Image upload is OK");
                 mProgressDialog.dismiss();
 
                 setResult(RESULT_PROFILE_PICTURE_UPDATED);
@@ -605,7 +611,7 @@ public class PhotoViewerActivity extends AppCompatActivity implements View.OnTou
             @Override
             public void onProgressError() {
                 mProgressDialog.dismiss();
-                Log.e(TAG, "Image upload ERROR");
+                Logger.e("Image upload ERROR");
                 Toast.makeText(PhotoViewerActivity.this, R.string.unknown_error, Toast.LENGTH_SHORT).show();
             }
         });

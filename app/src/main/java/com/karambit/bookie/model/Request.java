@@ -9,8 +9,10 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.sql.Timestamp;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.Locale;
 
 /**
  * Created by orcan on 3/26/17.
@@ -167,11 +169,16 @@ public class Request implements Book.BookProcess, Parcelable, Comparable<Request
 
     @Override
     public String toString() {
-        return mBook + ".Request{" +
-            "mType=" + mType +
-            ", mRequester=" + mRequester.getName() +
-            ", mResponder=" + mResponder.getName() +
-            ", mCreatedAt=" + mCreatedAt.getTimeInMillis() + '}';
+
+        SimpleDateFormat dateFormat = new SimpleDateFormat("dd/MM/yyyy hh:mm:ss a", Locale.getDefault());
+        String createdAt = dateFormat.format(mCreatedAt.getTime());
+
+        return mBook.toShortString() + ".Request{" +
+            "\n\tmType=" + mType +
+            "\n\tmRequester=" + mRequester.getName() +
+            "\n\tmResponder=" + mResponder.getName() +
+            "\n\tmCreatedAt=" + createdAt +
+            "\n}";
     }
 
     @Override

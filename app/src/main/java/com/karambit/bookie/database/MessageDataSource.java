@@ -3,10 +3,10 @@ package com.karambit.bookie.database;
 import android.content.ContentValues;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
-import android.util.Log;
 
 import com.karambit.bookie.model.Message;
 import com.karambit.bookie.model.User;
+import com.orhanobut.logger.Logger;
 
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -106,7 +106,7 @@ public class MessageDataSource {
 
             result = mSqLiteDatabase.insert(MESSAGE_TABLE_NAME, null, contentValues) < 0;
         }finally {
-            Log.i(TAG, "New message insertion successful");
+            Logger.d("New message insertion successful");
         }
 
         return result;
@@ -128,7 +128,7 @@ public class MessageDataSource {
 
             mSqLiteDatabase.update(MESSAGE_TABLE_NAME, cv, MESSAGE_COLUMN_ID + "=" + messageId, null);
         }finally {
-            Log.i(TAG, "Message state updated");
+            Logger.d("Message state updated");
         }
     }
 
@@ -145,7 +145,7 @@ public class MessageDataSource {
 
             mSqLiteDatabase.update(MESSAGE_TABLE_NAME, cv, MESSAGE_COLUMN_ID + "=" + message.getID(), null);
         }finally {
-            Log.i(TAG, "Message state updated");
+            Logger.d("Message state updated");
         }
     }
 
@@ -162,7 +162,7 @@ public class MessageDataSource {
 
             mSqLiteDatabase.update(MESSAGE_TABLE_NAME, cv, MESSAGE_COLUMN_ID + "=" + oldMessageId, null);
         }finally {
-            Log.i(TAG, "Message id updated");
+            Logger.d("Message id updated");
         }
     }
 
@@ -234,7 +234,7 @@ public class MessageDataSource {
             mSqLiteDatabase.update(MESSAGE_TABLE_NAME, cv, MESSAGE_COLUMN_FROM_USER_ID + "=" + otherUserID + " OR " +
                     MESSAGE_COLUMN_TO_USER_ID + " = " + otherUserID, null);
         }finally {
-            Log.i(TAG, "Users conversation messages deleted from database");
+            Logger.d("Users conversation messages deleted from database");
         }
     }
 
@@ -254,7 +254,7 @@ public class MessageDataSource {
             mSqLiteDatabase.update(MESSAGE_TABLE_NAME, cv, MESSAGE_COLUMN_FROM_USER_ID + "=" + otherUser.getID() + " OR " +
                     MESSAGE_COLUMN_TO_USER_ID + " = " + otherUser.getID(), null);
         }finally {
-            Log.i(TAG, "Users conversation messages deleted from database");
+            Logger.d("Users conversation messages deleted from database");
         }
     }
 
@@ -425,7 +425,7 @@ public class MessageDataSource {
 
             mSqLiteDatabase.update(MESSAGE_TABLE_NAME, cv, MESSAGE_COLUMN_ID + "=" + messageID, null);
         }finally {
-            Log.i(TAG, "Message deleted from database");
+            Logger.d("Message deleted from database");
         }
     }
 
@@ -442,7 +442,7 @@ public class MessageDataSource {
 
             mSqLiteDatabase.update(MESSAGE_TABLE_NAME, cv, MESSAGE_COLUMN_ID + "=" + message.getID(), null);
         }finally {
-            Log.i(TAG, "Message deleted from database");
+            Logger.d("Message deleted from database");
         }
     }
 
@@ -455,7 +455,7 @@ public class MessageDataSource {
             mSqLiteDatabase.delete(MESSAGE_TABLE_NAME, null, null);
 
         } finally {
-            Log.i(TAG, "All Message Users and Messages deleted from database");
+            Logger.d("All Message Users and Messages deleted from database");
         }
 
     }

@@ -12,7 +12,6 @@ import android.text.Spannable;
 import android.text.SpannableString;
 import android.text.TextWatcher;
 import android.text.style.AbsoluteSizeSpan;
-import android.util.Log;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewTreeObserver;
@@ -32,6 +31,7 @@ import com.karambit.bookie.model.User;
 import com.karambit.bookie.rest_api.BookieClient;
 import com.karambit.bookie.rest_api.ErrorCodes;
 import com.karambit.bookie.rest_api.UserApi;
+import com.orhanobut.logger.Logger;
 
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -306,6 +306,9 @@ public class OtherUserProfileSettingsActivity extends AppCompatActivity {
         String password = SessionManager.getCurrentUserDetails(this).getPassword();
         Call<ResponseBody> uploadUserReport = userApi.uploadUserReport(email, password, mUser.getID(), reportCode, reportInfo);
 
+        Logger.d("uploadUserReport() API called with parameters: \n" +
+                     "\temail=" + email + ", \n\tpassword=" + password + ", \n\tuserID=" + mUser.getID() +
+                     ", \n\treportCode=" + reportCode + ", \n\treportInfo=" + reportInfo);
 
         uploadUserReport.enqueue(new Callback<ResponseBody>() {
             @Override
@@ -316,40 +319,35 @@ public class OtherUserProfileSettingsActivity extends AppCompatActivity {
                         if (response.body() != null){
                             String json = response.body().string();
 
+                            Logger.json(json);
+
                             JSONObject responseObject = new JSONObject(json);
                             boolean error = responseObject.getBoolean("error");
 
                             if (!error) {
+                                Logger.d("Report uploaded succesfully");
                                 Toast.makeText(OtherUserProfileSettingsActivity.this, getString(R.string.thaks_for_your_report), Toast.LENGTH_SHORT).show();
                             } else {
                                 int errorCode = responseObject.getInt("errorCode");
 
-                                if (errorCode == ErrorCodes.EMPTY_POST){
-                                    Log.e(TAG, "Post is empty. (Other User Settings Page Error)");
-                                }else if (errorCode == ErrorCodes.MISSING_POST_ELEMENT){
-                                    Log.e(TAG, "Post element missing. (Other User Settings Page Error)");
-                                }else if (errorCode == ErrorCodes.INVALID_EMAIL){
-                                    Log.e(TAG, "Invalid email. (Other User Settings Page Error)");
-                                }else if (errorCode == ErrorCodes.INVALID_REQUEST){
-                                    Log.e(TAG, "Invalid request. (Other User Settings Page Error)");
-                                }else if (errorCode == ErrorCodes.USER_NOT_VERIFIED){
-                                    Log.e(TAG, "User not valid. (Other User Settings Page Error)");
-                                }else if (errorCode == ErrorCodes.UNKNOWN){
-                                    Log.e(TAG, "onResponse: errorCode = " + errorCode);
+                                if (errorCode == ErrorCodes.USER_NOT_VERIFIED){
+                                    Logger.e("User not valid. (Other User Settings Page Error)");
+                                }else {
+                                    Logger.e("Error true in response: errorCode = " + errorCode);
                                 }
 
                                 Toast.makeText(OtherUserProfileSettingsActivity.this, getString(R.string.unknown_error), Toast.LENGTH_SHORT).show();
                             }
                         }else{
-                            Log.e(TAG, "Response body is null. (Other User Settings Page Error)");
+                            Logger.e("Response body is null. (Other User Settings Page Error)");
                             Toast.makeText(OtherUserProfileSettingsActivity.this, getString(R.string.unknown_error), Toast.LENGTH_SHORT).show();
                         }
                     }else {
-                        Log.e(TAG, "Response object is null. (Other User Settings Page Error)");
+                        Logger.e("Response object is null. (Other User Settings Page Error)");
                         Toast.makeText(OtherUserProfileSettingsActivity.this, getString(R.string.unknown_error), Toast.LENGTH_SHORT).show();
                     }
                 } catch (IOException | JSONException e) {
-                    e.printStackTrace();
+                    Logger.e("IOException or JSONException caught: " + e.getMessage());
 
                     Toast.makeText(OtherUserProfileSettingsActivity.this, getString(R.string.unknown_error), Toast.LENGTH_SHORT).show();
                 }
@@ -360,7 +358,7 @@ public class OtherUserProfileSettingsActivity extends AppCompatActivity {
             public void onFailure(Call<ResponseBody> call, Throwable t) {
                 progressDialog.dismiss();
                 Toast.makeText(OtherUserProfileSettingsActivity.this, getString(R.string.unknown_error), Toast.LENGTH_SHORT).show();
-                Log.e(TAG, "Other User Settings onFailure: " + t.getMessage());
+                Logger.e("UpladUserReport Failure: " + t.getMessage());
             }
         });
     }
@@ -372,6 +370,8 @@ public class OtherUserProfileSettingsActivity extends AppCompatActivity {
         String password = SessionManager.getCurrentUserDetails(this).getPassword();
         Call<ResponseBody> uploadUserBlock = userApi.uploadUserBlock(email, password, userId);
 
+        Logger.d("getHomePageBooks() API called with parameters: \n" +
+                     "\temail=" + email + ", \n\tpassword=" + password + ", \n\tuserID=" + userId);
 
         uploadUserBlock.enqueue(new Callback<ResponseBody>() {
             @Override
@@ -382,40 +382,33 @@ public class OtherUserProfileSettingsActivity extends AppCompatActivity {
                         if (response.body() != null){
                             String json = response.body().string();
 
+                            Logger.json(json);
+
                             JSONObject responseObject = new JSONObject(json);
                             boolean error = responseObject.getBoolean("error");
 
                             if (!error) {
+                                Logger.d("User block uploaded successfully");
                                 Toast.makeText(OtherUserProfileSettingsActivity.this, getString(R.string.user_blocked, mUser.getName()), Toast.LENGTH_SHORT).show();
                             } else {
                                 int errorCode = responseObject.getInt("errorCode");
 
-                                if (errorCode == ErrorCodes.EMPTY_POST){
-                                    Log.e(TAG, "Post is empty. (Other User Settings Page Error)");
-                                }else if (errorCode == ErrorCodes.MISSING_POST_ELEMENT){
-                                    Log.e(TAG, "Post element missing. (Other User Settings Page Error)");
-                                }else if (errorCode == ErrorCodes.INVALID_EMAIL){
-                                    Log.e(TAG, "Invalid email. (Other User Settings Page Error)");
-                                }else if (errorCode == ErrorCodes.INVALID_REQUEST){
-                                    Log.e(TAG, "Invalid request. (Other User Settings Page Error)");
-                                }else if (errorCode == ErrorCodes.UNKNOWN){
-                                    Log.e(TAG, "onResponse: errorCode = " + errorCode);
-                                }
+                                Logger.e("Error true in response: errorCode = " + errorCode);
 
                                 Toast.makeText(OtherUserProfileSettingsActivity.this, getString(R.string.unknown_error), Toast.LENGTH_SHORT).show();
                             }
                         }else{
-                            Log.e(TAG, "Response body is null. (Other User Settings Page Error)");
+                            Logger.e("Response body is null. (Other User Settings Page Error)");
                             Toast.makeText(OtherUserProfileSettingsActivity.this, getString(R.string.unknown_error), Toast.LENGTH_SHORT).show();
                         }
                     }else {
-                        Log.e(TAG, "Response object is null. (Other User Settings Page Error)");
+                        Logger.e("Response object is null. (Other User Settings Page Error)");
                         Toast.makeText(OtherUserProfileSettingsActivity.this, getString(R.string.unknown_error), Toast.LENGTH_SHORT).show();
                     }
                 } catch (IOException | JSONException e) {
                     e.printStackTrace();
 
-                    Toast.makeText(OtherUserProfileSettingsActivity.this, getString(R.string.unknown_error), Toast.LENGTH_SHORT).show();
+                    Logger.e("IOException or JSONException caught: " + e.getMessage());
                 }
                 progressDialog.dismiss();
             }
@@ -424,7 +417,7 @@ public class OtherUserProfileSettingsActivity extends AppCompatActivity {
             public void onFailure(Call<ResponseBody> call, Throwable t) {
                 progressDialog.dismiss();
                 Toast.makeText(OtherUserProfileSettingsActivity.this, getString(R.string.unknown_error), Toast.LENGTH_SHORT).show();
-                Log.e(TAG, "Other User Settings onFailure: " + t.getMessage());
+                Logger.e("uploadBlock Failure: " + t.getMessage());
             }
         });
     }

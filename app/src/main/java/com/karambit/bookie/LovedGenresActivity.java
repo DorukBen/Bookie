@@ -9,7 +9,6 @@ import android.support.v7.widget.RecyclerView;
 import android.text.Spannable;
 import android.text.SpannableString;
 import android.text.style.AbsoluteSizeSpan;
-import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.widget.Toast;
@@ -21,8 +20,8 @@ import com.karambit.bookie.helper.SessionManager;
 import com.karambit.bookie.helper.TypefaceSpan;
 import com.karambit.bookie.model.User;
 import com.karambit.bookie.rest_api.BookieClient;
-import com.karambit.bookie.rest_api.ErrorCodes;
 import com.karambit.bookie.rest_api.UserApi;
+import com.orhanobut.logger.Logger;
 
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -128,7 +127,7 @@ public class LovedGenresActivity extends AppCompatActivity {
             }
         }).start();
 
-        Log.d(TAG, "Inserting loved genres to local database...");
+        Logger.d("Inserting loved genres to local database...");
     }
 
     private void postToServer(Integer[] selectedGenreCodes) {
@@ -155,6 +154,9 @@ public class LovedGenresActivity extends AppCompatActivity {
 
         Call<ResponseBody> setLovedGenres = userApi.setLovedGenres(email, password, lovedGenreCodes);
 
+        Logger.d("setLovedGenres() API called with parameters: \n" +
+                     "\temail=" + email + ", \n\tpassword=" + password + ", \n\tgenreCodes=" + lovedGenreCodes);
+
         setLovedGenres.enqueue(new Callback<ResponseBody>() {
             @Override
             public void onResponse(Call<ResponseBody> call, Response<ResponseBody> response) {
@@ -163,6 +165,8 @@ public class LovedGenresActivity extends AppCompatActivity {
                     if (response != null){
                         if (response.body() != null){
                             String json = response.body().string();
+
+                            Logger.json(json);
 
                             JSONObject responseObject = new JSONObject(json);
                             boolean error = responseObject.getBoolean("error");
@@ -181,34 +185,24 @@ public class LovedGenresActivity extends AppCompatActivity {
 
                                 int errorCode = responseObject.getInt("errorCode");
 
-                                if (errorCode == ErrorCodes.EMPTY_POST){
-                                    Log.e(TAG, "Post is empty. (Loved Genres Error)");
-                                }else if (errorCode == ErrorCodes.MISSING_POST_ELEMENT){
-                                    Log.e(TAG, "Post element missing. (Loved Genres Error)");
-                                }else if (errorCode == ErrorCodes.INVALID_REQUEST){
-                                    Log.e(TAG, "Invalid request. (Loved Genres Error)");
-                                }else if (errorCode == ErrorCodes.INVALID_EMAIL){
-                                    Log.e(TAG, "Invalid email. (Loved Genres Error)");
-                                }else if (errorCode == ErrorCodes.UNKNOWN){
-                                    Log.e(TAG, "onResponse: errorCode = " + errorCode);
-                                }
+                                Logger.e("Error true in response: errorCode = " + errorCode);
 
                                 mProgressDialog.dismiss();
                                 Toast.makeText(LovedGenresActivity.this, R.string.unknown_error, Toast.LENGTH_SHORT).show();
 
                             }
                         }else{
-                            Log.e(TAG, "Response body is null. (Loved Genres Error)");
+                            Logger.e("Response body is null. (Loved Genres Error)");
                             mProgressDialog.dismiss();
                             Toast.makeText(LovedGenresActivity.this, R.string.unknown_error, Toast.LENGTH_SHORT).show();
                         }
                     }else{
-                        Log.e(TAG, "Response object is null. (Loved Genres Error)");
+                        Logger.e("Response object is null. (Loved Genres Error)");
                         mProgressDialog.dismiss();
                         Toast.makeText(LovedGenresActivity.this, R.string.unknown_error, Toast.LENGTH_SHORT).show();
                     }
                 } catch (IOException | JSONException e) {
-                    e.printStackTrace();
+                    Logger.e("IOException or JSONException caught: " + e.getMessage());
 
                     mProgressDialog.dismiss();
                     Toast.makeText(LovedGenresActivity.this, R.string.unknown_error, Toast.LENGTH_SHORT).show();
@@ -219,7 +213,7 @@ public class LovedGenresActivity extends AppCompatActivity {
             public void onFailure(Call<ResponseBody> call, Throwable t) {
                 mProgressDialog.dismiss();
 
-                Log.e(TAG, "Loved Genres onFailure: " + t.getMessage());
+                Logger.e("Loved Genres onFailure: " + t.getMessage());
 
                 Toast.makeText(LovedGenresActivity.this, R.string.unknown_error, Toast.LENGTH_SHORT).show();
             }
