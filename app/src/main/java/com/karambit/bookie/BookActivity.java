@@ -784,69 +784,29 @@ public class BookActivity extends AppCompatActivity {
 
                     final User currentUser = SessionManager.getCurrentUser(BookActivity.this);
 
-                    if (mBookTimelineAdapter.getPendingRequestCount() > 0) {
+                    Interaction closeToShare = new Interaction(mBook,
+                                                               currentUser,
+                                                               Interaction.Type.CLOSE_TO_SHARE,
+                                                               Calendar.getInstance());
 
-                        new AlertDialog.Builder(BookActivity.this)
-                            .setMessage(R.string.requests_rejected_prompt)
-                            .setIcon(R.drawable.ic_book_timeline_read_start_stop_36dp)
-                            .setPositiveButton(R.string.reject_all, new OnClickListener() {
-                                @Override
-                                public void onClick(DialogInterface dialog, int which) {
+                    if (mBook.getState() == Book.State.READING) {
 
-                                    Interaction closeToShare = new Interaction(mBook,
-                                                                               currentUser,
-                                                                               Interaction.Type.CLOSE_TO_SHARE,
-                                                                               Calendar.getInstance());
+                        Interaction stopReading = new Interaction(mBook,
+                                                                  currentUser,
+                                                                  Interaction.Type.READ_STOP,
+                                                                  Calendar.getInstance());
 
-                                    if (mBook.getState() == Book.State.READING) {
-
-                                        Interaction stopReading = new Interaction(mBook,
-                                                                                  currentUser,
-                                                                                  Interaction.Type.READ_STOP,
-                                                                                  Calendar.getInstance());
-
-                                        mBookDetails.getBookProcesses().add(stopReading);
-                                    }
-
-                                    mBookDetails.getBookProcesses().add(closeToShare);
-                                    mBookTimelineAdapter.notifyItemRangeChanged(3, mBookDetails.getBookProcesses().size());
-
-                                    mBookDetails.getBook().setState(Book.State.CLOSED_TO_SHARE);
-                                    mBook.setState(Book.State.CLOSED_TO_SHARE);
-                                    mBookTimelineAdapter.notifyItemChanged(1);
-
-                                    bookProcessToServer(closeToShare);
-                                }
-                            })
-                            .setNegativeButton(android.R.string.no, null)
-                            .create().show();
-
-                    } else {
-
-                        Interaction closeToShare = new Interaction(mBook,
-                                                                   currentUser,
-                                                                   Interaction.Type.CLOSE_TO_SHARE,
-                                                                   Calendar.getInstance());
-
-                        if (mBook.getState() == Book.State.READING) {
-
-                            Interaction stopReading = new Interaction(mBook,
-                                                                      currentUser,
-                                                                      Interaction.Type.READ_STOP,
-                                                                      Calendar.getInstance());
-
-                            mBookDetails.getBookProcesses().add(stopReading);
-                        }
-
-                        mBookDetails.getBookProcesses().add(closeToShare);
-                        mBookTimelineAdapter.notifyItemRangeChanged(3, mBookDetails.getBookProcesses().size());
-
-                        mBookDetails.getBook().setState(Book.State.CLOSED_TO_SHARE);
-                        mBook.setState(Book.State.CLOSED_TO_SHARE);
-                        mBookTimelineAdapter.notifyItemChanged(1);
-
-                        bookProcessToServer(closeToShare);
+                        mBookDetails.getBookProcesses().add(stopReading);
                     }
+
+                    mBookDetails.getBookProcesses().add(closeToShare);
+                    mBookTimelineAdapter.notifyItemRangeChanged(3, mBookDetails.getBookProcesses().size());
+
+                    mBookDetails.getBook().setState(Book.State.CLOSED_TO_SHARE);
+                    mBook.setState(Book.State.CLOSED_TO_SHARE);
+                    mBookTimelineAdapter.notifyItemChanged(1);
+
+                    bookProcessToServer(closeToShare);
 
                     dismiss();
                 }

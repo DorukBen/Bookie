@@ -307,4 +307,5 @@
     <string name="new_password_sent_info_short">Your new password sent!</string>
     <string name="new_password_sent_info">Please check your email and activate your new password. You can change your password in your profile settings anytime. Don\'t forget to check your spam folder!</string>
     <string name="notification_empty_state_text">Your notifications will appear here…</string>
+    <string name="sharing_is_closed_for_x">Sharing is closed for %s</string>
 </resources>

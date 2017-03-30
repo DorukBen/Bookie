@@ -484,7 +484,6 @@ public class BookTimelineAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
                         case CLOSED_TO_SHARE:
                             stateCurrentHolder.mStateText.setText(R.string.closed_to_share);
                             stateCurrentHolder.mStateIcon.setImageResource(R.drawable.ic_book_timeline_closed_to_share_36dp);
-                            stateCurrentHolder.mRequestCount.setVisibility(View.GONE);
                             break;
 
                         case ON_ROAD:
@@ -528,7 +527,6 @@ public class BookTimelineAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
                         case CLOSED_TO_SHARE:
                             stateCurrentHolder.mStateText.setText(R.string.closed_to_share);
                             stateCurrentHolder.mStateIcon.setImageResource(R.drawable.ic_book_timeline_closed_to_share_36dp);
-                            stateCurrentHolder.mRequestCount.setVisibility(View.GONE);
                             break;
 
                         case ON_ROAD:
@@ -1394,7 +1392,7 @@ public class BookTimelineAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
 
         Book.State state = mBookDetails.getBook().getState();
 
-        if (state == Book.State.OPENED_TO_SHARE || state == Book.State.READING) {
+        if (state == Book.State.OPENED_TO_SHARE || state == Book.State.READING || state == Book.State.CLOSED_TO_SHARE) {
 
             User currentUser = SessionManager.getCurrentUser(mContext);
             ArrayList<Book.BookProcess> bookProcesses = mBookDetails.getBookProcesses();

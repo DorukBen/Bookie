@@ -205,6 +205,11 @@ public class RequestActivity extends AppCompatActivity {
                     .create()
                     .show();
             }
+
+            @Override
+            public void disabledAcceptRejectClick(Request request) {
+                Toast.makeText(RequestActivity.this, getString(R.string.sharing_is_closed_for_x, mBook.getName()), Toast.LENGTH_SHORT).show();
+            }
         });
 
         mMessageReceiver = new BroadcastReceiver() {
@@ -236,6 +241,8 @@ public class RequestActivity extends AppCompatActivity {
         };
 
         LocalBroadcastManager.getInstance(this).registerReceiver(mMessageReceiver, new IntentFilter(BookieIntentFilters.FCM_INTENT_FILTER_SENT_REQUEST_RECEIVED));
+
+        fetchLocations();
     }
 
     @Override
@@ -253,6 +260,9 @@ public class RequestActivity extends AppCompatActivity {
         String email = currentUserDetails.getEmail();
         String password = currentUserDetails.getPassword();
         final Call<ResponseBody> getBookRequests = bookApi.getBookRequests(email, password, mBook.getID());
+
+        Logger.d("getBookRequests() API called with parameters: \n" +
+                     "\temail=" + email + ", \n\tpassword=" + password + ", \n\tbookID=" + mBook.getID());
 
         getBookRequests.enqueue(new Callback<ResponseBody>() {
             @Override
@@ -520,6 +530,7 @@ public class RequestActivity extends AppCompatActivity {
         new Thread(new Runnable() {
             @Override
             public void run() {
+                mLocations = new Hashtable<>(mRequests.size());
 
                 for (int i = 0; i < mRequests.size(); i++) {
                     final Request r = mRequests.get(i);
@@ -553,10 +564,13 @@ public class RequestActivity extends AppCompatActivity {
                                 if (!TextUtils.isEmpty(locationString)) {
                                     mLocations.put(r, locationString);
 
+                                    final int finalI = i;
                                     runOnUiThread(new Runnable() {
                                         @Override
                                         public void run() {
-                                            mRequestAdapter.notifyItemChanged(mRequests.indexOf(r));
+                                            int adapterRequestPosition = finalI <= mRequestAdapter.getSentRequestCount() ? finalI : finalI - 1; /*SUBTITLE*/
+                                            mRequestAdapter.setLocations(mLocations);
+                                            mRequestAdapter.notifyItemChanged(adapterRequestPosition);
                                         }
                                     });
                                 }
