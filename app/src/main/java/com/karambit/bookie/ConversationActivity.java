@@ -843,7 +843,7 @@ public class ConversationActivity extends AppCompatActivity {
                             boolean error = responseObject.getBoolean("error");
 
                             if (!error) {
-                                Logger.d("Message state uploaded to server");
+                                Logger.d("Message state uploaded to server: " + message.getState());
                             } else {
                                 int errorCode = responseObject.getInt("errorCode");
 

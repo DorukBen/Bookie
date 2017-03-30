@@ -128,7 +128,7 @@ public class MessageDataSource {
 
             mSqLiteDatabase.update(MESSAGE_TABLE_NAME, cv, MESSAGE_COLUMN_ID + "=" + messageId, null);
         }finally {
-            Logger.d("Message state updated");
+            Logger.d("Message state updated to " + state);
         }
     }
 
@@ -145,7 +145,7 @@ public class MessageDataSource {
 
             mSqLiteDatabase.update(MESSAGE_TABLE_NAME, cv, MESSAGE_COLUMN_ID + "=" + message.getID(), null);
         }finally {
-            Logger.d("Message state updated");
+            Logger.d("Message state updated to " + state);
         }
     }
 
@@ -162,7 +162,7 @@ public class MessageDataSource {
 
             mSqLiteDatabase.update(MESSAGE_TABLE_NAME, cv, MESSAGE_COLUMN_ID + "=" + oldMessageId, null);
         }finally {
-            Logger.d("Message id updated");
+            Logger.d("Message id updated from " + oldMessageId + " to " + newMessageId);
         }
     }
 

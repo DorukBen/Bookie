@@ -89,11 +89,12 @@ public class BookieFirebaseMessagingService extends com.google.firebase.messagin
         // [END_EXCLUDE]
 
         // Not getting messages here? See why this may be: https://goo.gl/39bRNJ
-        Logger.d("From: " + remoteMessage.getFrom());
+        Log.d(TAG, "From: " + remoteMessage.getFrom());
 
         // Check if message contains a data payload.
         if (remoteMessage.getData().size() > 0) {
-            Logger.d("Message data payload: " + remoteMessage.getData());
+            Logger.d("Message data payload: ");
+            Logger.json(remoteMessage.getData().toString());
             if (remoteMessage.getData().containsKey("fcmDataType")) {
                 if (Integer.parseInt(remoteMessage.getData().get("fcmDataType")) == FcmDataTypes.FCM_DATA_TYPE_SENT_MESSAGE && SessionManager.isLoggedIn(getApplicationContext())) {
                     if (remoteMessage.getData().containsKey("messageID") && remoteMessage.getData().containsKey("message") && remoteMessage.getData().containsKey("sender")) {
@@ -548,6 +549,8 @@ public class BookieFirebaseMessagingService extends com.google.firebase.messagin
                             boolean error = responseObject.getBoolean("error");
 
                             if (!error) {
+
+                                Logger.d("Message state uploaded successfully");
 
                             } else {
                                 int errorCode = responseObject.getInt("errorCode");
