@@ -54,7 +54,7 @@ public class NotificationBookDataSource {
      * @param book {@link Book} which will be inserted
      * @return Returns boolean value if insertion successful returns true else returns false
      */
-    public boolean insertBook(Book book) {
+    private boolean insertBook(Book book) {
         boolean result = false;
         try{
             ContentValues contentValues = new ContentValues();
@@ -72,6 +72,48 @@ public class NotificationBookDataSource {
             Logger.d("New Book insertion successful");
         }
         return result;
+    }
+
+    /**
+     * Update {@link Book book} in database.<br>
+     *
+     * @param book {@link Book} which will be updated
+     * @return Returns boolean value if update successful returns true else returns false
+     */
+    private boolean updateBook(Book book) {
+        boolean result = false;
+        try{
+            ContentValues contentValues = new ContentValues();
+            contentValues.put(NOTIFICATION_BOOK_COLUMN_ID, book.getID());
+            contentValues.put(NOTIFICATION_BOOK_COLUMN_NAME, book.getName());
+            contentValues.put(NOTIFICATION_BOOK_COLUMN_IMAGE_URL, book.getImageURL());
+            contentValues.put(NOTIFICATION_BOOK_COLUMN_THUMBNAIL_URL, book.getThumbnailURL());
+            contentValues.put(NOTIFICATION_BOOK_COLUMN_AUTHOR, book.getAuthor());
+            contentValues.put(NOTIFICATION_BOOK_COLUMN_STATE, book.getState().getStateCode());
+            contentValues.put(NOTIFICATION_BOOK_COLUMN_GENRE, book.getGenreCode());
+            contentValues.put(NOTIFICATION_BOOK_COLUMN_OWNER_ID, book.getOwner().getID());
+
+            result = mSqLiteDatabase.update(NOTIFICATION_BOOK_TABLE_NAME, contentValues, NOTIFICATION_BOOK_COLUMN_ID + "=" + book.getID(), null) > 0;
+        }finally {
+            Logger.d("New Book insertion successful");
+        }
+        return result;
+    }
+
+    public boolean checkAndUpdateBook(Book book) {
+        if (isBookExists(book)) {
+            return updateBook(book);
+        } else {
+            return false;
+        }
+    }
+
+    public boolean saveBook(Book book) {
+        if (!isBookExists(book)) {
+            return insertBook(book);
+        } else {
+            return false;
+        }
     }
 
     /**

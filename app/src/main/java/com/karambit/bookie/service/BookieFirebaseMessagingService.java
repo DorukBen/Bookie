@@ -527,12 +527,12 @@ public class BookieFirebaseMessagingService extends com.google.firebase.messagin
 
         String email = currentUserDetails.getEmail();
         String password = currentUserDetails.getPassword();
-        final Call<ResponseBody> uploadMessageState = fcmApi.uploadMessageState(email, password, messageId, Message.State.DELIVERED.ordinal());
+        final Call<ResponseBody> uploadMessageState = fcmApi.uploadMessageState(email, password, messageId, Message.State.DELIVERED.getStateCode());
 
         Logger.d("uploadMessageState() API called with parameters: \n" +
                      "\temail=" + email + ", \n\tpassword=" + password +
                      ", \n\tmessageID=" + messageId +
-                     ", \n\tstate=" + Message.State.DELIVERED.ordinal());
+                     ", \n\tstate=" + Message.State.DELIVERED.getStateCode());
 
         uploadMessageState.enqueue(new Callback<ResponseBody>() {
             @Override

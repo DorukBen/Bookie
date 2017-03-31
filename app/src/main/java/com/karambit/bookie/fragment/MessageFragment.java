@@ -30,6 +30,7 @@ import com.karambit.bookie.helper.pull_refresh_layout.PullRefreshLayout;
 import com.karambit.bookie.model.Message;
 import com.karambit.bookie.model.User;
 import com.karambit.bookie.rest_api.BookieClient;
+import com.karambit.bookie.rest_api.FcmApi;
 import com.karambit.bookie.rest_api.UserApi;
 import com.karambit.bookie.service.BookieIntentFilters;
 import com.orhanobut.logger.Logger;
@@ -225,6 +226,13 @@ public class MessageFragment extends Fragment {
             }
         });
 
+        mLastMessageAdapter.setOnSearchUserButtonClickListener(new LastMessageAdapter.OnSearchUserButtonClickListener() {
+            @Override
+            public void onSearchUserButtonClicked() {
+                ((MainActivity) getActivity()).setCurrentPage(SearchFragment.TAB_INDEX);
+            }
+        });
+
         // listen refresh event
         mPullRefreshLayout.setOnRefreshListener(new PullRefreshLayout.OnRefreshListener() {
             @Override
@@ -313,7 +321,16 @@ public class MessageFragment extends Fragment {
                             if (!error) {
                                 ArrayList<Message> messages = Message.jsonObjectToMessageList(responseObject);
                                 for (Message message: messages){
+                                    if (message.getReceiver().equals(currentUserDetails.getUser()) &&
+                                        message.getState() == Message.State.SENT) {
+
+                                        message.setState(Message.State.DELIVERED);
+
+                                        uploadMessageStateToServer(message);
+                                    }
                                     mDBManager.getMessageDataSource().saveMessage(message, currentUserDetails.getUser());
+
+                                    mDBManager.checkAndUpdateAllUsers(message.getOppositeUser(currentUserDetails.getUser()));
                                 }
 
                                 mLastMessages = mDBManager.getMessageDataSource().getLastMessages(SessionManager.getCurrentUser(getContext()));
@@ -405,6 +422,59 @@ public class MessageFragment extends Fragment {
 
                 mPullRefreshLayout.setRefreshing(false);
                 Logger.e("deleteConversation() Failure: " + t.getMessage());
+            }
+        });
+    }
+
+    private void uploadMessageStateToServer(final Message message) {
+        final FcmApi fcmApi = BookieClient.getClient().create(FcmApi.class);
+
+        User.Details currentUserDetails = SessionManager.getCurrentUserDetails(getContext());
+
+        String email = currentUserDetails.getEmail();
+        String password = currentUserDetails.getPassword();
+        final Call<ResponseBody> uploadMessageState = fcmApi.uploadMessageState(email, password, message.getID(), message.getState().getStateCode());
+
+        Logger.d("uploadMessageState() API called with parameters: \n" +
+                     "\temail=" + email + ", \n\tpassword=" + password +
+                     ", \n\tmessageID=" + message.getID() + ", \n\tmessageState=" + message.getState().getStateCode());
+
+        uploadMessageState.enqueue(new Callback<ResponseBody>() {
+            @Override
+            public void onResponse(Call<ResponseBody> call, Response<ResponseBody> response) {
+
+                try {
+                    if (response != null){
+                        if (response.body() != null){
+                            String json = response.body().string();
+
+                            Logger.json(json);
+
+                            JSONObject responseObject = new JSONObject(json);
+                            boolean error = responseObject.getBoolean("error");
+
+                            if (!error) {
+                                Logger.d("Message state uploaded to server: " + message.getState());
+                            } else {
+                                int errorCode = responseObject.getInt("errorCode");
+
+                                Logger.e("Error true in response: errorCode = " + errorCode);
+                            }
+                        }else{
+                            Logger.e("Response body is null. (Upload Message State Error)");
+                        }
+                    }else {
+                        Logger.e("Response object is null. (Upload Message State Error)");
+                    }
+                } catch (IOException | JSONException e) {
+                    Logger.e("IOException or JSONException caught: " + e.getMessage());
+                }
+            }
+
+            @Override
+            public void onFailure(Call<ResponseBody> call, Throwable t) {
+                Logger.e("uploadMessageState Failure: " + t.getMessage());
+                uploadMessageStateToServer(message);
             }
         });
     }

@@ -49,7 +49,7 @@ public class MessageUserDataSource {
      *
      * @return boolean value. If insertion successful returns true else returns false.
      */
-    public boolean insertUser(User user) {
+    private boolean insertUser(User user) {
         boolean result = false;
         try{
             ContentValues contentValues = new ContentValues();
@@ -65,6 +65,60 @@ public class MessageUserDataSource {
             Logger.d("New User insertion successful");
         }
         return result;
+    }
+
+    public boolean saveUser(User user) {
+        if (!isUserExists(user.getID())) {
+            return insertUser(user);
+        } else {
+            return false;
+        }
+    }
+
+    /**
+     * Updates given user in database.<br>
+     *
+     * @param user {@link User User}<br>
+     *
+     * @return boolean value. If update successful returns true else returns false.
+     */
+    private boolean updateUser(User user) {
+        boolean result = false;
+        try {
+            ContentValues contentValues = new ContentValues();
+            contentValues.put(MESSAGE_USER_COLUMN_ID, user.getID());
+            contentValues.put(MESSAGE_USER_COLUMN_NAME, user.getName());
+            contentValues.put(MESSAGE_USER_COLUMN_IMAGE_URL, user.getImageUrl());
+            contentValues.put(MESSAGE_USER_COLUMN_THUMBNAIL_URL, user.getThumbnailUrl());
+            contentValues.put(MESSAGE_USER_COLUMN_LATITUDE, (user.getLocation() != null) ? user.getLocation().latitude : null);
+            contentValues.put(MESSAGE_USER_COLUMN_LONGITUDE, (user.getLocation() != null) ? user.getLocation().longitude : null);
+
+            result = mSqLiteDatabase.update(MESSAGE_USER_TABLE_NAME, contentValues, MESSAGE_USER_COLUMN_ID + "=" + user.getID(), null) > 0;
+        }finally {
+
+            if (result){
+                Logger.d(TAG, "Message user update successful.");
+            }else{
+                Logger.e(TAG,"Error occurred during user update!");
+            }
+        }
+        return result;
+    }
+
+    /**
+     * Checks the user exists. Updates given user in database if its not exist.<br>
+     *
+     * @param user {@link User User}<br>
+     *
+     * @return boolean value. If insertion successful returns true else returns false.
+     */
+    public boolean checkAndUpdateUser(User user) {
+
+        if (isUserExists(user.getID())) {
+            return updateUser(user);
+        } else {
+            return false;
+        }
     }
 
     /**

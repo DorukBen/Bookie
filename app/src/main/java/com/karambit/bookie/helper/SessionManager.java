@@ -24,6 +24,7 @@ public class SessionManager {
 
     private static final String IS_LOGGED_IN = "is_logged_in";
     private static final String LAST_LOCATION_REMINDER = "last_reminded";
+    private static final String LAST_LOGGED_EMAIL = "last_logged_email";
 
     public static boolean isLoggedIn(Context context) {
         SharedPreferences sharedPreferences = context.getSharedPreferences(NAME_SHARED_PREFERENCES, Context.MODE_PRIVATE);
@@ -89,6 +90,19 @@ public class SessionManager {
         }else {
             return mUserDetails.getUser();
         }
+    }
+
+    public static void saveEmailAddress(Context context, String email) {
+        SharedPreferences sharedPreferences = context.getSharedPreferences(NAME_SHARED_PREFERENCES, Context.MODE_PRIVATE);
+        SharedPreferences.Editor editor = sharedPreferences.edit();
+        editor.putString(LAST_LOGGED_EMAIL, email);
+        editor.apply();
+        editor.commit();
+    }
+
+    public static String getLastEmailAddress(Context context) {
+        SharedPreferences sharedPreferences = context.getSharedPreferences(NAME_SHARED_PREFERENCES, Context.MODE_PRIVATE);
+        return sharedPreferences.getString(LAST_LOGGED_EMAIL, "");
     }
 
     public static boolean isLovedGenresSelectedLocal(Context context) {

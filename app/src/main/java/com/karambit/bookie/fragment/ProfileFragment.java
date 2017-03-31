@@ -602,6 +602,8 @@ public class ProfileFragment extends Fragment {
                                         mUser = mUserDetails.getUser();
                                         mDbManager.getUserDataSource().updateUserDetails(mUserDetails);
                                         SessionManager.updateCurrentUser(mUserDetails);
+                                    } else {
+                                        mDbManager.checkAndUpdateAllUsers(mUserDetails.getUser());
                                     }
 
                                     if (!responseObject.isNull("currentlyReading")){

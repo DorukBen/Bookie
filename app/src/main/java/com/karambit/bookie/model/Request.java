@@ -188,7 +188,7 @@ public class Request implements Book.BookProcess, Parcelable, Comparable<Request
 
     @Override
     public int compareTo(@NonNull Request otherRequest) {
-        int ordinalDifference = this.mType.ordinal() - otherRequest.getType().ordinal();
+        int ordinalDifference = this.mType.getRequestCode() - otherRequest.getType().getRequestCode();
         if (ordinalDifference != 0) {
             return ordinalDifference;
         } else {

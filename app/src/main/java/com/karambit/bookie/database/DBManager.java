@@ -3,7 +3,9 @@ package com.karambit.bookie.database;
 import android.content.Context;
 import android.database.SQLException;
 import android.database.sqlite.SQLiteDatabase;
-import android.util.Log;
+
+import com.karambit.bookie.model.Book;
+import com.karambit.bookie.model.User;
 
 /**
  * Created by doruk on 20.03.2017.
@@ -22,6 +24,10 @@ public class DBManager {
     private NotificationDataSource mNotificationDataSource;
     private SearchUserDataSource mSearchUserDataSource;
     private SearchBookDataSource mSearchBookDataSource;
+    private MessageUserDataSource mMessageUserDataSource;
+    private NotificationUserDataSource mNotificationUserDataSource;
+    private NotificationBookDataSource mNotificationBookDataSource;
+    private NotificationBookUserDataSource mNotificationBookUserDataSource;
 
     public DBManager(Context context){
         mDbHelper = new DBHelper(context);
@@ -76,5 +82,45 @@ public class DBManager {
             mSearchBookDataSource = new SearchBookDataSource(mSqLiteDatabase);
         }
         return mSearchBookDataSource;
+    }
+
+    public MessageUserDataSource getMessageUserDataSource(){
+        if (mMessageUserDataSource == null){
+            mMessageUserDataSource = new MessageUserDataSource(mSqLiteDatabase);
+        }
+        return mMessageUserDataSource;
+    }
+
+    public NotificationUserDataSource getNotificationUserDataSource() {
+        if (mNotificationUserDataSource == null){
+            mNotificationUserDataSource = new NotificationUserDataSource(mSqLiteDatabase);
+        }
+        return mNotificationUserDataSource;
+    }
+
+    public NotificationBookUserDataSource getNotificationBookUserDataSource() {
+        if (mNotificationBookUserDataSource == null){
+            mNotificationBookUserDataSource = new NotificationBookUserDataSource(mSqLiteDatabase);
+        }
+        return mNotificationBookUserDataSource;
+    }
+
+    public NotificationBookDataSource getNotificationBookDataSource() {
+        if (mNotificationBookDataSource == null) {
+            mNotificationBookDataSource = new NotificationBookDataSource(mSqLiteDatabase);
+        }
+        return mNotificationBookDataSource;
+    }
+
+    public void checkAndUpdateAllUsers(User user) {
+        getMessageUserDataSource().checkAndUpdateUser(user);
+        getNotificationBookUserDataSource().checkAndUpdateUser(user);
+        getNotificationUserDataSource().checkAndUpdateUser(user);
+        getSearchUserDataSource().checkAndUpdateUser(user);
+    }
+
+    public void checkAndUpdateAllBooks(Book book) {
+        getSearchBookDataSource().checkAndUpdateBook(book);
+        getNotificationBookDataSource().checkAndUpdateBook(book);
     }
 }

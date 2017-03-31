@@ -793,6 +793,8 @@ public class CurrentUserProfileSettingsActivity extends AppCompatActivity {
         String email = mCurrentUserDetails.getEmail();
         String password = mCurrentUserDetails.getPassword();
 
+        name = upperCaseString(name);
+
         if (TextUtils.isEmpty(bio)){
             bio = null;
         }
@@ -930,6 +932,19 @@ public class CurrentUserProfileSettingsActivity extends AppCompatActivity {
                 Logger.e("uploadFeedBack Failure: " + t.getMessage());
             }
         });
+    }
+
+    private String upperCaseString(String input){
+        String[] words = input.split(" ");
+        StringBuilder sb = new StringBuilder();
+        if (words[0].length() > 0) {
+            sb.append(Character.toUpperCase(words[0].charAt(0)) + words[0].subSequence(1, words[0].length()).toString().toLowerCase());
+            for (int i = 1; i < words.length; i++) {
+                sb.append(" ");
+                sb.append(Character.toUpperCase(words[i].charAt(0)) + words[i].subSequence(1, words[i].length()).toString().toLowerCase());
+            }
+        }
+        return sb.toString();
     }
 
     /**

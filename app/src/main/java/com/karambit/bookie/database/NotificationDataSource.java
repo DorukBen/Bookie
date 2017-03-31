@@ -51,17 +51,11 @@ public class NotificationDataSource {
     }
 
     public void saveNotificationToDatabase(final Notification notification){
-        if (!mNotificationBookUserDataSource.isUserExists(notification.getBook().getOwner())){
-            mNotificationBookUserDataSource.insertUser(notification.getBook().getOwner());
-        }
+        mNotificationBookUserDataSource.saveUser(notification.getBook().getOwner());
 
-        if (!mNotificationBookDataSource.isBookExists(notification.getBook())){
-            mNotificationBookDataSource.insertBook(notification.getBook());
-        }
+        mNotificationBookDataSource.saveBook(notification.getBook());
 
-        if (!mNotificationUserDataSource.isUserExists(notification.getOppositeUser())){
-            mNotificationUserDataSource.insertUser(notification.getOppositeUser());
-        }
+        mNotificationUserDataSource.saveUser(notification.getOppositeUser());
 
         insertNotification(notification);
     }

@@ -42,9 +42,11 @@ public class SearchUserDataSource {
         this.mSqLiteDatabase = database;
     }
 
-    public void saveUser(User user){
+    public boolean saveUser(User user){
         if (!isUserExists(user)){
-            insertUser(user);
+            return insertUser(user);
+        } else {
+            return false;
         }
     }
 
@@ -70,6 +72,45 @@ public class SearchUserDataSource {
             Logger.d("New User insertion successful");
         }
         return result;
+    }
+
+    /**
+     * Updates user in database.<br>
+     *
+     * @param user {@link User} which will be inserted
+     * @return Returns boolean value if update successful returns true else returns false
+     */
+    private boolean updateUser(User user) {
+        boolean result = false;
+        try{
+            ContentValues contentValues = new ContentValues();
+            contentValues.put(SEARCH_USER_COLUMN_ID, user.getID());
+            contentValues.put(SEARCH_USER_COLUMN_NAME, user.getName());
+            contentValues.put(SEARCH_USER_COLUMN_IMAGE_URL, user.getImageUrl());
+            contentValues.put(SEARCH_USER_COLUMN_THUMBNAIL_URL, user.getThumbnailUrl());
+            contentValues.put(SEARCH_USER_COLUMN_LATITUDE, (user.getLocation() != null) ? user.getLocation().latitude : null);
+            contentValues.put(SEARCH_USER_COLUMN_LONGITUDE, (user.getLocation() != null) ? user.getLocation().longitude : null);
+
+            result = mSqLiteDatabase.update(SEARCH_USER_TABLE_NAME, contentValues, SEARCH_USER_COLUMN_ID + "=" + user.getID(), null) > 0;
+        }finally {
+            Logger.d("Search User update successful");
+        }
+        return result;
+    }
+
+    /**
+     * Checks the user exists. Updates given user in database if its not exist.<br>
+     *
+     * @param user {@link User User}<br>
+     *
+     * @return boolean value. If insertion successful returns true else returns false.
+     */
+    public boolean checkAndUpdateUser(User user) {
+        if (isUserExists(user)) {
+            return updateUser(user);
+        } else {
+            return false;
+        }
     }
 
     /**

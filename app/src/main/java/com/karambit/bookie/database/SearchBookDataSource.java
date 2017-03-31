@@ -49,9 +49,7 @@ public class SearchBookDataSource {
     }
 
     public void saveBook(Book book){
-        if (!mSearchBookUserDataSource.isUserExists(book.getOwner())){
-            mSearchBookUserDataSource.insertUser(book.getOwner());
-        }
+        mSearchBookUserDataSource.saveUser(book.getOwner());
 
         if (!isBookExists(book)){
             insertBook(book);
@@ -82,6 +80,40 @@ public class SearchBookDataSource {
             Logger.d("New Book insertion successful");
         }
         return result;
+    }
+
+    /**
+     * Updates {@link Book book} to database.<br>
+     *
+     * @param book {@link Book} which will be updated
+     * @return Returns boolean value if update successful returns true else returns false
+     */
+    private boolean updateBook(Book book) {
+        boolean result = false;
+        try{
+            ContentValues contentValues = new ContentValues();
+            contentValues.put(SEARCH_BOOK_COLUMN_ID, book.getID());
+            contentValues.put(SEARCH_BOOK_COLUMN_NAME, book.getName());
+            contentValues.put(SEARCH_BOOK_COLUMN_IMAGE_URL, book.getImageURL());
+            contentValues.put(SEARCH_BOOK_COLUMN_THUMBNAIL_URL, book.getThumbnailURL());
+            contentValues.put(SEARCH_BOOK_COLUMN_AUTHOR, book.getAuthor());
+            contentValues.put(SEARCH_BOOK_COLUMN_STATE, book.getState().getStateCode());
+            contentValues.put(SEARCH_BOOK_COLUMN_GENRE, book.getGenreCode());
+            contentValues.put(SEARCH_BOOK_COLUMN_OWNER_ID, book.getOwner().getID());
+
+            result = mSqLiteDatabase.update(SEARCH_BOOK_TABLE_NAME, contentValues, SEARCH_BOOK_COLUMN_ID + "=" + book.getID(), null) > 0;
+        }finally {
+            Logger.d("New Book update successful");
+        }
+        return result;
+    }
+
+    public boolean checkAndUpdateBook(Book book) {
+        if (isBookExists(book)) {
+            return updateBook(book);
+        } else {
+            return false;
+        }
     }
 
     /**

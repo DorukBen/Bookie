@@ -220,6 +220,13 @@ public class LoginRegisterActivity extends AppCompatActivity {
                 showEmailDialog();
             }
         });
+
+        String lastEmailAddress = SessionManager.getLastEmailAddress(this);
+        if (!TextUtils.isEmpty(lastEmailAddress)) {
+            mEmailEditText.setText(lastEmailAddress);
+            findViewById(R.id.emailImage).setAlpha(1f);
+            mPasswordEditText.requestFocus();
+        }
     }
 
     private void showEmailDialog() {
@@ -270,7 +277,7 @@ public class LoginRegisterActivity extends AppCompatActivity {
 
         Call<ResponseBody> forgotPassword = userApi.forgotPassword(email);
 
-        Logger.d("getHomePageBooks() API called with parameters: \n\temail=" + email);
+        Logger.d("forgotPassword() API called with parameters: \n\temail=" + email);
 
         forgotPassword.enqueue(new Callback<ResponseBody>() {
             @Override
@@ -427,7 +434,8 @@ public class LoginRegisterActivity extends AppCompatActivity {
 
         UserApi userApi = BookieClient.getClient().create(UserApi.class);
         String nameSurname = mNameEditText.getText().toString().trim() + " " + mSurnameEditText.getText().toString().trim();
-        String email = mEmailEditText.getText().toString().trim();
+        nameSurname = upperCaseString(nameSurname);
+        final String email = mEmailEditText.getText().toString().trim();
         String password = mPasswordEditText.getText().toString().trim();
         Call<ResponseBody> register = userApi.register(email, password, nameSurname);
 
@@ -462,6 +470,7 @@ public class LoginRegisterActivity extends AppCompatActivity {
                                 Logger.e("Error occured while registering new user.");
                             }
 
+                            SessionManager.saveEmailAddress(LoginRegisterActivity.this, email);
 
                             setResult(RESULT_LOGGED_IN);
                             finish();
@@ -522,11 +531,11 @@ public class LoginRegisterActivity extends AppCompatActivity {
         progressDialog.show();
 
         final UserApi userApi = BookieClient.getClient().create(UserApi.class);
-        String email = mEmailEditText.getText().toString();
+        final String email = mEmailEditText.getText().toString();
         String password = mPasswordEditText.getText().toString();
         Call<ResponseBody> login = userApi.login(email, password);
 
-        Logger.d("getHomePageBooks() API called with parameters: \n" +
+        Logger.d("login() API called with parameters: \n" +
                      "\temail=" + email + ", \n\tpassword=" + password);
 
         login.enqueue(new Callback<ResponseBody>() {
@@ -576,6 +585,8 @@ public class LoginRegisterActivity extends AppCompatActivity {
                                     Logger.d("Error occured while logging in.");
                                 }
 
+                                SessionManager.saveEmailAddress(LoginRegisterActivity.this, email);
+
                                 setResult(RESULT_LOGGED_IN);
                                 finish();
                             } else {
@@ -616,5 +627,18 @@ public class LoginRegisterActivity extends AppCompatActivity {
                 Toast.makeText(LoginRegisterActivity.this, R.string.unknown_error, Toast.LENGTH_SHORT).show();
             }
         });
+    }
+
+    private String upperCaseString(String input){
+        String[] words = input.split(" ");
+        StringBuilder sb = new StringBuilder();
+        if (words[0].length() > 0) {
+            sb.append(Character.toUpperCase(words[0].charAt(0)) + words[0].subSequence(1, words[0].length()).toString().toLowerCase());
+            for (int i = 1; i < words.length; i++) {
+                sb.append(" ");
+                sb.append(Character.toUpperCase(words[i].charAt(0)) + words[i].subSequence(1, words[i].length()).toString().toLowerCase());
+            }
+        }
+        return sb.toString();
     }
 }

@@ -48,7 +48,7 @@ public class SearchBookUserDataSource {
      * @param user {@link User} which will be inserted
      * @return Returns boolean value if insertion successful returns true else returns false
      */
-    public boolean insertUser(User user) {
+    private boolean insertUser(User user) {
         boolean result = false;
         try{
             ContentValues contentValues = new ContentValues();
@@ -64,6 +64,14 @@ public class SearchBookUserDataSource {
             Logger.d("New User insertion successful");
         }
         return result;
+    }
+
+    public boolean saveUser(User user) {
+        if (!isUserExists(user)) {
+            return insertUser(user);
+        } else {
+            return false;
+        }
     }
 
     /**

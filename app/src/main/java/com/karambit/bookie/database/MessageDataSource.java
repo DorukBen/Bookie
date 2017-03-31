@@ -51,14 +51,13 @@ public class MessageDataSource {
      * Saves massage to database if message user not exist inserts message user too.
      *
      * @param message New {@link Message message}<br>
-     * @param currentUser Current {@link User user}
+     * @param user {@link User User}
      *
      * @return boolean value if insertion successful returns true else returns false.
      */
-    public boolean saveMessage(Message message, User currentUser) {
-        if (!mMessageUserDataSource.isUserExists(message.getOppositeUser(currentUser))) {
-            mMessageUserDataSource.insertUser(message.getOppositeUser(currentUser));
-        }
+    public boolean saveMessage(Message message, User user) {
+        mMessageUserDataSource.saveUser(user);
+
         return !isMessageExists(message) && insertMessage(message);
     }
 
@@ -102,7 +101,7 @@ public class MessageDataSource {
             contentValues.put(MESSAGE_COLUMN_TO_USER_ID, message.getReceiver().getID());
             contentValues.put(MESSAGE_COLUMN_IS_DELETED, 0);
             contentValues.put(MESSAGE_COLUMN_CREATED_AT, message.getCreatedAt().getTimeInMillis());
-            contentValues.put(MESSAGE_COLUMN_STATE, message.getState().ordinal());
+            contentValues.put(MESSAGE_COLUMN_STATE, message.getState().getStateCode());
 
             result = mSqLiteDatabase.insert(MESSAGE_TABLE_NAME, null, contentValues) < 0;
         }finally {
@@ -124,7 +123,7 @@ public class MessageDataSource {
 
         try{
             ContentValues cv = new ContentValues();
-            cv.put(MESSAGE_COLUMN_STATE, state.ordinal());
+            cv.put(MESSAGE_COLUMN_STATE, state.getStateCode());
 
             mSqLiteDatabase.update(MESSAGE_TABLE_NAME, cv, MESSAGE_COLUMN_ID + "=" + messageId, null);
         }finally {
@@ -141,7 +140,7 @@ public class MessageDataSource {
     public void updateMessageState(Message message, Message.State state){
         try{
             ContentValues cv = new ContentValues();
-            cv.put(MESSAGE_COLUMN_STATE, state.ordinal());
+            cv.put(MESSAGE_COLUMN_STATE, state.getStateCode());
 
             mSqLiteDatabase.update(MESSAGE_TABLE_NAME, cv, MESSAGE_COLUMN_ID + "=" + message.getID(), null);
         }finally {
@@ -198,14 +197,14 @@ public class MessageDataSource {
                                 currentUser,
                                 anotherUser,
                                 calendar,
-                                Message.State.values()[res.getInt(res.getColumnIndex(MESSAGE_COLUMN_STATE))]);
+                                Message.State.valueOf(res.getInt(res.getColumnIndex(MESSAGE_COLUMN_STATE))));
                     } else {
                         message = new Message(res.getInt(res.getColumnIndex(MESSAGE_COLUMN_ID)),
                                 res.getString(res.getColumnIndex(MESSAGE_COLUMN_TEXT)),
                                 anotherUser,
                                 currentUser,
                                 calendar,
-                                Message.State.values()[res.getInt(res.getColumnIndex(MESSAGE_COLUMN_STATE))]);
+                                Message.State.valueOf(res.getInt(res.getColumnIndex(MESSAGE_COLUMN_STATE))));
                     }
                     messages.add(message);
 
@@ -289,14 +288,14 @@ public class MessageDataSource {
                             currentUser,
                             anotherUser,
                             calendar,
-                            Message.State.values()[res.getInt(res.getColumnIndex(MESSAGE_COLUMN_STATE))]);
+                            Message.State.valueOf(res.getInt(res.getColumnIndex(MESSAGE_COLUMN_STATE))));
                 }else{
                     message = new Message(res.getInt(res.getColumnIndex(MESSAGE_COLUMN_ID)),
                             res.getString(res.getColumnIndex(MESSAGE_COLUMN_TEXT)),
                             anotherUser,
                             currentUser,
                             calendar,
-                            Message.State.values()[res.getInt(res.getColumnIndex(MESSAGE_COLUMN_STATE))]);
+                            Message.State.valueOf(res.getInt(res.getColumnIndex(MESSAGE_COLUMN_STATE))));
                 }
             }else {
                 message = null;
@@ -372,7 +371,7 @@ public class MessageDataSource {
         try {
             res = mSqLiteDatabase.rawQuery("SELECT COUNT(*) AS " + queryVariableString + " FROM " + MESSAGE_TABLE_NAME +
                     " WHERE " + MESSAGE_COLUMN_FROM_USER_ID + " = " + oppositeUser.getID() +
-                    " AND " + MESSAGE_COLUMN_STATE + " = " + Message.State.DELIVERED.ordinal(), null);
+                    " AND " + MESSAGE_COLUMN_STATE + " = " + Message.State.DELIVERED.getStateCode(), null);
             res.moveToFirst();
 
             unseenMessageCount = res.getInt(res.getColumnIndex(queryVariableString));
@@ -399,7 +398,7 @@ public class MessageDataSource {
         try {
             res = mSqLiteDatabase.rawQuery("SELECT COUNT(*) AS " + queryVariableString + " FROM " + MESSAGE_TABLE_NAME +
                     " WHERE " + MESSAGE_COLUMN_FROM_USER_ID + " <> " + currentUser.getID() +
-                    " AND " + MESSAGE_COLUMN_STATE + " = " + Message.State.DELIVERED.ordinal(), null);
+                    " AND " + MESSAGE_COLUMN_STATE + " = " + Message.State.DELIVERED.getStateCode(), null);
             res.moveToFirst();
 
             totalUnseenMessageCount = res.getInt(res.getColumnIndex(queryVariableString));

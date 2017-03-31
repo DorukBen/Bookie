@@ -27,6 +27,7 @@ import android.widget.Toast;
 
 import com.karambit.bookie.adapter.BookTimelineAdapter;
 import com.karambit.bookie.adapter.ProfileTimelineAdapter;
+import com.karambit.bookie.database.DBManager;
 import com.karambit.bookie.helper.ComfortableProgressDialog;
 import com.karambit.bookie.helper.ElevationScrollListener;
 import com.karambit.bookie.helper.InformationDialog;
@@ -76,6 +77,7 @@ public class BookActivity extends AppCompatActivity {
     private PullRefreshLayout mPullRefreshLayout;
     private BroadcastReceiver mMessageReceiver;
     private InformationDialog mLocationInfoDialog;
+    private DBManager mDBManager;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -101,6 +103,10 @@ public class BookActivity extends AppCompatActivity {
         mBook = getIntent().getParcelableExtra(EXTRA_BOOK);
 
         RecyclerView bookRecyclerView = (RecyclerView) findViewById(R.id.bookRecyclerView);
+
+        mDBManager = new DBManager(BookActivity.this);
+        mDBManager.open();
+
         bookRecyclerView.setLayoutManager(new LinearLayoutManager(this));
 
         mBookTimelineAdapter = new BookTimelineAdapter(this, mBook);
@@ -905,7 +911,7 @@ public class BookActivity extends AppCompatActivity {
     private void fetchBookPageArguments() {
         final BookApi bookApi = BookieClient.getClient().create(BookApi.class);
 
-        User.Details currentUserDetails = SessionManager.getCurrentUserDetails(this);
+        final User.Details currentUserDetails = SessionManager.getCurrentUserDetails(this);
 
         String email = currentUserDetails.getEmail();
         String password = currentUserDetails.getPassword();
@@ -938,8 +944,14 @@ public class BookActivity extends AppCompatActivity {
 
                                     if (mBookDetails != null) {
                                         mBook = mBookDetails.getBook();
+
+                                        if (!mBook.getOwner().equals(SessionManager.getCurrentUser(BookActivity.this))) {
+                                            mDBManager.checkAndUpdateAllBooks(mBook);
+                                        }
                                     }
                                     mBookTimelineAdapter.setBookDetails(mBookDetails);
+
+                                    // TODO Notifiy item changed
 
                                     Logger.d("Book page fetched: " + "\n\n" + mBook + "\n\n" +
                                                  "BookProcesses:\n" + mBookDetails.getBookProcesses());

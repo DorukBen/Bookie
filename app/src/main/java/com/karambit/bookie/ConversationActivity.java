@@ -822,11 +822,11 @@ public class ConversationActivity extends AppCompatActivity {
 
         String email = currentUserDetails.getEmail();
         String password = currentUserDetails.getPassword();
-        final Call<ResponseBody> uploadMessageState = fcmApi.uploadMessageState(email, password, message.getID(), message.getState().ordinal());
+        final Call<ResponseBody> uploadMessageState = fcmApi.uploadMessageState(email, password, message.getID(), message.getState().getStateCode());
 
         Logger.d("uploadMessageState() API called with parameters: \n" +
                      "\temail=" + email + ", \n\tpassword=" + password +
-                     ", \n\tmessageID=" + message.getID() + ", \n\tmessageState=" + message.getState().ordinal());
+                     ", \n\tmessageID=" + message.getID() + ", \n\tmessageState=" + message.getState().getStateCode());
 
         uploadMessageState.enqueue(new Callback<ResponseBody>() {
             @Override

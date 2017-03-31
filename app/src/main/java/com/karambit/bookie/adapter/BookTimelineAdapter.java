@@ -609,22 +609,28 @@ public class BookTimelineAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
                                 */
 
                             int canSendRequest = 0;
-                            for (Book.BookProcess process: mBookDetails.getBookProcesses()) {
+                            int i = mBookDetails.getBookProcesses().size();
+                            Book.BookProcess bookProcess;
+                            do {
 
-                                if (process instanceof Request) {
+                                i--;
 
-                                    Request request = (Request) process;
+                                bookProcess = mBookDetails.getBookProcesses().get(i);
 
-                                    if (request.getRequester().equals(currentUser) && request.getResponder().equals(mBook.getOwner())) {
-
-                                        if (request.getType() == Request.Type.SEND) {
-                                            canSendRequest--;
-                                        } else { // Request.Type.ACCEPT || Request.Type.REJECT
-                                            canSendRequest++;
-                                        }
+                                if (bookProcess instanceof Request && ((Request) bookProcess).getRequester().equals(currentUser)) {
+                                    if (((Request) bookProcess).getType() == Request.Type.SEND){
+                                        canSendRequest--;
+                                    }else if (((Request) bookProcess).getType() == Request.Type.ACCEPT ||
+                                        ((Request) bookProcess).getType() == Request.Type.REJECT){
+                                        canSendRequest++;
                                     }
                                 }
-                            }
+
+                            } while
+                                (bookProcess instanceof Transaction &&
+                                ((Transaction) bookProcess).getType() == Transaction.Type.COME_TO_HAND &&
+                                i > 0);
+
                             if (canSendRequest < 0){
                                 stateOtherHolder.mRequest.setText(R.string.requested_button);
                                 stateOtherHolder.mRequest.setEnabled(false);

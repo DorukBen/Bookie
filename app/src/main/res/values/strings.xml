@@ -309,4 +309,5 @@
     <string name="notification_empty_state_text">Your notifications will appear here…</string>
     <string name="sharing_is_closed_for_x">Sharing is closed for %s</string>
     <string name="click_search_for_more">Click search button for more results</string>
+    <string name="search_user">Search user</string>
 </resources>
