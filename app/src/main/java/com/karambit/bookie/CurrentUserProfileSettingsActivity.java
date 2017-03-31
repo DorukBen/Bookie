@@ -801,7 +801,7 @@ public class CurrentUserProfileSettingsActivity extends AppCompatActivity {
         if (location != null){
             uploadUserDetails = userApi.updateUserDetails(email, password, name, bio, location.latitude, location.longitude);
 
-            Logger.d("getHomePageBooks() API called with parameters: \n" +
+            Logger.d("updateUserDetails() API called with parameters: \n" +
                          "\temail=" + email + ", \n\tpassword=" + password +
                          ", \n\tname=" + name + ", \n\tbio=" + bio +
                          ", \n\tlatitude=" + location.latitude + ", \n\tlongitude=" + location.longitude);
@@ -809,7 +809,7 @@ public class CurrentUserProfileSettingsActivity extends AppCompatActivity {
         }else{
             uploadUserDetails = userApi.updateUserDetails(email, password, name, bio);
 
-            Logger.d("getHomePageBooks() API called with parameters: \n" +
+            Logger.d("updateUserDetails() API called with parameters: \n" +
                          "\temail=" + email + ", \n\tpassword=" + password +
                          ", \n\tname=" + name + ", \n\tbio=" + bio);
         }

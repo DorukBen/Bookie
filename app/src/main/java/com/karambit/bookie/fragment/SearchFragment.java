@@ -2,19 +2,25 @@ package com.karambit.bookie.fragment;
 
 
 import android.content.Intent;
+import android.graphics.Typeface;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
+import android.support.v4.content.ContextCompat;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.text.Editable;
+import android.text.Spannable;
+import android.text.SpannableStringBuilder;
 import android.text.TextUtils;
 import android.text.TextWatcher;
+import android.text.style.StyleSpan;
 import android.view.KeyEvent;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.inputmethod.EditorInfo;
 import android.widget.EditText;
+import android.widget.ImageButton;
 import android.widget.TextView;
 
 import com.karambit.bookie.BookActivity;
@@ -64,6 +70,9 @@ public class SearchFragment extends Fragment {
     public static final String TAB_INDICATOR = "tab1";
 
     public static final long INTERVAL_LOCATION_REMINDER_MILLIS = TimeUnit.DAYS.toMillis(2);
+    public static final int UNSELECTED_GENRE_CODE = -1;
+
+    private final StyleSpan STYLE_SPAN_BOLD = new StyleSpan(Typeface.BOLD);
 
     private String[] mAllGenres ;
     private ArrayList<Integer> mGenreCodes = new ArrayList<>();
@@ -71,10 +80,10 @@ public class SearchFragment extends Fragment {
     private ArrayList<User> mUsers = new ArrayList<>();
 
     private int mFetchGenreCode = -1;
-    private boolean mFetchSearchButtonPressed = false;
     private SearchAdapter mSearchAdapter;
     private DBManager mDbManager;
     private EditText mSearchEditText;
+    private ImageButton mSearchButton;
 
     public SearchFragment() {
         // Required empty public constructor
@@ -101,8 +110,16 @@ public class SearchFragment extends Fragment {
             @Override
             public void onGenreClick(int genreCode) {
                 mFetchGenreCode = genreCode;
-                mSearchEditText.setText(mAllGenres[genreCode]);
-                getSearchResults("");
+
+                String genre = mAllGenres[genreCode];
+
+                SpannableStringBuilder spannableStringBuilder = new SpannableStringBuilder(genre);
+
+                spannableStringBuilder.setSpan(STYLE_SPAN_BOLD, 0, genre.length(), Spannable.SPAN_INCLUSIVE_INCLUSIVE);
+                mSearchEditText.setText(spannableStringBuilder);
+                mSearchEditText.setSelection(spannableStringBuilder.length());
+
+                getSearchResults("", false);
             }
 
             @Override
@@ -138,11 +155,16 @@ public class SearchFragment extends Fragment {
 
         recyclerView.setAdapter(mSearchAdapter);
 
-        rootView.findViewById(R.id.searchButton).setOnClickListener(new View.OnClickListener() {
+        mSearchButton = (ImageButton) rootView.findViewById(R.id.searchButton);
+
+        mSearchButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-            mFetchSearchButtonPressed = true;
-            getSearchResults(mSearchEditText.getText().toString());
+                if (mSearchEditText.length() > 0) {
+                    getSearchResults(mSearchEditText.getText().toString(), true);
+                    changeSearchButtonMode(true);
+                }
+
             }
         });
 
@@ -150,8 +172,8 @@ public class SearchFragment extends Fragment {
             @Override
             public boolean onEditorAction(TextView v, int actionId, KeyEvent event) {
                 if (actionId == EditorInfo.IME_ACTION_DONE) {
-                    mFetchSearchButtonPressed = true;
-                    getSearchResults(mSearchEditText.getText().toString());
+                    getSearchResults(mSearchEditText.getText().toString(), true);
+                    changeSearchButtonMode(true);
                     return true;
                 }
                 return false;
@@ -162,13 +184,26 @@ public class SearchFragment extends Fragment {
             @Override
             public void beforeTextChanged(CharSequence s, int start, int count, int after) {
 
+                Spannable spannable = mSearchEditText.getText();
+                if (spannable.getSpans(0, s.length(), StyleSpan.class).length > 0) {
+                    spannable.removeSpan(STYLE_SPAN_BOLD);
+                }
             }
 
             @Override
              public void onTextChanged(CharSequence s, int start, int before, int count) {
-                String string = mSearchEditText.getText().toString();
 
-                getSearchResults(string);
+                changeSearchButtonMode(false);
+
+                if (mFetchGenreCode == UNSELECTED_GENRE_CODE) {
+                    String string = mSearchEditText.getText().toString();
+                    getSearchResults(string, false);
+                }else {
+                    Spannable spannable = mSearchEditText.getText();
+                    if (spannable.getSpans(0, before, StyleSpan.class).length == 0) {
+                        mFetchGenreCode = UNSELECTED_GENRE_CODE;
+                    }
+                }
             }
 
             @Override
@@ -184,8 +219,6 @@ public class SearchFragment extends Fragment {
                     if (SessionManager.getCurrentUser(getContext()).getLocation() == null) {
                         Calendar lastRemindedAt = SessionManager.getLastLocationReminderTime(getContext());
                         if (Calendar.getInstance().getTimeInMillis() - lastRemindedAt.getTimeInMillis() > INTERVAL_LOCATION_REMINDER_MILLIS) {
-
-                            // Unverified email information dialog
 
                             final InformationDialog informationDialog = new InformationDialog(getContext());
                             informationDialog.setCancelable(false);
@@ -226,18 +259,18 @@ public class SearchFragment extends Fragment {
         return rootView;
     }
 
-    private void getSearchResults(final String searchString) {
+    private void getSearchResults(final String searchString, final boolean isSearchButtonPressed) {
         final SearchApi searchApi = BookieClient.getClient().create(SearchApi.class);
 
         User.Details currentUserDetails = SessionManager.getCurrentUserDetails(getContext());
 
         String email = currentUserDetails.getEmail();
         String password = currentUserDetails.getPassword();
-        Call<ResponseBody> searchResults = searchApi.getSearchResults(email, password, searchString, mFetchGenreCode, mFetchSearchButtonPressed);
+        Call<ResponseBody> searchResults = searchApi.getSearchResults(email, password, searchString, mFetchGenreCode, isSearchButtonPressed);
 
         Logger.d("getSearchResults() API called with parameters: \n" +
                      "\temail=" + email + ", \n\tpassword=" + password + ", \n\tsearchString=" + searchString +
-                     ", \n\tsearchGenre=" + mFetchGenreCode + ", \n\tsearchPressed=" + mFetchSearchButtonPressed);
+                     ", \n\tsearchGenre=" + mFetchGenreCode + ", \n\tsearchPressed=" + isSearchButtonPressed);
 
         searchResults.enqueue(new Callback<ResponseBody>() {
             @Override
@@ -268,14 +301,14 @@ public class SearchFragment extends Fragment {
                                     mUsers.addAll(User.jsonArrayToUserList(usersArray));
                                 }
 
-                                if (mFetchGenreCode > -1 && !TextUtils.isEmpty(searchString)){
-                                    mSearchAdapter.setItems(new ArrayList<Integer>(), mBooks, mUsers);
+                                if (mFetchGenreCode != UNSELECTED_GENRE_CODE || TextUtils.isEmpty(searchString)){
+                                    mSearchAdapter.setItems(new ArrayList<Integer>(), mBooks, mUsers, isSearchButtonPressed);
                                 }else {
-                                    mSearchAdapter.setItems(getMostSimilarGenreIndex(searchString), mBooks, mUsers);
+                                    mSearchAdapter.setItems(getMostSimilarGenreIndex(searchString), mBooks, mUsers, isSearchButtonPressed);
                                 }
 
                                 if (mBooks.size() < 1 && mUsers.size() < 1){
-                                    if (TextUtils.isEmpty(searchString)){
+                                    if (TextUtils.isEmpty(mSearchEditText.getText().toString())){
                                         showSearchHistory();
                                     }else {
                                         mSearchAdapter.setWarning(SearchAdapter.WARNING_TYPE_NO_RESULT_FOUND);
@@ -286,8 +319,6 @@ public class SearchFragment extends Fragment {
                                              "\n\n" + Book.listToShortString(mBooks) +
                                              "\n\n" + User.listToShortString(mUsers));
 
-                                mFetchGenreCode = -1;
-                                mFetchSearchButtonPressed = false;
                             } else {
 
                                 int errorCode = responseObject.getInt("errorCode");
@@ -329,6 +360,15 @@ public class SearchFragment extends Fragment {
         });
     }
 
+    private void changeSearchButtonMode(boolean isSearchButtonPressed) {
+
+        if (isSearchButtonPressed) {
+            mSearchButton.setColorFilter(ContextCompat.getColor(getContext(), R.color.colorAccent));
+        } else {
+            mSearchButton.setColorFilter(ContextCompat.getColor(getContext(), R.color.secondaryTextColor));
+        }
+    }
+
     private ArrayList<Integer> getMostSimilarGenreIndex(String searchString){
         final HashMap<Integer, Double> searchGenreSimilarityMap = new HashMap<>();
         for (int i = 0; i < mAllGenres.length; i++){
@@ -365,13 +405,19 @@ public class SearchFragment extends Fragment {
         return finalResults;
     }
 
-    private double getStringSimilarity(String string1, String string2){
-        string1 = string1.toLowerCase();
-        string2 = string2.toLowerCase();
+    private double getStringSimilarity(String reference, String searchString){
+        reference = reference.toLowerCase();
+        searchString = searchString.toLowerCase();
 
-        JaroWinkler jaroWinkler = new JaroWinkler();
+        if (reference.contains(searchString)) {
+            return 1;
+        } else if (reference.contains(searchString)) {
+            return 1;
+        } else {
+            JaroWinkler jaroWinkler = new JaroWinkler();
 
-        return jaroWinkler.similarity(string1, string2);
+            return jaroWinkler.similarity(reference, searchString);
+        }
     }
 
     private void showSearchHistory(){
