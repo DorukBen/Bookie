@@ -4,6 +4,8 @@ package com.karambit.bookie.fragment;
 import android.content.Intent;
 import android.graphics.Typeface;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
 import android.support.v4.app.Fragment;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.widget.LinearLayoutManager;
@@ -71,10 +73,11 @@ public class SearchFragment extends Fragment {
 
     public static final long INTERVAL_LOCATION_REMINDER_MILLIS = TimeUnit.DAYS.toMillis(2);
     public static final int UNSELECTED_GENRE_CODE = -1;
+    private static final int SEARCH_BUTTON_PRESSED_TAG = Integer.MAX_VALUE - 564;
 
     private final StyleSpan STYLE_SPAN_BOLD = new StyleSpan(Typeface.BOLD);
 
-    private String[] mAllGenres ;
+    private String[] mAllGenres;
     private ArrayList<Integer> mGenreCodes = new ArrayList<>();
     private ArrayList<Book> mBooks = new ArrayList<>();
     private ArrayList<User> mUsers = new ArrayList<>();
@@ -98,12 +101,12 @@ public class SearchFragment extends Fragment {
 
         RecyclerView recyclerView = (RecyclerView) rootView.findViewById(R.id.searchResultsRecyclerView);
         recyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
-        mSearchEditText = (EditText)rootView.findViewById(R.id.searchEditText);
+        mSearchEditText = (EditText) rootView.findViewById(R.id.searchEditText);
 
         mDbManager = new DBManager(getContext());
         mDbManager.open();
 
-        mAllGenres  = getContext().getResources().getStringArray(R.array.genre_types);
+        mAllGenres = getContext().getResources().getStringArray(R.array.genre_types);
 
         mSearchAdapter = new SearchAdapter(getContext(), mGenreCodes, mBooks, mUsers);
         mSearchAdapter.setBookClickListener(new SearchAdapter.SearchItemClickListener() {
@@ -190,14 +193,29 @@ public class SearchFragment extends Fragment {
                 }
             }
 
+            private static final int INTERVAL_SEARCH_TEXT_CHANGED_MILLIS = 500;
+            private long mLastKeyPressTime = Calendar.getInstance().getTimeInMillis();
+
             @Override
-             public void onTextChanged(CharSequence s, int start, int before, int count) {
+            public void onTextChanged(CharSequence s, int start, int before, int count) {
 
                 changeSearchButtonMode(false);
 
+                mLastKeyPressTime = Calendar.getInstance().getTimeInMillis();
+
                 if (mFetchGenreCode == UNSELECTED_GENRE_CODE) {
-                    String string = mSearchEditText.getText().toString();
-                    getSearchResults(string, false);
+
+                    new Handler(Looper.getMainLooper()).postDelayed(new Runnable() {
+                        @Override
+                        public void run() {
+                            if (Calendar.getInstance().getTimeInMillis() - mLastKeyPressTime >= INTERVAL_SEARCH_TEXT_CHANGED_MILLIS &&
+                                !isSearchButtonPressed()) {
+
+                                String string = mSearchEditText.getText().toString();
+                                getSearchResults(string, false);
+                            }
+                        }
+                    }, INTERVAL_SEARCH_TEXT_CHANGED_MILLIS);
                 }else {
                     Spannable spannable = mSearchEditText.getText();
                     if (spannable.getSpans(0, before, StyleSpan.class).length == 0) {
@@ -215,7 +233,7 @@ public class SearchFragment extends Fragment {
         mSearchEditText.setOnFocusChangeListener(new View.OnFocusChangeListener() {
             @Override
             public void onFocusChange(View v, boolean hasFocus) {
-                if(hasFocus){
+                if (hasFocus) {
                     if (SessionManager.getCurrentUser(getContext()).getLocation() == null) {
                         Calendar lastRemindedAt = SessionManager.getLastLocationReminderTime(getContext());
                         if (Calendar.getInstance().getTimeInMillis() - lastRemindedAt.getTimeInMillis() > INTERVAL_LOCATION_REMINDER_MILLIS) {
@@ -276,8 +294,8 @@ public class SearchFragment extends Fragment {
             @Override
             public void onResponse(Call<ResponseBody> call, Response<ResponseBody> response) {
                 try {
-                    if (response != null){
-                        if (response.body() != null){
+                    if (response != null) {
+                        if (response.body() != null) {
                             String json = response.body().string();
 
                             Logger.json(json);
@@ -292,25 +310,25 @@ public class SearchFragment extends Fragment {
                                 mBooks.clear();
                                 mUsers.clear();
 
-                                if (!responseObject.isNull("listBooks")){
+                                if (!responseObject.isNull("listBooks")) {
                                     JSONArray booksArray = responseObject.getJSONArray("listBooks");
                                     mBooks.addAll(Book.jsonArrayToBookList(booksArray));
                                 }
-                                if (!responseObject.isNull("listUsers")){
+                                if (!responseObject.isNull("listUsers")) {
                                     JSONArray usersArray = responseObject.getJSONArray("listUsers");
                                     mUsers.addAll(User.jsonArrayToUserList(usersArray));
                                 }
 
-                                if (mFetchGenreCode != UNSELECTED_GENRE_CODE || TextUtils.isEmpty(searchString)){
+                                if (mFetchGenreCode != UNSELECTED_GENRE_CODE || TextUtils.isEmpty(searchString)) {
                                     mSearchAdapter.setItems(new ArrayList<Integer>(), mBooks, mUsers, isSearchButtonPressed);
-                                }else {
+                                } else {
                                     mSearchAdapter.setItems(getMostSimilarGenreIndex(searchString), mBooks, mUsers, isSearchButtonPressed);
                                 }
 
-                                if (mBooks.size() < 1 && mUsers.size() < 1){
-                                    if (TextUtils.isEmpty(mSearchEditText.getText().toString())){
+                                if (mBooks.size() < 1 && mUsers.size() < 1) {
+                                    if (TextUtils.isEmpty(mSearchEditText.getText().toString())) {
                                         showSearchHistory();
-                                    }else {
+                                    } else {
                                         mSearchAdapter.setWarning(SearchAdapter.WARNING_TYPE_NO_RESULT_FOUND);
                                     }
                                 }
@@ -327,20 +345,20 @@ public class SearchFragment extends Fragment {
 
                                 mSearchAdapter.setError(SearchAdapter.ERROR_TYPE_UNKNOWN_ERROR);
                             }
-                        }else{
+                        } else {
                             Logger.e("Response body is null. (Search Page Error)");
                             mSearchAdapter.setError(SearchAdapter.ERROR_TYPE_UNKNOWN_ERROR);
                         }
-                    }else {
+                    } else {
                         Logger.e("Response object is null. (Search Page Error)");
                         mSearchAdapter.setError(SearchAdapter.ERROR_TYPE_UNKNOWN_ERROR);
                     }
                 } catch (IOException | JSONException e) {
                     Logger.e("IOException or JSONException caught: " + e.getMessage());
 
-                    if(BookieApplication.hasNetwork()){
+                    if (BookieApplication.hasNetwork()) {
                         mSearchAdapter.setError(SearchAdapter.ERROR_TYPE_UNKNOWN_ERROR);
-                    }else{
+                    } else {
                         mSearchAdapter.setError(SearchAdapter.ERROR_TYPE_NO_CONNECTION);
                     }
 
@@ -349,9 +367,9 @@ public class SearchFragment extends Fragment {
 
             @Override
             public void onFailure(Call<ResponseBody> call, Throwable t) {
-                if(BookieApplication.hasNetwork()){
+                if (BookieApplication.hasNetwork()) {
                     mSearchAdapter.setError(SearchAdapter.ERROR_TYPE_UNKNOWN_ERROR);
-                }else{
+                } else {
                     mSearchAdapter.setError(SearchAdapter.ERROR_TYPE_NO_CONNECTION);
                 }
 
@@ -364,18 +382,24 @@ public class SearchFragment extends Fragment {
 
         if (isSearchButtonPressed) {
             mSearchButton.setColorFilter(ContextCompat.getColor(getContext(), R.color.colorAccent));
+            mSearchButton.setTag(SEARCH_BUTTON_PRESSED_TAG, true);
         } else {
             mSearchButton.setColorFilter(ContextCompat.getColor(getContext(), R.color.secondaryTextColor));
+            mSearchButton.setTag(SEARCH_BUTTON_PRESSED_TAG, false);
         }
     }
 
-    private ArrayList<Integer> getMostSimilarGenreIndex(String searchString){
+    private boolean isSearchButtonPressed() {
+        return mSearchButton.getTag(SEARCH_BUTTON_PRESSED_TAG) != null ? ((Boolean) mSearchButton.getTag(SEARCH_BUTTON_PRESSED_TAG)) : false;
+    }
+
+    private ArrayList<Integer> getMostSimilarGenreIndex(String searchString) {
         final HashMap<Integer, Double> searchGenreSimilarityMap = new HashMap<>();
-        for (int i = 0; i < mAllGenres.length; i++){
+        for (int i = 0; i < mAllGenres.length; i++) {
             double similarity = getStringSimilarity(mAllGenres[i], searchString);
-            if (similarity > 0.7){
+            if (similarity > 0.7) {
                 searchGenreSimilarityMap.put(i, similarity);
-                if (similarity > 0.9){
+                if (similarity > 0.9) {
                     ArrayList<Integer> finalResult = new ArrayList<>();
                     finalResult.add(i);
                     return finalResult;
@@ -395,17 +419,17 @@ public class SearchFragment extends Fragment {
 
 
         ArrayList<Integer> finalResults = new ArrayList<>();
-        if (sortedGenres.size() > 1){
+        if (sortedGenres.size() > 1) {
             finalResults.add(sortedGenres.get(0));
         }
-        if (sortedGenres.size()> 2){
+        if (sortedGenres.size() > 2) {
             finalResults.add(sortedGenres.get(1));
         }
 
         return finalResults;
     }
 
-    private double getStringSimilarity(String reference, String searchString){
+    private double getStringSimilarity(String reference, String searchString) {
         reference = reference.toLowerCase();
         searchString = searchString.toLowerCase();
 
@@ -420,11 +444,11 @@ public class SearchFragment extends Fragment {
         }
     }
 
-    private void showSearchHistory(){
+    private void showSearchHistory() {
         ArrayList<Book> historyBooks = mDbManager.getSearchBookDataSource().getAllBooks();
         ArrayList<User> historyUsers = mDbManager.getSearchUserDataSource().getAllUsers();
 
-        if (historyBooks.size() + historyUsers.size() > 0){
+        if (historyBooks.size() + historyUsers.size() > 0) {
             mSearchAdapter.showHistory(historyBooks, historyUsers);
         } else {
             mSearchAdapter.hideHistory();
@@ -435,12 +459,12 @@ public class SearchFragment extends Fragment {
     private void addBookToSearchHistory(Book book) {
         ArrayList<Book> historyBooks = mDbManager.getSearchBookDataSource().getAllBooks();
 
-        if (historyBooks.size() > 2){
+        if (historyBooks.size() > 2) {
             mDbManager.getSearchBookDataSource().deleteAllBooks();
 
             historyBooks.remove(0);
 
-            for (Book historyBook: historyBooks){
+            for (Book historyBook : historyBooks) {
                 mDbManager.getSearchBookDataSource().saveBook(historyBook);
             }
         }
@@ -451,12 +475,12 @@ public class SearchFragment extends Fragment {
     private void addUserToSearchHistory(User user) {
         ArrayList<User> historyUsers = mDbManager.getSearchUserDataSource().getAllUsers();
 
-        if (historyUsers.size() > 2){
+        if (historyUsers.size() > 2) {
             mDbManager.getSearchUserDataSource().deleteAllUsers();
 
             historyUsers.remove(0);
 
-            for (User historyUser: historyUsers){
+            for (User historyUser : historyUsers) {
                 mDbManager.getSearchUserDataSource().saveUser(historyUser);
             }
         }
@@ -464,11 +488,12 @@ public class SearchFragment extends Fragment {
         mDbManager.getSearchUserDataSource().saveUser(user);
     }
 
-    public boolean isSearchEditTextEmpty(){
+    public boolean isSearchEditTextEmpty() {
         return mSearchEditText.length() == 0;
     }
 
-    public void clearSearchEditText(){
+    public void clearSearchEditText() {
+        mFetchGenreCode = UNSELECTED_GENRE_CODE;
         mSearchEditText.setText("");
     }
 }
