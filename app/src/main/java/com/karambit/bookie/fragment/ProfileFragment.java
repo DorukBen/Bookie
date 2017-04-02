@@ -6,9 +6,11 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.os.Bundle;
+import android.support.annotation.NonNull;
 import android.support.v4.app.Fragment;
 import android.support.v4.content.LocalBroadcastManager;
 import android.support.v7.app.AlertDialog;
+import android.support.v7.widget.DefaultItemAnimator;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.view.LayoutInflater;
@@ -40,6 +42,7 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.IOException;
+import java.util.List;
 
 import okhttp3.ResponseBody;
 import retrofit2.Call;
@@ -115,10 +118,22 @@ public class ProfileFragment extends Fragment {
         mProfileRecyclerView = (RecyclerView) rootView.findViewById(R.id.profileRecyclerView);
         mProfileRecyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
 
+        mProfileRecyclerView.setItemAnimator(new DefaultItemAnimator() {
+            @Override
+            public boolean canReuseUpdatedViewHolder(@NonNull RecyclerView.ViewHolder viewHolder, @NonNull List<Object> payloads) {
+                return true;
+            }
+
+            @Override
+            public boolean canReuseUpdatedViewHolder(@NonNull RecyclerView.ViewHolder viewHolder) {
+                return true;
+            }
+        });
+
         mDbManager = new DBManager(getContext());
         mDbManager.open();
 
-        User currentUser = SessionManager.getCurrentUser(getContext());
+        final User currentUser = SessionManager.getCurrentUser(getContext());
 
         if (mUser.equals(currentUser)){
             mProfileTimelineAdapter = new ProfileTimelineAdapter(getContext(), SessionManager.getCurrentUserDetails(getContext()));
@@ -238,32 +253,47 @@ public class ProfileFragment extends Fragment {
                     if (intent.getParcelableExtra(BookieIntentFilters.EXTRA_NOTIFICATION) != null){
                         Notification notification = intent.getParcelableExtra(BookieIntentFilters.EXTRA_NOTIFICATION);
 
-                        int onRoadBookCountBeforeAdding = mUserDetails.getOnRoadBooks().size();
-
-                        mUserDetails.getOnRoadBooks().add(0, notification.getBook());
-
-                        mProfileTimelineAdapter.notifyItemInserted(mProfileTimelineAdapter.getFirstOnRoadBookIndex());
-
                         Logger.d("Accepted request received from FCM: " + notification);
 
-                        if (onRoadBookCountBeforeAdding == 0) {
-                            mProfileTimelineAdapter.notifyItemInserted(mProfileTimelineAdapter.getOnRoadBookSubtitleIndex(false));
+                        if (mUser.equals(currentUser)) {
+                            int onRoadBookCountBeforeAdding = mUserDetails.getOnRoadBooks().size();
+
+                            mUserDetails.getOnRoadBooks().add(0, notification.getBook());
+
+                            mProfileTimelineAdapter.notifyItemInserted(mProfileTimelineAdapter.getFirstOnRoadBookIndex());
+
+                            if (onRoadBookCountBeforeAdding == 0) {
+                                mProfileTimelineAdapter.notifyItemInserted(mProfileTimelineAdapter.getOnRoadBookSubtitleIndex(false));
+                            }
+
                         }
                     }
                 } else if (intent.getAction().equalsIgnoreCase(BookieIntentFilters.FCM_INTENT_FILTER_BOOK_OWNER_CHANGED_RECEIVED)){
                     if (intent.getParcelableExtra(BookieIntentFilters.EXTRA_NOTIFICATION) != null){
                         Notification notification = intent.getParcelableExtra(BookieIntentFilters.EXTRA_NOTIFICATION);
 
-                        int removedBookIndex = mUserDetails.getBooksOnHand().indexOf(notification.getBook());
-                        int firstBookOnHandIndexBeforeRemoving = mProfileTimelineAdapter.getFirstBookOnHandIndex();
+                        if (mUserDetails.getBooksOnHand().contains(notification.getBook())) {
+                            int removedBookIndex = mUserDetails.getBooksOnHand().indexOf(notification.getBook());
+                            int firstBookOnHandIndexBeforeRemoving = mProfileTimelineAdapter.getFirstBookOnHandIndex();
 
-                        mUserDetails.getBooksOnHand().remove(notification.getBook());
-                        mUserDetails.setPoint(mUserDetails.getPoint() + User.POINT_SHARE_BOOK);
-                        mUserDetails.setSharedPoint(mUserDetails.getSharedPoint() + 1);
+                            mUserDetails.getBooksOnHand().remove(notification.getBook());
+                            mUserDetails.setPoint(mUserDetails.getPoint() + User.POINT_SHARE_BOOK);
+                            mUserDetails.setSharedPoint(mUserDetails.getSharedPoint() + 1);
 
-                        mProfileTimelineAdapter.notifyItemRemoved(firstBookOnHandIndexBeforeRemoving + removedBookIndex);
+                            mProfileTimelineAdapter.notifyItemRemoved(firstBookOnHandIndexBeforeRemoving + removedBookIndex);
 
-                        mProfileTimelineAdapter.notifyItemChanged(mProfileTimelineAdapter.getHeaderIndex());
+                            mProfileTimelineAdapter.notifyItemChanged(mProfileTimelineAdapter.getHeaderIndex());
+
+                        } else if (mUserDetails.getCurrentlyReading().contains(notification.getBook())) {
+
+                            mUserDetails.getBooksOnHand().remove(notification.getBook());
+                            mUserDetails.setPoint(mUserDetails.getPoint() + User.POINT_SHARE_BOOK);
+                            mUserDetails.setSharedPoint(mUserDetails.getSharedPoint() + 1);
+
+                            mProfileTimelineAdapter.notifyItemChanged(mProfileTimelineAdapter.getCurrentlyReadingIndex());
+
+                            mProfileTimelineAdapter.notifyItemChanged(mProfileTimelineAdapter.getHeaderIndex());
+                        }
 
                         Logger.d("Book owner changed received from FCM: " + notification);
 
@@ -309,6 +339,8 @@ public class ProfileFragment extends Fragment {
                                         mUserDetails.getCurrentlyReading().add(book);
 
                                         mProfileTimelineAdapter.notifyItemRemoved(firstBookOnHandIndexBeforeRemoving + removedBookIndex);
+
+                                        mProfileTimelineAdapter.notifyItemChanged(mProfileTimelineAdapter.getCurrentlyReadingIndex());
 
                                         Logger.d("Book state changed received from Local Broadcast: " + book);
 
@@ -375,6 +407,8 @@ public class ProfileFragment extends Fragment {
 
                                         mProfileTimelineAdapter.notifyItemInserted(firstBookOnHandIndexBeforeRemoving);
 
+                                        mProfileTimelineAdapter.notifyItemChanged(mProfileTimelineAdapter.getCurrentlyReadingIndex());
+
                                         Logger.d("Book state changed received from Local Broadcast: " + book);
 
                                         if (booksOnHandCountBeforeAdding == 0) {
@@ -407,6 +441,8 @@ public class ProfileFragment extends Fragment {
 
                                         mProfileTimelineAdapter.notifyItemInserted(mProfileTimelineAdapter.getFirstBookOnHandIndex());
 
+                                        mProfileTimelineAdapter.notifyItemChanged(mProfileTimelineAdapter.getCurrentlyReadingIndex());
+
                                         Logger.d("Book state changed received from Local Broadcast: " + book);
 
                                         if (booksOnHandCountBeforeAdding == 0) {
@@ -429,17 +465,19 @@ public class ProfileFragment extends Fragment {
                                     }
 
                                     case ON_ROAD:{
-                                        int onRoadBooksCountBeforeAdding = mUserDetails.getOnRoadBooks().size();
+                                        int booksOnHndCountCountBeforeAdding = mUserDetails.getOnRoadBooks().size();
 
                                         mUserDetails.getCurrentlyReading().remove(book);
-                                        mUserDetails.getOnRoadBooks().add(0, book);
+                                        mUserDetails.getBooksOnHand().add(0, book);
 
-                                        mProfileTimelineAdapter.notifyItemInserted(mProfileTimelineAdapter.getFirstOnRoadBookIndex());
+                                        mProfileTimelineAdapter.notifyItemInserted(mProfileTimelineAdapter.getFirstBookOnHandIndex());
+
+                                        mProfileTimelineAdapter.notifyItemChanged(mProfileTimelineAdapter.getCurrentlyReadingIndex());
 
                                         Logger.d("Book state changed received from Local Broadcast: " + book);
 
-                                        if (onRoadBooksCountBeforeAdding == 0) {
-                                            mProfileTimelineAdapter.notifyItemInserted(mProfileTimelineAdapter.getOnRoadBookSubtitleIndex(false));
+                                        if (booksOnHndCountCountBeforeAdding == 0) {
+                                            mProfileTimelineAdapter.notifyItemInserted(mProfileTimelineAdapter.getBooksOnHandSubtitleIndex(false));
                                         }
 
                                         if (!mUserDetails.getReadBooks().contains(book)){
@@ -474,6 +512,8 @@ public class ProfileFragment extends Fragment {
                                         mUserDetails.getCurrentlyReading().add(0, book);
 
                                         mProfileTimelineAdapter.notifyItemRemoved(firstOnRoadBookIndexBeforeRemoving + removedBookIndex);
+
+                                        mProfileTimelineAdapter.notifyItemChanged(mProfileTimelineAdapter.getCurrentlyReadingIndex());
 
                                         Logger.d("Book state changed received from Local Broadcast: " + book);
 
@@ -540,7 +580,50 @@ public class ProfileFragment extends Fragment {
                             Logger.e("Null book in intent extra");
                         }
                     }
-                }else if (intent.getAction().equalsIgnoreCase(BookieIntentFilters.FCM_INTENT_FILTER_USER_VERIFIED)){
+                } else if (intent.getAction().equalsIgnoreCase(BookieIntentFilters.INTENT_FILTER_PROFILE_PICTURE_CHANGED)) {
+
+                    String profilePictureUrl = intent.getStringExtra(BookieIntentFilters.EXTRA_PROFILE_PICTURE_URL);
+                    String thumbnailUrl = intent.getStringExtra(BookieIntentFilters.EXTRA_PROFILE_THUMBNAIL_URL);
+
+                    if (profilePictureUrl != null && thumbnailUrl != null) {
+
+                        mUserDetails.getUser().setImageUrl(profilePictureUrl);
+                        mUserDetails.getUser().setThumbnailUrl(thumbnailUrl);
+
+                        Logger.d("Profile picture changed received from Local Broadcast: \n" +
+                                     "Profile Picture URL: " + profilePictureUrl + "\nThumbnail URL: " + thumbnailUrl);
+
+                        mProfileTimelineAdapter.notifyItemChanged(mProfileTimelineAdapter.getHeaderIndex());
+                    }
+                } else if (intent.getAction().equalsIgnoreCase(BookieIntentFilters.INTENT_FILTER_BOOK_ADDED)) {
+
+                    Book book = intent.getParcelableExtra(BookieIntentFilters.EXTRA_BOOK);
+
+                    if (book != null) {
+
+                        Logger.d("Book added received from Local Broadcast: " + book);
+
+                        switch (book.getState()) {
+                            case OPENED_TO_SHARE:
+                            case CLOSED_TO_SHARE: {
+                                mUserDetails.getBooksOnHand().add(0, book);
+                                mProfileTimelineAdapter.notifyItemInserted(mProfileTimelineAdapter.getFirstBookOnHandIndex());
+                                break;
+                            }
+
+                            case READING: {
+                                mUserDetails.getCurrentlyReading().add(book);
+                                mProfileTimelineAdapter.notifyItemChanged(mProfileTimelineAdapter.getCurrentlyReadingIndex());
+                                break;
+                            }
+
+                            default: {
+                                Logger.e("Invalid book state after adding: " + book);
+                            }
+
+                        }
+                    }
+                } else if (intent.getAction().equalsIgnoreCase(BookieIntentFilters.FCM_INTENT_FILTER_USER_VERIFIED)){
                     //TODO When user verified
                 }
             }
@@ -548,9 +631,12 @@ public class ProfileFragment extends Fragment {
 
         LocalBroadcastManager.getInstance(getContext()).registerReceiver(mMessageReceiver, new IntentFilter(BookieIntentFilters.FCM_INTENT_FILTER_ACCEPTED_REQUEST_RECEIVED));
         LocalBroadcastManager.getInstance(getContext()).registerReceiver(mMessageReceiver, new IntentFilter(BookieIntentFilters.FCM_INTENT_FILTER_BOOK_OWNER_CHANGED_RECEIVED));
-        LocalBroadcastManager.getInstance(getContext()).registerReceiver(mMessageReceiver, new IntentFilter(BookieIntentFilters.INTENT_FILTER_BOOK_STATE_CHANGED));
         LocalBroadcastManager.getInstance(getContext()).registerReceiver(mMessageReceiver, new IntentFilter(BookieIntentFilters.FCM_INTENT_FILTER_USER_VERIFIED));
         LocalBroadcastManager.getInstance(getContext()).registerReceiver(mMessageReceiver, new IntentFilter(BookieIntentFilters.FCM_INTENT_FILTER_BOOK_LOST));
+
+        LocalBroadcastManager.getInstance(getContext()).registerReceiver(mMessageReceiver, new IntentFilter(BookieIntentFilters.INTENT_FILTER_BOOK_STATE_CHANGED));
+        LocalBroadcastManager.getInstance(getContext()).registerReceiver(mMessageReceiver, new IntentFilter(BookieIntentFilters.INTENT_FILTER_PROFILE_PICTURE_CHANGED));
+        LocalBroadcastManager.getInstance(getContext()).registerReceiver(mMessageReceiver, new IntentFilter(BookieIntentFilters.INTENT_FILTER_BOOK_ADDED));
 
         return rootView;
     }
@@ -688,18 +774,5 @@ public class ProfileFragment extends Fragment {
 
     public void refreshProfilePage(){
         fetchProfilePageArguments();
-    }
-
-    @Override
-    public void onActivityResult(int requestCode, int resultCode, Intent data) {
-        super.onActivityResult(requestCode, resultCode, data);
-        if (requestCode == UPDATE_PROFILE_PICTURE_REQUEST_CODE){
-            if (resultCode == PhotoViewerActivity.RESULT_PROFILE_PICTURE_UPDATED){
-                refreshProfilePage();
-//                TODO mProfileTimelineAdapter.notifyItemChanged(mProfileTimelineAdapter.getHeaderIndex());
-            }
-        } else if (resultCode == AddBookActivity.RESULT_BOOK_CREATED) {
-            refreshProfilePage();
-        }
     }
 }

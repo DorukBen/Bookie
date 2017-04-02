@@ -4,9 +4,12 @@ import android.os.AsyncTask;
 
 import com.orhanobut.logger.Logger;
 
+import java.io.BufferedReader;
 import java.io.DataOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
 
@@ -42,7 +45,7 @@ import java.net.URL;
  * Created by doruk on 2.09.2016.
  * Created for BookieApplication
  */
-public class UploadFileTask extends AsyncTask<Void, Integer, Integer> {
+public class UploadFileTask extends AsyncTask<Void, Integer, HttpURLConnection> {
 
     public static final String TAG = UploadFileTask.class.getSimpleName();
 
@@ -82,7 +85,7 @@ public class UploadFileTask extends AsyncTask<Void, Integer, Integer> {
     }
 
     @Override
-    protected Integer doInBackground(Void... params) {
+    protected HttpURLConnection doInBackground(Void... params) {
         try {
             String filePath = mFilePath;
 
@@ -146,57 +149,71 @@ public class UploadFileTask extends AsyncTask<Void, Integer, Integer> {
             outputStream.flush();
             outputStream.close();
 
-            return serverResponseCode;
+            return connection;
 
         } catch (Exception ex) {
             Logger.e("Upload failed: " + ex.getMessage());
 
-            return -1;
+            return null;
         }
     }
 
     @Override
-    protected void onPostExecute(Integer responseCode) {
-        super.onPostExecute(responseCode);
+    protected void onPostExecute(HttpURLConnection connection) {
+        super.onPostExecute(connection);
 
         if (mUploadProgressChangedListener != null) {
 
-            switch (responseCode) {
+            try {
+                BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(connection.getInputStream()));
+                StringBuilder stringBuilder = new StringBuilder();
+                String line;
+                while ((line = bufferedReader.readLine()) != null) {
+                    stringBuilder.append(line + "\n");
+                }
+                bufferedReader.close();
 
-                case HttpURLConnection.HTTP_OK:
-                    Logger.d("UploadFilesTask: OK!");
+                String response = stringBuilder.toString();
 
-                    mUploadProgressChangedListener.onProgressCompleted();
+                switch (connection.getResponseCode()) {
 
-                    break;// fine, go on
+                    case HttpURLConnection.HTTP_OK:
+                        Logger.d("UploadFilesTask: OK!");
 
-                case HttpURLConnection.HTTP_GATEWAY_TIMEOUT:
-                    Logger.e("UploadFilesTask: Gateway timeout");
+                        mUploadProgressChangedListener.onProgressCompleted(response);
 
-                    mUploadProgressChangedListener.onProgressError();
+                        break;// fine, go on
 
-                    break;// retry
+                    case HttpURLConnection.HTTP_GATEWAY_TIMEOUT:
+                        Logger.e("UploadFilesTask: Gateway timeout");
 
-                case HttpURLConnection.HTTP_UNAVAILABLE:
-                    Logger.e("UploadFilesTask: Unavaliable");
+                        mUploadProgressChangedListener.onProgressError();
 
-                    mUploadProgressChangedListener.onProgressError();
+                        break;// retry
 
-                    break;// retry, server is unstable
+                    case HttpURLConnection.HTTP_UNAVAILABLE:
+                        Logger.e("UploadFilesTask: Unavaliable");
 
-                default:
-                    Logger.e("UploadFilesTask: Unknown reponse code..!");
-                    Logger.e(responseCode.toString());
-                    mUploadProgressChangedListener.onProgressError();
+                        mUploadProgressChangedListener.onProgressError();
 
-                    break; // abort
+                        break;// retry, server is unstable
+
+                    default:
+                        Logger.e("UploadFilesTask: Unknown response code: " + connection.getResponseCode());
+                        mUploadProgressChangedListener.onProgressError();
+
+                        break; // abort
+                }
+            } catch (IOException e) {
+                Logger.d("IOException caught while parsing response: " + e.getMessage());
+                e.printStackTrace();
             }
         }
     }
 
     public interface UploadProgressChangedListener{
         void onProgressChanged(int progress);
-        void onProgressCompleted();
+        void onProgressCompleted(String response);
         void onProgressError();
     }
 

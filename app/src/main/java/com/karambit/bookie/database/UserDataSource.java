@@ -280,6 +280,24 @@ public class UserDataSource {
     }
 
     /**
+     * Updates {@link User user} profile picture and its thumbnail.<br>
+     *
+     * @param imageUrl {@link User user's} image url value.<br>
+     * @param thumbnailUrl {@link User user's} thumbnail url value.<br>
+     */
+    public void updateUserImage(String imageUrl, String thumbnailUrl){
+        try{
+            ContentValues cv = new ContentValues();
+            cv.put(USER_COLUMN_IMAGE_URL, imageUrl);
+            cv.put(USER_COLUMN_THUMBNAIL_URL, thumbnailUrl);
+
+            mSqLiteDatabase.update(USER_TABLE_NAME, cv, null, null);
+        }finally {
+            Logger.d("User's location updated: imageUrl = " + imageUrl + " thumbnailUrl = " + thumbnailUrl);
+        }
+    }
+
+    /**
      * Updates {@link User user} password.<br>
      *
      * @param password {@link User user's} password string.<br>

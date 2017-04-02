@@ -22,9 +22,9 @@ import android.os.Environment;
 import android.support.annotation.NonNull;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
+import android.support.v4.content.LocalBroadcastManager;
 import android.support.v7.app.AppCompatActivity;
 import android.util.DisplayMetrics;
-import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
 import android.widget.ImageButton;
@@ -36,6 +36,7 @@ import com.bumptech.glide.Glide;
 import com.bumptech.glide.load.engine.DiskCacheStrategy;
 import com.bumptech.glide.request.animation.GlideAnimation;
 import com.bumptech.glide.request.target.BitmapImageViewTarget;
+import com.karambit.bookie.database.DBManager;
 import com.karambit.bookie.helper.FileNameGenerator;
 import com.karambit.bookie.helper.ImagePicker;
 import com.karambit.bookie.helper.ImageScaler;
@@ -43,7 +44,11 @@ import com.karambit.bookie.helper.SessionManager;
 import com.karambit.bookie.helper.UploadFileTask;
 import com.karambit.bookie.model.User;
 import com.karambit.bookie.rest_api.BookieClient;
+import com.karambit.bookie.service.BookieIntentFilters;
 import com.orhanobut.logger.Logger;
+
+import org.json.JSONException;
+import org.json.JSONObject;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -93,6 +98,7 @@ public class PhotoViewerActivity extends AppCompatActivity implements View.OnTou
 
     private static final String TAG = PhotoViewerActivity.class.getSimpleName();
     private ProgressDialog mProgressDialog;
+    private DBManager mDbManager;
 
 
     @Override
@@ -112,6 +118,9 @@ public class PhotoViewerActivity extends AppCompatActivity implements View.OnTou
                 getWindow().setStatusBarColor(Color.TRANSPARENT);
             }
         }
+
+        mDbManager = new DBManager(PhotoViewerActivity.this);
+        mDbManager.open();
 
         mPhotoView = (ImageView) findViewById(R.id.profilePictureFullSize);
         mEditPhotoView = (ImageView) findViewById(R.id.editProfilePictureFullSize);
@@ -534,7 +543,6 @@ public class PhotoViewerActivity extends AppCompatActivity implements View.OnTou
 
         String imageUrlString = BookieClient.BASE_URL + UPLOAD_USER_IMAGE_URL + serverArgsString;
 
-
         Logger.d("UploadFileTask called with parameters:\n" +
                      "\tfilePath=" + path + "\n\tURLString=" + imageUrlString + "\n\tfileName=" + name);
 
@@ -547,18 +555,61 @@ public class PhotoViewerActivity extends AppCompatActivity implements View.OnTou
             }
 
             @Override
-            public void onProgressCompleted() {
-                Logger.d("Image upload is OK");
+            public void onProgressCompleted(String response) {
+
                 mProgressDialog.dismiss();
 
-                setResult(RESULT_PROFILE_PICTURE_UPDATED);
-                finish();
+                if (response != null) {
+
+                    Logger.json(response);
+
+                    try {
+                        JSONObject responseObject = new JSONObject(response);
+                        boolean error = responseObject.optBoolean("error", true);
+
+                        if (!error) {
+
+                            String pictureUrl = responseObject.optString("pictureURL");
+                            String thumbnailUrl = responseObject.optString("thumbnailURL");
+
+                            mDbManager.getUserDataSource().updateUserImage(pictureUrl, thumbnailUrl);
+
+                            Intent data = new Intent(BookieIntentFilters.INTENT_FILTER_PROFILE_PICTURE_CHANGED);
+
+                            data.putExtra(BookieIntentFilters.EXTRA_PROFILE_PICTURE_URL, pictureUrl);
+                            data.putExtra(BookieIntentFilters.EXTRA_PROFILE_THUMBNAIL_URL, thumbnailUrl);
+
+                            LocalBroadcastManager.getInstance(PhotoViewerActivity.this).sendBroadcast(data);
+
+                            Logger.d("Profile picture upload is OK");
+
+                            finish();
+
+                        } else {
+                            int errorCode = responseObject.getInt("errorCode");
+
+                            Logger.e("Error true in response: errorCode = " + errorCode);
+
+                            Toast.makeText(PhotoViewerActivity.this, getString(R.string.unknown_error), Toast.LENGTH_SHORT).show();
+                        }
+                    } catch (JSONException e) {
+                        Logger.e("IOException caught: " + e.getMessage());
+
+                        Toast.makeText(PhotoViewerActivity.this, getString(R.string.unknown_error), Toast.LENGTH_SHORT).show();
+                    }
+                } else {
+                    Logger.e("Response is null. (Upload Profile Picture Error)");
+
+                    Toast.makeText(PhotoViewerActivity.this, getString(R.string.unknown_error), Toast.LENGTH_SHORT).show();
+                }
             }
 
             @Override
             public void onProgressError() {
                 mProgressDialog.dismiss();
-                Logger.e("Image upload ERROR");
+
+                Logger.e("Image upload error");
+
                 Toast.makeText(PhotoViewerActivity.this, R.string.unknown_error, Toast.LENGTH_SHORT).show();
             }
         });
@@ -600,18 +651,56 @@ public class PhotoViewerActivity extends AppCompatActivity implements View.OnTou
             }
 
             @Override
-            public void onProgressCompleted() {
-                Logger.d("Image upload is OK");
+            public void onProgressCompleted(String response) {
                 mProgressDialog.dismiss();
 
-                setResult(RESULT_PROFILE_PICTURE_UPDATED);
-                finish();
+                if (response != null) {
+
+                    Logger.json(response);
+
+                    try {
+                        JSONObject responseObject = new JSONObject(response);
+                        boolean error = responseObject.optBoolean("error", true);
+
+                        if (!error) {
+
+                            String pictureUrl = responseObject.optString("pictureURL");
+                            String thumbnailUrl = responseObject.optString("thumbnailURL");
+
+                            Intent data = new Intent(BookieIntentFilters.INTENT_FILTER_BOOK_PICTURE_CHANGED);
+
+                            data.putExtra(BookieIntentFilters.EXTRA_BOOK_PICTURE_URL, pictureUrl);
+                            data.putExtra(BookieIntentFilters.EXTRA_BOOK_THUMBNAIL_URL, thumbnailUrl);
+
+                            LocalBroadcastManager.getInstance(PhotoViewerActivity.this).sendBroadcast(data);
+
+                            Logger.d("Book picture upload is OK");
+
+                            finish();
+
+                        } else {
+                            int errorCode = responseObject.getInt("errorCode");
+
+                            Logger.e("Error true in response: errorCode = " + errorCode);
+
+                            Toast.makeText(PhotoViewerActivity.this, getString(R.string.unknown_error), Toast.LENGTH_SHORT).show();
+                        }
+                    } catch (JSONException e) {
+                        Logger.e("IOException caught: " + e.getMessage());
+
+                        Toast.makeText(PhotoViewerActivity.this, getString(R.string.unknown_error), Toast.LENGTH_SHORT).show();
+                    }
+                } else {
+                    Logger.e("Response is null. (Book Profile Picture Error)");
+
+                    Toast.makeText(PhotoViewerActivity.this, getString(R.string.unknown_error), Toast.LENGTH_SHORT).show();
+                }
             }
 
             @Override
             public void onProgressError() {
                 mProgressDialog.dismiss();
-                Logger.e("Image upload ERROR");
+                Logger.e("Image upload error");
                 Toast.makeText(PhotoViewerActivity.this, R.string.unknown_error, Toast.LENGTH_SHORT).show();
             }
         });

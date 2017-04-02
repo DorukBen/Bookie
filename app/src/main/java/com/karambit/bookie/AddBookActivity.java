@@ -13,6 +13,7 @@ import android.os.Environment;
 import android.support.annotation.NonNull;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
+import android.support.v4.content.LocalBroadcastManager;
 import android.support.v7.app.AppCompatActivity;
 import android.text.InputType;
 import android.text.Spannable;
@@ -39,7 +40,11 @@ import com.karambit.bookie.helper.UploadFileTask;
 import com.karambit.bookie.model.Book;
 import com.karambit.bookie.model.User;
 import com.karambit.bookie.rest_api.BookieClient;
+import com.karambit.bookie.service.BookieIntentFilters;
 import com.orhanobut.logger.Logger;
+
+import org.json.JSONException;
+import org.json.JSONObject;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -359,8 +364,8 @@ public class AddBookActivity extends AppCompatActivity {
 
         User.Details currentUserDetails = SessionManager.getCurrentUserDetails(this);
 
-        String serverArgsString = "?email=" + currentUserDetails.getEmail()
-                + "&password=" + currentUserDetails.getPassword()
+        String serverArgsString = "?email=" + currentUserDetails.getEmail() +
+                "&password=" + currentUserDetails.getPassword()
                 + "&imageName=" + name
                 + "&bookName=" + bookName
                 + "&author=" + author
@@ -371,6 +376,12 @@ public class AddBookActivity extends AppCompatActivity {
 
         final UploadFileTask uftImage = new UploadFileTask(path, imageUrlString, name);
 
+        Logger.d("getHomePageBooks() API called with parameters: \n" +
+                     "\temail=" + currentUserDetails.getEmail() + ", \n\tpassword=" + currentUserDetails.getPassword() +
+                     ", \n\timageName=" + name + ", \n\tbookName=" + bookName + ", \n\tauthor=" + author +
+                     ", \n\tbookState=" + bookState + ", \n\tgenreCode=" + genreCode);
+
+
         uftImage.setUploadProgressListener(new UploadFileTask.UploadProgressChangedListener() {
             @Override
             public void onProgressChanged(int progress) {
@@ -378,22 +389,57 @@ public class AddBookActivity extends AppCompatActivity {
             }
 
             @Override
-            public void onProgressCompleted() {
-
-                Logger.d("Book image upload is OK");
+            public void onProgressCompleted(String response) {
 
                 mProgressDialog.dismiss();
 
-                setResult(RESULT_BOOK_CREATED);
-                finish();
+                if (response != null) {
+
+                    Logger.json(response);
+
+                    try {
+                        JSONObject responseObject = new JSONObject(response);
+                        boolean error = responseObject.optBoolean("error", true);
+
+                        if (!error) {
+
+                            Book book = Book.jsonObjectToBook(responseObject.getJSONObject("book"));
+
+                            Intent data = new Intent(BookieIntentFilters.INTENT_FILTER_BOOK_ADDED);
+
+                            data.putExtra(BookieIntentFilters.EXTRA_BOOK, book);
+
+                            LocalBroadcastManager.getInstance(AddBookActivity.this).sendBroadcast(data);
+
+                            Logger.d("Book add is OK");
+
+                            finish();
+
+                        } else {
+                            int errorCode = responseObject.getInt("errorCode");
+
+                            Logger.e("Error true in response: errorCode = " + errorCode);
+
+                            Toast.makeText(AddBookActivity.this, getString(R.string.unknown_error), Toast.LENGTH_SHORT).show();
+                        }
+                    } catch (JSONException e) {
+                        Logger.e("IOException caught: " + e.getMessage());
+
+                        Toast.makeText(AddBookActivity.this, getString(R.string.unknown_error), Toast.LENGTH_SHORT).show();
+                    }
+                } else {
+                    Logger.e("Response is null. (Add Book Error)");
+
+                    Toast.makeText(AddBookActivity.this, getString(R.string.unknown_error), Toast.LENGTH_SHORT).show();
+                }
             }
 
             @Override
             public void onProgressError() {
-
-                Logger.e("Image upload ERROR");
+                Logger.e("Book Add error");
 
                 mProgressDialog.dismiss();
+
                 Toast.makeText(AddBookActivity.this, R.string.unknown_error, Toast.LENGTH_SHORT).show();
             }
         });
