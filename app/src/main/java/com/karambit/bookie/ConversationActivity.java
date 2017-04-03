@@ -290,7 +290,7 @@ public class ConversationActivity extends AppCompatActivity {
                     final Message message = new Message(id, messageText, SessionManager.getCurrentUser(ConversationActivity.this),
                     mOppositeUser, Calendar.getInstance(), Message.State.PENDING);
 
-                    if (mDbManager.getMessageDataSource().saveMessage(message, SessionManager.getCurrentUser(ConversationActivity.this))) {
+                    if (mDbManager.getMessageDataSource().saveMessage(message, message.getOppositeUser(SessionManager.getCurrentUser(ConversationActivity.this)))) {
 
                         mMessageEditText.setText("");
                         toggleSendButton(false);
@@ -773,7 +773,7 @@ public class ConversationActivity extends AppCompatActivity {
 
                                     try {
                                         changeMessageID(responseObject.getInt("oldMessageID"), responseObject.getInt("newMessageID"));
-                                        Logger.d("Message sent to server");
+                                        Logger.d("Message sent to server succesfully");
                                     } catch (JSONException e) {
                                         Logger.e("JSONException caught: " + e.getMessage());
                                     }

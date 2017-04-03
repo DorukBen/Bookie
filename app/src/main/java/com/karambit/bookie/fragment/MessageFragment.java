@@ -245,6 +245,8 @@ public class MessageFragment extends Fragment {
 
         recyclerView.setOnScrollListener(new ElevationScrollListener((MainActivity) getActivity(), TAB_INDEX));
 
+
+
         mMessageReceiver = new BroadcastReceiver() {
             @Override
             public void onReceive(Context context, Intent intent) {
@@ -274,6 +276,14 @@ public class MessageFragment extends Fragment {
         LocalBroadcastManager.getInstance(getContext()).registerReceiver(mMessageReceiver, new IntentFilter(BookieIntentFilters.FCM_INTENT_FILTER_MESSAGE_DELIVERED));
         LocalBroadcastManager.getInstance(getContext()).registerReceiver(mMessageReceiver, new IntentFilter(BookieIntentFilters.FCM_INTENT_FILTER_MESSAGE_SEEN));
         return rootView;
+    }
+
+    @Override
+    public void onResume() {
+        super.onResume();
+        if (SessionManager.isLoggedIn(getContext())){
+            fetchMessages();
+        }
     }
 
     private void fetchMessagesFromServer() {
@@ -328,7 +338,7 @@ public class MessageFragment extends Fragment {
 
                                         uploadMessageStateToServer(message);
                                     }
-                                    mDBManager.getMessageDataSource().saveMessage(message, currentUserDetails.getUser());
+                                    mDBManager.getMessageDataSource().saveMessage(message, message.getOppositeUser(currentUserDetails.getUser()));
 
                                     mDBManager.checkAndUpdateAllUsers(message.getOppositeUser(currentUserDetails.getUser()));
                                 }
@@ -354,8 +364,6 @@ public class MessageFragment extends Fragment {
                         Logger.e("Response object is null. (Message Fragment Error)");
                     }
                 } catch (IOException | JSONException e) {
-                    e.printStackTrace();
-
                     Logger.e("JSONException or IOException caught: " + e.getMessage());
                 }
                 mPullRefreshLayout.setRefreshing(false);
@@ -477,14 +485,6 @@ public class MessageFragment extends Fragment {
                 uploadMessageStateToServer(message);
             }
         });
-    }
-
-    @Override
-    public void onResume() {
-        super.onResume();
-        if (SessionManager.isLoggedIn(getContext())){
-            fetchMessages();
-        }
     }
 
     @Override

@@ -114,7 +114,7 @@ public class BookieFirebaseMessagingService extends com.google.firebase.messagin
 
                             DBManager dbManager = new DBManager(getApplicationContext());
                             dbManager.open();
-                            dbManager.getMessageDataSource().saveMessage(message, SessionManager.getCurrentUser(getApplicationContext()));
+                            dbManager.getMessageDataSource().saveMessage(message, message.getOppositeUser(SessionManager.getCurrentUser(this)));
 
                             Intent intent = new Intent(BookieIntentFilters.FCM_INTENT_FILTER_MESSAGE_RECEIVED);
                             intent.putExtra(BookieIntentFilters.EXTRA_MESSAGE, message);

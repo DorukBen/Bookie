@@ -97,9 +97,9 @@ public class MessageUserDataSource {
         }finally {
 
             if (result){
-                Logger.d(TAG, "Message user update successful.");
+                Logger.d("Message user update successful.");
             }else{
-                Logger.e(TAG,"Error occurred during user update!");
+                Logger.e("Error occurred during user update!");
             }
         }
         return result;
