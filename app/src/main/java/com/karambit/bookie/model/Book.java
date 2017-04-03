@@ -106,19 +106,18 @@ public class Book implements Parcelable {
         }
 
         public static State valueOf(int stateCode) {
-            switch (stateCode) {
-                case 0:
-                    return State.READING;
-                case 1:
-                    return State.OPENED_TO_SHARE;
-                case 2:
-                    return State.CLOSED_TO_SHARE;
-                case 3:
-                    return State.ON_ROAD;
-                case 4:
-                    return State.LOST;
-                default:
-                    return null;
+            if (stateCode == READING.mStateCode) {
+                return READING;
+            } else if (stateCode == OPENED_TO_SHARE.mStateCode) {
+                return OPENED_TO_SHARE;
+            } else if (stateCode == CLOSED_TO_SHARE.mStateCode) {
+                return CLOSED_TO_SHARE;
+            } else if (stateCode == ON_ROAD.mStateCode) {
+                return ON_ROAD;
+            } else if (stateCode == LOST.mStateCode) {
+                return LOST;
+            } else {
+                throw new IllegalArgumentException("Invalid Book state");
             }
         }
     }
@@ -267,10 +266,40 @@ public class Book implements Parcelable {
 
     @Override
     public String toString() {
-        return "Book{" +
-            "mID=" + mID +
-            ", mName='" + mName + '\'' +
-            ", mState=" + mState + '}';
+        return "\nBook{" +
+            "\n\tmID=" + mID + "," +
+            "\n\tmName='" + mName + "'," +
+            "\n\tmImageURL='" + mImageURL + "'," +
+            "\n\tmThumbnailURL='" + mThumbnailURL + "'," +
+            "\n\tmAuthor='" + mAuthor + "'," +
+            "\n\tmState=" + mState + "," +
+            "\n\tmGenreCode=" + mGenreCode + "," +
+            "\n\tmOwner=" + mOwner +
+            "\n}\n";
+    }
+
+    public String toShortString() {
+        return "\nBook{" +
+            "\n\tmID=" + mID + "," +
+            "\n\tmName='" + mName + "'," +
+            "\n\tmState=" + mState + "," +
+            "\n\tmOwner=" + mOwner.getName() + "," +
+            "\n\tmGenreCode=" + mGenreCode +
+            "\n}\n";
+    }
+
+    public static String listToShortString(ArrayList<Book> books) {
+        StringBuilder stringBuilder = new StringBuilder();
+
+        stringBuilder.append("BookList[");
+
+        for (Book book : books) {
+            stringBuilder.append(book.toShortString());
+        }
+
+        stringBuilder.append("\n]");
+
+        return stringBuilder.toString();
     }
 
     public class Details {
@@ -305,8 +334,10 @@ public class Book implements Parcelable {
 
         @Override
         public String toString() {
-            return Book.this.toString() + ".Details{" +
-                ", mAddedBy=" + mAddedBy + '}';
+            return "\n" + Book.this.toString() + "\nDetails{" +
+                "\nmAddedBy=" + mAddedBy +
+                "\n, mBookProcesses=" + mBookProcesses +
+                "\n}\n";
         }
     }
 

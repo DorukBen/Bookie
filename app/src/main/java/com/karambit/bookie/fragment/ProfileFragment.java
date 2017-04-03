@@ -6,12 +6,13 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.os.Bundle;
+import android.support.annotation.NonNull;
 import android.support.v4.app.Fragment;
 import android.support.v4.content.LocalBroadcastManager;
 import android.support.v7.app.AlertDialog;
+import android.support.v7.widget.DefaultItemAnimator;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -33,14 +34,15 @@ import com.karambit.bookie.model.Book;
 import com.karambit.bookie.model.Notification;
 import com.karambit.bookie.model.User;
 import com.karambit.bookie.rest_api.BookieClient;
-import com.karambit.bookie.rest_api.ErrorCodes;
 import com.karambit.bookie.rest_api.UserApi;
 import com.karambit.bookie.service.BookieIntentFilters;
+import com.orhanobut.logger.Logger;
 
 import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.IOException;
+import java.util.List;
 
 import okhttp3.ResponseBody;
 import retrofit2.Call;
@@ -116,10 +118,22 @@ public class ProfileFragment extends Fragment {
         mProfileRecyclerView = (RecyclerView) rootView.findViewById(R.id.profileRecyclerView);
         mProfileRecyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
 
+        mProfileRecyclerView.setItemAnimator(new DefaultItemAnimator() {
+            @Override
+            public boolean canReuseUpdatedViewHolder(@NonNull RecyclerView.ViewHolder viewHolder, @NonNull List<Object> payloads) {
+                return true;
+            }
+
+            @Override
+            public boolean canReuseUpdatedViewHolder(@NonNull RecyclerView.ViewHolder viewHolder) {
+                return true;
+            }
+        });
+
         mDbManager = new DBManager(getContext());
         mDbManager.open();
 
-        User currentUser = SessionManager.getCurrentUser(getContext());
+        final User currentUser = SessionManager.getCurrentUser(getContext());
 
         if (mUser.equals(currentUser)){
             mProfileTimelineAdapter = new ProfileTimelineAdapter(getContext(), SessionManager.getCurrentUserDetails(getContext()));
@@ -239,45 +253,55 @@ public class ProfileFragment extends Fragment {
                     if (intent.getParcelableExtra(BookieIntentFilters.EXTRA_NOTIFICATION) != null){
                         Notification notification = intent.getParcelableExtra(BookieIntentFilters.EXTRA_NOTIFICATION);
 
-                        int onRoadBookCountBeforeAdding = mUserDetails.getOnRoadBooks().size();
+                        Logger.d("Accepted request received from FCM: " + notification);
 
-                        mUserDetails.getOnRoadBooks().add(0, notification.getBook());
+                        if (mUser.equals(currentUser)) {
+                            int onRoadBookCountBeforeAdding = mUserDetails.getOnRoadBooks().size();
 
-                        mProfileTimelineAdapter.notifyItemInserted(mProfileTimelineAdapter.getFirstOnRoadBookIndex());
+                            mUserDetails.getOnRoadBooks().add(0, notification.getBook());
 
-                        Log.i(TAG, "Accepted Request Received: notifyItemRemoved called to position " +
-                            mProfileTimelineAdapter.getFirstOnRoadBookIndex() + " for OnRoadBooks");
+                            mProfileTimelineAdapter.notifyItemInserted(mProfileTimelineAdapter.getFirstOnRoadBookIndex());
 
-                        if (onRoadBookCountBeforeAdding == 0) {
-                            mProfileTimelineAdapter.notifyItemInserted(mProfileTimelineAdapter.getOnRoadBookSubtitleIndex(false));
+                            if (onRoadBookCountBeforeAdding == 0) {
+                                mProfileTimelineAdapter.notifyItemInserted(mProfileTimelineAdapter.getOnRoadBookSubtitleIndex(false));
+                            }
 
-                            Log.i(TAG, "Accepted Request Received: notifyItemInserted called to position " +
-                                mProfileTimelineAdapter.getOnRoadBookSubtitleIndex(false) + " for OnRoadBooks Subtitle");
                         }
                     }
                 } else if (intent.getAction().equalsIgnoreCase(BookieIntentFilters.FCM_INTENT_FILTER_BOOK_OWNER_CHANGED_RECEIVED)){
                     if (intent.getParcelableExtra(BookieIntentFilters.EXTRA_NOTIFICATION) != null){
                         Notification notification = intent.getParcelableExtra(BookieIntentFilters.EXTRA_NOTIFICATION);
 
-                        int removedBookIndex = mUserDetails.getBooksOnHand().indexOf(notification.getBook());
-                        int firstBookOnHandIndexBeforeRemoving = mProfileTimelineAdapter.getFirstBookOnHandIndex();
+                        if (mUserDetails.getBooksOnHand().contains(notification.getBook())) {
+                            int removedBookIndex = mUserDetails.getBooksOnHand().indexOf(notification.getBook());
+                            int firstBookOnHandIndexBeforeRemoving = mProfileTimelineAdapter.getFirstBookOnHandIndex();
 
-                        mUserDetails.getBooksOnHand().remove(notification.getBook());
-                        mUserDetails.setPoint(mUserDetails.getPoint() + User.POINT_SHARE_BOOK);
-                        mUserDetails.setSharedPoint(mUserDetails.getSharedPoint() + 1);
+                            mUserDetails.getBooksOnHand().remove(notification.getBook());
+                            mUserDetails.setPoint(mUserDetails.getPoint() + User.POINT_SHARE_BOOK);
+                            mUserDetails.setSharedPoint(mUserDetails.getSharedPoint() + 1);
 
-                        mProfileTimelineAdapter.notifyItemRemoved(firstBookOnHandIndexBeforeRemoving + removedBookIndex);
+                            mProfileTimelineAdapter.notifyItemRemoved(firstBookOnHandIndexBeforeRemoving + removedBookIndex);
 
-                        Log.i(TAG, "Owner changed: notifyItemRemoved called to position " +
-                            (firstBookOnHandIndexBeforeRemoving + removedBookIndex) + " for BooksOnHand");
+                            mProfileTimelineAdapter.notifyItemChanged(mProfileTimelineAdapter.getHeaderIndex());
 
-                        mProfileTimelineAdapter.notifyItemChanged(mProfileTimelineAdapter.getHeaderIndex());
+                        } else if (mUserDetails.getCurrentlyReading().contains(notification.getBook())) {
 
-                        Log.i(TAG, "Owner changed: notifyItemChanged called to position " +
-                            mProfileTimelineAdapter.getHeaderIndex() + " for Header");
+                            mUserDetails.getBooksOnHand().remove(notification.getBook());
+                            mUserDetails.setPoint(mUserDetails.getPoint() + User.POINT_SHARE_BOOK);
+                            mUserDetails.setSharedPoint(mUserDetails.getSharedPoint() + 1);
+
+                            mProfileTimelineAdapter.notifyItemChanged(mProfileTimelineAdapter.getCurrentlyReadingIndex());
+
+                            mProfileTimelineAdapter.notifyItemChanged(mProfileTimelineAdapter.getHeaderIndex());
+                        }
+
+                        Logger.d("Book owner changed received from FCM: " + notification);
 
                         if (mUserDetails.getBooksOnHand().size() == 0){
                             mProfileTimelineAdapter.notifyItemRemoved(mProfileTimelineAdapter.getBooksOnHandSubtitleIndex(true));
+
+                            Logger.d("notifyItemRemoved called to position " +
+                                         mProfileTimelineAdapter.getBooksOnHandSubtitleIndex(true) + " for BooksOnHand Subtitle");
                         }
                     }
                 } else if (intent.getAction().equalsIgnoreCase(BookieIntentFilters.FCM_INTENT_FILTER_BOOK_LOST)){
@@ -292,13 +316,9 @@ public class ProfileFragment extends Fragment {
 
                         mProfileTimelineAdapter.notifyItemRemoved(firstBookOnHandIndexBeforeRemoving + removedBookIndex);
 
-                        Log.i(TAG, "Book lost: notifyItemRemoved called to position " +
-                            (firstBookOnHandIndexBeforeRemoving + removedBookIndex) + " for BooksOnHand");
-
                         mProfileTimelineAdapter.notifyItemChanged(mProfileTimelineAdapter.getHeaderIndex());
 
-                        Log.i(TAG, "Book lost: notifyItemChanged called to position " +
-                            mProfileTimelineAdapter.getHeaderIndex() + " for Header");
+                        Logger.d("Book lost received from FCM: " + notification);
 
                         if (mUserDetails.getBooksOnHand().size() == 0){
                             mProfileTimelineAdapter.notifyItemRemoved(mProfileTimelineAdapter.getBooksOnHandSubtitleIndex(true));
@@ -320,14 +340,12 @@ public class ProfileFragment extends Fragment {
 
                                         mProfileTimelineAdapter.notifyItemRemoved(firstBookOnHandIndexBeforeRemoving + removedBookIndex);
 
-                                        Log.i(TAG, "State change: (OpenedToShare-ClosedToShare) -> Reading. notifyItemRemoved called to position " +
-                                            (firstBookOnHandIndexBeforeRemoving + removedBookIndex) + " for BooksOnHand");
+                                        mProfileTimelineAdapter.notifyItemChanged(mProfileTimelineAdapter.getCurrentlyReadingIndex());
+
+                                        Logger.d("Book state changed received from Local Broadcast: " + book);
 
                                         if (mUserDetails.getBooksOnHand().size() == 0) {
                                             mProfileTimelineAdapter.notifyItemRemoved(mProfileTimelineAdapter.getBooksOnHandSubtitleIndex(true));
-
-                                            Log.i(TAG, "State change: (OpenedToShare-ClosedToShare) -> Reading. notifyItemRemoved called to position " +
-                                                mProfileTimelineAdapter.getBooksOnHandSubtitleIndex(true) + " for BooksOnHand Subtitle");
                                         }
 
                                         break;
@@ -340,8 +358,7 @@ public class ProfileFragment extends Fragment {
 
                                         mProfileTimelineAdapter.notifyItemChanged(mProfileTimelineAdapter.getFirstBookOnHandIndex() + changedBookIndex);
 
-                                        Log.i(TAG, "State change: ClosedToShare -> OpenedToShare. notifyItemChanged called to position " +
-                                            (mProfileTimelineAdapter.getFirstBookOnHandIndex() + changedBookIndex) + " for BooksOnHand");
+                                        Logger.d("Book state changed received from Local Broadcast: " + book);
 
                                         break;
                                     }
@@ -353,8 +370,7 @@ public class ProfileFragment extends Fragment {
 
                                         mProfileTimelineAdapter.notifyItemChanged(mProfileTimelineAdapter.getFirstBookOnHandIndex() + changedBookIndex);
 
-                                        Log.i(TAG, "State change: OpenedToShare -> ClosedToShare. notifyItemChanged called to position " +
-                                            (mProfileTimelineAdapter.getFirstBookOnHandIndex() + changedBookIndex) + " for BooksOnHand");
+                                        Logger.d("Book state changed received from Local Broadcast: " + book);
 
                                         break;
                                     }
@@ -366,8 +382,7 @@ public class ProfileFragment extends Fragment {
 
                                         mProfileTimelineAdapter.notifyItemChanged(mProfileTimelineAdapter.getFirstBookOnHandIndex() + changedBookIndex);
 
-                                        Log.i(TAG, "State change: OpenedToShare -> OnRoad. notifyItemChanged called to position " +
-                                            (mProfileTimelineAdapter.getFirstBookOnHandIndex() + changedBookIndex) + " for BooksOnHand");
+                                        Logger.d("Book state changed received from Local Broadcast:" + book);
 
                                         break;
                                     }
@@ -392,14 +407,12 @@ public class ProfileFragment extends Fragment {
 
                                         mProfileTimelineAdapter.notifyItemInserted(firstBookOnHandIndexBeforeRemoving);
 
-                                        Log.i(TAG, "State change: Reading -> OpenedToShare. notifyItemInserted at position " +
-                                            firstBookOnHandIndexBeforeRemoving + " for BooksOnHand");
+                                        mProfileTimelineAdapter.notifyItemChanged(mProfileTimelineAdapter.getCurrentlyReadingIndex());
+
+                                        Logger.d("Book state changed received from Local Broadcast: " + book);
 
                                         if (booksOnHandCountBeforeAdding == 0) {
                                             mProfileTimelineAdapter.notifyItemInserted(mProfileTimelineAdapter.getBooksOnHandSubtitleIndex(false));
-
-                                            Log.i(TAG, "State change: Reading -> OpenedToShare. notifyItemInserted at position " +
-                                                mProfileTimelineAdapter.getBooksOnHandSubtitleIndex(false) + " for BooksOnHand Subtitle");
                                         }
 
                                         if (!mUserDetails.getReadBooks().contains(book)){
@@ -410,14 +423,10 @@ public class ProfileFragment extends Fragment {
 
                                             mProfileTimelineAdapter.notifyItemInserted(mProfileTimelineAdapter.getFirstReadBookIndex());
 
-                                            Log.i(TAG, "State change: Reading -> OpenedToShare. notifyItemInserted at position " +
-                                                mProfileTimelineAdapter.getFirstReadBookIndex() + " for ReadBooks");
+                                            Logger.d("Book state changed received from Local Broadcast: " + book);
 
                                             if (readBooksCountBeforeAdding == 0) {
                                                 mProfileTimelineAdapter.notifyItemInserted(mProfileTimelineAdapter.getReadBooksSubtitleIndex(false));
-
-                                                Log.i(TAG, "State change: Reading -> OpenedToShare. notifyItemInserted at position " +
-                                                    mProfileTimelineAdapter.getReadBooksSubtitleIndex(false) + " for ReadBooks Subtitle");
                                             }
                                         }
 
@@ -432,15 +441,12 @@ public class ProfileFragment extends Fragment {
 
                                         mProfileTimelineAdapter.notifyItemInserted(mProfileTimelineAdapter.getFirstBookOnHandIndex());
 
-                                        Log.i(TAG, "State change: Reading -> ClosedToShare. notifyItemInserted at position " +
-                                            mProfileTimelineAdapter.getFirstBookOnHandIndex() + " for BooksOnHand");
+                                        mProfileTimelineAdapter.notifyItemChanged(mProfileTimelineAdapter.getCurrentlyReadingIndex());
 
+                                        Logger.d("Book state changed received from Local Broadcast: " + book);
 
                                         if (booksOnHandCountBeforeAdding == 0) {
                                             mProfileTimelineAdapter.notifyItemInserted(mProfileTimelineAdapter.getBooksOnHandSubtitleIndex(false));
-
-                                            Log.i(TAG, "State change: Reading -> ClosedToShare. notifyItemInserted at position " +
-                                                (mProfileTimelineAdapter.getBooksOnHandSubtitleIndex(false)) + " for BooksOnHand Subtitle");
                                         }
 
                                         if (!mUserDetails.getReadBooks().contains(book)){
@@ -451,35 +457,27 @@ public class ProfileFragment extends Fragment {
 
                                             mProfileTimelineAdapter.notifyItemInserted(mProfileTimelineAdapter.getFirstReadBookIndex());
 
-                                            Log.i(TAG, "State change: Reading -> ClosedToShare. notifyItemInserted at position " +
-                                                (mProfileTimelineAdapter.getFirstReadBookIndex() + readBooksCountBeforeAdding) + " for ReadBooks");
-
                                             if (readBooksCountBeforeAdding == 0) {
                                                 mProfileTimelineAdapter.notifyItemInserted(mProfileTimelineAdapter.getReadBooksSubtitleIndex(false));
-
-                                                Log.i(TAG, "State change: Reading -> ClosedToShare. notifyItemInserted at position " +
-                                                    (mProfileTimelineAdapter.getReadBooksSubtitleIndex(false)) + " for ReadBooks");
                                             }
                                         }
                                         break;
                                     }
 
                                     case ON_ROAD:{
-                                        int onRoadBooksCountBeforeAdding = mUserDetails.getOnRoadBooks().size();
+                                        int booksOnHndCountCountBeforeAdding = mUserDetails.getOnRoadBooks().size();
 
                                         mUserDetails.getCurrentlyReading().remove(book);
-                                        mUserDetails.getOnRoadBooks().add(0, book);
+                                        mUserDetails.getBooksOnHand().add(0, book);
 
-                                        mProfileTimelineAdapter.notifyItemInserted(mProfileTimelineAdapter.getFirstOnRoadBookIndex());
+                                        mProfileTimelineAdapter.notifyItemInserted(mProfileTimelineAdapter.getFirstBookOnHandIndex());
 
-                                        Log.i(TAG, "State change: Reading -> OnRoad. notifyItemInserted at position " +
-                                            mProfileTimelineAdapter.getFirstOnRoadBookIndex() + " for OnRoadBooks");
+                                        mProfileTimelineAdapter.notifyItemChanged(mProfileTimelineAdapter.getCurrentlyReadingIndex());
 
-                                        if (onRoadBooksCountBeforeAdding == 0) {
-                                            mProfileTimelineAdapter.notifyItemInserted(mProfileTimelineAdapter.getOnRoadBookSubtitleIndex(false));
+                                        Logger.d("Book state changed received from Local Broadcast: " + book);
 
-                                            Log.i(TAG, "State change: Reading -> OnRoad. notifyItemInserted at position " +
-                                                mProfileTimelineAdapter.getOnRoadBookSubtitleIndex(false) + " for OnRoadBooks Subtitle");
+                                        if (booksOnHndCountCountBeforeAdding == 0) {
+                                            mProfileTimelineAdapter.notifyItemInserted(mProfileTimelineAdapter.getBooksOnHandSubtitleIndex(false));
                                         }
 
                                         if (!mUserDetails.getReadBooks().contains(book)){
@@ -489,14 +487,10 @@ public class ProfileFragment extends Fragment {
 
                                             mProfileTimelineAdapter.notifyItemInserted(mProfileTimelineAdapter.getFirstReadBookIndex());
 
-                                            Log.i(TAG, "State change: Reading -> OnRoad. notifyItemInserted at position " +
-                                                mProfileTimelineAdapter.getFirstReadBookIndex() + " for ReadBooks");
+                                            Logger.d("Book state changed received from Local Broadcast: " + book);
 
                                             if (readBooksCountBeforeAdding == 0) {
                                                 mProfileTimelineAdapter.notifyItemInserted(mProfileTimelineAdapter.getReadBooksSubtitleIndex(false));
-
-                                                Log.i(TAG, "State change: Reading -> OnRoad. notifyItemInserted at position " +
-                                                    mProfileTimelineAdapter.getReadBooksSubtitleIndex(false) + " for ReadBooks Subtitle");
                                             }
                                         }
 
@@ -519,14 +513,12 @@ public class ProfileFragment extends Fragment {
 
                                         mProfileTimelineAdapter.notifyItemRemoved(firstOnRoadBookIndexBeforeRemoving + removedBookIndex);
 
-                                        Log.i(TAG, "State change: OnRoad -> Reading. notifyItemRemoved at position " +
-                                            (firstOnRoadBookIndexBeforeRemoving + removedBookIndex) + " for OnRoadBooks");
+                                        mProfileTimelineAdapter.notifyItemChanged(mProfileTimelineAdapter.getCurrentlyReadingIndex());
+
+                                        Logger.d("Book state changed received from Local Broadcast: " + book);
 
                                         if (mUserDetails.getOnRoadBooks().size() == 0){
                                             mProfileTimelineAdapter.notifyItemRemoved(mProfileTimelineAdapter.getOnRoadBookSubtitleIndex(true));
-
-                                            Log.i(TAG, "State change: OnRoad -> Reading. notifyItemRemoved at position " +
-                                                (mProfileTimelineAdapter.getOnRoadBookSubtitleIndex(true)) + " for OnRoadBooks Subtitle");
                                         }
 
                                         break;
@@ -544,22 +536,14 @@ public class ProfileFragment extends Fragment {
                                                                                 mProfileTimelineAdapter.getFirstBookOnHandIndex());
 
 
-                                        Log.i(TAG, "State change: OnRoad -> OpenToShare. notifyItemMoved from position " +
-                                            (firstOnRoadBookIndexBeforeRemoving + removedBookIndex) + " to position " +
-                                            mProfileTimelineAdapter.getFirstBookOnHandIndex() + " for OnRoadBooks -> BooksOnHand");
+                                        Logger.d("Book state changed received from Local Broadcast: " + book);
 
                                         if (mUserDetails.getOnRoadBooks().size() == 0){
                                             mProfileTimelineAdapter.notifyItemRemoved(mProfileTimelineAdapter.getOnRoadBookSubtitleIndex(true));
-
-                                            Log.i(TAG, "State change: OnRoad -> OpenToShare. notifyItemRemoved at position " +
-                                                (mProfileTimelineAdapter.getOnRoadBookSubtitleIndex(true)) + " for OnRoadBooks Subtitle");
                                         }
 
                                         if (booksOnHandCountBeforeAdding == 0){
                                             mProfileTimelineAdapter.notifyItemInserted(mProfileTimelineAdapter.getBooksOnHandSubtitleIndex(false));
-
-                                            Log.i(TAG, "State change: OnRoad -> OpenToShare. notifyItemInserted at position " +
-                                                (mProfileTimelineAdapter.getBooksOnHandSubtitleIndex(false)) + " for BooksOnHand Subtitle");
                                         }
 
                                         break;
@@ -576,35 +560,70 @@ public class ProfileFragment extends Fragment {
                                         mProfileTimelineAdapter.notifyItemMoved(firstOnRoadBookIndexBeforeRemoving + removedBookIndex,
                                                                                 mProfileTimelineAdapter.getFirstBookOnHandIndex() + booksOnHandCountBeforeAdding);
 
-                                        Log.i(TAG, "State change: OnRoad -> CloseToShare. notifyItemMoved from position " +
-                                            (firstOnRoadBookIndexBeforeRemoving + removedBookIndex) + " to position " +
-                                            (mProfileTimelineAdapter.getFirstBookOnHandIndex() + booksOnHandCountBeforeAdding) + " for OnRoadBooks -> BooksOnHand");
+                                        Logger.d("Book state changed received from Local Broadcast: " + book);
 
                                         if (mUserDetails.getOnRoadBooks().size() == 0){
                                             mProfileTimelineAdapter.notifyItemRemoved(mProfileTimelineAdapter.getOnRoadBookSubtitleIndex(true));
-
-                                            Log.i(TAG, "State change: OnRoad -> OpenToShare. notifyItemRemoved at position " +
-                                                (mProfileTimelineAdapter.getOnRoadBookSubtitleIndex(true)) + " for OnRoadBooks Subtitle");
                                         }
 
                                         if (booksOnHandCountBeforeAdding == 0){
                                             mProfileTimelineAdapter.notifyItemInserted(mProfileTimelineAdapter.getBooksOnHandSubtitleIndex(false));
-
-                                            Log.i(TAG, "State change: OnRoad -> OpenToShare. notifyItemInserted at position " +
-                                                (mProfileTimelineAdapter.getBooksOnHandSubtitleIndex(false)) + " for BooksOnHand Subtitle");
                                         }
 
                                         break;
                                     }
                                 }
                             } else {
-                                Log.e(TAG, "Invalid book state on state changing!");
+                                Logger.e("Invalid book state on state changing!");
                             }
                         } else {
-                            Log.e(TAG, "Null book in intent extra");
+                            Logger.e("Null book in intent extra");
                         }
                     }
-                }else if (intent.getAction().equalsIgnoreCase(BookieIntentFilters.FCM_INTENT_FILTER_USER_VERIFIED)){
+                } else if (intent.getAction().equalsIgnoreCase(BookieIntentFilters.INTENT_FILTER_PROFILE_PICTURE_CHANGED)) {
+
+                    String profilePictureUrl = intent.getStringExtra(BookieIntentFilters.EXTRA_PROFILE_PICTURE_URL);
+                    String thumbnailUrl = intent.getStringExtra(BookieIntentFilters.EXTRA_PROFILE_THUMBNAIL_URL);
+
+                    if (profilePictureUrl != null && thumbnailUrl != null) {
+
+                        mUserDetails.getUser().setImageUrl(profilePictureUrl);
+                        mUserDetails.getUser().setThumbnailUrl(thumbnailUrl);
+
+                        Logger.d("Profile picture changed received from Local Broadcast: \n" +
+                                     "Profile Picture URL: " + profilePictureUrl + "\nThumbnail URL: " + thumbnailUrl);
+
+                        mProfileTimelineAdapter.notifyItemChanged(mProfileTimelineAdapter.getHeaderIndex());
+                    }
+                } else if (intent.getAction().equalsIgnoreCase(BookieIntentFilters.INTENT_FILTER_BOOK_ADDED)) {
+
+                    Book book = intent.getParcelableExtra(BookieIntentFilters.EXTRA_BOOK);
+
+                    if (book != null) {
+
+                        Logger.d("Book added received from Local Broadcast: " + book);
+
+                        switch (book.getState()) {
+                            case OPENED_TO_SHARE:
+                            case CLOSED_TO_SHARE: {
+                                mUserDetails.getBooksOnHand().add(0, book);
+                                mProfileTimelineAdapter.notifyItemInserted(mProfileTimelineAdapter.getFirstBookOnHandIndex());
+                                break;
+                            }
+
+                            case READING: {
+                                mUserDetails.getCurrentlyReading().add(book);
+                                mProfileTimelineAdapter.notifyItemChanged(mProfileTimelineAdapter.getCurrentlyReadingIndex());
+                                break;
+                            }
+
+                            default: {
+                                Logger.e("Invalid book state after adding: " + book);
+                            }
+
+                        }
+                    }
+                } else if (intent.getAction().equalsIgnoreCase(BookieIntentFilters.FCM_INTENT_FILTER_USER_VERIFIED)){
                     //TODO When user verified
                 }
             }
@@ -612,9 +631,12 @@ public class ProfileFragment extends Fragment {
 
         LocalBroadcastManager.getInstance(getContext()).registerReceiver(mMessageReceiver, new IntentFilter(BookieIntentFilters.FCM_INTENT_FILTER_ACCEPTED_REQUEST_RECEIVED));
         LocalBroadcastManager.getInstance(getContext()).registerReceiver(mMessageReceiver, new IntentFilter(BookieIntentFilters.FCM_INTENT_FILTER_BOOK_OWNER_CHANGED_RECEIVED));
-        LocalBroadcastManager.getInstance(getContext()).registerReceiver(mMessageReceiver, new IntentFilter(BookieIntentFilters.INTENT_FILTER_BOOK_STATE_CHANGED));
         LocalBroadcastManager.getInstance(getContext()).registerReceiver(mMessageReceiver, new IntentFilter(BookieIntentFilters.FCM_INTENT_FILTER_USER_VERIFIED));
         LocalBroadcastManager.getInstance(getContext()).registerReceiver(mMessageReceiver, new IntentFilter(BookieIntentFilters.FCM_INTENT_FILTER_BOOK_LOST));
+
+        LocalBroadcastManager.getInstance(getContext()).registerReceiver(mMessageReceiver, new IntentFilter(BookieIntentFilters.INTENT_FILTER_BOOK_STATE_CHANGED));
+        LocalBroadcastManager.getInstance(getContext()).registerReceiver(mMessageReceiver, new IntentFilter(BookieIntentFilters.INTENT_FILTER_PROFILE_PICTURE_CHANGED));
+        LocalBroadcastManager.getInstance(getContext()).registerReceiver(mMessageReceiver, new IntentFilter(BookieIntentFilters.INTENT_FILTER_BOOK_ADDED));
 
         return rootView;
     }
@@ -635,6 +657,9 @@ public class ProfileFragment extends Fragment {
         String password = currentUserDetails.getPassword();
         final Call<ResponseBody> getUserProfilePageComponents = userApi.getUserProfilePageComponents(email, password, mUser.getID());
 
+        Logger.d("getUserProfilePageComponents() API called with parameters: \n" +
+                     "\temail=" + email + ", \n\tpassword=" + password + ", \n\tuserID=" + mUser.getID());
+
         getUserProfilePageComponents.enqueue(new Callback<ResponseBody>() {
             @Override
             public void onResponse(Call<ResponseBody> call, Response<ResponseBody> response) {
@@ -643,6 +668,8 @@ public class ProfileFragment extends Fragment {
                     if (response != null){
                         if (response.body() != null){
                             String json = response.body().string();
+
+                            Logger.json(json);
 
                             JSONObject responseObject = new JSONObject(json);
                             boolean error = responseObject.getBoolean("error");
@@ -659,8 +686,11 @@ public class ProfileFragment extends Fragment {
                                     if (mUser.equals(currentUser)) {
                                         // Update user info from fetched user
                                         mUser = mUserDetails.getUser();
-                                        mDbManager.getUserDataSource().updateUserDetails(mUserDetails);
+                                        mDbManager.Threaded(mDbManager.getUserDataSource().cUpdateUserDetails(mUserDetails));
+
                                         SessionManager.updateCurrentUser(mUserDetails);
+                                    } else {
+                                        mDbManager.checkAndUpdateAllUsers(mUserDetails.getUser());
                                     }
 
                                     if (!responseObject.isNull("currentlyReading")){
@@ -687,6 +717,15 @@ public class ProfileFragment extends Fragment {
                                         }
                                     }
 
+                                    if (mUserDetails != null) {
+                                        Logger.d("Profile page fetched:" +
+                                                     "\n" + mUser.toString() +
+                                                     "\n\nCurrently Reading:\n\n" + Book.listToShortString(mUserDetails.getCurrentlyReading()) +
+                                                     "\n\nOn Road Books:\n\n" + Book.listToShortString(mUserDetails.getOnRoadBooks()) +
+                                                     "\n\nBooks On Hand:\n\n" + Book.listToShortString(mUserDetails.getBooksOnHand()) +
+                                                     "\n\nRead Books:\n\n" + Book.listToShortString(mUserDetails.getReadBooks()));
+                                    }
+
                                     mProfileTimelineAdapter.setUserDetails(mUserDetails);
                                     mProfileTimelineAdapter.notifyDataSetChanged();
                                 }
@@ -694,30 +733,20 @@ public class ProfileFragment extends Fragment {
                             } else {
                                 int errorCode = responseObject.getInt("errorCode");
 
-                                if (errorCode == ErrorCodes.EMPTY_POST){
-                                    Log.e(TAG, "Post is empty. (Profile Page Error)");
-                                }else if (errorCode == ErrorCodes.MISSING_POST_ELEMENT){
-                                    Log.e(TAG, "Post element missing. (Profile Page Error)");
-                                }else if (errorCode == ErrorCodes.INVALID_EMAIL){
-                                    Log.e(TAG, "Invalid email. (Profile Page Error)");
-                                }else if (errorCode == ErrorCodes.INVALID_REQUEST){
-                                    Log.e(TAG, "Invalid request. (Profile Page Error)");
-                                }else if (errorCode == ErrorCodes.UNKNOWN){
-                                    Log.e(TAG, "onResponse: errorCode = " + errorCode);
-                                }
+                                Logger.e("Error true in response: errorCode = " + errorCode);
 
                                 mProfileTimelineAdapter.setError(ProfileTimelineAdapter.ERROR_TYPE_UNKNOWN_ERROR);
                             }
                         }else{
-                            Log.e(TAG, "Response body is null. (Profile Page Error)");
+                            Logger.e("Response body is null. (Profile Page Error)");
                             mProfileTimelineAdapter.setError(ProfileTimelineAdapter.ERROR_TYPE_UNKNOWN_ERROR);
                         }
                     }else {
-                        Log.e(TAG, "Response object is null. (Profile Page Error)");
+                        Logger.e("Response object is null. (Profile Page Error)");
                         mProfileTimelineAdapter.setError(ProfileTimelineAdapter.ERROR_TYPE_UNKNOWN_ERROR);
                     }
                 } catch (IOException | JSONException e) {
-                    e.printStackTrace();
+                    Logger.e("IOException or JSONException caught: " + e.getMessage());
 
                     if(BookieApplication.hasNetwork()){
                         mProfileTimelineAdapter.setError(ProfileTimelineAdapter.ERROR_TYPE_UNKNOWN_ERROR);
@@ -739,25 +768,12 @@ public class ProfileFragment extends Fragment {
                 }
 
                 mPullRefreshLayout.setRefreshing(false);
-                Log.e(TAG, "ProfilePage onFailure: " + t.getMessage());
+                Logger.e("getUserProfilePageComponents Failure: " + t.getMessage());
             }
         });
     }
 
     public void refreshProfilePage(){
         fetchProfilePageArguments();
-    }
-
-    @Override
-    public void onActivityResult(int requestCode, int resultCode, Intent data) {
-        super.onActivityResult(requestCode, resultCode, data);
-        if (requestCode == UPDATE_PROFILE_PICTURE_REQUEST_CODE){
-            if (resultCode == PhotoViewerActivity.RESULT_PROFILE_PICTURE_UPDATED){
-                refreshProfilePage();
-//                TODO mProfileTimelineAdapter.notifyItemChanged(mProfileTimelineAdapter.getHeaderIndex());
-            }
-        } else if (resultCode == AddBookActivity.RESULT_BOOK_CREATED) {
-            refreshProfilePage();
-        }
     }
 }

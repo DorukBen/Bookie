@@ -10,8 +10,10 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.sql.Timestamp;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.Locale;
 
 /**
  * Message model
@@ -21,7 +23,39 @@ import java.util.Calendar;
 
 public class Message implements Parcelable, Comparable<Message> {
 
-    public enum State {PENDING, SENT, DELIVERED, SEEN, ERROR}
+    public enum State {
+        PENDING(0),
+        SENT(1),
+        DELIVERED(2),
+        SEEN(3),
+        ERROR(-1);
+
+        private final int mStateCode;
+
+        State(int stateCode) {
+            mStateCode = stateCode;
+        }
+
+        public int getStateCode() {
+            return mStateCode;
+        }
+
+        public static State valueOf(int stateCode) {
+            if (stateCode == PENDING.mStateCode) {
+                return PENDING;
+            } else if (stateCode == SENT.mStateCode) {
+                return SENT;
+            } else if (stateCode == DELIVERED.mStateCode) {
+                return DELIVERED;
+            } else if (stateCode == SEEN.mStateCode) {
+                return SEEN;
+            } else if (stateCode == ERROR.mStateCode){
+                return ERROR;
+            } else {
+                throw new IllegalArgumentException("Invalid Message state code");
+            }
+        }
+    }
 
     private int mID;
     private String mText;
@@ -99,7 +133,7 @@ public class Message implements Parcelable, Comparable<Message> {
                         messageObject.isNull("fromUser")? null: User.jsonObjectToUser(messageObject.getJSONObject("fromUser")),
                         messageObject.isNull("toUser")? null: User.jsonObjectToUser(messageObject.getJSONObject("toUser")),
                         calendar,
-                        State.values()[messageObject.isNull("messageState")? 2: messageObject.getInt("messageState")]);
+                        State.valueOf(messageObject.optInt("messageState", 2)));
             }else {
                 return null;
             }
@@ -200,11 +234,16 @@ public class Message implements Parcelable, Comparable<Message> {
 
     @Override
     public String toString() {
-        return "Message{" +
-            "mText='" + mText + '\'' +
-            ", mSender=" + mSender +
-            ", mReceiver=" + mReceiver +
-            ", mState=" + mState +
-            ", mCreatedAt=" + mCreatedAt + '}';
+
+        SimpleDateFormat dateFormat = new SimpleDateFormat("dd/MM/yyyy hh:mm:ss a", Locale.getDefault());
+        String createdAt = dateFormat.format(mCreatedAt.getTime());
+
+        return "\nMessage{" +
+            "\n\tmText='" + mText + "\'," +
+            "\n\tmSender=" + mSender.getName() + "," +
+            "\n\tmReceiver=" + mReceiver.getName() + "," +
+            "\n\tmState=" + mState + "," +
+            "\n\tmCreatedAt=" + createdAt +
+            "\n}";
     }
 }

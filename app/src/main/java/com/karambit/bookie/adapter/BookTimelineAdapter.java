@@ -32,6 +32,7 @@ import com.karambit.bookie.model.Interaction;
 import com.karambit.bookie.model.Request;
 import com.karambit.bookie.model.Transaction;
 import com.karambit.bookie.model.User;
+import com.orhanobut.logger.Logger;
 
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -443,7 +444,7 @@ public class BookTimelineAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
 
                     /////////////////////////////////////////////////////////////////////////////////////////////
 
-                    int requestCount = getRequestCount();
+                    int requestCount = getPendingRequestCount();
 
                     if (requestCount > 0) {
 
@@ -483,7 +484,6 @@ public class BookTimelineAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
                         case CLOSED_TO_SHARE:
                             stateCurrentHolder.mStateText.setText(R.string.closed_to_share);
                             stateCurrentHolder.mStateIcon.setImageResource(R.drawable.ic_book_timeline_closed_to_share_36dp);
-                            stateCurrentHolder.mRequestCount.setVisibility(View.GONE);
                             break;
 
                         case ON_ROAD:
@@ -527,7 +527,6 @@ public class BookTimelineAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
                         case CLOSED_TO_SHARE:
                             stateCurrentHolder.mStateText.setText(R.string.closed_to_share);
                             stateCurrentHolder.mStateIcon.setImageResource(R.drawable.ic_book_timeline_closed_to_share_36dp);
-                            stateCurrentHolder.mRequestCount.setVisibility(View.GONE);
                             break;
 
                         case ON_ROAD:
@@ -577,7 +576,7 @@ public class BookTimelineAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
                             if (lastProcess instanceof Transaction) {
                                 Transaction sentTransaction = (Transaction) lastProcess;
 
-                                if (sentTransaction.getToUser().equals(currentUser)) {
+                                if (sentTransaction.getTaker().equals(currentUser)) {
                                     stateOtherHolder.mRequest.setText(R.string.arrived);
                                     stateOtherHolder.mRequest.setEnabled(true);
                                     stateOtherHolder.mRequest.setTextColor(ContextCompat.getColor(mContext, R.color.colorAccent));
@@ -595,30 +594,43 @@ public class BookTimelineAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
                                     stateOtherHolder.mRequest.setTextColor(ContextCompat.getColor(mContext, R.color.secondaryTextColor));
                                     stateOtherHolder.mRequest.setAlpha(0.5f);
                                 }
+                            } else {
+                                Logger.e("State-BookProcess inconsistency. state=ON_ROAD lastBookProcess!=Transaction");
                             }
 
                         } else if (state == Book.State.OPENED_TO_SHARE || state == Book.State.READING) {
+
+                            /*
+                                    Request tuşu "requested" yada "request" olarak değiştiren kısım
+                                    TODO May be inconsistent CHECK
+                                    Kitaba birden fazla istek gelir current user da istek atar.
+                                    Current user dan başka bir kullanıcının isteği kabul edilir.
+                                    Benim REJECTED yazılmayacağı için kitap tekrar önceki ownera dönerse tutarsızlık oluşabilir
+                                */
+
                             int canSendRequest = 0;
-                            for (Book.BookProcess process: mBookDetails.getBookProcesses()){
+                            int i = mBookDetails.getBookProcesses().size();
+                            Book.BookProcess bookProcess;
+                            do {
 
-                                if (process instanceof Request){
+                                i--;
 
-                                    if (((Request)process).getFromUser().equals(currentUser) &&
-                                        ((Request)process).getToUser().equals(mBookDetails.getBook().getOwner())){
+                                bookProcess = mBookDetails.getBookProcesses().get(i);
 
-                                        if (((Request)process).getType() == Request.Type.SEND){
-                                            canSendRequest--;
-                                        }
-                                    }
-                                    if (((Request)process).getFromUser().equals(mBookDetails.getBook().getOwner()) &&
-                                        ((Request)process).getToUser().equals(currentUser)){
-
-                                        if (((Request)process).getType() == Request.Type.REJECT || ((Request)process).getType() == Request.Type.ACCEPT){
-                                            canSendRequest++;
-                                        }
+                                if (bookProcess instanceof Request && ((Request) bookProcess).getRequester().equals(currentUser)) {
+                                    if (((Request) bookProcess).getType() == Request.Type.SEND){
+                                        canSendRequest--;
+                                    }else if (((Request) bookProcess).getType() == Request.Type.ACCEPT ||
+                                        ((Request) bookProcess).getType() == Request.Type.REJECT){
+                                        canSendRequest++;
                                     }
                                 }
-                            }
+
+                            } while
+                                (bookProcess instanceof Transaction &&
+                                ((Transaction) bookProcess).getType() == Transaction.Type.COME_TO_HAND &&
+                                i > 0);
+
                             if (canSendRequest < 0){
                                 stateOtherHolder.mRequest.setText(R.string.requested_button);
                                 stateOtherHolder.mRequest.setEnabled(false);
@@ -730,7 +742,7 @@ public class BookTimelineAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
                 final Book.BookProcess item = bookProcesses.get(bookProcesses.size() - position + 2); // - Header - State - Subtitle
 
                 /*
-                  Decide which Book process. Visitor pattern takes care this.
+                  Decide which Book process. Visitor pattern takes care of this.
                  */
                 item.accept(new Book.TimelineDisplayableVisitor() { // Visitor interface
 
@@ -893,13 +905,13 @@ public class BookTimelineAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
 
                         bookProcessHolder.mProcessImage.setVisibility(View.VISIBLE);
 
-                        String fromUserName = transaction.getFromUser().getName();
-                        String toUserName = transaction.getToUser().getName();
+                        String giverName = transaction.getGiver().getName();
+                        String takerName = transaction.getTaker().getName();
 
-                        ClickableSpan clickableSpanFromUserName = new ClickableSpan() {
+                        ClickableSpan clickableSpanGiverName = new ClickableSpan() {
                             @Override
                             public void onClick(View textView) {
-                                mSpanTextClickListener.onUserNameClick(transaction.getFromUser());
+                                mSpanTextClickListener.onUserNameClick(transaction.getGiver());
                             }
 
                             @Override
@@ -909,10 +921,10 @@ public class BookTimelineAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
                             }
                         };
 
-                        ClickableSpan clickableSpanToUserName = new ClickableSpan() {
+                        ClickableSpan clickableSpanTakerName = new ClickableSpan() {
                             @Override
                             public void onClick(View textView) {
-                                mSpanTextClickListener.onUserNameClick(transaction.getToUser());
+                                mSpanTextClickListener.onUserNameClick(transaction.getTaker());
                             }
 
                             @Override
@@ -922,17 +934,17 @@ public class BookTimelineAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
                             }
                         };
 
-                        if (transaction.getFromUser().equals(currentUser)) {
+                        if (transaction.getGiver().equals(currentUser)) {
 
                             switch (transaction.getType()) {
 
                                 case COME_TO_HAND: {
-                                    String comeToHandString = mContext.getString(R.string.x_took, toUserName);
+                                    String comeToHandString = mContext.getString(R.string.x_took, takerName);
                                     SpannableString spanComeToHand = new SpannableString(comeToHandString);
-                                    int startIndex = comeToHandString.indexOf(toUserName);
-                                    int endIndex = startIndex + toUserName.length();
+                                    int startIndex = comeToHandString.indexOf(takerName);
+                                    int endIndex = startIndex + takerName.length();
 
-                                    spanComeToHand.setSpan(clickableSpanToUserName, startIndex, endIndex, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+                                    spanComeToHand.setSpan(clickableSpanTakerName, startIndex, endIndex, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
                                     spanComeToHand.setSpan(new StyleSpan(Typeface.BOLD), startIndex, endIndex, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
                                     spanComeToHand.setSpan(new ForegroundColorSpan(ContextCompat.getColor(mContext, R.color.primaryTextColor)),
                                                            0, spanComeToHand.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
@@ -944,12 +956,12 @@ public class BookTimelineAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
                                 }
 
                                 case DISPACTH: {
-                                    String sentBookString = mContext.getString(R.string.you_sent_the_book_to_x, toUserName);
+                                    String sentBookString = mContext.getString(R.string.you_sent_the_book_to_x, takerName);
                                     SpannableString spanSentBook = new SpannableString(sentBookString);
-                                    int startIndex = sentBookString.indexOf(toUserName);
-                                    int endIndex = startIndex + toUserName.length();
+                                    int startIndex = sentBookString.indexOf(takerName);
+                                    int endIndex = startIndex + takerName.length();
 
-                                    spanSentBook.setSpan(clickableSpanToUserName, startIndex, endIndex, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+                                    spanSentBook.setSpan(clickableSpanTakerName, startIndex, endIndex, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
                                     spanSentBook.setSpan(new StyleSpan(Typeface.BOLD), startIndex, endIndex, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
                                     spanSentBook.setSpan(new ForegroundColorSpan(ContextCompat.getColor(mContext, R.color.primaryTextColor)),
                                                          0, spanSentBook.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
@@ -961,12 +973,12 @@ public class BookTimelineAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
                                 }
 
                                 case LOST: {
-                                    String lostBookString = mContext.getString(R.string.you_lost_the_book_while_sending_to_x, toUserName);
+                                    String lostBookString = mContext.getString(R.string.you_lost_the_book_while_sending_to_x, takerName);
                                     SpannableString spanLostBook = new SpannableString(lostBookString);
-                                    int startIndex = lostBookString.indexOf(toUserName);
-                                    int endIndex = startIndex + toUserName.length();
+                                    int startIndex = lostBookString.indexOf(takerName);
+                                    int endIndex = startIndex + takerName.length();
 
-                                    spanLostBook.setSpan(clickableSpanToUserName, startIndex, endIndex, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+                                    spanLostBook.setSpan(clickableSpanTakerName, startIndex, endIndex, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
                                     spanLostBook.setSpan(new StyleSpan(Typeface.BOLD), startIndex, endIndex, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
                                     spanLostBook.setSpan(new ForegroundColorSpan(ContextCompat.getColor(mContext, R.color.primaryTextColor)),
                                                          0, spanLostBook.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
@@ -981,7 +993,7 @@ public class BookTimelineAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
                                     throw new IllegalArgumentException("Invalid transaction type:" + transaction.getType().name());
                             }
 
-                        } else if (transaction.getToUser().equals(currentUser)) {
+                        } else if (transaction.getTaker().equals(currentUser)) {
 
                             switch (transaction.getType()) {
 
@@ -993,12 +1005,12 @@ public class BookTimelineAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
                                 }
 
                                 case DISPACTH: {
-                                    String sentBookString = mContext.getString(R.string.x_sent_the_book_to_you, fromUserName);
+                                    String sentBookString = mContext.getString(R.string.x_sent_the_book_to_you, giverName);
                                     SpannableString spanSentBook = new SpannableString(sentBookString);
-                                    int startIndex = sentBookString.indexOf(fromUserName);
-                                    int endIndex = startIndex + fromUserName.length();
+                                    int startIndex = sentBookString.indexOf(giverName);
+                                    int endIndex = startIndex + giverName.length();
 
-                                    spanSentBook.setSpan(clickableSpanFromUserName, startIndex, endIndex, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+                                    spanSentBook.setSpan(clickableSpanGiverName, startIndex, endIndex, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
                                     spanSentBook.setSpan(new StyleSpan(Typeface.BOLD), startIndex, endIndex, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
                                     spanSentBook.setSpan(new ForegroundColorSpan(ContextCompat.getColor(mContext, R.color.primaryTextColor)),
                                                          0, spanSentBook.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
@@ -1010,12 +1022,12 @@ public class BookTimelineAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
                                 }
 
                                 case LOST: {
-                                    String lostBookString = mContext.getString(R.string.book_lost_while_x_sending_to_you, fromUserName);
+                                    String lostBookString = mContext.getString(R.string.book_lost_while_x_sending_to_you, giverName);
                                     SpannableString spanLostBook = new SpannableString(lostBookString);
-                                    int startIndex = lostBookString.indexOf(fromUserName);
-                                    int endIndex = startIndex + fromUserName.length();
+                                    int startIndex = lostBookString.indexOf(giverName);
+                                    int endIndex = startIndex + giverName.length();
 
-                                    spanLostBook.setSpan(clickableSpanFromUserName, startIndex, endIndex, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+                                    spanLostBook.setSpan(clickableSpanGiverName, startIndex, endIndex, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
                                     spanLostBook.setSpan(new StyleSpan(Typeface.BOLD), startIndex, endIndex, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
                                     spanLostBook.setSpan(new ForegroundColorSpan(ContextCompat.getColor(mContext, R.color.primaryTextColor)),
                                                          0, spanLostBook.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
@@ -1035,12 +1047,12 @@ public class BookTimelineAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
                             switch (transaction.getType()) {
 
                                 case COME_TO_HAND: {
-                                    String comeToHandString = mContext.getString(R.string.x_took, toUserName);
+                                    String comeToHandString = mContext.getString(R.string.x_took, takerName);
                                     SpannableString spanComeToHand = new SpannableString(comeToHandString);
-                                    int startIndex = comeToHandString.indexOf(toUserName);
-                                    int endIndex = startIndex + toUserName.length();
+                                    int startIndex = comeToHandString.indexOf(takerName);
+                                    int endIndex = startIndex + takerName.length();
 
-                                    spanComeToHand.setSpan(clickableSpanToUserName, startIndex, endIndex, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+                                    spanComeToHand.setSpan(clickableSpanTakerName, startIndex, endIndex, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
                                     spanComeToHand.setSpan(new StyleSpan(Typeface.BOLD), startIndex, endIndex, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
                                     spanComeToHand.setSpan(new ForegroundColorSpan(ContextCompat.getColor(mContext, R.color.primaryTextColor)),
                                                            0, spanComeToHand.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
@@ -1052,20 +1064,20 @@ public class BookTimelineAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
                                 }
 
                                 case DISPACTH: {
-                                    String sentBookString = mContext.getString(R.string.x_sent_the_book_to_y, fromUserName, toUserName);
+                                    String sentBookString = mContext.getString(R.string.x_sent_the_book_to_y, giverName, takerName);
                                     SpannableString spanSentBook = new SpannableString(sentBookString);
 
-                                    int startIndexToUser = sentBookString.indexOf(toUserName);
-                                    int endIndexToUser = startIndexToUser + toUserName.length();
+                                    int startIndexTaker = sentBookString.indexOf(takerName);
+                                    int endIndexTaker = startIndexTaker + takerName.length();
 
-                                    int startIndexFromUser = sentBookString.indexOf(fromUserName);
-                                    int endIndexFromUser = startIndexFromUser + fromUserName.length();
+                                    int startIndexGiver = sentBookString.indexOf(giverName);
+                                    int endIndexGiver = startIndexGiver + giverName.length();
 
-                                    spanSentBook.setSpan(clickableSpanFromUserName, startIndexFromUser, endIndexFromUser, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
-                                    spanSentBook.setSpan(new StyleSpan(Typeface.BOLD), startIndexFromUser, endIndexFromUser, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+                                    spanSentBook.setSpan(clickableSpanGiverName, startIndexGiver, endIndexGiver, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+                                    spanSentBook.setSpan(new StyleSpan(Typeface.BOLD), startIndexGiver, endIndexGiver, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
 
-                                    spanSentBook.setSpan(clickableSpanToUserName, startIndexToUser, endIndexToUser, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
-                                    spanSentBook.setSpan(new StyleSpan(Typeface.BOLD), startIndexToUser, endIndexToUser, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+                                    spanSentBook.setSpan(clickableSpanTakerName, startIndexTaker, endIndexTaker, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+                                    spanSentBook.setSpan(new StyleSpan(Typeface.BOLD), startIndexTaker, endIndexTaker, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
 
                                     spanSentBook.setSpan(new ForegroundColorSpan(ContextCompat.getColor(mContext, R.color.primaryTextColor)),
                                                          0, spanSentBook.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
@@ -1077,20 +1089,20 @@ public class BookTimelineAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
                                 }
 
                                 case LOST: {
-                                    String lostBookString = mContext.getString(R.string.book_sent_from_x_to_y_and_its_lost, fromUserName, toUserName);
+                                    String lostBookString = mContext.getString(R.string.book_sent_from_x_to_y_and_its_lost, giverName, takerName);
                                     SpannableString spanLostBook = new SpannableString(lostBookString);
 
-                                    int startIndexFromUser = lostBookString.indexOf(fromUserName);
-                                    int endIndexFromUser = startIndexFromUser + fromUserName.length();
+                                    int startIndexGiver = lostBookString.indexOf(giverName);
+                                    int endIndexGiver = startIndexGiver + giverName.length();
 
-                                    int startIndexToUser = lostBookString.indexOf(toUserName);
-                                    int endIndexToUser = startIndexToUser + toUserName.length();
+                                    int startIndexTaker = lostBookString.indexOf(takerName);
+                                    int endIndexTaker = startIndexTaker + takerName.length();
 
-                                    spanLostBook.setSpan(clickableSpanFromUserName, startIndexFromUser, endIndexFromUser, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
-                                    spanLostBook.setSpan(new StyleSpan(Typeface.BOLD), startIndexFromUser, endIndexFromUser, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+                                    spanLostBook.setSpan(clickableSpanGiverName, startIndexGiver, endIndexGiver, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+                                    spanLostBook.setSpan(new StyleSpan(Typeface.BOLD), startIndexGiver, endIndexGiver, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
 
-                                    spanLostBook.setSpan(clickableSpanToUserName, startIndexToUser, endIndexToUser, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
-                                    spanLostBook.setSpan(new StyleSpan(Typeface.BOLD), startIndexToUser, endIndexToUser, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+                                    spanLostBook.setSpan(clickableSpanTakerName, startIndexTaker, endIndexTaker, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+                                    spanLostBook.setSpan(new StyleSpan(Typeface.BOLD), startIndexTaker, endIndexTaker, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
 
                                     spanLostBook.setSpan(new ForegroundColorSpan(ContextCompat.getColor(mContext, R.color.primaryTextColor)),
                                                          0, spanLostBook.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
@@ -1117,13 +1129,13 @@ public class BookTimelineAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
 
                         bookProcessHolder.mProcessImage.setVisibility(View.GONE);
 
-                        String fromUserName = request.getFromUser().getName();
-                        String toUserName = request.getToUser().getName();
+                        String requesterName = request.getRequester().getName();
+                        String responderName = request.getResponder().getName();
 
-                        ClickableSpan clickableSpanFromUserName = new ClickableSpan() {
+                        ClickableSpan clickableSpanRequesterName = new ClickableSpan() {
                             @Override
                             public void onClick(View textView) {
-                                mSpanTextClickListener.onUserNameClick(request.getFromUser());
+                                mSpanTextClickListener.onUserNameClick(request.getRequester());
                             }
 
                             @Override
@@ -1133,10 +1145,10 @@ public class BookTimelineAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
                             }
                         };
 
-                        ClickableSpan clickableSpanToUserName = new ClickableSpan() {
+                        ClickableSpan clickableSpanResponderName = new ClickableSpan() {
                             @Override
                             public void onClick(View textView) {
-                                mSpanTextClickListener.onUserNameClick(request.getToUser());
+                                mSpanTextClickListener.onUserNameClick(request.getResponder());
                             }
 
                             @Override
@@ -1146,17 +1158,17 @@ public class BookTimelineAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
                             }
                         };
 
-                        if (request.getFromUser().equals(currentUser)) {
+                        if (request.getRequester().equals(currentUser)) {
 
                             switch (request.getType()) {
 
                                 case SEND: {
-                                    String sendRequestString = mContext.getString(R.string.you_sent_request, toUserName);
+                                    String sendRequestString = mContext.getString(R.string.you_sent_request, responderName);
                                     SpannableString spanSentRequest = new SpannableString(sendRequestString);
-                                    int startIndex = sendRequestString.indexOf(toUserName);
-                                    int endIndex = startIndex + toUserName.length();
+                                    int startIndex = sendRequestString.indexOf(responderName);
+                                    int endIndex = startIndex + responderName.length();
 
-                                    spanSentRequest.setSpan(clickableSpanToUserName, startIndex, endIndex, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+                                    spanSentRequest.setSpan(clickableSpanResponderName, startIndex, endIndex, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
                                     spanSentRequest.setSpan(new StyleSpan(Typeface.BOLD), startIndex, endIndex, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
                                     spanSentRequest.setSpan(new ForegroundColorSpan(ContextCompat.getColor(mContext, R.color.primaryTextColor)),
                                                          0, spanSentRequest.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
@@ -1167,12 +1179,12 @@ public class BookTimelineAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
                                 }
 
                                 case ACCEPT: {
-                                    String acceptRequestString = mContext.getString(R.string.you_accepted_request, toUserName);
+                                    String acceptRequestString = mContext.getString(R.string.x_accepted_your_request, responderName);
                                     SpannableString spanAcceptRequest = new SpannableString(acceptRequestString);
-                                    int startIndex = acceptRequestString.indexOf(toUserName);
-                                    int endIndex = startIndex + toUserName.length();
+                                    int startIndex = acceptRequestString.indexOf(responderName);
+                                    int endIndex = startIndex + responderName.length();
 
-                                    spanAcceptRequest.setSpan(clickableSpanToUserName, startIndex, endIndex, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+                                    spanAcceptRequest.setSpan(responderName, startIndex, endIndex, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
                                     spanAcceptRequest.setSpan(new StyleSpan(Typeface.BOLD), startIndex, endIndex, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
                                     spanAcceptRequest.setSpan(new ForegroundColorSpan(ContextCompat.getColor(mContext, R.color.primaryTextColor)),
                                                               0, spanAcceptRequest.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
@@ -1184,12 +1196,12 @@ public class BookTimelineAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
 
                                 case REJECT: {
 
-                                    String rejectRequestString = mContext.getString(R.string.you_rejected_request, toUserName);
+                                    String rejectRequestString = mContext.getString(R.string.x_rejected_your_request, responderName);
                                     SpannableString spanRejectRequest = new SpannableString(rejectRequestString);
-                                    int startIndex = rejectRequestString.indexOf(toUserName);
-                                    int endIndex = startIndex + toUserName.length();
+                                    int startIndex = rejectRequestString.indexOf(responderName);
+                                    int endIndex = startIndex + responderName.length();
 
-                                    spanRejectRequest.setSpan(clickableSpanToUserName, startIndex, endIndex, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+                                    spanRejectRequest.setSpan(clickableSpanResponderName, startIndex, endIndex, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
                                     spanRejectRequest.setSpan(new StyleSpan(Typeface.BOLD), startIndex, endIndex, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
                                     spanRejectRequest.setSpan(new ForegroundColorSpan(ContextCompat.getColor(mContext, R.color.primaryTextColor)),
                                                               0, spanRejectRequest.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
@@ -1203,17 +1215,17 @@ public class BookTimelineAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
                                     throw new IllegalArgumentException("Invalid request type:" + request.getType().name());
                             }
 
-                        } else if (request.getToUser().equals(currentUser)) {
+                        } else if (request.getResponder().equals(currentUser)) {
 
                             switch (request.getType()) {
 
                                 case SEND: {
-                                    String sendRequestString = mContext.getString(R.string.x_sent_request_to_you, fromUserName);
+                                    String sendRequestString = mContext.getString(R.string.x_sent_request_to_you, requesterName);
                                     SpannableString spanSentRequest = new SpannableString(sendRequestString);
-                                    int startIndex = sendRequestString.indexOf(fromUserName);
-                                    int endIndex = startIndex + fromUserName.length();
+                                    int startIndex = sendRequestString.indexOf(requesterName);
+                                    int endIndex = startIndex + requesterName.length();
 
-                                    spanSentRequest.setSpan(clickableSpanFromUserName, startIndex, endIndex, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+                                    spanSentRequest.setSpan(clickableSpanRequesterName, startIndex, endIndex, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
                                     spanSentRequest.setSpan(new StyleSpan(Typeface.BOLD), startIndex, endIndex, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
                                     spanSentRequest.setSpan(new ForegroundColorSpan(ContextCompat.getColor(mContext, R.color.primaryTextColor)),
                                                             0, spanSentRequest.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
@@ -1224,12 +1236,12 @@ public class BookTimelineAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
                                 }
 
                                 case ACCEPT: {
-                                    String acceptRequestString = mContext.getString(R.string.x_accepted_your_request, fromUserName);
+                                    String acceptRequestString = mContext.getString(R.string.you_accepted_request, requesterName);
                                     SpannableString spanAcceptRequest = new SpannableString(acceptRequestString);
-                                    int startIndex = acceptRequestString.indexOf(fromUserName);
-                                    int endIndex = startIndex + fromUserName.length();
+                                    int startIndex = acceptRequestString.indexOf(requesterName);
+                                    int endIndex = startIndex + requesterName.length();
 
-                                    spanAcceptRequest.setSpan(clickableSpanFromUserName, startIndex, endIndex, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+                                    spanAcceptRequest.setSpan(clickableSpanRequesterName, startIndex, endIndex, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
                                     spanAcceptRequest.setSpan(new StyleSpan(Typeface.BOLD), startIndex, endIndex, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
                                     spanAcceptRequest.setSpan(new ForegroundColorSpan(ContextCompat.getColor(mContext, R.color.primaryTextColor)),
                                                               0, spanAcceptRequest.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
@@ -1241,12 +1253,12 @@ public class BookTimelineAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
 
                                 case REJECT: {
 
-                                    String rejectRequestString = mContext.getString(R.string.x_rejected_your_request, fromUserName);
+                                    String rejectRequestString = mContext.getString(R.string.you_rejected_request, requesterName);
                                     SpannableString spanRejectRequest = new SpannableString(rejectRequestString);
-                                    int startIndex = rejectRequestString.indexOf(fromUserName);
-                                    int endIndex = startIndex + fromUserName.length();
+                                    int startIndex = rejectRequestString.indexOf(requesterName);
+                                    int endIndex = startIndex + requesterName.length();
 
-                                    spanRejectRequest.setSpan(clickableSpanFromUserName, startIndex, endIndex, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+                                    spanRejectRequest.setSpan(clickableSpanRequesterName, startIndex, endIndex, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
                                     spanRejectRequest.setSpan(new StyleSpan(Typeface.BOLD), startIndex, endIndex, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
                                     spanRejectRequest.setSpan(new ForegroundColorSpan(ContextCompat.getColor(mContext, R.color.primaryTextColor)),
                                                               0, spanRejectRequest.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
@@ -1265,20 +1277,20 @@ public class BookTimelineAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
                             switch (request.getType()) {
 
                                 case SEND: {
-                                    String sendRequestString = mContext.getString(R.string.x_sent_request_to_y, fromUserName, toUserName);
+                                    String sendRequestString = mContext.getString(R.string.x_sent_request_to_y, requesterName, responderName);
                                     SpannableString spanSentRequest = new SpannableString(sendRequestString);
 
-                                    int startIndexFromUser = sendRequestString.indexOf(fromUserName);
-                                    int endIndexFromUser = startIndexFromUser + fromUserName.length();
+                                    int startIndexRequester = sendRequestString.indexOf(requesterName);
+                                    int endIndexRequester = startIndexRequester + requesterName.length();
 
-                                    int startIndexToUser = sendRequestString.indexOf(toUserName);
-                                    int endIndexToUser = startIndexToUser + toUserName.length();
+                                    int startIndexResponder = sendRequestString.indexOf(responderName);
+                                    int endIndexResponder = startIndexResponder + responderName.length();
 
-                                    spanSentRequest.setSpan(clickableSpanFromUserName, startIndexFromUser, endIndexFromUser, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
-                                    spanSentRequest.setSpan(new StyleSpan(Typeface.BOLD), startIndexFromUser, endIndexFromUser, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+                                    spanSentRequest.setSpan(clickableSpanRequesterName, startIndexRequester, endIndexRequester, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+                                    spanSentRequest.setSpan(new StyleSpan(Typeface.BOLD), startIndexRequester, endIndexRequester, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
 
-                                    spanSentRequest.setSpan(clickableSpanToUserName, startIndexToUser, endIndexToUser, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
-                                    spanSentRequest.setSpan(new StyleSpan(Typeface.BOLD), startIndexToUser, endIndexToUser, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+                                    spanSentRequest.setSpan(clickableSpanResponderName, startIndexResponder, endIndexResponder, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+                                    spanSentRequest.setSpan(new StyleSpan(Typeface.BOLD), startIndexResponder, endIndexResponder, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
 
                                     spanSentRequest.setSpan(new ForegroundColorSpan(ContextCompat.getColor(mContext, R.color.primaryTextColor)),
                                                             0, spanSentRequest.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
@@ -1289,20 +1301,20 @@ public class BookTimelineAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
                                 }
 
                                 case ACCEPT: {
-                                    String acceptRequestString = mContext.getString(R.string.x_accepted_ys_request, fromUserName, toUserName);
+                                    String acceptRequestString = mContext.getString(R.string.x_accepted_ys_request, responderName, requesterName);
                                     SpannableString spanAcceptRequest = new SpannableString(acceptRequestString);
 
-                                    int startIndexFromUser = acceptRequestString.indexOf(fromUserName);
-                                    int endIndexFromUser = startIndexFromUser + fromUserName.length();
+                                    int startIndexResponder = acceptRequestString.indexOf(responderName);
+                                    int endIndexResponder = startIndexResponder + responderName.length();
 
-                                    int startIndexToUser = acceptRequestString.indexOf(toUserName);
-                                    int endIndexToUser = startIndexToUser + toUserName.length();
+                                    int startIndexRequester = acceptRequestString.indexOf(requesterName);
+                                    int endIndexRequester = startIndexRequester + requesterName.length();
 
-                                    spanAcceptRequest.setSpan(clickableSpanFromUserName, startIndexFromUser, endIndexFromUser, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
-                                    spanAcceptRequest.setSpan(new StyleSpan(Typeface.BOLD), startIndexFromUser, endIndexFromUser, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+                                    spanAcceptRequest.setSpan(clickableSpanResponderName, startIndexResponder, endIndexResponder, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+                                    spanAcceptRequest.setSpan(new StyleSpan(Typeface.BOLD), startIndexResponder, endIndexResponder, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
 
-                                    spanAcceptRequest.setSpan(clickableSpanToUserName, startIndexToUser, endIndexToUser, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
-                                    spanAcceptRequest.setSpan(new StyleSpan(Typeface.BOLD), startIndexToUser, endIndexToUser, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+                                    spanAcceptRequest.setSpan(clickableSpanRequesterName, startIndexRequester, endIndexRequester, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+                                    spanAcceptRequest.setSpan(new StyleSpan(Typeface.BOLD), startIndexRequester, endIndexRequester, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
 
                                     spanAcceptRequest.setSpan(new ForegroundColorSpan(ContextCompat.getColor(mContext, R.color.primaryTextColor)),
                                                               0, spanAcceptRequest.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
@@ -1314,20 +1326,20 @@ public class BookTimelineAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
 
                                 case REJECT: {
 
-                                    String rejectRequestString = mContext.getString(R.string.x_rejected_ys_request, fromUserName, toUserName);
+                                    String rejectRequestString = mContext.getString(R.string.x_rejected_ys_request, responderName, requesterName);
                                     SpannableString spanRejectRequest = new SpannableString(rejectRequestString);
 
-                                    int startIndexFromUser = rejectRequestString.indexOf(fromUserName);
-                                    int endIndexFromUser = startIndexFromUser + fromUserName.length();
+                                    int startIndexResponder = rejectRequestString.indexOf(responderName);
+                                    int endIndexResponder = startIndexResponder + responderName.length();
 
-                                    int startIndexToUser = rejectRequestString.indexOf(toUserName);
-                                    int endIndexToUser = startIndexToUser + toUserName.length();
+                                    int startIndexRequester = rejectRequestString.indexOf(requesterName);
+                                    int endIndexRequester = startIndexRequester + requesterName.length();
 
-                                    spanRejectRequest.setSpan(clickableSpanFromUserName, startIndexFromUser, endIndexFromUser, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
-                                    spanRejectRequest.setSpan(new StyleSpan(Typeface.BOLD), startIndexFromUser, endIndexFromUser, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+                                    spanRejectRequest.setSpan(clickableSpanResponderName, startIndexResponder, endIndexResponder, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+                                    spanRejectRequest.setSpan(new StyleSpan(Typeface.BOLD), startIndexResponder, endIndexResponder, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
 
-                                    spanRejectRequest.setSpan(clickableSpanToUserName, startIndexToUser, endIndexToUser, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
-                                    spanRejectRequest.setSpan(new StyleSpan(Typeface.BOLD), startIndexToUser, endIndexToUser, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+                                    spanRejectRequest.setSpan(clickableSpanRequesterName, startIndexRequester, endIndexRequester, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+                                    spanRejectRequest.setSpan(new StyleSpan(Typeface.BOLD), startIndexRequester, endIndexRequester, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
 
                                     spanRejectRequest.setSpan(new ForegroundColorSpan(ContextCompat.getColor(mContext, R.color.primaryTextColor)),
                                                               0, spanRejectRequest.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
@@ -1382,24 +1394,45 @@ public class BookTimelineAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
         }
     }
 
-    public int getRequestCount() {
-        int requestCount = 0;
-        ArrayList<Book.BookProcess> bookProcesses = mBookDetails.getBookProcesses();
-        for (Book.BookProcess process : bookProcesses){
+    public int getPendingRequestCount() {
+
+        Book.State state = mBookDetails.getBook().getState();
+
+        if (state == Book.State.OPENED_TO_SHARE || state == Book.State.READING || state == Book.State.CLOSED_TO_SHARE) {
 
             User currentUser = SessionManager.getCurrentUser(mContext);
+            ArrayList<Book.BookProcess> bookProcesses = mBookDetails.getBookProcesses();
 
-            if (process instanceof Request && ((Request) process).getToUser().equals(currentUser)){
-                if (((Request)process).getType() == Request.Type.SEND){
-                    requestCount++;
+            int pendingRequestCount = 0;
+
+            // The list is reversed so the closest process to now is the last element
+            int index = bookProcesses.size() - 1;
+            boolean acceptedRequestFound = false;
+            while (!acceptedRequestFound && index >= 0) {
+
+                Book.BookProcess process = bookProcesses.get(index);
+
+                if (process instanceof Request && ((Request) process).getResponder().equals(currentUser)) {
+
+                    Request.Type type = ((Request) process).getType();
+
+                    if (type == Request.Type.SEND) {
+                        pendingRequestCount++;
+                    } else if (type == Request.Type.REJECT) {
+                        pendingRequestCount--;
+                    } else if (type == Request.Type.ACCEPT){
+                        acceptedRequestFound = true;
+                    }
                 }
-            }else if (process instanceof Request && ((Request) process).getFromUser().equals(currentUser)){
-                if (((Request)process).getType() != Request.Type.SEND){
-                    requestCount--;
-                }
+
+                index--;
             }
+
+            return pendingRequestCount;
+
+        } else {
+            return 0;
         }
-        return requestCount;
     }
 
     private String bookStateToString(Book.State state) {

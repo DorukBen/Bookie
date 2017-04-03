@@ -143,6 +143,7 @@
                     android:background="@color/colorPrimaryDark"
                     android:hint="@string/your_name_hint"
                     android:padding="12dp"
+                    android:inputType="textCapWords"
                     android:textColor="@color/primaryTextColor"
                     android:textColorHint="@color/secondaryTextColor"
                     android:textSize="16sp"/>

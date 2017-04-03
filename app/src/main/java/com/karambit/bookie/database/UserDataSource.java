@@ -7,12 +7,16 @@ import android.util.Log;
 
 import com.google.android.gms.maps.model.LatLng;
 import com.karambit.bookie.model.User;
+import com.orhanobut.logger.Logger;
+
+import java.util.concurrent.Callable;
+import java.util.function.Function;
 
 /**
  * Created by doruk on 19.03.2017.
  */
 
-public class UserDataSource {
+public class UserDataSource{
 
     private static final String TAG = UserDataSource.class.getSimpleName();
 
@@ -33,7 +37,7 @@ public class UserDataSource {
     private static final String USER_COLUMN_POINT = "point";
     private static final String USER_COLUMN_SHARED_POINT = "shared_point";
 
-    public static final String CREATE_USER_TABLE_TAG = "CREATE TABLE " + USER_TABLE_NAME + " (" +
+    static final String CREATE_USER_TABLE_TAG = "CREATE TABLE " + USER_TABLE_NAME + " (" +
             USER_COLUMN_ID + " INTEGER PRIMERY KEY, " +
             USER_COLUMN_NAME + " TEXT NOT NULL, " +
             USER_COLUMN_IMAGE_URL + " TEXT, " +
@@ -48,7 +52,7 @@ public class UserDataSource {
             USER_COLUMN_POINT + " INTEGER NOT NULL, " +
             USER_COLUMN_SHARED_POINT + " INTEGER NOT NULL)";
 
-    public static final String UPGRADE_USER_TABLE_TAG = "DROP TABLE IF EXISTS " + USER_TABLE_NAME;
+    static final String UPGRADE_USER_TABLE_TAG = "DROP TABLE IF EXISTS " + USER_TABLE_NAME;
 
     UserDataSource(SQLiteDatabase database) {
         mSqLiteDatabase = database;
@@ -101,7 +105,6 @@ public class UserDataSource {
         }
         return result;
     }
-
     /**
      * Insert {@link User user} to database.<br>
      *
@@ -172,7 +175,7 @@ public class UserDataSource {
                 res.close();
             }
         }
-        Log.i(TAG, "User: " + user.toString());
+        Logger.d("User: " + user.toString());
         return user;
     }
 
@@ -220,7 +223,7 @@ public class UserDataSource {
                 res.close();
             }
         }
-        Log.i(TAG, "User.Details: " + details.toString());
+        Logger.d("User.Details: " + details.toString());
         return details;
     }
 
@@ -266,16 +269,39 @@ public class UserDataSource {
      * @param latitude {@link User user's} latitude value.<br>
      * @param longitude {@link User user's} longitude value.<br>
      */
-    public void updateUserLocation(double latitude, double longitude){
+    public boolean updateUserLocation(double latitude, double longitude){
+        boolean result = false;
         try{
             ContentValues cv = new ContentValues();
             cv.put(USER_COLUMN_LATITUDE, latitude);
             cv.put(USER_COLUMN_LONGITUDE, longitude);
 
-            mSqLiteDatabase.update(USER_TABLE_NAME, cv, null, null);
+            result = mSqLiteDatabase.update(USER_TABLE_NAME, cv, null, null) > 0;
         }finally {
-            Log.i(TAG, "User's location updated: lat = " + latitude + " long = " + longitude);
+            Logger.d("User's location updated: lat = " + latitude + " long = " + longitude);
         }
+        return result;
+    }
+
+    /**
+     * Updates {@link User user} profile picture and its thumbnail.<br>
+     *
+     * @param imageUrl {@link User user's} image url value.<br>
+     * @param thumbnailUrl {@link User user's} thumbnail url value.<br>
+     */
+    public boolean updateUserImage(String imageUrl, String thumbnailUrl){
+        boolean result = false;
+        try{
+            ContentValues cv = new ContentValues();
+            cv.put(USER_COLUMN_IMAGE_URL, imageUrl);
+            cv.put(USER_COLUMN_THUMBNAIL_URL, thumbnailUrl);
+
+            result = mSqLiteDatabase.update(USER_TABLE_NAME, cv, null, null) > 0;
+        }finally {
+            Logger.d("User's location updated: imageUrl = " + imageUrl + " thumbnailUrl = " + thumbnailUrl);
+        }
+
+        return result;
     }
 
     /**
@@ -283,25 +309,96 @@ public class UserDataSource {
      *
      * @param password {@link User user's} password string.<br>
      */
-    public void updateUserPassword(String password){
+    public boolean updateUserPassword(String password){
+        boolean result = false;
         try{
             ContentValues cv = new ContentValues();
             cv.put(USER_COLUMN_PASSWORD, password);
 
-            mSqLiteDatabase.update(USER_TABLE_NAME, cv, null, null);
+            result = mSqLiteDatabase.update(USER_TABLE_NAME, cv, null, null) > 0;
         }finally {
-            Log.i(TAG, "User's password updated");
+            Logger.d("User's password updated");
         }
+
+        return result;
     }
 
     /**
      * Deletes {@link User user} from database.<br>
      */
-    public void deleteUser() {
+    public boolean deleteUser() {
+        boolean result = false;
         try{
-            mSqLiteDatabase.delete(USER_TABLE_NAME, null, null);
+            result = mSqLiteDatabase.delete(USER_TABLE_NAME, null, null) > 0;
         }finally {
-            Log.i(TAG, "User deleted from database.");
+            Logger.d("User deleted from database.");
         }
+
+        return result;
+    }
+
+    //Callable Methods
+    public Callable<Boolean> cSaveUser(final int id, final String name, final String imageURL, final String thumbnailURL, final double latitude, final double longitude,
+                                       final String password, final String email, final boolean verified, final String bio, final int bookCounter, final int point, final int sharedPoint){
+        return new Callable<Boolean>() {
+            @Override
+            public Boolean call() throws Exception {
+                return saveUser(id, name, imageURL, thumbnailURL, latitude, longitude, password, email, verified, bio, bookCounter, point, sharedPoint);
+            }
+        };
+    }
+
+    public Callable<Boolean> cSaveUser(final User.Details userDetails){
+        return new Callable<Boolean>() {
+            @Override
+            public Boolean call() throws Exception {
+                return saveUser(userDetails);
+            }
+        };
+    }
+
+    public Callable<Boolean> cUpdateUserDetails(final User.Details userDetails){
+        return new Callable<Boolean>() {
+            @Override
+            public Boolean call() throws Exception {
+                return updateUserDetails(userDetails);
+            }
+        };
+    }
+
+    public Callable<Boolean> cUpdateUserLocation(final double latitude, final double longitude){
+        return new Callable<Boolean>() {
+            @Override
+            public Boolean call() throws Exception {
+                return updateUserLocation(latitude, longitude);
+            }
+        };
+    }
+
+    public Callable<Boolean> cUpdateUserImage(final String imageUrl, final String thumbnailUrl){
+        return new Callable<Boolean>() {
+            @Override
+            public Boolean call() throws Exception {
+                return updateUserImage(imageUrl, thumbnailUrl);
+            }
+        };
+    }
+
+    public Callable<Boolean> cUpdateUserPassword(final String password){
+        return new Callable<Boolean>() {
+            @Override
+            public Boolean call() throws Exception {
+                return updateUserPassword(password);
+            }
+        };
+    }
+
+    public Callable<Boolean> cDeleteUser(){
+        return new Callable<Boolean>() {
+            @Override
+            public Boolean call() throws Exception {
+                return deleteUser();
+            }
+        };
     }
 }

@@ -20,7 +20,6 @@ import android.text.SpannableString;
 import android.text.TextUtils;
 import android.text.TextWatcher;
 import android.text.style.AbsoluteSizeSpan;
-import android.util.Log;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
@@ -37,11 +36,11 @@ import com.karambit.bookie.helper.TypefaceSpan;
 import com.karambit.bookie.model.Message;
 import com.karambit.bookie.model.User;
 import com.karambit.bookie.rest_api.BookieClient;
-import com.karambit.bookie.rest_api.ErrorCodes;
 import com.karambit.bookie.rest_api.FcmApi;
 import com.karambit.bookie.rest_api.UserApi;
 import com.karambit.bookie.service.BookieFirebaseMessagingService;
 import com.karambit.bookie.service.BookieIntentFilters;
+import com.orhanobut.logger.Logger;
 
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -178,7 +177,7 @@ public class ConversationActivity extends AppCompatActivity {
 
                     if (!selectedIndexes.contains(position)) {
 
-                        Log.i(TAG, "Message " + position + " selected");
+                        Logger.d("Message " + position + " selected");
 
                         if (selectedIndexes.size() == 0) {
                             setSelectionMode(true);
@@ -191,7 +190,7 @@ public class ConversationActivity extends AppCompatActivity {
 
                     } else {
 
-                        Log.i(TAG, "Message " + position + " unselected");
+                        Logger.d("Message " + position + " unselected");
 
                         selectedIndexes.remove((Integer) position);
 
@@ -214,7 +213,7 @@ public class ConversationActivity extends AppCompatActivity {
 
                 if (!selectedIndexes.contains(position)) {
 
-                    Log.i(TAG, "Message " + position + " selected");
+                    Logger.d("Message " + position + " selected");
 
                     if (selectedIndexes.size() == 0) {
                         setSelectionMode(true);
@@ -227,7 +226,7 @@ public class ConversationActivity extends AppCompatActivity {
 
                 } else {
 
-                    Log.i(TAG, "Message " + position + " unselected");
+                    Logger.d("Message " + position + " unselected");
 
                     selectedIndexes.remove((Integer) position);
 
@@ -289,19 +288,18 @@ public class ConversationActivity extends AppCompatActivity {
 
                     int id = createTemporaryMessageID();
                     final Message message = new Message(id, messageText, SessionManager.getCurrentUser(ConversationActivity.this),
-                            mOppositeUser, Calendar.getInstance(), Message.State.PENDING);
+                    mOppositeUser, Calendar.getInstance(), Message.State.PENDING);
 
-                                if (mDbManager.getMessageDataSource().saveMessage(message, SessionManager.getCurrentUser(ConversationActivity.this))){
+                    if (mDbManager.getMessageDataSource().saveMessage(message, message.getOppositeUser(SessionManager.getCurrentUser(ConversationActivity.this)))) {
 
-                                    mMessageEditText.setText("");
-                                    toggleSendButton(false);
-                                    sendMessageToServer(message);
-                                    insertMessage(message);
-                                }else {
-                                    Log.e(TAG, "Message Insertion Failed!");
-                                    Toast.makeText(ConversationActivity.this, getString(R.string.unknown_error), Toast.LENGTH_SHORT).show();
-                                }
-
+                        mMessageEditText.setText("");
+                        toggleSendButton(false);
+                        sendMessageToServer(message);
+                        insertMessage(message);
+                    } else {
+                        Logger.e("Message Insertion Failed: " + message);
+                        Toast.makeText(ConversationActivity.this, getString(R.string.unknown_error), Toast.LENGTH_SHORT).show();
+                    }
                 }
 
             }
@@ -343,13 +341,16 @@ public class ConversationActivity extends AppCompatActivity {
                             insertMessage(message);
 
                             fetchSeenMessages();
+
+                            Logger.d("Message received, received from FCM: " + message);
                         }
                     }
                 } else if (intent.getAction().equalsIgnoreCase(BookieIntentFilters.FCM_INTENT_FILTER_MESSAGE_DELIVERED)){
                     final int messageId = intent.getIntExtra(BookieIntentFilters.EXTRA_MESSAGE_ID, -1);
                     if (messageId > 0){
+                        Message message = changeMessageState(messageId, Message.State.DELIVERED);
 
-                        changeMessageState(messageId, Message.State.DELIVERED);
+                        Logger.d("Message delivered received from FCM: " + message);
                     }
                 } else if (intent.getAction().equalsIgnoreCase(BookieIntentFilters.FCM_INTENT_FILTER_MESSAGE_SEEN)){
                     final int messageId = intent.getIntExtra(BookieIntentFilters.EXTRA_MESSAGE_ID, -1);
@@ -367,6 +368,7 @@ public class ConversationActivity extends AppCompatActivity {
                             }
                         }
 
+                        Logger.d("Message seen received from FCM: " + changedMessage);
                     }
                 }
             }
@@ -413,7 +415,7 @@ public class ConversationActivity extends AppCompatActivity {
 
     public void insertMessage(final Message newMessage) {
 
-        Log.i(TAG, "Message inserted: " + newMessage.getText());
+        Logger.d("Message inserted: " + newMessage.getText());
 
         mMessages.add(0, newMessage);
         mConversationAdapter.notifyItemInserted(0);
@@ -448,7 +450,7 @@ public class ConversationActivity extends AppCompatActivity {
                 if (message.getState() != Message.State.SEEN) {
                     message.setState(state);
                     mConversationAdapter.notifyItemChanged(mMessages.indexOf(message));
-                    mDbManager.getMessageDataSource().updateMessageState(message, state);
+                    mDbManager.Threaded(mDbManager.getMessageDataSource().cUpdateMessageState(message, state));
 
                     if (message.getSender().getID() != SessionManager.getCurrentUser(getApplicationContext()).getID()){
                         uploadMessageStateToServer(message);
@@ -458,7 +460,7 @@ public class ConversationActivity extends AppCompatActivity {
                     if (state == Message.State.SEEN){
                         message.setState(state);
                         mConversationAdapter.notifyItemChanged(mMessages.indexOf(message));
-                        mDbManager.getMessageDataSource().updateMessageState(message, state);
+                        mDbManager.Threaded(mDbManager.getMessageDataSource().cUpdateMessageState(message, state));
 
                         if (message.getSender().getID() != SessionManager.getCurrentUser(getApplicationContext()).getID()){
                             uploadMessageStateToServer(message);
@@ -477,7 +479,7 @@ public class ConversationActivity extends AppCompatActivity {
         for (Message message : mMessages) {
             if (message.getID() == oldMessageID) {
                 message.setID(newMessageID);
-                mDbManager.getMessageDataSource().updateMessageId(oldMessageID, newMessageID);
+                mDbManager.Threaded(mDbManager.getMessageDataSource().cUpdateMessageId(oldMessageID, newMessageID));
                 return true;
             }
         }
@@ -496,7 +498,7 @@ public class ConversationActivity extends AppCompatActivity {
 
             mDeleteMenuItem.setVisible(true);
 
-            Log.i(TAG, "Message selection mode on");
+            Logger.d("Message selection mode on");
         } else {
             setActionBarTitle(mOppositeUser.getName());
 
@@ -504,7 +506,7 @@ public class ConversationActivity extends AppCompatActivity {
 
             mDeleteMenuItem.setVisible(false);
 
-            Log.i(TAG, "Message selection mode off");
+            Logger.d("Message selection mode off");
         }
     }
 
@@ -565,13 +567,13 @@ public class ConversationActivity extends AppCompatActivity {
                                 Message message = mMessages.get(index);
                                 selectedMessageIds[i] = message.getID();
                                 mMessages.remove(index);
-                                mDbManager.getMessageDataSource().deleteMessage(message);
+                                mDbManager.Threaded(mDbManager.getMessageDataSource().cDeleteMessage(message));
                             }
 
                             deleteMessagesOnServer(selectedMessageIds);
 
-                            Log.i(TAG, "Deleted message indexes: " + selectedIndexes.toString());
-                            Log.i(TAG, "Deleted message IDs: " + Arrays.toString(selectedMessageIds));
+                            Logger.d("Deleted message indexes: " + selectedIndexes.toString());
+                            Logger.d("Deleted message IDs: " + Arrays.toString(selectedMessageIds));
 
                             selectedIndexes.clear();
                             setSelectionMode(false);
@@ -640,9 +642,12 @@ public class ConversationActivity extends AppCompatActivity {
         }
         deletedMessageIds = builder.toString();
 
-        Call<ResponseBody> setLovedGenres = userApi.deleteMessages(email, password, deletedMessageIds);
+        Call<ResponseBody> deleteMessages = userApi.deleteMessages(email, password, deletedMessageIds);
 
-        setLovedGenres.enqueue(new Callback<ResponseBody>() {
+        Logger.d("deleteMessages() API called with parameters: \n" +
+                     "\temail=" + email + ", \n\tpassword=" + password + ", \n\tmessageIDs=" + deletedMessageIds);
+
+        deleteMessages.enqueue(new Callback<ResponseBody>() {
             @Override
             public void onResponse(Call<ResponseBody> call, Response<ResponseBody> response) {
 
@@ -651,43 +656,34 @@ public class ConversationActivity extends AppCompatActivity {
                         if (response.body() != null){
                             String json = response.body().string();
 
+                            Logger.json(json);
+
                             JSONObject responseObject = new JSONObject(json);
                             boolean error = responseObject.getBoolean("error");
 
                             if (!error) {
-                                Log.i(TAG, "Messages deleted from server!");
+                                Logger.d("Messages deleted from server");
                             } else {
 
                                 int errorCode = responseObject.getInt("errorCode");
 
-                                if (errorCode == ErrorCodes.EMPTY_POST){
-                                    Log.e(TAG, "Post is empty. (Conversation Error)");
-                                }else if (errorCode == ErrorCodes.MISSING_POST_ELEMENT){
-                                    Log.e(TAG, "Post element missing. (Conversation Error)");
-                                }else if (errorCode == ErrorCodes.INVALID_REQUEST){
-                                    Log.e(TAG, "Invalid request. (Conversation Error)");
-                                }else if (errorCode == ErrorCodes.INVALID_EMAIL){
-                                    Log.e(TAG, "Invalid email. (Conversation Error)");
-                                }else if (errorCode == ErrorCodes.UNKNOWN){
-                                    Log.e(TAG, "onResponse: errorCode = " + errorCode);
-                                }
-
+                                Logger.e("Error true in response: errorCode = " + errorCode);
                             }
                         }else{
-                            Log.e(TAG, "Response body is null. (Conversation Error)");
+                            Logger.e("Response body is null. (Conversation Error)");
                         }
                     }else{
-                        Log.e(TAG, "Response object is null. (Conversation Error)");
+                        Logger.e("Response object is null. (Conversation Error)");
                     }
                 } catch (IOException | JSONException e) {
-                    e.printStackTrace();
+                    Logger.e("IOException or JSONException caught: " + e.getMessage());
                 }
             }
 
             @Override
             public void onFailure(Call<ResponseBody> call, Throwable t) {
 
-                Log.e(TAG, "Conversation onFailure: " + t.getMessage());
+                Logger.e("deleteMessages Failure: " + t.getMessage());
             }
         });
     }
@@ -754,6 +750,10 @@ public class ConversationActivity extends AppCompatActivity {
         String password = currentUserDetails.getPassword();
         Call<ResponseBody> sendMessage = fcmApi.sendMessage(email, password, message.getText(), message.getReceiver().getID(), message.getID());
 
+        Logger.d("sendMessage() API called with parameters: \n" +
+                     "\temail=" + email + ", \n\tpassword=" + password + ", \n\tmessage=" + message.getText() +
+                     ", \n\ttoUserID=" + message.getReceiver().getID() + ", \n\toldMessageID=" + message.getID());
+
         sendMessage.enqueue(new Callback<ResponseBody>() {
             @Override
             public void onResponse(Call<ResponseBody> call, Response<ResponseBody> response) {
@@ -763,6 +763,8 @@ public class ConversationActivity extends AppCompatActivity {
                         if (response.body() != null){
                             String json = response.body().string();
 
+                            Logger.json(json);
+
                             final JSONObject responseObject = new JSONObject(json);
                             boolean error = responseObject.getBoolean("error");
 
@@ -771,14 +773,15 @@ public class ConversationActivity extends AppCompatActivity {
 
                                     try {
                                         changeMessageID(responseObject.getInt("oldMessageID"), responseObject.getInt("newMessageID"));
+                                        Logger.d("Message sent to server succesfully");
                                     } catch (JSONException e) {
-                                        e.printStackTrace();
+                                        Logger.e("JSONException caught: " + e.getMessage());
                                     }
 
                                     try {
                                         changeMessageState(responseObject.getInt("newMessageID"), Message.State.SENT);
                                     } catch (JSONException e) {
-                                        e.printStackTrace();
+                                        Logger.e("JSONException caught: " + e.getMessage());
                                     }
 
                                 }
@@ -786,37 +789,27 @@ public class ConversationActivity extends AppCompatActivity {
                             } else {
                                 int errorCode = responseObject.getInt("errorCode");
 
-                                if (errorCode == ErrorCodes.EMPTY_POST){
-                                    Log.e(TAG, "Post is empty. (Send Message Error)");
-                                }else if (errorCode == ErrorCodes.MISSING_POST_ELEMENT){
-                                    Log.e(TAG, "Post element missing. (Send Message Error)");
-                                }else if (errorCode == ErrorCodes.INVALID_REQUEST){
-                                    Log.e(TAG, "Invalid request. (Send Message Error)");
-                                }else if (errorCode == ErrorCodes.INVALID_EMAIL){
-                                    Log.e(TAG, "Invalid email. (Send Message Error)");
-                                }else if (errorCode == ErrorCodes.UNKNOWN){
-                                    Log.e(TAG, "onResponse: errorCode = " + errorCode);
-                                }
+                                Logger.e("Error true in response: errorCode = " + errorCode);
 
                                 changeMessageState(message.getID(), Message.State.ERROR);
                             }
                         }else{
-                            Log.e(TAG, "Response body is null. (Send Message Error)");
+                            Logger.e("Response body is null. (Send Message Error)");
                             changeMessageState(message.getID(), Message.State.ERROR);
                         }
                     }else {
-                        Log.e(TAG, "Response object is null. (Send Message Error)");
+                        Logger.e("Response object is null. (Send Message Error)");
                         changeMessageState(message.getID(), Message.State.ERROR);
                     }
                 } catch (IOException | JSONException e) {
-                    e.printStackTrace();
+                    Logger.e("IOException or JSONException caught: " + e.getMessage());
                     changeMessageState(message.getID(), Message.State.ERROR);
                 }
             }
 
             @Override
             public void onFailure(Call<ResponseBody> call, Throwable t) {
-                Log.e(TAG, "Send Message onFailure: " + t.getMessage());
+                Logger.e("Send Message onFailure: " + t.getMessage());
                 changeMessageState(message.getID(), Message.State.ERROR);
             }
         });
@@ -829,7 +822,11 @@ public class ConversationActivity extends AppCompatActivity {
 
         String email = currentUserDetails.getEmail();
         String password = currentUserDetails.getPassword();
-        final Call<ResponseBody> uploadMessageState = fcmApi.uploadMessageState(email, password, message.getID(), message.getState().ordinal());
+        final Call<ResponseBody> uploadMessageState = fcmApi.uploadMessageState(email, password, message.getID(), message.getState().getStateCode());
+
+        Logger.d("uploadMessageState() API called with parameters: \n" +
+                     "\temail=" + email + ", \n\tpassword=" + password +
+                     ", \n\tmessageID=" + message.getID() + ", \n\tmessageState=" + message.getState().getStateCode());
 
         uploadMessageState.enqueue(new Callback<ResponseBody>() {
             @Override
@@ -840,40 +837,32 @@ public class ConversationActivity extends AppCompatActivity {
                         if (response.body() != null){
                             String json = response.body().string();
 
+                            Logger.json(json);
+
                             JSONObject responseObject = new JSONObject(json);
                             boolean error = responseObject.getBoolean("error");
 
                             if (!error) {
-
+                                Logger.d("Message state uploaded to server: " + message.getState());
                             } else {
                                 int errorCode = responseObject.getInt("errorCode");
 
-                                if (errorCode == ErrorCodes.EMPTY_POST){
-                                    Log.e(TAG, "Post is empty. (Upload Message State Error)");
-                                }else if (errorCode == ErrorCodes.MISSING_POST_ELEMENT){
-                                    Log.e(TAG, "Post element missing. (Upload Message State Error)");
-                                }else if (errorCode == ErrorCodes.INVALID_REQUEST){
-                                    Log.e(TAG, "Invalid request. (Upload Message State Error)");
-                                }else if (errorCode == ErrorCodes.INVALID_EMAIL){
-                                    Log.e(TAG, "Invalid email. (Upload Message State Error)");
-                                }else if (errorCode == ErrorCodes.UNKNOWN){
-                                    Log.e(TAG, "onResponse: errorCode = " + errorCode);
-                                }
+                                Logger.e("Error true in response: errorCode = " + errorCode);
                             }
                         }else{
-                            Log.e(TAG, "Response body is null. (Upload Message State Error)");
+                            Logger.e("Response body is null. (Upload Message State Error)");
                         }
                     }else {
-                        Log.e(TAG, "Response object is null. (Upload Message State Error)");
+                        Logger.e("Response object is null. (Upload Message State Error)");
                     }
                 } catch (IOException | JSONException e) {
-                    e.printStackTrace();
+                    Logger.e("IOException or JSONException caught: " + e.getMessage());
                 }
             }
 
             @Override
             public void onFailure(Call<ResponseBody> call, Throwable t) {
-                Log.e(TAG, "Upload Message State onFailure: " + t.getMessage());
+                Logger.e("uploadMessageState Failure: " + t.getMessage());
                 uploadMessageStateToServer(message);
             }
         });

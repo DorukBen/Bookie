@@ -3,12 +3,13 @@ package com.karambit.bookie.database;
 import android.content.ContentValues;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
-import android.util.Log;
 
 import com.karambit.bookie.model.Book;
 import com.karambit.bookie.model.User;
+import com.orhanobut.logger.Logger;
 
 import java.util.ArrayList;
+import java.util.concurrent.Callable;
 
 /**
  * Created by doruk on 19.03.2017.
@@ -31,7 +32,7 @@ public class NotificationBookDataSource {
     private static final String NOTIFICATION_BOOK_COLUMN_GENRE = "genre";
     private static final String NOTIFICATION_BOOK_COLUMN_OWNER_ID = "owner_id";
 
-    public static final String CREATE_NOTIFICATION_BOOK_TABLE_TAG = "CREATE TABLE " + NOTIFICATION_BOOK_TABLE_NAME + " (" +
+    static final String CREATE_NOTIFICATION_BOOK_TABLE_TAG = "CREATE TABLE " + NOTIFICATION_BOOK_TABLE_NAME + " (" +
             NOTIFICATION_BOOK_COLUMN_ID + " INTEGER PRIMARY KEY NOT NULL, " +
             NOTIFICATION_BOOK_COLUMN_NAME + " TEXT NOT NULL, " +
             NOTIFICATION_BOOK_COLUMN_IMAGE_URL + " TEXT NOT NULL, " +
@@ -41,9 +42,9 @@ public class NotificationBookDataSource {
             NOTIFICATION_BOOK_COLUMN_GENRE + " INTEGER NOT NULL, " +
             NOTIFICATION_BOOK_COLUMN_OWNER_ID + " INTEGER NOT NULL)";
 
-    public static final String UPGRADE_NOTIFICATION_BOOK_TABLE_TAG = "DROP TABLE IF EXISTS " + NOTIFICATION_BOOK_TABLE_NAME;
+    static final String UPGRADE_NOTIFICATION_BOOK_TABLE_TAG = "DROP TABLE IF EXISTS " + NOTIFICATION_BOOK_TABLE_NAME;
 
-    public NotificationBookDataSource(SQLiteDatabase database) {
+    NotificationBookDataSource(SQLiteDatabase database) {
         mSqLiteDatabase = database;
         mNotificationBookUserDataSource = new NotificationBookUserDataSource(mSqLiteDatabase);
     }
@@ -54,7 +55,7 @@ public class NotificationBookDataSource {
      * @param book {@link Book} which will be inserted
      * @return Returns boolean value if insertion successful returns true else returns false
      */
-    public boolean insertBook(Book book) {
+    private boolean insertBook(Book book) {
         boolean result = false;
         try{
             ContentValues contentValues = new ContentValues();
@@ -69,9 +70,51 @@ public class NotificationBookDataSource {
 
             result = mSqLiteDatabase.insert(NOTIFICATION_BOOK_TABLE_NAME, null, contentValues) > 0;
         }finally {
-            Log.i(TAG, "New Book insertion successful");
+            Logger.d("New Book insertion successful");
         }
         return result;
+    }
+
+    /**
+     * Update {@link Book book} in database.<br>
+     *
+     * @param book {@link Book} which will be updated
+     * @return Returns boolean value if update successful returns true else returns false
+     */
+    private boolean updateBook(Book book) {
+        boolean result = false;
+        try{
+            ContentValues contentValues = new ContentValues();
+            contentValues.put(NOTIFICATION_BOOK_COLUMN_ID, book.getID());
+            contentValues.put(NOTIFICATION_BOOK_COLUMN_NAME, book.getName());
+            contentValues.put(NOTIFICATION_BOOK_COLUMN_IMAGE_URL, book.getImageURL());
+            contentValues.put(NOTIFICATION_BOOK_COLUMN_THUMBNAIL_URL, book.getThumbnailURL());
+            contentValues.put(NOTIFICATION_BOOK_COLUMN_AUTHOR, book.getAuthor());
+            contentValues.put(NOTIFICATION_BOOK_COLUMN_STATE, book.getState().getStateCode());
+            contentValues.put(NOTIFICATION_BOOK_COLUMN_GENRE, book.getGenreCode());
+            contentValues.put(NOTIFICATION_BOOK_COLUMN_OWNER_ID, book.getOwner().getID());
+
+            result = mSqLiteDatabase.update(NOTIFICATION_BOOK_TABLE_NAME, contentValues, NOTIFICATION_BOOK_COLUMN_ID + "=" + book.getID(), null) > 0;
+        }finally {
+            Logger.d("New Book insertion successful");
+        }
+        return result;
+    }
+
+    public boolean checkAndUpdateBook(Book book) {
+        if (isBookExists(book)) {
+            return updateBook(book);
+        } else {
+            return false;
+        }
+    }
+
+    public boolean saveBook(Book book) {
+        if (!isBookExists(book)) {
+            return insertBook(book);
+        } else {
+            return false;
+        }
     }
 
     /**
@@ -145,7 +188,17 @@ public class NotificationBookDataSource {
         try{
             mSqLiteDatabase.delete(NOTIFICATION_BOOK_TABLE_NAME, null, null);
         }finally {
-            Log.i(TAG, "All books deleted from database");
+            Logger.d("All books deleted from database");
         }
+    }
+
+    //Callable Methods
+    public Callable<Boolean> cCheckAndUpdateBook(final Book book){
+        return new Callable<Boolean>() {
+            @Override
+            public Boolean call() throws Exception {
+                return checkAndUpdateBook(book);
+            }
+        };
     }
 }

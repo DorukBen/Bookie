@@ -13,6 +13,7 @@ import com.bumptech.glide.Glide;
 import com.karambit.bookie.R;
 import com.karambit.bookie.helper.CircleImageView;
 import com.karambit.bookie.helper.CreatedAtHelper;
+import com.karambit.bookie.model.Book;
 import com.karambit.bookie.model.Request;
 import com.karambit.bookie.model.User;
 
@@ -70,10 +71,10 @@ public class RequestAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
         private TextView mUserName;
         private TextView mCreatedAt;
         private TextView mLocation;
+        private View mAcceptRejectContainer;
         private ImageButton mAccept;
         private ImageButton mReject;
-        private View mUserClickContainer;
-        private View mButtonClickContainer;
+        private View mRequesterClickContainer;
         private View mDivider;
 
         public RequestViewHolder(View requestView) {
@@ -83,10 +84,10 @@ public class RequestAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
             mUserName = (TextView) requestView.findViewById(R.id.userNameRequest);
             mCreatedAt = (TextView) requestView.findViewById(R.id.createdAtRequest);
             mLocation = (TextView) requestView.findViewById(R.id.locationRequest);
+            mAcceptRejectContainer = requestView.findViewById(R.id.acceptRejectContainer);
             mAccept = (ImageButton) requestView.findViewById(R.id.acceptRequest);
             mReject = (ImageButton) requestView.findViewById(R.id.rejectRequest);
-            mUserClickContainer = requestView.findViewById(R.id.fromUserClickContainer);
-            mButtonClickContainer = requestView.findViewById(R.id.buttonContainer);
+            mRequesterClickContainer = requestView.findViewById(R.id.requesterClickContainer);
             mDivider = requestView.findViewById(R.id.divider);
         }
     }
@@ -193,48 +194,69 @@ public class RequestAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
 
                 int exactRequestPosition = position <= getSentRequestCount() ? position : position - 1; /*SUBTITLE*/
                 final Request request = mRequests.get(exactRequestPosition);
-                final User anotherUser = (getItemViewType(position) == TYPE_SENT_REQUEST)?request.getFromUser():request.getToUser();
+                final User requester = request.getRequester();
 
                 if (getItemViewType(position) == TYPE_SENT_REQUEST) {
-                    requestViewHolder.mButtonClickContainer.setVisibility(View.VISIBLE);
-                    requestViewHolder.mAccept.setOnClickListener(new View.OnClickListener() {
-                        @Override
-                        public void onClick(View v) {
-                            if (mRequestClickListeners != null) {
-                                mRequestClickListeners.onAcceptClick(request);
-                            }
-                        }
-                    });
+                    requestViewHolder.mAcceptRejectContainer.setVisibility(View.VISIBLE);
 
-                    requestViewHolder.mReject.setOnClickListener(new View.OnClickListener() {
-                        @Override
-                        public void onClick(View v) {
-                            if (mRequestClickListeners != null) {
-                                mRequestClickListeners.onRejectClick(request);
+                    if (request.getBook().getState() == Book.State.READING || request.getBook().getState() == Book.State.OPENED_TO_SHARE) {
+
+                        requestViewHolder.mAcceptRejectContainer.setAlpha(1f);
+
+                        requestViewHolder.mAccept.setOnClickListener(new View.OnClickListener() {
+                            @Override
+                            public void onClick(View v) {
+                                if (mRequestClickListeners != null) {
+                                    mRequestClickListeners.onAcceptClick(request);
+                                }
                             }
-                        }
-                    });
+                        });
+
+                        requestViewHolder.mReject.setOnClickListener(new View.OnClickListener() {
+                            @Override
+                            public void onClick(View v) {
+                                if (mRequestClickListeners != null) {
+                                    mRequestClickListeners.onRejectClick(request);
+                                }
+                            }
+                        });
+
+                    } else {
+                        requestViewHolder.mAcceptRejectContainer.setAlpha(0.3f);
+
+                        requestViewHolder.mReject.setClickable(false);
+                        requestViewHolder.mAccept.setClickable(false);
+
+                        requestViewHolder.mAcceptRejectContainer.setOnClickListener(new View.OnClickListener() {
+                            @Override
+                            public void onClick(View v) {
+                                if (mRequestClickListeners != null) {
+                                    mRequestClickListeners.disabledAcceptRejectClick(request);
+                                }
+                            }
+                        });
+                    }
                 } else {
-                    requestViewHolder.mButtonClickContainer.setVisibility(View.GONE);
+                    requestViewHolder.mAcceptRejectContainer.setVisibility(View.GONE);
                 }
 
-                requestViewHolder.mUserClickContainer.setOnClickListener(new View.OnClickListener() {
+                requestViewHolder.mRequesterClickContainer.setOnClickListener(new View.OnClickListener() {
                     @Override
                     public void onClick(View v) {
                         if (mRequestClickListeners != null) {
-                            mRequestClickListeners.onUserClick(anotherUser);
+                            mRequestClickListeners.onUserClick(requester);
                         }
                     }
                 });
 
                 Glide.with(mContext)
-                     .load(anotherUser.getThumbnailUrl())
+                     .load(requester.getThumbnailUrl())
                      .asBitmap()
                      .placeholder(R.drawable.placeholder_88dp)
                      .error(R.drawable.error_88dp)
                      .into(requestViewHolder.mProfilePicture);
 
-                requestViewHolder.mUserName.setText(anotherUser.getName());
+                requestViewHolder.mUserName.setText(requester.getName());
 
                 requestViewHolder.mCreatedAt.setText(CreatedAtHelper.createdAtToSimpleString(mContext, request.getCreatedAt()));
 
@@ -332,6 +354,7 @@ public class RequestAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
         void onUserClick(User user);
         void onAcceptClick(Request request);
         void onRejectClick(Request request);
+        void disabledAcceptRejectClick(Request request);
     }
 
     public RequestClickListeners getRequestClickListeners() {

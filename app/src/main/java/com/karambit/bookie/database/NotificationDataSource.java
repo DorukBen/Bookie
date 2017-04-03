@@ -3,14 +3,15 @@ package com.karambit.bookie.database;
 import android.content.ContentValues;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
-import android.util.Log;
 
 import com.karambit.bookie.model.Book;
 import com.karambit.bookie.model.Notification;
 import com.karambit.bookie.model.User;
+import com.orhanobut.logger.Logger;
 
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.concurrent.Callable;
 
 /**
  * Created by doruk on 19.03.2017.
@@ -33,7 +34,7 @@ public class NotificationDataSource {
     private static final String NOTIFICATION_COLUMN_SEEN = "seen";
     private static final String NOTIFICATION_COLUMN_CREATED_AT = "created_at";
 
-    public static final String CREATE_NOTIFICATION_TABLE_TAG = "CREATE TABLE " + NOTIFICATION_TABLE_NAME + " (" +
+    static final String CREATE_NOTIFICATION_TABLE_TAG = "CREATE TABLE " + NOTIFICATION_TABLE_NAME + " (" +
             NOTIFICATION_COLUMN_ID + " INTEGER PRIMARY KEY NOT NULL, " +
             NOTIFICATION_COLUMN_BOOK_ID + " INTEGER NOT NULL, " +
             NOTIFICATION_COLUMN_USER_ID + " INTEGER NOT NULL, " +
@@ -41,29 +42,27 @@ public class NotificationDataSource {
             NOTIFICATION_COLUMN_SEEN + " INTEGER NOT NULL, " +
             NOTIFICATION_COLUMN_CREATED_AT + " LONG NOT NULL)";
 
-    public static final String UPGRADE_NOTIFICATION_TABLE_TAG = "DROP TABLE IF EXISTS " + NOTIFICATION_TABLE_NAME;
+    static final String UPGRADE_NOTIFICATION_TABLE_TAG = "DROP TABLE IF EXISTS " + NOTIFICATION_TABLE_NAME;
 
-    public NotificationDataSource(SQLiteDatabase database) {
+    NotificationDataSource(SQLiteDatabase database) {
         mSqLiteDatabase = database;
         mNotificationUserDataSource = new NotificationUserDataSource(mSqLiteDatabase);
         mNotificationBookDataSource = new NotificationBookDataSource(mSqLiteDatabase);
         mNotificationBookUserDataSource = new NotificationBookUserDataSource(mSqLiteDatabase);
     }
 
-    public void saveNotificationToDatabase(final Notification notification){
-        if (!mNotificationBookUserDataSource.isUserExists(notification.getBook().getOwner())){
-            mNotificationBookUserDataSource.insertUser(notification.getBook().getOwner());
-        }
+    public boolean saveNotificationToDatabase(final Notification notification){
+        boolean result;
 
-        if (!mNotificationBookDataSource.isBookExists(notification.getBook())){
-            mNotificationBookDataSource.insertBook(notification.getBook());
-        }
+        mNotificationBookUserDataSource.saveUser(notification.getBook().getOwner());
 
-        if (!mNotificationUserDataSource.isUserExists(notification.getOppositeUser())){
-            mNotificationUserDataSource.insertUser(notification.getOppositeUser());
-        }
+        mNotificationBookDataSource.saveBook(notification.getBook());
 
-        insertNotification(notification);
+        mNotificationUserDataSource.saveUser(notification.getOppositeUser());
+
+        result = insertNotification(notification);
+
+        return result;
     }
 
     /**
@@ -90,7 +89,7 @@ public class NotificationDataSource {
 
             result = mSqLiteDatabase.insert(NOTIFICATION_TABLE_NAME, null, contentValues) > 0;
         }finally {
-            Log.i(TAG, "New Notification insertion successful");
+            Logger.d("New Notification insertion successful");
         }
         return result;
     }
@@ -185,37 +184,69 @@ public class NotificationDataSource {
         return unseenMessageCount;
     }
 
-
     /**
      * Updates all notifications seen value.<br>
      *
      * Using SQLiteOpenHelper. Can't access database simultaneously.<br>
 
      */
-    public void updateAllNotificationsSeen(){
-
+    public boolean updateAllNotificationsSeen(){
+        boolean result = false;
         try{
             ContentValues cv = new ContentValues();
             cv.put(NOTIFICATION_COLUMN_SEEN, 1);
 
-            mSqLiteDatabase.update(NOTIFICATION_TABLE_NAME, cv,null, null);
+            result = mSqLiteDatabase.update(NOTIFICATION_TABLE_NAME, cv,null, null) > 0;
         }finally {
-            Log.i(TAG, "Notifications seen updated updated");
+            Logger.d("Notifications seen updated updated");
         }
+
+        return result;
     }
 
     /**
      * Deletes all notifications from database.
      */
-    public void deleteAllNotifications() {
+    public boolean deleteAllNotifications() {
+        boolean result = false;
         try{
-            mSqLiteDatabase.delete(NOTIFICATION_TABLE_NAME, null, null);
+            result = mSqLiteDatabase.delete(NOTIFICATION_TABLE_NAME, null, null) > 0;
             mNotificationBookDataSource.deleteAllBooks();
             mNotificationBookUserDataSource.deleteAllUsers();
             mNotificationUserDataSource.deleteAllUsers();
 
         } finally {
-            Log.i(TAG, "All Notification books, notification book users, notification users and notifications deleted from database");
+            Logger.d("All Notification books, notification book users, notification users and notifications deleted from database");
         }
+
+        return result;
+    }
+
+    //Callable Methods
+    public Callable<Boolean> cSaveNotificationToDatabase(final Notification notification){
+        return new Callable<Boolean>() {
+            @Override
+            public Boolean call() throws Exception {
+                return saveNotificationToDatabase(notification);
+            }
+        };
+    }
+
+    public Callable<Boolean> cUpdateAllNotificationsSeen(){
+        return new Callable<Boolean>() {
+            @Override
+            public Boolean call() throws Exception {
+                return updateAllNotificationsSeen();
+            }
+        };
+    }
+
+    public Callable<Boolean> cDeleteAllNotifications(){
+        return new Callable<Boolean>() {
+            @Override
+            public Boolean call() throws Exception {
+                return deleteAllNotifications();
+            }
+        };
     }
 }

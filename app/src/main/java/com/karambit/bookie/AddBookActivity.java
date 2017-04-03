@@ -13,13 +13,13 @@ import android.os.Environment;
 import android.support.annotation.NonNull;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
+import android.support.v4.content.LocalBroadcastManager;
 import android.support.v7.app.AppCompatActivity;
 import android.text.InputType;
 import android.text.Spannable;
 import android.text.SpannableString;
 import android.text.TextUtils;
 import android.text.style.AbsoluteSizeSpan;
-import android.util.Log;
 import android.view.Display;
 import android.view.View;
 import android.view.WindowManager;
@@ -40,6 +40,11 @@ import com.karambit.bookie.helper.UploadFileTask;
 import com.karambit.bookie.model.Book;
 import com.karambit.bookie.model.User;
 import com.karambit.bookie.rest_api.BookieClient;
+import com.karambit.bookie.service.BookieIntentFilters;
+import com.orhanobut.logger.Logger;
+
+import org.json.JSONException;
+import org.json.JSONObject;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -273,7 +278,8 @@ public class AddBookActivity extends AppCompatActivity {
                 if (checkPermissions()) {
                     startActivityForResult(ImagePicker.getPickImageIntent(getBaseContext()), 1);
 
-                    Log.i(TAG, "Permissions OK!");
+                    Logger.d("Permissions OK!");
+
                 } else {
                     String[] permissions = {
                             Manifest.permission.WRITE_EXTERNAL_STORAGE,
@@ -283,7 +289,7 @@ public class AddBookActivity extends AppCompatActivity {
 
                     ActivityCompat.requestPermissions(AddBookActivity.this, permissions, REQUEST_CODE_CUSTOM_PERMISSIONS);
 
-                    Log.i(TAG, "Permissions NOT OK!");
+                    Logger.d("Permissions NOT OK!");
                 }
             }
         });
@@ -358,8 +364,8 @@ public class AddBookActivity extends AppCompatActivity {
 
         User.Details currentUserDetails = SessionManager.getCurrentUserDetails(this);
 
-        String serverArgsString = "?email=" + currentUserDetails.getEmail()
-                + "&password=" + currentUserDetails.getPassword()
+        String serverArgsString = "?email=" + currentUserDetails.getEmail() +
+                "&password=" + currentUserDetails.getPassword()
                 + "&imageName=" + name
                 + "&bookName=" + bookName
                 + "&author=" + author
@@ -370,25 +376,70 @@ public class AddBookActivity extends AppCompatActivity {
 
         final UploadFileTask uftImage = new UploadFileTask(path, imageUrlString, name);
 
+        Logger.d("getHomePageBooks() API called with parameters: \n" +
+                     "\temail=" + currentUserDetails.getEmail() + ", \n\tpassword=" + currentUserDetails.getPassword() +
+                     ", \n\timageName=" + name + ", \n\tbookName=" + bookName + ", \n\tauthor=" + author +
+                     ", \n\tbookState=" + bookState + ", \n\tgenreCode=" + genreCode);
+
+
         uftImage.setUploadProgressListener(new UploadFileTask.UploadProgressChangedListener() {
             @Override
             public void onProgressChanged(int progress) {
-                Log.i(TAG, "Book image upload progress => " + progress + " / 100");
+                Logger.d("Book image upload progress => " + progress + " / 100");
             }
 
             @Override
-            public void onProgressCompleted() {
-                Log.w(TAG, "Book image upload is OK");
+            public void onProgressCompleted(String response) {
+
                 mProgressDialog.dismiss();
 
-                setResult(RESULT_BOOK_CREATED);
-                finish();
+                if (response != null) {
+
+                    Logger.json(response);
+
+                    try {
+                        JSONObject responseObject = new JSONObject(response);
+                        boolean error = responseObject.optBoolean("error", true);
+
+                        if (!error) {
+
+                            Book book = Book.jsonObjectToBook(responseObject.getJSONObject("book"));
+
+                            Intent data = new Intent(BookieIntentFilters.INTENT_FILTER_BOOK_ADDED);
+
+                            data.putExtra(BookieIntentFilters.EXTRA_BOOK, book);
+
+                            LocalBroadcastManager.getInstance(AddBookActivity.this).sendBroadcast(data);
+
+                            Logger.d("Book add is OK");
+
+                            finish();
+
+                        } else {
+                            int errorCode = responseObject.getInt("errorCode");
+
+                            Logger.e("Error true in response: errorCode = " + errorCode);
+
+                            Toast.makeText(AddBookActivity.this, getString(R.string.unknown_error), Toast.LENGTH_SHORT).show();
+                        }
+                    } catch (JSONException e) {
+                        Logger.e("IOException caught: " + e.getMessage());
+
+                        Toast.makeText(AddBookActivity.this, getString(R.string.unknown_error), Toast.LENGTH_SHORT).show();
+                    }
+                } else {
+                    Logger.e("Response is null. (Add Book Error)");
+
+                    Toast.makeText(AddBookActivity.this, getString(R.string.unknown_error), Toast.LENGTH_SHORT).show();
+                }
             }
 
             @Override
             public void onProgressError() {
+                Logger.e("Book Add error");
+
                 mProgressDialog.dismiss();
-                Log.e(TAG, "Image upload ERROR");
+
                 Toast.makeText(AddBookActivity.this, R.string.unknown_error, Toast.LENGTH_SHORT).show();
             }
         });

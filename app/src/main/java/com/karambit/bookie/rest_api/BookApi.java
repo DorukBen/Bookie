@@ -5,7 +5,6 @@ import retrofit2.Call;
 import retrofit2.http.Field;
 import retrofit2.http.FormUrlEncoded;
 import retrofit2.http.GET;
-import retrofit2.http.Headers;
 import retrofit2.http.POST;
 import retrofit2.http.Query;
 
@@ -38,12 +37,12 @@ public interface BookApi {
 
     @FormUrlEncoded
     @POST("BookAddRequest")
-    Call<ResponseBody> addBookRequests(
+    Call<ResponseBody> addBookRequest(
             @Field("email") String email,
             @Field("password") String password,
             @Field("bookID") int bookId,
-            @Field("fromUserID") int fromUserId,
-            @Field("toUserID") int toUserId,
+            @Field("requesterID") int requesterId, // TODO Server key change ("fromUserID" -> "requesterID")
+            @Field("responderID") int responderId, // TODO Server key change ("toUserID" -> "responderID")
             @Field("requestType") int requestType);
 
     @FormUrlEncoded

@@ -24,6 +24,7 @@ public class SessionManager {
 
     private static final String IS_LOGGED_IN = "is_logged_in";
     private static final String LAST_LOCATION_REMINDER = "last_reminded";
+    private static final String LAST_LOGGED_EMAIL = "last_logged_email";
 
     public static boolean isLoggedIn(Context context) {
         SharedPreferences sharedPreferences = context.getSharedPreferences(NAME_SHARED_PREFERENCES, Context.MODE_PRIVATE);
@@ -41,12 +42,12 @@ public class SessionManager {
     public static void logout(Context context) {
         DBManager dbManager = new DBManager(context);
         dbManager.open();
-        dbManager.getLovedGenreDataSource().resetGenres(getCurrentUser(context));
-        dbManager.getMessageDataSource().deleteAllMessages();
-        dbManager.getUserDataSource().deleteUser();
-        dbManager.getNotificationDataSource().deleteAllNotifications();
-        dbManager.getSearchUserDataSource().deleteAllUsers();
-        dbManager.getSearchBookDataSource().deleteAllBooks();
+        dbManager.Threaded(dbManager.getLovedGenreDataSource().cResetGenres(getCurrentUser(context)));
+        dbManager.Threaded(dbManager.getMessageDataSource().cDeleteAllMessages());
+        dbManager.Threaded(dbManager.getUserDataSource().cDeleteUser());
+        dbManager.Threaded(dbManager.getNotificationDataSource().cDeleteAllNotifications());
+        dbManager.Threaded(dbManager.getSearchUserDataSource().cDeleteAllUsers());
+        dbManager.Threaded(dbManager.getSearchBookDataSource().cDeleteAllBooks());
         changeLoginStatus(context, false);
         mUserDetails = null;
     }
@@ -54,7 +55,7 @@ public class SessionManager {
     public static void login(Context context, User.Details userDetails) {
         DBManager dbManager = new DBManager(context);
         dbManager.open();
-        dbManager.getUserDataSource().saveUser(userDetails);
+        dbManager.Threaded(dbManager.getUserDataSource().cSaveUser(userDetails));
         changeLoginStatus(context, true);
         mUserDetails = userDetails;
     }
@@ -89,6 +90,19 @@ public class SessionManager {
         }else {
             return mUserDetails.getUser();
         }
+    }
+
+    public static void saveEmailAddress(Context context, String email) {
+        SharedPreferences sharedPreferences = context.getSharedPreferences(NAME_SHARED_PREFERENCES, Context.MODE_PRIVATE);
+        SharedPreferences.Editor editor = sharedPreferences.edit();
+        editor.putString(LAST_LOGGED_EMAIL, email);
+        editor.apply();
+        editor.commit();
+    }
+
+    public static String getLastEmailAddress(Context context) {
+        SharedPreferences sharedPreferences = context.getSharedPreferences(NAME_SHARED_PREFERENCES, Context.MODE_PRIVATE);
+        return sharedPreferences.getString(LAST_LOGGED_EMAIL, "");
     }
 
     public static boolean isLovedGenresSelectedLocal(Context context) {

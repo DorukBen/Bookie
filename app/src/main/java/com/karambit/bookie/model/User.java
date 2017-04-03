@@ -183,13 +183,35 @@ public class User implements Parcelable {
 
     @Override
     public String toString() {
-        return "User{" +
-                "mID=" + mID +
-                ", mName='" + mName + '\'' +
-                ", mImageUrl='" + mImageUrl + '\'' +
-                ", mThumbnailUrl='" + mThumbnailUrl + '\'' +
-                ", mLocation=" + ((mLocation != null) ? mLocation.toString(): "null") +
-                '}';
+        return "\nUser{" +
+                "\n\tmID=" + mID +
+                "\n\tmName='" + mName + "'," +
+                "\n\tmImageUrl='" + mImageUrl + "'," +
+                "\n\tmThumbnailUrl='" + mThumbnailUrl + "'," +
+                "\n\tmLocation=" + ((mLocation != null) ? mLocation.toString(): "null") +
+                "\n}";
+    }
+
+    public String toShortString() {
+        return "\nUser{" +
+            "\n\tmID=" + mID +
+            "\n\tmName='" + mName + "'," +
+            "\n\tmLocation=" + ((mLocation != null) ? mLocation.toString(): "null") +
+            "\n}";
+    }
+
+    public static String listToShortString(ArrayList<User> users) {
+        StringBuilder stringBuilder = new StringBuilder();
+
+        stringBuilder.append("Message[");
+
+        for (User user : users) {
+            stringBuilder.append(user.toShortString());
+        }
+
+        stringBuilder.append("\n]");
+
+        return stringBuilder.toString();
     }
 
     public class Details {

@@ -9,8 +9,10 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.sql.Timestamp;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.Locale;
 
 /**
  * Created by orcan on 3/26/17.
@@ -159,10 +161,14 @@ public class Interaction implements Book.BookProcess, Parcelable {
 
     @Override
     public String toString() {
-        return mBook + ".Interaction{" +
-            "mInteractionType=" + mType +
-            ", mUser=" + mUser +
-            ", mCreatedAt=" + mCreatedAt + '}';
+
+        SimpleDateFormat dateFormat = new SimpleDateFormat("dd/MM/yyyy hh:mm:ss a", Locale.getDefault());
+        String createdAt = dateFormat.format(mCreatedAt.getTime());
+
+        return mBook.toShortString() + ".Interaction{" +
+            "\n\tmInteractionType=" + mType + "," +
+            "\n\tmUser=" + mUser.toShortString() +
+            ", mCreatedAt=" + createdAt + '}';
     }
 
     @Override

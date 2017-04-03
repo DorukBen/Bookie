@@ -1,12 +1,10 @@
 package com.karambit.bookie.adapter;
 
 import android.content.Context;
-import android.graphics.Bitmap;
 import android.support.v4.content.ContextCompat;
 import android.support.v4.view.ViewCompat;
 import android.support.v7.widget.CardView;
 import android.support.v7.widget.RecyclerView;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -33,6 +31,8 @@ public class SearchAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder>
     private ArrayList<Integer> mGenreCodes = new ArrayList<>();
     private ArrayList<Book> mBooks = new ArrayList<>();
     private ArrayList<User> mUsers = new ArrayList<>();
+
+    private boolean mIsSearchPressed = false;
 
     private int genrePosition = 0;
     private int bookPosition = 0;
@@ -614,7 +614,12 @@ public class SearchAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder>
 
                 NoResultFoundViewHolder noResultFoundViewHolder = (NoResultFoundViewHolder) holder;
                 noResultFoundViewHolder.mNoResultFoundImageView.setImageDrawable(ContextCompat.getDrawable(mContext, R.drawable.ic_search_black_24dp));
-                noResultFoundViewHolder.mNoResultFoundTextView.setText(mContext.getString(R.string.no_result_found));
+
+                if (mIsSearchPressed) {
+                    noResultFoundViewHolder.mNoResultFoundTextView.setText(mContext.getString(R.string.no_result_found));
+                } else {
+                    noResultFoundViewHolder.mNoResultFoundTextView.setText(mContext.getString(R.string.click_search_for_more));
+                }
 
                 break;
             }
@@ -708,10 +713,12 @@ public class SearchAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder>
         mSearchItemClickListener = searchItemClickListener;
     }
 
-    public void setItems(ArrayList<Integer> genreCodes, ArrayList<Book> books, ArrayList<User> users){
+    public void setItems(ArrayList<Integer> genreCodes, ArrayList<Book> books, ArrayList<User> users, boolean isSearchPressed){
         mGenreCodes = genreCodes;
         mBooks = books;
         mUsers = users;
+
+        mIsSearchPressed = isSearchPressed;
 
         mShowHistory = false;
         notifyDataSetChanged();

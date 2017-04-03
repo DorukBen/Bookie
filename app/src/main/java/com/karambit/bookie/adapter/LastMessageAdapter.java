@@ -8,6 +8,7 @@ import android.util.SparseIntArray;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.TextView;
 
@@ -40,6 +41,7 @@ public class LastMessageAdapter extends RecyclerView.Adapter<RecyclerView.ViewHo
 
     private OnMessageClickListener mOnMessageClickListener;
     private OnSelectedStateClickListener mOnSelectedStateClickListener;
+    private OnSearchUserButtonClickListener mOnSearchUserButtonClickListener;
 
     public LastMessageAdapter(Context context) {
         mContext = context;
@@ -85,16 +87,18 @@ public class LastMessageAdapter extends RecyclerView.Adapter<RecyclerView.ViewHo
         }
     }
 
-    private static class ExceptionalSituationViewHolder extends RecyclerView.ViewHolder {
+    private static class EmptyStateViewHolder extends RecyclerView.ViewHolder {
 
         private ImageView mImageView;
         private TextView mTextView;
+        private Button mSearchUser;
 
-        private ExceptionalSituationViewHolder(View noConnectionView) {
-            super(noConnectionView);
+        private EmptyStateViewHolder(View emptyStateView) {
+            super(emptyStateView);
 
-            mImageView = (ImageView) noConnectionView.findViewById(R.id.emptyStateImageView);
-            mTextView = (TextView) noConnectionView.findViewById(R.id.emptyStateTextView);
+            mImageView = (ImageView) emptyStateView.findViewById(R.id.emptyStateImageView);
+            mTextView = (TextView) emptyStateView.findViewById(R.id.emptyStateTextView);
+            mSearchUser = (Button) emptyStateView.findViewById(R.id.searchUserButton);
         }
     }
 
@@ -134,8 +138,8 @@ public class LastMessageAdapter extends RecyclerView.Adapter<RecyclerView.ViewHo
                 return new SelectedViewHolder(selectedView);
 
             case VIEW_TYPE_EMPTY_STATE:
-                View exceptionalView = LayoutInflater.from(mContext).inflate(R.layout.item_empty_state, parent, false);
-                return new ExceptionalSituationViewHolder(exceptionalView);
+                View emptyView = LayoutInflater.from(mContext).inflate(R.layout.item_empty_state_message_fragment, parent, false);
+                return new EmptyStateViewHolder(emptyView);
 
             default:
                 throw new IllegalArgumentException("Invalid view type: " + viewType);
@@ -273,9 +277,17 @@ public class LastMessageAdapter extends RecyclerView.Adapter<RecyclerView.ViewHo
             }
 
             case VIEW_TYPE_EMPTY_STATE:
-                ExceptionalSituationViewHolder exceptionalHolder = (ExceptionalSituationViewHolder) holder;
+                EmptyStateViewHolder emptyStateHolder = (EmptyStateViewHolder) holder;
 
-                exceptionalHolder.mTextView.setText(R.string.no_messages_yet);
+                emptyStateHolder.mTextView.setText(R.string.no_messages_yet);
+                emptyStateHolder.mSearchUser.setOnClickListener(new View.OnClickListener() {
+                    @Override
+                    public void onClick(View v) {
+                        if (mOnSearchUserButtonClickListener != null) {
+                            mOnSearchUserButtonClickListener.onSearchUserButtonClicked();
+                        }
+                    }
+                });
                 break;
 
             default:
@@ -312,6 +324,14 @@ public class LastMessageAdapter extends RecyclerView.Adapter<RecyclerView.ViewHo
     public interface OnSelectedStateClickListener {
         boolean onSelectedEmptyClick(Message message, int position);
         void onDeleteClick(Message message, int position);
+    }
+
+    public interface OnSearchUserButtonClickListener {
+        void onSearchUserButtonClicked();
+    }
+
+    public void setOnSearchUserButtonClickListener(OnSearchUserButtonClickListener onSearchUserButtonClickListener) {
+        mOnSearchUserButtonClickListener = onSearchUserButtonClickListener;
     }
 
     public int getSelectedPosition() {
