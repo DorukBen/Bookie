@@ -971,7 +971,12 @@ public class BookActivity extends AppCompatActivity {
                                         mBook = mBookDetails.getBook();
 
                                         if (!mBook.getOwner().equals(SessionManager.getCurrentUser(BookActivity.this))) {
-                                            mDBManager.checkAndUpdateAllBooks(mBook);
+                                            new Thread(new Runnable() {
+                                                @Override
+                                                public void run() {
+                                                    mDBManager.checkAndUpdateAllBooks(mBook);
+                                                }
+                                            }).start();
                                         }
                                     }
                                     mBookTimelineAdapter.setBookDetails(mBookDetails);

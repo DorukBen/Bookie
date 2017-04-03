@@ -521,10 +521,9 @@ public class CurrentUserProfileSettingsActivity extends AppCompatActivity {
                                     newPasswordDialog.dismiss();
                                     Toast.makeText(CurrentUserProfileSettingsActivity.this, getString(R.string.password_changed), Toast.LENGTH_SHORT).show();
 
-                                    mDbManager.getUserDataSource().updateUserPassword(responseObject.getString("newPassword"));
+                                    mDbManager.Threaded(mDbManager.getUserDataSource().cUpdateUserPassword(responseObject.getString("newPassword")));
                                     SessionManager.getCurrentUserDetails(CurrentUserProfileSettingsActivity.this).setPassword(responseObject.getString("newPassword"));
                                 }
-
                             } else {
                                 int errorCode = responseObject.getInt("errorCode");
 

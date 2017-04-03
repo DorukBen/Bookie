@@ -9,6 +9,7 @@ import com.karambit.bookie.model.User;
 import com.orhanobut.logger.Logger;
 
 import java.util.ArrayList;
+import java.util.concurrent.Callable;
 
 /**
  * Created by doruk on 19.03.2017.
@@ -31,7 +32,7 @@ public class NotificationBookDataSource {
     private static final String NOTIFICATION_BOOK_COLUMN_GENRE = "genre";
     private static final String NOTIFICATION_BOOK_COLUMN_OWNER_ID = "owner_id";
 
-    public static final String CREATE_NOTIFICATION_BOOK_TABLE_TAG = "CREATE TABLE " + NOTIFICATION_BOOK_TABLE_NAME + " (" +
+    static final String CREATE_NOTIFICATION_BOOK_TABLE_TAG = "CREATE TABLE " + NOTIFICATION_BOOK_TABLE_NAME + " (" +
             NOTIFICATION_BOOK_COLUMN_ID + " INTEGER PRIMARY KEY NOT NULL, " +
             NOTIFICATION_BOOK_COLUMN_NAME + " TEXT NOT NULL, " +
             NOTIFICATION_BOOK_COLUMN_IMAGE_URL + " TEXT NOT NULL, " +
@@ -41,9 +42,9 @@ public class NotificationBookDataSource {
             NOTIFICATION_BOOK_COLUMN_GENRE + " INTEGER NOT NULL, " +
             NOTIFICATION_BOOK_COLUMN_OWNER_ID + " INTEGER NOT NULL)";
 
-    public static final String UPGRADE_NOTIFICATION_BOOK_TABLE_TAG = "DROP TABLE IF EXISTS " + NOTIFICATION_BOOK_TABLE_NAME;
+    static final String UPGRADE_NOTIFICATION_BOOK_TABLE_TAG = "DROP TABLE IF EXISTS " + NOTIFICATION_BOOK_TABLE_NAME;
 
-    public NotificationBookDataSource(SQLiteDatabase database) {
+    NotificationBookDataSource(SQLiteDatabase database) {
         mSqLiteDatabase = database;
         mNotificationBookUserDataSource = new NotificationBookUserDataSource(mSqLiteDatabase);
     }
@@ -189,5 +190,15 @@ public class NotificationBookDataSource {
         }finally {
             Logger.d("All books deleted from database");
         }
+    }
+
+    //Callable Methods
+    public Callable<Boolean> cCheckAndUpdateBook(final Book book){
+        return new Callable<Boolean>() {
+            @Override
+            public Boolean call() throws Exception {
+                return checkAndUpdateBook(book);
+            }
+        };
     }
 }

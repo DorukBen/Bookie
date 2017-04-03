@@ -686,7 +686,8 @@ public class ProfileFragment extends Fragment {
                                     if (mUser.equals(currentUser)) {
                                         // Update user info from fetched user
                                         mUser = mUserDetails.getUser();
-                                        mDbManager.getUserDataSource().updateUserDetails(mUserDetails);
+                                        mDbManager.Threaded(mDbManager.getUserDataSource().cUpdateUserDetails(mUserDetails));
+
                                         SessionManager.updateCurrentUser(mUserDetails);
                                     } else {
                                         mDbManager.checkAndUpdateAllUsers(mUserDetails.getUser());

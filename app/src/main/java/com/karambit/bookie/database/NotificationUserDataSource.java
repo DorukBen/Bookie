@@ -9,6 +9,7 @@ import com.karambit.bookie.model.User;
 import com.orhanobut.logger.Logger;
 
 import java.util.ArrayList;
+import java.util.concurrent.Callable;
 
 /**
  * Created by doruk on 19.03.2017.
@@ -28,7 +29,7 @@ public class NotificationUserDataSource {
     private static final String NOTIFICATION_USER_COLUMN_LATITUDE = "latitude";
     private static final String NOTIFICATION_USER_COLUMN_LONGITUDE = "longitude";
 
-    public static final String CREATE_NOTIFICATION_USER_TABLE_TAG = "CREATE TABLE " + NOTIFICATION_USER_TABLE_NAME + " (" +
+    static final String CREATE_NOTIFICATION_USER_TABLE_TAG = "CREATE TABLE " + NOTIFICATION_USER_TABLE_NAME + " (" +
             NOTIFICATION_USER_COLUMN_ID + " INTEGER PRIMARY KEY NOT NULL, " +
             NOTIFICATION_USER_COLUMN_NAME + " TEXT NOT NULL, " +
             NOTIFICATION_USER_COLUMN_IMAGE_URL + " TEXT, " +
@@ -36,9 +37,9 @@ public class NotificationUserDataSource {
             NOTIFICATION_USER_COLUMN_LATITUDE + " DOUBLE, " +
             NOTIFICATION_USER_COLUMN_LONGITUDE + " DOUBLE)";
 
-    public static final String UPGRADE_NOTIFICATION_USER_TABLE_TAG = "DROP TABLE IF EXISTS " + NOTIFICATION_USER_TABLE_NAME;
+    static final String UPGRADE_NOTIFICATION_USER_TABLE_TAG = "DROP TABLE IF EXISTS " + NOTIFICATION_USER_TABLE_NAME;
 
-    public NotificationUserDataSource(SQLiteDatabase database) {
+    NotificationUserDataSource(SQLiteDatabase database) {
         mSqLiteDatabase = database;
     }
 
@@ -194,5 +195,15 @@ public class NotificationUserDataSource {
         }finally {
             Logger.d("All users deleted from database");
         }
+    }
+
+    //Callable Methods
+    public Callable<Boolean> cCheckAndUpdateUser(final User user){
+        return new Callable<Boolean>() {
+            @Override
+            public Boolean call() throws Exception {
+                return checkAndUpdateUser(user);
+            }
+        };
     }
 }
