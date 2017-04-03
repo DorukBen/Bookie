@@ -190,7 +190,7 @@ public class LocationActivity extends AppCompatActivity {
 
                                 Logger.d("Location updated");
 
-                                mDbManager.getUserDataSource().updateUserLocation(latitude, longitude);
+                                mDbManager.Threaded(mDbManager.getUserDataSource().cUpdateUserLocation(latitude, longitude));
                                 SessionManager.updateCurrentUserFromDB(LocationActivity.this);
                                 SessionManager.setLocationText(null);
                                 getIntent().putExtra(EXTRA_LATITUDE, latitude);

@@ -9,6 +9,7 @@ import com.karambit.bookie.model.User;
 import com.orhanobut.logger.Logger;
 
 import java.util.ArrayList;
+import java.util.concurrent.Callable;
 
 /**
  * Created by doruk on 19.03.2017.
@@ -28,7 +29,7 @@ public class MessageUserDataSource {
     private static final String MESSAGE_USER_COLUMN_LATITUDE = "latitude";
     private static final String MESSAGE_USER_COLUMN_LONGITUDE = "longitude";
 
-    public static final String CREATE_MESSAGE_USER_TABLE_TAG = "CREATE TABLE " + MESSAGE_USER_TABLE_NAME + " (" +
+    static final String CREATE_MESSAGE_USER_TABLE_TAG = "CREATE TABLE " + MESSAGE_USER_TABLE_NAME + " (" +
             MESSAGE_USER_COLUMN_ID + " INTEGER PRIMARY KEY NOT NULL, " +
             MESSAGE_USER_COLUMN_NAME + " TEXT NOT NULL, " +
             MESSAGE_USER_COLUMN_IMAGE_URL + " TEXT, " +
@@ -36,9 +37,9 @@ public class MessageUserDataSource {
             MESSAGE_USER_COLUMN_LATITUDE + " DOUBLE, " +
             MESSAGE_USER_COLUMN_LONGITUDE + " DOUBLE)";
 
-    public static final String UPGRADE_MESSAGE_USER_TABLE_TAG = "DROP TABLE IF EXISTS " + MESSAGE_USER_TABLE_NAME;
+    static final String UPGRADE_MESSAGE_USER_TABLE_TAG = "DROP TABLE IF EXISTS " + MESSAGE_USER_TABLE_NAME;
 
-    public MessageUserDataSource(SQLiteDatabase database) {
+    MessageUserDataSource(SQLiteDatabase database) {
         mSqLiteDatabase = database;
     }
 
@@ -97,9 +98,9 @@ public class MessageUserDataSource {
         }finally {
 
             if (result){
-                Logger.d(TAG, "Message user update successful.");
+                Logger.d("Message user update successful.");
             }else{
-                Logger.e(TAG,"Error occurred during user update!");
+                Logger.e("Error occurred during user update!");
             }
         }
         return result;
@@ -213,12 +214,15 @@ public class MessageUserDataSource {
      *
      * @param userID {@link User User's} id, ({@link User#getID()})
      */
-    public void deleteUser(Integer userID) {
+    public boolean deleteUser(Integer userID) {
+        boolean result = false;
         try{
-            mSqLiteDatabase.delete(MESSAGE_USER_TABLE_NAME, MESSAGE_USER_COLUMN_ID + " = ?", new String[] { userID.toString() });
+            result = mSqLiteDatabase.delete(MESSAGE_USER_TABLE_NAME, MESSAGE_USER_COLUMN_ID + " = ?", new String[] { userID.toString() }) > 0;
         }finally {
             Logger.d("User deleted from database");
         }
+
+        return result;
     }
 
     /**
@@ -226,22 +230,39 @@ public class MessageUserDataSource {
      *
      * @param user {@link User User}
      */
-    public void deleteUser(User user) {
+    public boolean deleteUser(User user) {
+        boolean result = false;
         try{
-            mSqLiteDatabase.delete(MESSAGE_USER_TABLE_NAME, MESSAGE_USER_COLUMN_ID + " = ?", new String[] { ((Integer)user.getID()).toString() });
+            result = mSqLiteDatabase.delete(MESSAGE_USER_TABLE_NAME, MESSAGE_USER_COLUMN_ID + " = ?", new String[] { ((Integer)user.getID()).toString() }) > 0;
         }finally {
             Logger.d("User deleted from database");
         }
+
+        return result;
     }
 
     /**
      * Deletes all {@link User users} from database.<br>
      */
-    public void deleteAllUsers() {
+    public boolean deleteAllUsers() {
+        boolean result = false;
         try{
-            mSqLiteDatabase.delete(MESSAGE_USER_TABLE_NAME, null, null);
+            result = mSqLiteDatabase.delete(MESSAGE_USER_TABLE_NAME, null, null) > 0;
         }finally {
             Logger.d("All users deleted from database");
         }
+
+        return result;
     }
+
+    //Callable Methods
+    public Callable<Boolean> cCheckAndUpdateUser(final User user){
+        return new Callable<Boolean>() {
+            @Override
+            public Boolean call() throws Exception {
+                return checkAndUpdateUser(user);
+            }
+        };
+    }
+
 }

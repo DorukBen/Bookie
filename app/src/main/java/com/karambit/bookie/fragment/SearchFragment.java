@@ -148,8 +148,9 @@ public class SearchFragment extends Fragment {
             @Override
             public void onClearHistoryClick() {
                 //Clear history
-                mDbManager.getSearchBookDataSource().deleteAllBooks();
-                mDbManager.getSearchUserDataSource().deleteAllUsers();
+
+                mDbManager.Threaded(mDbManager.getSearchBookDataSource().cDeleteAllBooks());
+                mDbManager.Threaded(mDbManager.getSearchUserDataSource().cDeleteAllUsers());
 
                 mSearchAdapter.hideHistory();
                 mSearchAdapter.setWarning(SearchAdapter.WARNING_TYPE_NOTHING_TO_SHOW);
@@ -460,32 +461,32 @@ public class SearchFragment extends Fragment {
         ArrayList<Book> historyBooks = mDbManager.getSearchBookDataSource().getAllBooks();
 
         if (historyBooks.size() > 2) {
-            mDbManager.getSearchBookDataSource().deleteAllBooks();
+            mDbManager.Threaded(mDbManager.getSearchBookDataSource().cDeleteAllBooks());
 
             historyBooks.remove(0);
 
             for (Book historyBook : historyBooks) {
-                mDbManager.getSearchBookDataSource().saveBook(historyBook);
+                mDbManager.Threaded(mDbManager.getSearchBookDataSource().cSaveBook(historyBook));
             }
         }
 
-        mDbManager.getSearchBookDataSource().saveBook(book);
+        mDbManager.Threaded(mDbManager.getSearchBookDataSource().cSaveBook(book));
     }
 
     private void addUserToSearchHistory(User user) {
         ArrayList<User> historyUsers = mDbManager.getSearchUserDataSource().getAllUsers();
 
         if (historyUsers.size() > 2) {
-            mDbManager.getSearchUserDataSource().deleteAllUsers();
+            mDbManager.Threaded(mDbManager.getSearchUserDataSource().cDeleteAllUsers());
 
             historyUsers.remove(0);
 
             for (User historyUser : historyUsers) {
-                mDbManager.getSearchUserDataSource().saveUser(historyUser);
+                mDbManager.Threaded(mDbManager.getSearchUserDataSource().cSaveUser(historyUser));
             }
         }
 
-        mDbManager.getSearchUserDataSource().saveUser(user);
+        mDbManager.Threaded(mDbManager.getSearchUserDataSource().cSaveUser(user));
     }
 
     public boolean isSearchEditTextEmpty() {

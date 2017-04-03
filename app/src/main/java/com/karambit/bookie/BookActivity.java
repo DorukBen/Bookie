@@ -1029,6 +1029,7 @@ public class BookActivity extends AppCompatActivity {
 
         final ComfortableProgressDialog comfortableProgressDialog = new ComfortableProgressDialog(BookActivity.this);
         comfortableProgressDialog.setMessage(getString(R.string.updating_process));
+        comfortableProgressDialog.setCancelable(false);
         comfortableProgressDialog.show();
 
         final BookApi bookApi = BookieClient.getClient().create(BookApi.class);
@@ -1126,6 +1127,7 @@ public class BookActivity extends AppCompatActivity {
 
         final ComfortableProgressDialog comfortableProgressDialog = new ComfortableProgressDialog(BookActivity.this);
         comfortableProgressDialog.setMessage(getString(R.string.updating_process));
+        comfortableProgressDialog.setCancelable(false);
         comfortableProgressDialog.show();
 
         final BookApi bookApi = BookieClient.getClient().create(BookApi.class);

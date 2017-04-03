@@ -26,6 +26,8 @@ public class BookieApplication extends Application {
               .hideThreadInfo();
     }
 
+
+
     public static BookieApplication getInstance ()
     {
         return instance;

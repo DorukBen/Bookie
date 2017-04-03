@@ -290,7 +290,7 @@ public class ConversationActivity extends AppCompatActivity {
                     final Message message = new Message(id, messageText, SessionManager.getCurrentUser(ConversationActivity.this),
                     mOppositeUser, Calendar.getInstance(), Message.State.PENDING);
 
-                    if (mDbManager.getMessageDataSource().saveMessage(message, SessionManager.getCurrentUser(ConversationActivity.this))) {
+                    if (mDbManager.getMessageDataSource().saveMessage(message, message.getOppositeUser(SessionManager.getCurrentUser(ConversationActivity.this)))) {
 
                         mMessageEditText.setText("");
                         toggleSendButton(false);
@@ -450,7 +450,7 @@ public class ConversationActivity extends AppCompatActivity {
                 if (message.getState() != Message.State.SEEN) {
                     message.setState(state);
                     mConversationAdapter.notifyItemChanged(mMessages.indexOf(message));
-                    mDbManager.getMessageDataSource().updateMessageState(message, state);
+                    mDbManager.Threaded(mDbManager.getMessageDataSource().cUpdateMessageState(message, state));
 
                     if (message.getSender().getID() != SessionManager.getCurrentUser(getApplicationContext()).getID()){
                         uploadMessageStateToServer(message);
@@ -460,7 +460,7 @@ public class ConversationActivity extends AppCompatActivity {
                     if (state == Message.State.SEEN){
                         message.setState(state);
                         mConversationAdapter.notifyItemChanged(mMessages.indexOf(message));
-                        mDbManager.getMessageDataSource().updateMessageState(message, state);
+                        mDbManager.Threaded(mDbManager.getMessageDataSource().cUpdateMessageState(message, state));
 
                         if (message.getSender().getID() != SessionManager.getCurrentUser(getApplicationContext()).getID()){
                             uploadMessageStateToServer(message);
@@ -479,7 +479,7 @@ public class ConversationActivity extends AppCompatActivity {
         for (Message message : mMessages) {
             if (message.getID() == oldMessageID) {
                 message.setID(newMessageID);
-                mDbManager.getMessageDataSource().updateMessageId(oldMessageID, newMessageID);
+                mDbManager.Threaded(mDbManager.getMessageDataSource().cUpdateMessageId(oldMessageID, newMessageID));
                 return true;
             }
         }
@@ -567,7 +567,7 @@ public class ConversationActivity extends AppCompatActivity {
                                 Message message = mMessages.get(index);
                                 selectedMessageIds[i] = message.getID();
                                 mMessages.remove(index);
-                                mDbManager.getMessageDataSource().deleteMessage(message);
+                                mDbManager.Threaded(mDbManager.getMessageDataSource().cDeleteMessage(message));
                             }
 
                             deleteMessagesOnServer(selectedMessageIds);
@@ -773,7 +773,7 @@ public class ConversationActivity extends AppCompatActivity {
 
                                     try {
                                         changeMessageID(responseObject.getInt("oldMessageID"), responseObject.getInt("newMessageID"));
-                                        Logger.d("Message sent to server");
+                                        Logger.d("Message sent to server succesfully");
                                     } catch (JSONException e) {
                                         Logger.e("JSONException caught: " + e.getMessage());
                                     }

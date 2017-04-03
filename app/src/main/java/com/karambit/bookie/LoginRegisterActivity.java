@@ -571,7 +571,7 @@ public class LoginRegisterActivity extends AppCompatActivity {
                                         if (userDetails != null) {
                                             DBManager dbManager = new DBManager(LoginRegisterActivity.this);
                                             dbManager.open();
-                                            dbManager.getLovedGenreDataSource().insertGenres(userDetails.getUser(), lovedGenres);
+                                            dbManager.Threaded(dbManager.getLovedGenreDataSource().cInsertGenres(userDetails.getUser(), lovedGenres));
                                         }
                                     }
                                 } else {

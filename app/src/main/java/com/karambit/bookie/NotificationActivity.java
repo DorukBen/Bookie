@@ -183,7 +183,8 @@ public class NotificationActivity extends AppCompatActivity {
         LocalBroadcastManager.getInstance(this).registerReceiver(mMessageReceiver, new IntentFilter(BookieIntentFilters.FCM_INTENT_FILTER_ACCEPTED_REQUEST_RECEIVED));
         LocalBroadcastManager.getInstance(this).registerReceiver(mMessageReceiver, new IntentFilter(BookieIntentFilters.FCM_INTENT_FILTER_BOOK_OWNER_CHANGED_RECEIVED));
 
-        mDbManager.getNotificationDataSource().updateAllNotificationsSeen();
+        mDbManager.Threaded(mDbManager.getNotificationDataSource().cUpdateAllNotificationsSeen());
+
         setResult(NotificationActivity.RESULT_CODE_ALL_NOTIFICATION_SEENS_DELETED);
     }
 
@@ -193,7 +194,8 @@ public class NotificationActivity extends AppCompatActivity {
 
         LocalBroadcastManager.getInstance(this).unregisterReceiver(mMessageReceiver);
 
-        mDbManager.getNotificationDataSource().updateAllNotificationsSeen();
+        mDbManager.Threaded(mDbManager.getNotificationDataSource().cUpdateAllNotificationsSeen());
+
         setResult(NotificationActivity.RESULT_CODE_ALL_NOTIFICATION_SEENS_DELETED);
     }
 }

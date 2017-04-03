@@ -114,7 +114,8 @@ public class LovedGenresActivity extends AppCompatActivity {
             @Override
             public void run() {
                 synchronized (DBHelper.class) {
-                    mDbManager.getLovedGenreDataSource().insertGenres(mCurrentUser, selectedGenreCodes);
+                    mDbManager.Threaded(mDbManager.getLovedGenreDataSource().cInsertGenres(mCurrentUser, selectedGenreCodes));
+
                     mLocalDone = true;
 
                     if (mServerDone) {

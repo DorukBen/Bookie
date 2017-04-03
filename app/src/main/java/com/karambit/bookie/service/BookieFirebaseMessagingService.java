@@ -114,7 +114,8 @@ public class BookieFirebaseMessagingService extends com.google.firebase.messagin
 
                             DBManager dbManager = new DBManager(getApplicationContext());
                             dbManager.open();
-                            dbManager.getMessageDataSource().saveMessage(message, SessionManager.getCurrentUser(getApplicationContext()));
+
+                            dbManager.Threaded(dbManager.getMessageDataSource().cSaveMessage(message, message.getOppositeUser(SessionManager.getCurrentUser(getApplicationContext()))));
 
                             Intent intent = new Intent(BookieIntentFilters.FCM_INTENT_FILTER_MESSAGE_RECEIVED);
                             intent.putExtra(BookieIntentFilters.EXTRA_MESSAGE, message);
@@ -130,8 +131,7 @@ public class BookieFirebaseMessagingService extends com.google.firebase.messagin
 
                         DBManager dbManager = new DBManager(getApplicationContext());
                         dbManager.open();
-                        dbManager.getMessageDataSource().updateMessageState(Integer.parseInt(remoteMessage.getData().get("messageID")), Message.State.DELIVERED);
-
+                        dbManager.Threaded(dbManager.getMessageDataSource().cUpdateMessageState(Integer.parseInt(remoteMessage.getData().get("messageID")), Message.State.DELIVERED));
 
                         Intent intent = new Intent(BookieIntentFilters.FCM_INTENT_FILTER_MESSAGE_DELIVERED);
                         intent.putExtra(BookieIntentFilters.EXTRA_MESSAGE_ID, Integer.parseInt(remoteMessage.getData().get("messageID")));
@@ -141,7 +141,7 @@ public class BookieFirebaseMessagingService extends com.google.firebase.messagin
 
                     DBManager dbManager = new DBManager(getApplicationContext());
                     dbManager.open();
-                    dbManager.getMessageDataSource().updateMessageState(Integer.parseInt(remoteMessage.getData().get("messageID")), Message.State.SEEN);
+                    dbManager.Threaded(dbManager.getMessageDataSource().cUpdateMessageState(Integer.parseInt(remoteMessage.getData().get("messageID")), Message.State.SEEN));
 
                     Intent intent = new Intent(BookieIntentFilters.FCM_INTENT_FILTER_MESSAGE_SEEN);
                     intent.putExtra(BookieIntentFilters.EXTRA_MESSAGE_ID, Integer.parseInt(remoteMessage.getData().get("messageID")));
@@ -167,7 +167,7 @@ public class BookieFirebaseMessagingService extends com.google.firebase.messagin
 
                             DBManager dbManager = new DBManager(getApplicationContext());
                             dbManager.open();
-                            dbManager.getNotificationDataSource().saveNotificationToDatabase(notification);
+                            dbManager.Threaded(dbManager.getNotificationDataSource().cSaveNotificationToDatabase(notification));
 
                             Intent intent = new Intent(BookieIntentFilters.FCM_INTENT_FILTER_SENT_REQUEST_RECEIVED);
                             intent.putExtra(BookieIntentFilters.EXTRA_NOTIFICATION, notification);
@@ -197,7 +197,7 @@ public class BookieFirebaseMessagingService extends com.google.firebase.messagin
 
                             DBManager dbManager = new DBManager(getApplicationContext());
                             dbManager.open();
-                            dbManager.getNotificationDataSource().saveNotificationToDatabase(notification);
+                            dbManager.Threaded(dbManager.getNotificationDataSource().cSaveNotificationToDatabase(notification));
 
                             Intent intent = new Intent(BookieIntentFilters.FCM_INTENT_FILTER_REJECTED_REQUEST_RECEIVED);
                             intent.putExtra(BookieIntentFilters.EXTRA_NOTIFICATION, notification);
@@ -227,7 +227,7 @@ public class BookieFirebaseMessagingService extends com.google.firebase.messagin
 
                             DBManager dbManager = new DBManager(getApplicationContext());
                             dbManager.open();
-                            dbManager.getNotificationDataSource().saveNotificationToDatabase(notification);
+                            dbManager.Threaded(dbManager.getNotificationDataSource().cSaveNotificationToDatabase(notification));
 
                             Intent intent = new Intent(BookieIntentFilters.FCM_INTENT_FILTER_ACCEPTED_REQUEST_RECEIVED);
                             intent.putExtra(BookieIntentFilters.EXTRA_NOTIFICATION, notification);
@@ -257,7 +257,7 @@ public class BookieFirebaseMessagingService extends com.google.firebase.messagin
 
                             DBManager dbManager = new DBManager(getApplicationContext());
                             dbManager.open();
-                            dbManager.getNotificationDataSource().saveNotificationToDatabase(notification);
+                            dbManager.Threaded(dbManager.getNotificationDataSource().cSaveNotificationToDatabase(notification));
 
                             Intent intent = new Intent(BookieIntentFilters.FCM_INTENT_FILTER_BOOK_OWNER_CHANGED_RECEIVED);
                             intent.putExtra(BookieIntentFilters.EXTRA_NOTIFICATION, notification);
@@ -287,7 +287,7 @@ public class BookieFirebaseMessagingService extends com.google.firebase.messagin
 
                             DBManager dbManager = new DBManager(getApplicationContext());
                             dbManager.open();
-                            dbManager.getNotificationDataSource().saveNotificationToDatabase(notification);
+                            dbManager.Threaded(dbManager.getNotificationDataSource().cSaveNotificationToDatabase(notification));
 
                             Intent intent = new Intent(BookieIntentFilters.FCM_INTENT_FILTER_BOOK_LOST);
                             intent.putExtra(BookieIntentFilters.EXTRA_NOTIFICATION, notification);

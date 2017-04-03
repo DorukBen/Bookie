@@ -7,6 +7,8 @@ import android.database.sqlite.SQLiteDatabase;
 import com.karambit.bookie.model.Book;
 import com.karambit.bookie.model.User;
 
+import java.util.concurrent.Callable;
+
 /**
  * Created by doruk on 20.03.2017.
  */
@@ -15,7 +17,6 @@ public class DBManager {
 
     private DBHelper mDbHelper;
     private SQLiteDatabase mSqLiteDatabase;
-    private Context mContext;
 
     //Data Sources for this manager
     private UserDataSource mUserDataSource;
@@ -24,22 +25,38 @@ public class DBManager {
     private NotificationDataSource mNotificationDataSource;
     private SearchUserDataSource mSearchUserDataSource;
     private SearchBookDataSource mSearchBookDataSource;
+    private SearchBookUserDataSource mSearchBookUserDataSource;
     private MessageUserDataSource mMessageUserDataSource;
     private NotificationUserDataSource mNotificationUserDataSource;
     private NotificationBookDataSource mNotificationBookDataSource;
     private NotificationBookUserDataSource mNotificationBookUserDataSource;
 
+
     public DBManager(Context context){
-        mDbHelper = new DBHelper(context);
-        mContext = context;
+        mDbHelper = DBHelper.getInstance(context);
     }
 
     public void open() throws SQLException {
-        mSqLiteDatabase = mDbHelper.getWritableDatabase();
+        if (mSqLiteDatabase == null){
+            mSqLiteDatabase = mDbHelper.getWritableDatabase();
+        }
     }
 
     public void close() {
         mDbHelper.close();
+    }
+
+    public void Threaded(final Callable func){
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    func.call();
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
+        }).start();
     }
 
     public UserDataSource getUserDataSource(){
@@ -84,6 +101,13 @@ public class DBManager {
         return mSearchBookDataSource;
     }
 
+    public SearchBookUserDataSource getSearchBookUserDataSource(){
+        if (mSearchBookUserDataSource == null){
+            mSearchBookUserDataSource = new SearchBookUserDataSource(mSqLiteDatabase);
+        }
+        return mSearchBookUserDataSource;
+    }
+
     public MessageUserDataSource getMessageUserDataSource(){
         if (mMessageUserDataSource == null){
             mMessageUserDataSource = new MessageUserDataSource(mSqLiteDatabase);
@@ -113,14 +137,15 @@ public class DBManager {
     }
 
     public void checkAndUpdateAllUsers(User user) {
-        getMessageUserDataSource().checkAndUpdateUser(user);
-        getNotificationBookUserDataSource().checkAndUpdateUser(user);
-        getNotificationUserDataSource().checkAndUpdateUser(user);
-        getSearchUserDataSource().checkAndUpdateUser(user);
+        Threaded(getMessageUserDataSource().cCheckAndUpdateUser(user));
+        Threaded(getNotificationBookUserDataSource().cCheckAndUpdateUser(user));
+        Threaded(getNotificationUserDataSource().cCheckAndUpdateUser(user));
+        Threaded(getSearchUserDataSource().cCheckAndUpdateUser(user));
+        Threaded(getSearchBookUserDataSource().cCheckAndUpdateUser(user));
     }
 
     public void checkAndUpdateAllBooks(Book book) {
-        getSearchBookDataSource().checkAndUpdateBook(book);
-        getNotificationBookDataSource().checkAndUpdateBook(book);
+        Threaded(getSearchBookDataSource().cCheckAndUpdateBook(book));
+        Threaded(getNotificationBookDataSource().cCheckAndUpdateBook(book));
     }
 }

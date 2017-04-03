@@ -9,6 +9,7 @@ import com.karambit.bookie.model.User;
 import com.orhanobut.logger.Logger;
 
 import java.util.ArrayList;
+import java.util.concurrent.Callable;
 
 /**
  * Created by doruk on 19.03.2017.
@@ -28,7 +29,7 @@ public class SearchUserDataSource {
     private static final String SEARCH_USER_COLUMN_LATITUDE = "latitude";
     private static final String SEARCH_USER_COLUMN_LONGITUDE = "longitude";
 
-    public static final String CREATE_SEARCH_USER_TABLE_TAG = "CREATE TABLE " + SEARCH_USER_TABLE_NAME + " (" +
+    static final String CREATE_SEARCH_USER_TABLE_TAG = "CREATE TABLE " + SEARCH_USER_TABLE_NAME + " (" +
             SEARCH_USER_COLUMN_ID + " INTEGER PRIMARY KEY NOT NULL, " +
             SEARCH_USER_COLUMN_NAME + " TEXT NOT NULL, " +
             SEARCH_USER_COLUMN_IMAGE_URL + " TEXT, " +
@@ -36,18 +37,14 @@ public class SearchUserDataSource {
             SEARCH_USER_COLUMN_LATITUDE + " DOUBLE, " +
             SEARCH_USER_COLUMN_LONGITUDE + " DOUBLE)";
 
-    public static final String UPGRADE_SEARCH_USER_TABLE_TAG = "DROP TABLE IF EXISTS " + SEARCH_USER_TABLE_NAME;
+    static final String UPGRADE_SEARCH_USER_TABLE_TAG = "DROP TABLE IF EXISTS " + SEARCH_USER_TABLE_NAME;
 
-    public SearchUserDataSource(SQLiteDatabase database) {
+    SearchUserDataSource(SQLiteDatabase database) {
         this.mSqLiteDatabase = database;
     }
 
-    public boolean saveUser(User user){
-        if (!isUserExists(user)){
-            return insertUser(user);
-        } else {
-            return false;
-        }
+    public boolean saveUser(User user) {
+        return !isUserExists(user) && insertUser(user);
     }
 
     /**
@@ -179,12 +176,42 @@ public class SearchUserDataSource {
     /**
      * Deletes all {@link User users} from database.<br>
      */
-    public void deleteAllUsers() {
-        int result;
+    public boolean deleteAllUsers() {
+        boolean result;
         try{
-            mSqLiteDatabase.delete(SEARCH_USER_TABLE_NAME, null, null);
+            result = mSqLiteDatabase.delete(SEARCH_USER_TABLE_NAME, null, null) > 0;
         }finally {
             Logger.d("Users deleted from database");
         }
+
+        return result;
+    }
+
+    //Callable Methods
+    public Callable<Boolean> cSaveUser(final User user){
+        return new Callable<Boolean>() {
+            @Override
+            public Boolean call() throws Exception {
+                return saveUser(user);
+            }
+        };
+    }
+
+    public Callable<Boolean> cCheckAndUpdateUser(final User user){
+        return new Callable<Boolean>() {
+            @Override
+            public Boolean call() throws Exception {
+                return checkAndUpdateUser(user);
+            }
+        };
+    }
+
+    public Callable<Boolean> cDeleteAllUsers(){
+        return new Callable<Boolean>() {
+            @Override
+            public Boolean call() throws Exception {
+                return deleteAllUsers();
+            }
+        };
     }
 }
