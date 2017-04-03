@@ -3,13 +3,14 @@ package com.karambit.bookie.database;
 import android.content.ContentValues;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
-import android.util.Log;
 
 import com.karambit.bookie.model.Message;
 import com.karambit.bookie.model.User;
+import com.orhanobut.logger.Logger;
 
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.concurrent.Callable;
 
 /**
  * Created by doruk on 19.03.2017.
@@ -31,7 +32,7 @@ public class MessageDataSource {
     private static final String MESSAGE_COLUMN_STATE = "state";
     private static final String MESSAGE_COLUMN_CREATED_AT = "created_at";
 
-    public static final String CREATE_MESSAGE_TABLE_TAG = "CREATE TABLE " + MESSAGE_TABLE_NAME + " (" +
+    static final String CREATE_MESSAGE_TABLE_TAG = "CREATE TABLE " + MESSAGE_TABLE_NAME + " (" +
             MESSAGE_COLUMN_ID + " INTEGER PRIMARY KEY NOT NULL, " +
             MESSAGE_COLUMN_TEXT + " TEXT NOT NULL, " +
             MESSAGE_COLUMN_FROM_USER_ID + " INTEGER NOT NULL, " +
@@ -40,9 +41,9 @@ public class MessageDataSource {
             MESSAGE_COLUMN_STATE + " INTEGER NOT NULL, " +
             MESSAGE_COLUMN_CREATED_AT + " LONG NOT NULL)";
 
-    public static final String UPGRADE_MESSAGE_TABLE_TAG = "DROP TABLE IF EXISTS " + MESSAGE_TABLE_NAME;
+    static final String UPGRADE_MESSAGE_TABLE_TAG = "DROP TABLE IF EXISTS " + MESSAGE_TABLE_NAME;
 
-    public MessageDataSource(SQLiteDatabase database) {
+    MessageDataSource(SQLiteDatabase database) {
         mSqLiteDatabase = database;
         mMessageUserDataSource = new MessageUserDataSource(mSqLiteDatabase);
     }
@@ -51,14 +52,13 @@ public class MessageDataSource {
      * Saves massage to database if message user not exist inserts message user too.
      *
      * @param message New {@link Message message}<br>
-     * @param currentUser Current {@link User user}
+     * @param user {@link User User}
      *
      * @return boolean value if insertion successful returns true else returns false.
      */
-    public boolean saveMessage(Message message, User currentUser) {
-        if (!mMessageUserDataSource.isUserExists(message.getOppositeUser(currentUser))) {
-            mMessageUserDataSource.insertUser(message.getOppositeUser(currentUser));
-        }
+    public boolean saveMessage(Message message, User user) {
+        mMessageUserDataSource.saveUser(user);
+
         return !isMessageExists(message) && insertMessage(message);
     }
 
@@ -69,7 +69,7 @@ public class MessageDataSource {
      *
      * @return  boolean value. If message {@link Message message} exist returns true else returns false.
      */
-    public boolean isMessageExists(Message message) {
+    private boolean isMessageExists(Message message) {
         Cursor res = null;
 
         try {
@@ -102,17 +102,15 @@ public class MessageDataSource {
             contentValues.put(MESSAGE_COLUMN_TO_USER_ID, message.getReceiver().getID());
             contentValues.put(MESSAGE_COLUMN_IS_DELETED, 0);
             contentValues.put(MESSAGE_COLUMN_CREATED_AT, message.getCreatedAt().getTimeInMillis());
-            contentValues.put(MESSAGE_COLUMN_STATE, message.getState().ordinal());
+            contentValues.put(MESSAGE_COLUMN_STATE, message.getState().getStateCode());
 
             result = mSqLiteDatabase.insert(MESSAGE_TABLE_NAME, null, contentValues) < 0;
         }finally {
-            Log.i(TAG, "New message insertion successful");
+            Logger.d("New message insertion successful");
         }
 
         return result;
     }
-
-
 
     /**
      * Updates {@link com.karambit.bookie.model.Message.State}.<br>
@@ -120,16 +118,18 @@ public class MessageDataSource {
      * @param messageId {@link Message} id
      * @param state {@link com.karambit.bookie.model.Message.State}
      */
-    public void updateMessageState(int messageId, Message.State state){
-
+    public boolean updateMessageState(int messageId, Message.State state){
+        boolean result = false;
         try{
             ContentValues cv = new ContentValues();
-            cv.put(MESSAGE_COLUMN_STATE, state.ordinal());
+            cv.put(MESSAGE_COLUMN_STATE, state.getStateCode());
 
-            mSqLiteDatabase.update(MESSAGE_TABLE_NAME, cv, MESSAGE_COLUMN_ID + "=" + messageId, null);
+            result = mSqLiteDatabase.update(MESSAGE_TABLE_NAME, cv, MESSAGE_COLUMN_ID + "=" + messageId, null) > 0;
         }finally {
-            Log.i(TAG, "Message state updated");
+            Logger.d("Message state updated to " + state);
         }
+
+        return result;
     }
 
     /**
@@ -138,15 +138,18 @@ public class MessageDataSource {
      * @param message {@link Message}
      * @param state {@link com.karambit.bookie.model.Message.State}
      */
-    public void updateMessageState(Message message, Message.State state){
+    public boolean updateMessageState(Message message, Message.State state){
+        boolean result = false;
         try{
             ContentValues cv = new ContentValues();
-            cv.put(MESSAGE_COLUMN_STATE, state.ordinal());
+            cv.put(MESSAGE_COLUMN_STATE, state.getStateCode());
 
-            mSqLiteDatabase.update(MESSAGE_TABLE_NAME, cv, MESSAGE_COLUMN_ID + "=" + message.getID(), null);
+            result = mSqLiteDatabase.update(MESSAGE_TABLE_NAME, cv, MESSAGE_COLUMN_ID + "=" + message.getID(), null) > 0;
         }finally {
-            Log.i(TAG, "Message state updated");
+            Logger.d("Message state updated to " + state);
         }
+
+        return result;
     }
 
     /**
@@ -155,15 +158,18 @@ public class MessageDataSource {
      * @param oldMessageId Old {@link Message} id
      * @param newMessageId New {@link Message} id
      */
-    public void updateMessageId(int oldMessageId, int newMessageId){
+    public boolean updateMessageId(int oldMessageId, int newMessageId){
+        boolean result = false;
         try{
             ContentValues cv = new ContentValues();
             cv.put(MESSAGE_COLUMN_ID, newMessageId);
 
-            mSqLiteDatabase.update(MESSAGE_TABLE_NAME, cv, MESSAGE_COLUMN_ID + "=" + oldMessageId, null);
+            result = mSqLiteDatabase.update(MESSAGE_TABLE_NAME, cv, MESSAGE_COLUMN_ID + "=" + oldMessageId, null) > 0;
         }finally {
-            Log.i(TAG, "Message id updated");
+            Logger.d("Message id updated from " + oldMessageId + " to " + newMessageId);
         }
+
+        return result;
     }
 
     /**
@@ -198,14 +204,14 @@ public class MessageDataSource {
                                 currentUser,
                                 anotherUser,
                                 calendar,
-                                Message.State.values()[res.getInt(res.getColumnIndex(MESSAGE_COLUMN_STATE))]);
+                                Message.State.valueOf(res.getInt(res.getColumnIndex(MESSAGE_COLUMN_STATE))));
                     } else {
                         message = new Message(res.getInt(res.getColumnIndex(MESSAGE_COLUMN_ID)),
                                 res.getString(res.getColumnIndex(MESSAGE_COLUMN_TEXT)),
                                 anotherUser,
                                 currentUser,
                                 calendar,
-                                Message.State.values()[res.getInt(res.getColumnIndex(MESSAGE_COLUMN_STATE))]);
+                                Message.State.valueOf(res.getInt(res.getColumnIndex(MESSAGE_COLUMN_STATE))));
                     }
                     messages.add(message);
 
@@ -225,17 +231,20 @@ public class MessageDataSource {
      *
      * @param otherUserID Message {@link User user} id
      */
-    public void deleteConversation(Integer otherUserID){
+    public boolean deleteConversation(Integer otherUserID){
+        boolean result = false;
         try{
             String deletedString = "1";
             ContentValues cv = new ContentValues();
             cv.put(MESSAGE_COLUMN_IS_DELETED, deletedString);
 
-            mSqLiteDatabase.update(MESSAGE_TABLE_NAME, cv, MESSAGE_COLUMN_FROM_USER_ID + "=" + otherUserID + " OR " +
-                    MESSAGE_COLUMN_TO_USER_ID + " = " + otherUserID, null);
+            result = mSqLiteDatabase.update(MESSAGE_TABLE_NAME, cv, MESSAGE_COLUMN_FROM_USER_ID + "=" + otherUserID + " OR " +
+                    MESSAGE_COLUMN_TO_USER_ID + " = " + otherUserID, null) > 0;
         }finally {
-            Log.i(TAG, "Users conversation messages deleted from database");
+            Logger.d("Users conversation messages deleted from database");
         }
+
+        return result;
     }
 
     /**
@@ -243,7 +252,8 @@ public class MessageDataSource {
      *
      * @param otherUser Message {@link User user}
      */
-    public void deleteConversation(User otherUser){
+    public boolean deleteConversation(User otherUser){
+        boolean result = false;
         try{
             mMessageUserDataSource.deleteUser(otherUser);
 
@@ -251,11 +261,12 @@ public class MessageDataSource {
             ContentValues cv = new ContentValues();
             cv.put(MESSAGE_COLUMN_IS_DELETED, deletedString);
 
-            mSqLiteDatabase.update(MESSAGE_TABLE_NAME, cv, MESSAGE_COLUMN_FROM_USER_ID + "=" + otherUser.getID() + " OR " +
-                    MESSAGE_COLUMN_TO_USER_ID + " = " + otherUser.getID(), null);
+            result = mSqLiteDatabase.update(MESSAGE_TABLE_NAME, cv, MESSAGE_COLUMN_FROM_USER_ID + "=" + otherUser.getID() + " OR " +
+                    MESSAGE_COLUMN_TO_USER_ID + " = " + otherUser.getID(), null) > 0;
         }finally {
-            Log.i(TAG, "Users conversation messages deleted from database");
+            Logger.d("Users conversation messages deleted from database");
         }
+        return  result;
     }
 
     /**
@@ -289,14 +300,14 @@ public class MessageDataSource {
                             currentUser,
                             anotherUser,
                             calendar,
-                            Message.State.values()[res.getInt(res.getColumnIndex(MESSAGE_COLUMN_STATE))]);
+                            Message.State.valueOf(res.getInt(res.getColumnIndex(MESSAGE_COLUMN_STATE))));
                 }else{
                     message = new Message(res.getInt(res.getColumnIndex(MESSAGE_COLUMN_ID)),
                             res.getString(res.getColumnIndex(MESSAGE_COLUMN_TEXT)),
                             anotherUser,
                             currentUser,
                             calendar,
-                            Message.State.values()[res.getInt(res.getColumnIndex(MESSAGE_COLUMN_STATE))]);
+                            Message.State.valueOf(res.getInt(res.getColumnIndex(MESSAGE_COLUMN_STATE))));
                 }
             }else {
                 message = null;
@@ -309,7 +320,6 @@ public class MessageDataSource {
         }
         return message;
     }
-
 
     /**
      * Gives last messages in all conversations current user have.<br>
@@ -372,7 +382,7 @@ public class MessageDataSource {
         try {
             res = mSqLiteDatabase.rawQuery("SELECT COUNT(*) AS " + queryVariableString + " FROM " + MESSAGE_TABLE_NAME +
                     " WHERE " + MESSAGE_COLUMN_FROM_USER_ID + " = " + oppositeUser.getID() +
-                    " AND " + MESSAGE_COLUMN_STATE + " = " + Message.State.DELIVERED.ordinal(), null);
+                    " AND " + MESSAGE_COLUMN_STATE + " = " + Message.State.DELIVERED.getStateCode(), null);
             res.moveToFirst();
 
             unseenMessageCount = res.getInt(res.getColumnIndex(queryVariableString));
@@ -399,7 +409,7 @@ public class MessageDataSource {
         try {
             res = mSqLiteDatabase.rawQuery("SELECT COUNT(*) AS " + queryVariableString + " FROM " + MESSAGE_TABLE_NAME +
                     " WHERE " + MESSAGE_COLUMN_FROM_USER_ID + " <> " + currentUser.getID() +
-                    " AND " + MESSAGE_COLUMN_STATE + " = " + Message.State.DELIVERED.ordinal(), null);
+                    " AND " + MESSAGE_COLUMN_STATE + " = " + Message.State.DELIVERED.getStateCode(), null);
             res.moveToFirst();
 
             totalUnseenMessageCount = res.getInt(res.getColumnIndex(queryVariableString));
@@ -417,16 +427,19 @@ public class MessageDataSource {
      *
      * @param messageID {@link Message Message} id<br>
      */
-    public void deleteMessage(Integer messageID) {
+    public boolean deleteMessage(Integer messageID) {
+        boolean result = false;
         try{
             String deletedString = "1";
             ContentValues cv = new ContentValues();
             cv.put(MESSAGE_COLUMN_IS_DELETED, deletedString);
 
-            mSqLiteDatabase.update(MESSAGE_TABLE_NAME, cv, MESSAGE_COLUMN_ID + "=" + messageID, null);
+            result = mSqLiteDatabase.update(MESSAGE_TABLE_NAME, cv, MESSAGE_COLUMN_ID + "=" + messageID, null) > 0;
         }finally {
-            Log.i(TAG, "Message deleted from database");
+            Logger.d("Message deleted from database");
         }
+
+        return result;
     }
 
     /**
@@ -434,29 +447,116 @@ public class MessageDataSource {
      *
      * @param message {@link Message Message}<br>
      */
-    public void deleteMessage(Message message) {
+    public boolean deleteMessage(Message message) {
+        boolean result = false;
         try{
             String deletedString = "1";
             ContentValues cv = new ContentValues();
             cv.put(MESSAGE_COLUMN_IS_DELETED, deletedString);
 
-            mSqLiteDatabase.update(MESSAGE_TABLE_NAME, cv, MESSAGE_COLUMN_ID + "=" + message.getID(), null);
+            result = mSqLiteDatabase.update(MESSAGE_TABLE_NAME, cv, MESSAGE_COLUMN_ID + "=" + message.getID(), null) > 0;
         }finally {
-            Log.i(TAG, "Message deleted from database");
+            Logger.d("Message deleted from database");
         }
+
+        return result;
     }
 
     /**
      * Deletes all messages and message users from database.<br>
      */
-    public void deleteAllMessages() {
+    public boolean deleteAllMessages() {
+        boolean result = false;
         try{
             mMessageUserDataSource.deleteAllUsers();
-            mSqLiteDatabase.delete(MESSAGE_TABLE_NAME, null, null);
+            result = mSqLiteDatabase.delete(MESSAGE_TABLE_NAME, null, null) > 0;
 
         } finally {
-            Log.i(TAG, "All Message Users and Messages deleted from database");
+            Logger.d("All Message Users and Messages deleted from database");
         }
 
+        return result;
+    }
+
+    //Callable Methods
+    public Callable<Boolean> cSaveMessage(final Message message, final User user){
+        return new Callable<Boolean>() {
+            @Override
+            public Boolean call() throws Exception {
+                return saveMessage(message, user);
+            }
+        };
+    }
+
+    public Callable<Boolean> cUpdateMessageState(final int messageId, final Message.State state){
+        return new Callable<Boolean>() {
+            @Override
+            public Boolean call() throws Exception {
+                return updateMessageState(messageId, state);
+            }
+        };
+    }
+
+    public Callable<Boolean> cUpdateMessageState(final Message message, final Message.State state){
+        return new Callable<Boolean>() {
+            @Override
+            public Boolean call() throws Exception {
+                return updateMessageState(message, state);
+            }
+        };
+    }
+
+    public Callable<Boolean> cUpdateMessageId(final int oldMessageId, final int newMessageId){
+        return new Callable<Boolean>() {
+            @Override
+            public Boolean call() throws Exception {
+                return updateMessageId(oldMessageId, newMessageId);
+            }
+        };
+    }
+
+    public Callable<Boolean> cDeleteConversation(final Integer otherUserID){
+        return new Callable<Boolean>() {
+            @Override
+            public Boolean call() throws Exception {
+                return deleteConversation(otherUserID);
+            }
+        };
+    }
+
+    public Callable<Boolean> cDeleteConversation(final User otherUser){
+        return new Callable<Boolean>() {
+            @Override
+            public Boolean call() throws Exception {
+                return deleteConversation(otherUser);
+            }
+        };
+    }
+
+    public Callable<Boolean> cDeleteMessage(final Integer messageID){
+        return new Callable<Boolean>() {
+            @Override
+            public Boolean call() throws Exception {
+                return deleteMessage(messageID);
+            }
+        };
+    }
+
+    public Callable<Boolean> cDeleteMessage(final Message message){
+        return new Callable<Boolean>() {
+            @Override
+            public Boolean call() throws Exception {
+                return deleteMessage(message);
+            }
+        };
+    }
+
+    public Callable<Boolean> cDeleteAllMessages(){
+        return new Callable<Boolean>() {
+            @Override
+            public Boolean call() throws Exception {
+                return deleteAllMessages();
+            }
+        };
     }
 }

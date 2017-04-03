@@ -6,14 +6,12 @@ import android.support.annotation.Nullable;
 import android.text.TextUtils;
 
 import com.google.android.gms.maps.model.LatLng;
-import com.karambit.bookie.helper.ImageLinkSource;
 
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.util.ArrayList;
-import java.util.Random;
 
 /**
  * Created by Orcan on 8/2/2016.
@@ -21,6 +19,12 @@ import java.util.Random;
  * All user information will held by this Class.
  */
 public class User implements Parcelable {
+
+    public static final int POINT_READ_FINISHED = 1;
+    public static final int POINT_ADD_BOOK = 2;
+    public static final int POINT_BOOK_COME_TO_HAND = 3;
+    public static final int POINT_SHARE_BOOK = 5;
+    public static final int POINT_LOST = -20;
 
     private int mID;
     private String mName;
@@ -179,13 +183,35 @@ public class User implements Parcelable {
 
     @Override
     public String toString() {
-        return "User{" +
-                "mID=" + mID +
-                ", mName='" + mName + '\'' +
-                ", mImageUrl='" + mImageUrl + '\'' +
-                ", mThumbnailUrl='" + mThumbnailUrl + '\'' +
-                ", mLocation=" + ((mLocation != null) ? mLocation.toString(): "null") +
-                '}';
+        return "\nUser{" +
+                "\n\tmID=" + mID +
+                "\n\tmName='" + mName + "'," +
+                "\n\tmImageUrl='" + mImageUrl + "'," +
+                "\n\tmThumbnailUrl='" + mThumbnailUrl + "'," +
+                "\n\tmLocation=" + ((mLocation != null) ? mLocation.toString(): "null") +
+                "\n}";
+    }
+
+    public String toShortString() {
+        return "\nUser{" +
+            "\n\tmID=" + mID +
+            "\n\tmName='" + mName + "'," +
+            "\n\tmLocation=" + ((mLocation != null) ? mLocation.toString(): "null") +
+            "\n}";
+    }
+
+    public static String listToShortString(ArrayList<User> users) {
+        StringBuilder stringBuilder = new StringBuilder();
+
+        stringBuilder.append("Message[");
+
+        for (User user : users) {
+            stringBuilder.append(user.toShortString());
+        }
+
+        stringBuilder.append("\n]");
+
+        return stringBuilder.toString();
     }
 
     public class Details {
@@ -411,87 +437,6 @@ public class User implements Parcelable {
                     ",mOnRoadBooks=\n" + onRoadBooks +
                     ",mBooksOnHand=\n" + booksOnHand +
                     ",mReadBooks=\n" + readBooks + '}';
-        }
-    }
-
-    /**
-     * This class contains all user generator methods
-     */
-    public static class GENERATOR {
-
-        private static final String[] NAMES = new String[]{
-                "Vinita Vossen",
-                "Tran Matamoros",
-                "Nilsa Laduke",
-                "Blake Stouffer",
-                "Zenaida Shuttleworth",
-                "Keturah Irey",
-                "Justina Tudor",
-                "Kamilah Tang",
-                "Ross Lukas",
-                "Caroline Mondor",
-                "Lona Crumb",
-                "Evie Meidinger",
-                "Torri Ruybal",
-                "Armida Skipper",
-                "Yvonne Trent",
-                "Russ Davy",
-                "Letisha Rudder",
-                "Sherwood Worsley",
-                "Simona Rabun",
-                "Rosalba Behnke"
-        };
-
-        private static final String BIO = "Lorem ipsum dolor sit amet, consectetur.";
-
-        public static User generateUser() {
-            Random random = new Random();
-
-            String name = NAMES[random.nextInt(NAMES.length)];
-
-            int randomIndex = random.nextInt(ImageLinkSource.IMAGE_THUMBNAIL_URLS.length);
-            String imageUrl = ImageLinkSource.IMAGE_THUMBNAIL_URLS[randomIndex];
-            String imageThumbnailUrl = ImageLinkSource.IMAGE_THUMBNAIL_URLS[randomIndex];
-
-            return new User(random.nextInt(), name, imageUrl, imageThumbnailUrl,
-                    new LatLng(random.nextDouble() + random.nextInt(180) - 90,
-                            random.nextDouble() + random.nextInt(180)));
-        }
-
-        public static ArrayList<User> generateUserList(int count) {
-            ArrayList<User> users = new ArrayList<>(count);
-
-            for (int i = 0; i < count; i++)
-                users.add(generateUser());
-
-            return users;
-        }
-
-        public static User.Details generateUserDetails() {
-            return generateUserDetails(generateUser());
-        }
-
-        /**
-         * @param user is referenced for newly created User.Details object
-         */
-        public static User.Details generateUserDetails(User user) {
-            Random random = new Random();
-
-            ArrayList<Book> currentlyReading = Book.GENERATOR.generateBookList(random.nextInt(4), user);
-
-            ArrayList<Book> booksOnRoad = Book.GENERATOR.generateBookList(random.nextInt(15));
-            ArrayList<Book> booksOnHand = Book.GENERATOR.generateBookList(random.nextInt(15), user);
-            ArrayList<Book> booksRead = Book.GENERATOR.generateBookList(random.nextInt(15));
-            ArrayList<Book> booksShared = Book.GENERATOR.generateBookList(random.nextInt(15));
-
-
-            return user.new Details("********", name2Email(user.mName), true, BIO, random.nextInt(5),
-                    random.nextInt(300), random.nextInt(300), currentlyReading, booksOnRoad, booksRead, booksOnHand, booksShared);
-        }
-
-        private static String name2Email(String name) {
-            name = name.replace(" ", "").toLowerCase().trim();
-            return name + "@gmail.com";
         }
     }
 

@@ -6,8 +6,10 @@ import android.database.sqlite.SQLiteDatabase;
 import android.util.Log;
 
 import com.karambit.bookie.model.User;
+import com.orhanobut.logger.Logger;
 
 import java.util.Arrays;
+import java.util.concurrent.Callable;
 
 /**
  * Created by doruk on 19.03.2017.
@@ -24,14 +26,14 @@ public class LovedGenreDataSource {
     private static final String LG_COLUMN_USER_ID = "user_id";
     private static final String LG_COLUMN_GENRE_CODE = "genre_code";
 
-    public static final String CREATE_LOVED_GENRE_TABLE_TAG = "CREATE TABLE " + LG_TABLE_NAME + " (" +
+    static final String CREATE_LOVED_GENRE_TABLE_TAG = "CREATE TABLE " + LG_TABLE_NAME + " (" +
             LG_COLUMN_ID + " INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, " +
             LG_COLUMN_USER_ID + " INTEGER NOT NULL, " +
             LG_COLUMN_GENRE_CODE + " INTEGER NOT NULL)";
 
-    public static final String UPGRADE_LOVED_GENRE_TABLE_TAG = "DROP TABLE IF EXISTS " + LG_TABLE_NAME;
+    static final String UPGRADE_LOVED_GENRE_TABLE_TAG = "DROP TABLE IF EXISTS " + LG_TABLE_NAME;
 
-    public LovedGenreDataSource(SQLiteDatabase database) {
+    LovedGenreDataSource(SQLiteDatabase database) {
         mSqLiteDatabase = database;
     }
 
@@ -57,7 +59,7 @@ public class LovedGenreDataSource {
                 }
             }
         }finally {
-            Log.i(TAG, "Loved genres inserted");
+            Logger.d("Loved genres inserted");
         }
         return true;
     }
@@ -101,12 +103,15 @@ public class LovedGenreDataSource {
      *
      * @param user {@link User User}<br>
      */
-    public void resetGenres(User user) {
+    public boolean resetGenres(User user) {
+        boolean result = false;
         try {
-            mSqLiteDatabase.delete(LG_TABLE_NAME, LG_COLUMN_USER_ID + " = " + user.getID(), null);
+            result = mSqLiteDatabase.delete(LG_TABLE_NAME, LG_COLUMN_USER_ID + " = " + user.getID(), null) > 0;
         }finally {
-            Log.i(TAG, "Loved Genres reset");
+            Logger.d("Loved Genres reset");
         }
+
+        return result;
     }
 
     /**
@@ -129,5 +134,24 @@ public class LovedGenreDataSource {
                 res.close();
             }
         }
+    }
+
+    //Callable Methods
+    public Callable<Boolean> cInsertGenres(final User user, final Integer[] genreCodes){
+        return new Callable<Boolean>() {
+            @Override
+            public Boolean call() throws Exception {
+                return insertGenres(user, genreCodes);
+            }
+        };
+    }
+
+    public Callable<Boolean> cResetGenres(final User user){
+        return new Callable<Boolean>() {
+            @Override
+            public Boolean call() throws Exception {
+                return resetGenres(user);
+            }
+        };
     }
 }

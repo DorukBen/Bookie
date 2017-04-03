@@ -3,7 +3,8 @@ package com.karambit.bookie.database;
 import android.content.Context;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
-import android.util.Log;
+
+import com.orhanobut.logger.Logger;
 
 /**
  * General class for creating and upgrading application's database.
@@ -17,8 +18,21 @@ public class DBHelper extends SQLiteOpenHelper {
     private static final String DATABASE_NAME = "BookieApplication.db";
     private static final int DATABASE_VERSION = 1;
 
-    public DBHelper(Context context) {
-        super(context.getApplicationContext(), DATABASE_NAME, null, DATABASE_VERSION);
+    private static DBHelper mInstance = null;
+
+    public static DBHelper getInstance(Context context) {
+
+        // Use the application context, which will ensure that you
+        // don't accidentally leak an Activity's context.
+        // See this article for more information: http://bit.ly/6LRzfx
+        if (mInstance == null) {
+            mInstance = new DBHelper(context.getApplicationContext());
+        }
+        return mInstance;
+    }
+
+    private DBHelper(Context context) {
+        super(context, DATABASE_NAME, null, DATABASE_VERSION);
     }
 
     @Override
@@ -36,7 +50,7 @@ public class DBHelper extends SQLiteOpenHelper {
         db.execSQL(SearchBookDataSource.CREATE_SEARCH_BOOK_TABLE_TAG);
         db.execSQL(SearchBookUserDataSource.CREATE_SEARCH_BOOK_USER_TABLE_TAG);
 
-        Log.i(TAG, "Databases created.");
+        Logger.d("Databases created.");
     }
 
     @Override
@@ -55,6 +69,6 @@ public class DBHelper extends SQLiteOpenHelper {
         db.execSQL(SearchBookUserDataSource.UPGRADE_SEARCH_BOOK_USER_TABLE_TAG);
 
         onCreate(db);
-        Log.i(TAG, "Databases upgraded.");
+        Logger.d("Databases upgraded.");
     }
 }

@@ -7,7 +7,6 @@ import android.support.v7.app.ActionBar;
 import android.support.v7.app.AppCompatActivity;
 import android.text.Spannable;
 import android.text.SpannableString;
-import android.util.Log;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
@@ -31,8 +30,8 @@ import com.karambit.bookie.helper.SessionManager;
 import com.karambit.bookie.helper.TypefaceSpan;
 import com.karambit.bookie.model.User;
 import com.karambit.bookie.rest_api.BookieClient;
-import com.karambit.bookie.rest_api.ErrorCodes;
 import com.karambit.bookie.rest_api.UserApi;
+import com.orhanobut.logger.Logger;
 
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -168,6 +167,11 @@ public class LocationActivity extends AppCompatActivity {
 
         Call<ResponseBody> uploadUserLocation = userApi.updateUserLocation(email, password, latitude, longitude);
 
+        Logger.d("getHomePageBooks() API called with parameters: \n" +
+                     "\temail=" + email + ", \n\tpassword=" + password +
+                     ", \n\tlatitude=" + latitude + ", \n\tlongitude=" + longitude);
+
+
         uploadUserLocation.enqueue(new Callback<ResponseBody>() {
             @Override
             public void onResponse(Call<ResponseBody> call, Response<ResponseBody> response) {
@@ -177,11 +181,16 @@ public class LocationActivity extends AppCompatActivity {
                         if (response.body() != null){
                             String json = response.body().string();
 
+                            Logger.json(json);
+
                             JSONObject responseObject = new JSONObject(json);
                             boolean error = responseObject.getBoolean("error");
 
                             if (!error) {
-                                mDbManager.getUserDataSource().updateUserLocation(latitude, longitude);
+
+                                Logger.d("Location updated");
+
+                                mDbManager.Threaded(mDbManager.getUserDataSource().cUpdateUserLocation(latitude, longitude));
                                 SessionManager.updateCurrentUserFromDB(LocationActivity.this);
                                 SessionManager.setLocationText(null);
                                 getIntent().putExtra(EXTRA_LATITUDE, latitude);
@@ -191,30 +200,20 @@ public class LocationActivity extends AppCompatActivity {
                             } else {
                                 int errorCode = responseObject.getInt("errorCode");
 
-                                if (errorCode == ErrorCodes.EMPTY_POST){
-                                    Log.e(TAG, "Post is empty. (Location Page Error)");
-                                }else if (errorCode == ErrorCodes.MISSING_POST_ELEMENT){
-                                    Log.e(TAG, "Post element missing. (Location Page Error)");
-                                }else if (errorCode == ErrorCodes.INVALID_EMAIL){
-                                    Log.e(TAG, "Invalid email. (Location Page Error)");
-                                }else if (errorCode == ErrorCodes.INVALID_REQUEST){
-                                    Log.e(TAG, "Invalid request. (Location Page Error)");
-                                }else if (errorCode == ErrorCodes.UNKNOWN){
-                                    Log.e(TAG, "onResponse: errorCode = " + errorCode);
-                                }
+                                Logger.e("Error true in response: errorCode = " + errorCode);
 
                                 Toast.makeText(LocationActivity.this, getString(R.string.unknown_error), Toast.LENGTH_SHORT).show();
                             }
                         }else{
-                            Log.e(TAG, "Response body is null. (Current User Settings Page Error)");
+                            Logger.e("Response body is null. (Current User Settings Page Error)");
                             Toast.makeText(LocationActivity.this, getString(R.string.unknown_error), Toast.LENGTH_SHORT).show();
                         }
                     }else {
-                        Log.e(TAG, "Response object is null. (Current User Settings Page Error)");
+                        Logger.e("Response object is null. (Current User Settings Page Error)");
                         Toast.makeText(LocationActivity.this, getString(R.string.unknown_error), Toast.LENGTH_SHORT).show();
                     }
                 } catch (IOException | JSONException e) {
-                    e.printStackTrace();
+                    Logger.e("IOException or JSONException caught: " + e.getMessage());
 
                     Toast.makeText(LocationActivity.this, getString(R.string.unknown_error), Toast.LENGTH_SHORT).show();
                 }
@@ -225,7 +224,7 @@ public class LocationActivity extends AppCompatActivity {
             public void onFailure(Call<ResponseBody> call, Throwable t) {
                 progressDialog.dismiss();
                 Toast.makeText(LocationActivity.this, getString(R.string.unknown_error), Toast.LENGTH_SHORT).show();
-                Log.e(TAG, "Location onFailure: " + t.getMessage());
+                Logger.e("Location onFailure: " + t.getMessage());
             }
         });
     }

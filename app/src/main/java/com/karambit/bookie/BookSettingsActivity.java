@@ -5,6 +5,7 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.os.Bundle;
 import android.support.v4.content.ContextCompat;
+import android.support.v4.content.LocalBroadcastManager;
 import android.support.v7.app.ActionBar;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
@@ -14,7 +15,6 @@ import android.text.SpannableString;
 import android.text.TextUtils;
 import android.text.TextWatcher;
 import android.text.style.AbsoluteSizeSpan;
-import android.util.Log;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
@@ -41,6 +41,8 @@ import com.karambit.bookie.model.User;
 import com.karambit.bookie.rest_api.BookApi;
 import com.karambit.bookie.rest_api.BookieClient;
 import com.karambit.bookie.rest_api.ErrorCodes;
+import com.karambit.bookie.service.BookieIntentFilters;
+import com.orhanobut.logger.Logger;
 
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -382,6 +384,9 @@ public class BookSettingsActivity extends AppCompatActivity {
         String password = currentUserDetails.getPassword();
         Call<ResponseBody> bookStateLost = bookApi.setBookStateLost(email, password, mBook.getID());
 
+        Logger.d("setBookStateLost() API called with parameters: \n" +
+                     "\temail=" + email + ", \n\tpassword=" + password + ", \n\tbookID=" + mBook.getID());
+
         bookStateLost.enqueue(new Callback<ResponseBody>() {
             @Override
             public void onResponse(Call<ResponseBody> call, Response<ResponseBody> response) {
@@ -391,44 +396,45 @@ public class BookSettingsActivity extends AppCompatActivity {
                         if (response.body() != null){
                             String json = response.body().string();
 
+                            Logger.json(json);
+
                             JSONObject responseObject = new JSONObject(json);
                             boolean error = responseObject.getBoolean("error");
 
                             if (!error) {
+
+                                Logger.d("Book lost sent to server successfully");
+
                                 comfortableProgressDialog.dismiss();
                                 Toast.makeText(BookSettingsActivity.this, getString(R.string.book_lost), Toast.LENGTH_SHORT).show();
-                                setResult(RESULT_LOST);
+
+                                mBook.setState(Book.State.LOST);
+
+                                Intent intent = new Intent(BookieIntentFilters.INTENT_FILTER_BOOK_LOST);
+                                intent.putExtra(BookieIntentFilters.EXTRA_BOOK, mBook);
+                                LocalBroadcastManager.getInstance(BookSettingsActivity.this).sendBroadcast(intent);
+
                                 finish();
                             } else {
                                 int errorCode = responseObject.getInt("errorCode");
 
-                                if (errorCode == ErrorCodes.EMPTY_POST){
-                                    Log.e(TAG, "Post is empty. (Book Settings Page Error)");
-                                }else if (errorCode == ErrorCodes.MISSING_POST_ELEMENT){
-                                    Log.e(TAG, "Post element missing. (Book Settings Page Error)");
-                                }else if (errorCode == ErrorCodes.INVALID_REQUEST){
-                                    Log.e(TAG, "Invalid request. (Book Settings Page Error)");
-                                }else if (errorCode == ErrorCodes.INVALID_EMAIL){
-                                    Log.e(TAG, "Invalid email. (Book Settings Page Error)");
-                                }else if (errorCode == ErrorCodes.UNKNOWN){
-                                    Log.e(TAG, "onResponse: errorCode = " + errorCode);
-                                }
+                                Logger.e("Error true in response: errorCode = " + errorCode);
 
                                 comfortableProgressDialog.dismiss();
                                 Toast.makeText(BookSettingsActivity.this, getString(R.string.unknown_error), Toast.LENGTH_SHORT).show();
                             }
                         }else{
-                            Log.e(TAG, "Response body is null. (Book Settings Page Error)");
+                            Logger.e("Response body is null. (Book Settings Page Error)");
                             comfortableProgressDialog.dismiss();
                             Toast.makeText(BookSettingsActivity.this, getString(R.string.unknown_error), Toast.LENGTH_SHORT).show();
                         }
                     }else {
-                        Log.e(TAG, "Response object is null. (Book Settings Page Error)");
+                        Logger.e("Response object is null. (Book Settings Page Error)");
                         comfortableProgressDialog.dismiss();
                         Toast.makeText(BookSettingsActivity.this, getString(R.string.unknown_error), Toast.LENGTH_SHORT).show();
                     }
                 } catch (IOException | JSONException e) {
-                    e.printStackTrace();
+                    Logger.e("IOException or JSONException caught: " + e.getMessage());
                     comfortableProgressDialog.dismiss();
                     Toast.makeText(BookSettingsActivity.this, getString(R.string.unknown_error), Toast.LENGTH_SHORT).show();
                 }
@@ -436,7 +442,7 @@ public class BookSettingsActivity extends AppCompatActivity {
 
             @Override
             public void onFailure(Call<ResponseBody> call, Throwable t) {
-                Log.e(TAG, "Book Settings Page onFailure: " + t.getMessage());
+                Logger.e("bookStateLost Failure: " + t.getMessage());
                 comfortableProgressDialog.dismiss();
                 Toast.makeText(BookSettingsActivity.this, getString(R.string.unknown_error), Toast.LENGTH_SHORT).show();
             }
@@ -465,6 +471,9 @@ public class BookSettingsActivity extends AppCompatActivity {
         String password = SessionManager.getCurrentUserDetails(this).getPassword();
         Call<ResponseBody> uploadBookReport = userApi.uploadBookReport(email, password, mBook.getID(), reportCode, reportInfo);
 
+        Logger.d("uploadBookReport() API called with parameters: \n" +
+                     "\temail=" + email + ", \n\tpassword=" + password +
+                     ", \n\treportCode=" + reportCode + ", \n\treportInfo=" + reportInfo);
 
         uploadBookReport.enqueue(new Callback<ResponseBody>() {
             @Override
@@ -475,40 +484,36 @@ public class BookSettingsActivity extends AppCompatActivity {
                         if (response.body() != null){
                             String json = response.body().string();
 
+                            Logger.json(json);
+
                             JSONObject responseObject = new JSONObject(json);
                             boolean error = responseObject.getBoolean("error");
 
                             if (!error) {
+                                Logger.d("Report uploaded");
                                 Toast.makeText(BookSettingsActivity.this, getString(R.string.thaks_for_your_report), Toast.LENGTH_SHORT).show();
                             } else {
                                 int errorCode = responseObject.getInt("errorCode");
 
-                                if (errorCode == ErrorCodes.EMPTY_POST){
-                                    Log.e(TAG, "Post is empty. (Book Settings Page Error)");
-                                }else if (errorCode == ErrorCodes.MISSING_POST_ELEMENT){
-                                    Log.e(TAG, "Post element missing. (Book Settings Page Error)");
-                                }else if (errorCode == ErrorCodes.INVALID_EMAIL){
-                                    Log.e(TAG, "Invalid email. (Book Settings Page Error)");
-                                }else if (errorCode == ErrorCodes.INVALID_REQUEST){
-                                    Log.e(TAG, "Invalid request. (Book Settings Page Error)");
-                                }else if (errorCode == ErrorCodes.USER_NOT_VERIFIED){
-                                    Log.e(TAG, "User not valid. (Book Settings Page Error)");
-                                }else if (errorCode == ErrorCodes.UNKNOWN){
-                                    Log.e(TAG, "onResponse: errorCode = " + errorCode);
+                                if (errorCode == ErrorCodes.USER_NOT_VERIFIED){
+                                    // TODO User not verified dialog
+                                    Logger.w("User not verified. (Book Settings Page Error)");
+                                }else{
+                                    Logger.e("Error true in response: errorCode = " + errorCode);
                                 }
 
                                 Toast.makeText(BookSettingsActivity.this, getString(R.string.unknown_error), Toast.LENGTH_SHORT).show();
                             }
                         }else{
-                            Log.e(TAG, "Response body is null. (Book Settings Page Error)");
+                            Logger.e("Response body is null. (Book Settings Page Error)");
                             Toast.makeText(BookSettingsActivity.this, getString(R.string.unknown_error), Toast.LENGTH_SHORT).show();
                         }
                     }else {
-                        Log.e(TAG, "Response object is null. (Book Settings Page Error)");
+                        Logger.e("Response object is null. (Book Settings Page Error)");
                         Toast.makeText(BookSettingsActivity.this, getString(R.string.unknown_error), Toast.LENGTH_SHORT).show();
                     }
                 } catch (IOException | JSONException e) {
-                    e.printStackTrace();
+                    Logger.e("IOException or JSONException caught: " + e.getMessage());
 
                     Toast.makeText(BookSettingsActivity.this, getString(R.string.unknown_error), Toast.LENGTH_SHORT).show();
                 }
@@ -519,7 +524,7 @@ public class BookSettingsActivity extends AppCompatActivity {
             public void onFailure(Call<ResponseBody> call, Throwable t) {
                 progressDialog.dismiss();
                 Toast.makeText(BookSettingsActivity.this, getString(R.string.unknown_error), Toast.LENGTH_SHORT).show();
-                Log.e(TAG, "Book Settings onFailure: " + t.getMessage());
+                Logger.e("uploadBookReport Failure: " + t.getMessage());
             }
         });
     }
@@ -602,14 +607,17 @@ public class BookSettingsActivity extends AppCompatActivity {
         uploadBookParamsToServer(bookName, author, mSelectedGenre, progressDialog);
     }
 
-    private void uploadBookParamsToServer(String name, String author, int genreCode, final ComfortableProgressDialog progressDialog) {
+    private void uploadBookParamsToServer(final String name, final String author, final int genreCode, final ComfortableProgressDialog progressDialog) {
         final BookApi bookApi = BookieClient.getClient().create(BookApi.class);
 
         String email = SessionManager.getCurrentUserDetails(BookSettingsActivity.this).getEmail();
         String password = SessionManager.getCurrentUserDetails(BookSettingsActivity.this).getPassword();
 
-
         Call<ResponseBody> updateBookDetails = bookApi.updateBookDetails(email, password, mBook.getID(), name, author, genreCode);
+
+        Logger.d("updateBookDetails() API called with parameters: \n" +
+                     "\temail=" + email + ", \n\tpassword=" + password + ", \n\tbookID=" + mBook.getID() +
+                     ", \n\tbookName=" + name + ", \n\tauthor=" + author + ", \n\tgenreCode=" + genreCode);
 
         updateBookDetails.enqueue(new Callback<ResponseBody>() {
             @Override
@@ -620,39 +628,41 @@ public class BookSettingsActivity extends AppCompatActivity {
                         if (response.body() != null){
                             String json = response.body().string();
 
+                            Logger.json(json);
+
                             JSONObject responseObject = new JSONObject(json);
                             boolean error = responseObject.getBoolean("error");
 
                             if (!error) {
-                                setResult(RESULT_BOOK_UPDATED);
+
+                                Logger.d("Book updated successfully");
+
+                                mBook.setName(name);
+                                mBook.setAuthor(author);
+                                mBook.setGenreCode(genreCode);
+
+                                Intent intent = new Intent(BookieIntentFilters.INTENT_FILTER_ACCEPTED_REQUEST);
+                                intent.putExtra(BookieIntentFilters.EXTRA_BOOK, mBook);
+                                LocalBroadcastManager.getInstance(BookSettingsActivity.this).sendBroadcast(intent);
+
                                 finish();
                             } else {
                                 int errorCode = responseObject.getInt("errorCode");
 
-                                if (errorCode == ErrorCodes.EMPTY_POST){
-                                    Log.e(TAG, "Post is empty. (Book Settings Page Error)");
-                                }else if (errorCode == ErrorCodes.MISSING_POST_ELEMENT){
-                                    Log.e(TAG, "Post element missing. (Book Settings Page Error)");
-                                }else if (errorCode == ErrorCodes.INVALID_EMAIL){
-                                    Log.e(TAG, "Invalid email. (Book Settings Page Error)");
-                                }else if (errorCode == ErrorCodes.INVALID_REQUEST){
-                                    Log.e(TAG, "Invalid request. (Book Settings Page Error)");
-                                }else if (errorCode == ErrorCodes.UNKNOWN){
-                                    Log.e(TAG, "onResponse: errorCode = " + errorCode);
-                                }
+                                Logger.e("Error true in response: errorCode = " + errorCode);
 
                                 Toast.makeText(BookSettingsActivity.this, getString(R.string.unknown_error), Toast.LENGTH_SHORT).show();
                             }
                         }else{
-                            Log.e(TAG, "Response body is null. (Book Settings Page Error)");
+                            Logger.e("Response body is null. (Book Settings Page Error)");
                             Toast.makeText(BookSettingsActivity.this, getString(R.string.unknown_error), Toast.LENGTH_SHORT).show();
                         }
                     }else {
-                        Log.e(TAG, "Response object is null. (Book Settings Page Error)");
+                        Logger.e("Response object is null. (Book Settings Page Error)");
                         Toast.makeText(BookSettingsActivity.this, getString(R.string.unknown_error), Toast.LENGTH_SHORT).show();
                     }
                 } catch (IOException | JSONException e) {
-                    e.printStackTrace();
+                    Logger.e("IOException or JSONException caught: " + e.getMessage());
 
                     Toast.makeText(BookSettingsActivity.this, getString(R.string.unknown_error), Toast.LENGTH_SHORT).show();
                 }
@@ -661,9 +671,10 @@ public class BookSettingsActivity extends AppCompatActivity {
 
             @Override
             public void onFailure(Call<ResponseBody> call, Throwable t) {
+                Logger.e("updateBookDetails Failure: " + t.getMessage());
+
                 progressDialog.dismiss();
                 Toast.makeText(BookSettingsActivity.this, getString(R.string.unknown_error), Toast.LENGTH_SHORT).show();
-                Log.e(TAG, "Book Settings onFailure: " + t.getMessage());
             }
         });
     }

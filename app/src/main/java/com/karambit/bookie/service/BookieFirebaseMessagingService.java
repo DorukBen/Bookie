@@ -33,7 +33,6 @@ import com.google.firebase.messaging.RemoteMessage;
 import com.karambit.bookie.ConversationActivity;
 import com.karambit.bookie.MainActivity;
 import com.karambit.bookie.R;
-import com.karambit.bookie.database.DBHelper;
 import com.karambit.bookie.database.DBManager;
 import com.karambit.bookie.helper.SessionManager;
 import com.karambit.bookie.model.Book;
@@ -41,8 +40,8 @@ import com.karambit.bookie.model.Message;
 import com.karambit.bookie.model.Notification;
 import com.karambit.bookie.model.User;
 import com.karambit.bookie.rest_api.BookieClient;
-import com.karambit.bookie.rest_api.ErrorCodes;
 import com.karambit.bookie.rest_api.FcmApi;
+import com.orhanobut.logger.Logger;
 
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -94,7 +93,8 @@ public class BookieFirebaseMessagingService extends com.google.firebase.messagin
 
         // Check if message contains a data payload.
         if (remoteMessage.getData().size() > 0) {
-            Log.d(TAG, "Message data payload: " + remoteMessage.getData());
+            Logger.d("Message data payload: ");
+            Logger.json(remoteMessage.getData().toString());
             if (remoteMessage.getData().containsKey("fcmDataType")) {
                 if (Integer.parseInt(remoteMessage.getData().get("fcmDataType")) == FcmDataTypes.FCM_DATA_TYPE_SENT_MESSAGE && SessionManager.isLoggedIn(getApplicationContext())) {
                     if (remoteMessage.getData().containsKey("messageID") && remoteMessage.getData().containsKey("message") && remoteMessage.getData().containsKey("sender")) {
@@ -114,12 +114,11 @@ public class BookieFirebaseMessagingService extends com.google.firebase.messagin
 
                             DBManager dbManager = new DBManager(getApplicationContext());
                             dbManager.open();
-                            dbManager.getMessageDataSource().saveMessage(message, SessionManager.getCurrentUser(getApplicationContext()));
 
-                            Intent intent = new Intent(BookieIntentFilters.INTENT_FILTER_MESSAGE_RECEIVED);
-                            Bundle bundle = new Bundle();
-                            bundle.putParcelable(BookieIntentFilters.EXTRA_MESSAGE, message);
-                            intent.putExtras(bundle);
+                            dbManager.Threaded(dbManager.getMessageDataSource().cSaveMessage(message, message.getOppositeUser(SessionManager.getCurrentUser(getApplicationContext()))));
+
+                            Intent intent = new Intent(BookieIntentFilters.FCM_INTENT_FILTER_MESSAGE_RECEIVED);
+                            intent.putExtra(BookieIntentFilters.EXTRA_MESSAGE, message);
                             LocalBroadcastManager.getInstance(this).sendBroadcast(intent);
 
                             uploadMessageDeliveredStateToServer(message.getID());
@@ -132,26 +131,22 @@ public class BookieFirebaseMessagingService extends com.google.firebase.messagin
 
                         DBManager dbManager = new DBManager(getApplicationContext());
                         dbManager.open();
-                        dbManager.getMessageDataSource().updateMessageState(Integer.parseInt(remoteMessage.getData().get("messageID")), Message.State.DELIVERED);
+                        dbManager.Threaded(dbManager.getMessageDataSource().cUpdateMessageState(Integer.parseInt(remoteMessage.getData().get("messageID")), Message.State.DELIVERED));
 
-
-                        Intent intent = new Intent(BookieIntentFilters.INTENT_FILTER_MESSAGE_DELIVERED);
-                        Bundle bundle = new Bundle();
-                        bundle.putInt(BookieIntentFilters.EXTRA_MESSAGE_ID, Integer.parseInt(remoteMessage.getData().get("messageID")));
-                        intent.putExtras(bundle);
+                        Intent intent = new Intent(BookieIntentFilters.FCM_INTENT_FILTER_MESSAGE_DELIVERED);
+                        intent.putExtra(BookieIntentFilters.EXTRA_MESSAGE_ID, Integer.parseInt(remoteMessage.getData().get("messageID")));
                         LocalBroadcastManager.getInstance(this).sendBroadcast(intent);
                     }
                 } else if (Integer.parseInt(remoteMessage.getData().get("fcmDataType")) == FcmDataTypes.FCM_DATA_TYPE_SEEN_MESSAGE && SessionManager.isLoggedIn(getApplicationContext())) {
 
                     DBManager dbManager = new DBManager(getApplicationContext());
                     dbManager.open();
-                    dbManager.getMessageDataSource().updateMessageState(Integer.parseInt(remoteMessage.getData().get("messageID")), Message.State.SEEN);
+                    dbManager.Threaded(dbManager.getMessageDataSource().cUpdateMessageState(Integer.parseInt(remoteMessage.getData().get("messageID")), Message.State.SEEN));
 
-                    Intent intent = new Intent(BookieIntentFilters.INTENT_FILTER_MESSAGE_SEEN);
-                    Bundle bundle = new Bundle();
-                    bundle.putInt(BookieIntentFilters.EXTRA_MESSAGE_ID, Integer.parseInt(remoteMessage.getData().get("messageID")));
-                    intent.putExtras(bundle);
+                    Intent intent = new Intent(BookieIntentFilters.FCM_INTENT_FILTER_MESSAGE_SEEN);
+                    intent.putExtra(BookieIntentFilters.EXTRA_MESSAGE_ID, Integer.parseInt(remoteMessage.getData().get("messageID")));
                     LocalBroadcastManager.getInstance(this).sendBroadcast(intent);
+
                 } else if (Integer.parseInt(remoteMessage.getData().get("fcmDataType")) == FcmDataTypes.FCM_DATA_TYPE_REQUEST_SENT && SessionManager.isLoggedIn(getApplicationContext())) {
                     if (remoteMessage.getData().containsKey("book") && remoteMessage.getData().containsKey("sender")) {
                         try {
@@ -168,20 +163,16 @@ public class BookieFirebaseMessagingService extends com.google.firebase.messagin
                                     sender,
                                     false);
 
-
                             sendNotification(notification);
-
 
                             DBManager dbManager = new DBManager(getApplicationContext());
                             dbManager.open();
-                            dbManager.getNotificationDataSource().saveNotificationToDatabase(notification);
+                            dbManager.Threaded(dbManager.getNotificationDataSource().cSaveNotificationToDatabase(notification));
 
-
-                            Intent intent = new Intent(BookieIntentFilters.INTENT_FILTER_SENT_REQUEST_RECEIVED);
-                            Bundle bundle = new Bundle();
-                            bundle.putParcelable(BookieIntentFilters.EXTRA_NOTIFICATION, notification);
-                            intent.putExtras(bundle);
+                            Intent intent = new Intent(BookieIntentFilters.FCM_INTENT_FILTER_SENT_REQUEST_RECEIVED);
+                            intent.putExtra(BookieIntentFilters.EXTRA_NOTIFICATION, notification);
                             LocalBroadcastManager.getInstance(this).sendBroadcast(intent);
+
                         } catch (JSONException e) {
                             e.printStackTrace();
                         }
@@ -206,12 +197,11 @@ public class BookieFirebaseMessagingService extends com.google.firebase.messagin
 
                             DBManager dbManager = new DBManager(getApplicationContext());
                             dbManager.open();
-                            dbManager.getNotificationDataSource().saveNotificationToDatabase(notification);
+                            dbManager.Threaded(dbManager.getNotificationDataSource().cSaveNotificationToDatabase(notification));
 
-                            Intent intent = new Intent(BookieIntentFilters.INTENT_FILTER_REJECTED_REQUEST_RECEIVED);
-                            Bundle bundle = new Bundle();
-                            bundle.putParcelable(BookieIntentFilters.EXTRA_NOTIFICATION, notification);
-                            intent.putExtras(bundle);
+                            Intent intent = new Intent(BookieIntentFilters.FCM_INTENT_FILTER_REJECTED_REQUEST_RECEIVED);
+                            intent.putExtra(BookieIntentFilters.EXTRA_NOTIFICATION, notification);
+
                             LocalBroadcastManager.getInstance(this).sendBroadcast(intent);
                         } catch (JSONException e) {
                             e.printStackTrace();
@@ -237,13 +227,12 @@ public class BookieFirebaseMessagingService extends com.google.firebase.messagin
 
                             DBManager dbManager = new DBManager(getApplicationContext());
                             dbManager.open();
-                            dbManager.getNotificationDataSource().saveNotificationToDatabase(notification);
+                            dbManager.Threaded(dbManager.getNotificationDataSource().cSaveNotificationToDatabase(notification));
 
-                            Intent intent = new Intent(BookieIntentFilters.INTENT_FILTER_ACCEPTED_REQUEST_RECEIVED);
-                            Bundle bundle = new Bundle();
-                            bundle.putParcelable(BookieIntentFilters.EXTRA_NOTIFICATION, notification);
-                            intent.putExtras(bundle);
+                            Intent intent = new Intent(BookieIntentFilters.FCM_INTENT_FILTER_ACCEPTED_REQUEST_RECEIVED);
+                            intent.putExtra(BookieIntentFilters.EXTRA_NOTIFICATION, notification);
                             LocalBroadcastManager.getInstance(this).sendBroadcast(intent);
+
                         } catch (JSONException e) {
                             e.printStackTrace();
                         }
@@ -268,13 +257,12 @@ public class BookieFirebaseMessagingService extends com.google.firebase.messagin
 
                             DBManager dbManager = new DBManager(getApplicationContext());
                             dbManager.open();
-                            dbManager.getNotificationDataSource().saveNotificationToDatabase(notification);
+                            dbManager.Threaded(dbManager.getNotificationDataSource().cSaveNotificationToDatabase(notification));
 
-                            Intent intent = new Intent(BookieIntentFilters.INTENT_FILTER_BOOK_OWNER_CHANGED_RECEIVED);
-                            Bundle bundle = new Bundle();
-                            bundle.putParcelable(BookieIntentFilters.EXTRA_NOTIFICATION, notification);
-                            intent.putExtras(bundle);
+                            Intent intent = new Intent(BookieIntentFilters.FCM_INTENT_FILTER_BOOK_OWNER_CHANGED_RECEIVED);
+                            intent.putExtra(BookieIntentFilters.EXTRA_NOTIFICATION, notification);
                             LocalBroadcastManager.getInstance(this).sendBroadcast(intent);
+
                         } catch (JSONException e) {
                             e.printStackTrace();
                         }
@@ -299,19 +287,18 @@ public class BookieFirebaseMessagingService extends com.google.firebase.messagin
 
                             DBManager dbManager = new DBManager(getApplicationContext());
                             dbManager.open();
-                            dbManager.getNotificationDataSource().saveNotificationToDatabase(notification);
+                            dbManager.Threaded(dbManager.getNotificationDataSource().cSaveNotificationToDatabase(notification));
 
-                            Intent intent = new Intent(BookieIntentFilters.INTENT_FILTER_BOOK_LOST);
-                            Bundle bundle = new Bundle();
-                            bundle.putParcelable(BookieIntentFilters.EXTRA_NOTIFICATION, notification);
-                            intent.putExtras(bundle);
+                            Intent intent = new Intent(BookieIntentFilters.FCM_INTENT_FILTER_BOOK_LOST);
+                            intent.putExtra(BookieIntentFilters.EXTRA_NOTIFICATION, notification);
                             LocalBroadcastManager.getInstance(this).sendBroadcast(intent);
+
                         } catch (JSONException e) {
                             e.printStackTrace();
                         }
                     }
                 } else if (Integer.parseInt(remoteMessage.getData().get("fcmDataType")) == FcmDataTypes.FCM_DATA_TYPE_USER_VERIFIED && SessionManager.isLoggedIn(getApplicationContext())) {
-                    Intent intent = new Intent(BookieIntentFilters.INTENT_FILTER_USER_VERIFIED);
+                    Intent intent = new Intent(BookieIntentFilters.FCM_INTENT_FILTER_USER_VERIFIED);
                     LocalBroadcastManager.getInstance(this).sendBroadcast(intent);
                 }
             }
@@ -540,7 +527,12 @@ public class BookieFirebaseMessagingService extends com.google.firebase.messagin
 
         String email = currentUserDetails.getEmail();
         String password = currentUserDetails.getPassword();
-        final Call<ResponseBody> uploadMessageState = fcmApi.uploadMessageState(email, password, messageId, Message.State.DELIVERED.ordinal());
+        final Call<ResponseBody> uploadMessageState = fcmApi.uploadMessageState(email, password, messageId, Message.State.DELIVERED.getStateCode());
+
+        Logger.d("uploadMessageState() API called with parameters: \n" +
+                     "\temail=" + email + ", \n\tpassword=" + password +
+                     ", \n\tmessageID=" + messageId +
+                     ", \n\tstate=" + Message.State.DELIVERED.getStateCode());
 
         uploadMessageState.enqueue(new Callback<ResponseBody>() {
             @Override
@@ -551,40 +543,34 @@ public class BookieFirebaseMessagingService extends com.google.firebase.messagin
                         if (response.body() != null) {
                             String json = response.body().string();
 
+                            Logger.json(json);
+
                             JSONObject responseObject = new JSONObject(json);
                             boolean error = responseObject.getBoolean("error");
 
                             if (!error) {
 
+                                Logger.d("Message state uploaded successfully");
+
                             } else {
                                 int errorCode = responseObject.getInt("errorCode");
 
-                                if (errorCode == ErrorCodes.EMPTY_POST) {
-                                    Log.e(TAG, "Post is empty. (Upload Message State Error)");
-                                } else if (errorCode == ErrorCodes.MISSING_POST_ELEMENT) {
-                                    Log.e(TAG, "Post element missing. (Upload Message State Error)");
-                                } else if (errorCode == ErrorCodes.INVALID_REQUEST) {
-                                    Log.e(TAG, "Invalid request. (Upload Message State Error)");
-                                } else if (errorCode == ErrorCodes.INVALID_EMAIL) {
-                                    Log.e(TAG, "Invalid email. (Upload Message State Error)");
-                                } else if (errorCode == ErrorCodes.UNKNOWN) {
-                                    Log.e(TAG, "onResponse: errorCode = " + errorCode);
-                                }
+                                Logger.e("Error true in response: errorCode = " + errorCode);
                             }
                         } else {
-                            Log.e(TAG, "Response body is null. (Upload Message State Error)");
+                            Logger.e("Response body is null. (Upload Message State Error)");
                         }
                     } else {
-                        Log.e(TAG, "Response object is null. (Upload Message State Error)");
+                        Logger.e("Response object is null. (Upload Message State Error)");
                     }
                 } catch (IOException | JSONException e) {
-                    e.printStackTrace();
+                    Logger.e("IOException or JSONException caught: " + e.getMessage());
                 }
             }
 
             @Override
             public void onFailure(Call<ResponseBody> call, Throwable t) {
-                Log.e(TAG, "Upload Message State onFailure: " + t.getMessage());
+                Logger.e("Upload Message State onFailure: " + t.getMessage());
                 uploadMessageDeliveredStateToServer(messageId);
             }
         });

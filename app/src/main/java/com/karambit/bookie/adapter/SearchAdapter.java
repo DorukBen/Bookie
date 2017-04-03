@@ -1,7 +1,6 @@
 package com.karambit.bookie.adapter;
 
 import android.content.Context;
-import android.graphics.Bitmap;
 import android.support.v4.content.ContextCompat;
 import android.support.v4.view.ViewCompat;
 import android.support.v7.widget.CardView;
@@ -32,6 +31,8 @@ public class SearchAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder>
     private ArrayList<Integer> mGenreCodes = new ArrayList<>();
     private ArrayList<Book> mBooks = new ArrayList<>();
     private ArrayList<User> mUsers = new ArrayList<>();
+
+    private boolean mIsSearchPressed = false;
 
     private int genrePosition = 0;
     private int bookPosition = 0;
@@ -613,7 +614,12 @@ public class SearchAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder>
 
                 NoResultFoundViewHolder noResultFoundViewHolder = (NoResultFoundViewHolder) holder;
                 noResultFoundViewHolder.mNoResultFoundImageView.setImageDrawable(ContextCompat.getDrawable(mContext, R.drawable.ic_search_black_24dp));
-                noResultFoundViewHolder.mNoResultFoundTextView.setText(mContext.getString(R.string.no_result_found));
+
+                if (mIsSearchPressed) {
+                    noResultFoundViewHolder.mNoResultFoundTextView.setText(mContext.getString(R.string.no_result_found));
+                } else {
+                    noResultFoundViewHolder.mNoResultFoundTextView.setText(mContext.getString(R.string.click_search_for_more));
+                }
 
                 break;
             }
@@ -707,8 +713,19 @@ public class SearchAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder>
         mSearchItemClickListener = searchItemClickListener;
     }
 
-    public void setItems(ArrayList<Integer> genreCodes, ArrayList<Book> books, ArrayList<User> users){
+    public void setItems(ArrayList<Integer> genreCodes, ArrayList<Book> books, ArrayList<User> users, boolean isSearchPressed){
         mGenreCodes = genreCodes;
+        mBooks = books;
+        mUsers = users;
+
+        mIsSearchPressed = isSearchPressed;
+
+        mShowHistory = false;
+        notifyDataSetChanged();
+    }
+
+    public void setItems(ArrayList<Book> books, ArrayList<User> users){
+        mGenreCodes = new ArrayList<>();
         mBooks = books;
         mUsers = users;
 
@@ -740,12 +757,25 @@ public class SearchAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder>
         notifyDataSetChanged();
     }
 
-    public void setShowHistory(boolean showHistory){
-        mShowHistory = showHistory;
+    public void showHistory(ArrayList<Book> historyBooks, ArrayList<User> historyUsers){
+        setItems(historyBooks, historyUsers);
+
         setError(ERROR_TYPE_NONE);
         setWarning(WARNING_TYPE_NONE);
         setProgressBarActive(false);
 
+        mShowHistory = true;
+        notifyDataSetChanged();
+    }
+
+    public void hideHistory(){
+        setItems(new ArrayList<Book>(), new ArrayList<User>());
+
+        setError(ERROR_TYPE_NONE);
+        setWarning(WARNING_TYPE_NONE);
+        setProgressBarActive(false);
+
+        mShowHistory = false;
         notifyDataSetChanged();
     }
 

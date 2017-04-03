@@ -10,11 +10,10 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.sql.Timestamp;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
-import java.util.Collections;
-import java.util.Date;
-import java.util.Random;
+import java.util.Locale;
 
 /**
  * Message model
@@ -24,7 +23,39 @@ import java.util.Random;
 
 public class Message implements Parcelable, Comparable<Message> {
 
-    public enum State {PENDING, SENT, DELIVERED, SEEN, ERROR}
+    public enum State {
+        PENDING(0),
+        SENT(1),
+        DELIVERED(2),
+        SEEN(3),
+        ERROR(-1);
+
+        private final int mStateCode;
+
+        State(int stateCode) {
+            mStateCode = stateCode;
+        }
+
+        public int getStateCode() {
+            return mStateCode;
+        }
+
+        public static State valueOf(int stateCode) {
+            if (stateCode == PENDING.mStateCode) {
+                return PENDING;
+            } else if (stateCode == SENT.mStateCode) {
+                return SENT;
+            } else if (stateCode == DELIVERED.mStateCode) {
+                return DELIVERED;
+            } else if (stateCode == SEEN.mStateCode) {
+                return SEEN;
+            } else if (stateCode == ERROR.mStateCode){
+                return ERROR;
+            } else {
+                throw new IllegalArgumentException("Invalid Message state code");
+            }
+        }
+    }
 
     private int mID;
     private String mText;
@@ -102,7 +133,7 @@ public class Message implements Parcelable, Comparable<Message> {
                         messageObject.isNull("fromUser")? null: User.jsonObjectToUser(messageObject.getJSONObject("fromUser")),
                         messageObject.isNull("toUser")? null: User.jsonObjectToUser(messageObject.getJSONObject("toUser")),
                         calendar,
-                        State.values()[messageObject.isNull("messageState")? 2: messageObject.getInt("messageState")]);
+                        State.valueOf(messageObject.optInt("messageState", 2)));
             }else {
                 return null;
             }
@@ -176,62 +207,6 @@ public class Message implements Parcelable, Comparable<Message> {
         mState = state;
     }
 
-    public static class GENERATOR {
-
-        private static Random RANDOM = new Random();
-        private static int MIN_IN_MILLIS = 60000; // 60 * 1000
-        private static char[] ALPHABET = "abcdefghijklmnopqrstuvwxyz".toCharArray();
-
-        public static ArrayList<Message> generateMessageList(User phoneOwner, User oppositeUser, int count) {
-            ArrayList<Message> messages = new ArrayList<>(count);
-
-            long createdMillis = System.currentTimeMillis() - RANDOM.nextInt(72 * 60 * 60 * 1000);
-
-            for (int i = 0; i < count; i++) {
-
-                User sender = RANDOM.nextBoolean() ? oppositeUser : phoneOwner;
-                User receiver;
-                if (sender != phoneOwner) {
-                    receiver = phoneOwner;
-                } else {
-                    receiver = oppositeUser;
-                }
-
-                Calendar createdAt = Calendar.getInstance();
-                createdAt.setTimeInMillis(createdMillis);
-
-                messages.add(new Message(RANDOM.nextInt(100000), generateRandomText(), sender, receiver, createdAt, State.SEEN));
-
-                // createdMillis -= MIN_IN_MILLIS * RANDOM.nextInt(5);
-
-                createdMillis -= 1000000 * RANDOM.nextInt(5);
-            }
-
-            Collections.sort(messages);
-
-            return messages;
-        }
-
-        public static ArrayList<Message> generateMessageList(User phoneOwner, int count) {
-            return generateMessageList(phoneOwner, User.GENERATOR.generateUser(), count);
-        }
-
-        public static String generateRandomText(int length) {
-            String result = "";
-
-            for (int i = 0; i < length; i++) {
-                result += ALPHABET[RANDOM.nextInt(ALPHABET.length)];
-            }
-
-            return result;
-        }
-
-        public static String generateRandomText() {
-            return generateRandomText(RANDOM.nextInt(38) + 2); // Min 2 characters
-        }
-
-    }
-
     @Override
     public int compareTo(@NonNull Message otherMessage) {
         return (int) (otherMessage.getCreatedAt().getTimeInMillis() - this.mCreatedAt.getTimeInMillis());
@@ -259,11 +234,16 @@ public class Message implements Parcelable, Comparable<Message> {
 
     @Override
     public String toString() {
-        return "Message{" +
-            "mText='" + mText + '\'' +
-            ", mSender=" + mSender +
-            ", mReceiver=" + mReceiver +
-            ", mState=" + mState +
-            ", mCreatedAt=" + mCreatedAt + '}';
+
+        SimpleDateFormat dateFormat = new SimpleDateFormat("dd/MM/yyyy hh:mm:ss a", Locale.getDefault());
+        String createdAt = dateFormat.format(mCreatedAt.getTime());
+
+        return "\nMessage{" +
+            "\n\tmText='" + mText + "\'," +
+            "\n\tmSender=" + mSender.getName() + "," +
+            "\n\tmReceiver=" + mReceiver.getName() + "," +
+            "\n\tmState=" + mState + "," +
+            "\n\tmCreatedAt=" + createdAt +
+            "\n}";
     }
 }

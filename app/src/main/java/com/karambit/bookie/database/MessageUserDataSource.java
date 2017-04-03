@@ -3,12 +3,13 @@ package com.karambit.bookie.database;
 import android.content.ContentValues;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
-import android.util.Log;
 
 import com.google.android.gms.maps.model.LatLng;
 import com.karambit.bookie.model.User;
+import com.orhanobut.logger.Logger;
 
 import java.util.ArrayList;
+import java.util.concurrent.Callable;
 
 /**
  * Created by doruk on 19.03.2017.
@@ -28,7 +29,7 @@ public class MessageUserDataSource {
     private static final String MESSAGE_USER_COLUMN_LATITUDE = "latitude";
     private static final String MESSAGE_USER_COLUMN_LONGITUDE = "longitude";
 
-    public static final String CREATE_MESSAGE_USER_TABLE_TAG = "CREATE TABLE " + MESSAGE_USER_TABLE_NAME + " (" +
+    static final String CREATE_MESSAGE_USER_TABLE_TAG = "CREATE TABLE " + MESSAGE_USER_TABLE_NAME + " (" +
             MESSAGE_USER_COLUMN_ID + " INTEGER PRIMARY KEY NOT NULL, " +
             MESSAGE_USER_COLUMN_NAME + " TEXT NOT NULL, " +
             MESSAGE_USER_COLUMN_IMAGE_URL + " TEXT, " +
@@ -36,9 +37,9 @@ public class MessageUserDataSource {
             MESSAGE_USER_COLUMN_LATITUDE + " DOUBLE, " +
             MESSAGE_USER_COLUMN_LONGITUDE + " DOUBLE)";
 
-    public static final String UPGRADE_MESSAGE_USER_TABLE_TAG = "DROP TABLE IF EXISTS " + MESSAGE_USER_TABLE_NAME;
+    static final String UPGRADE_MESSAGE_USER_TABLE_TAG = "DROP TABLE IF EXISTS " + MESSAGE_USER_TABLE_NAME;
 
-    public MessageUserDataSource(SQLiteDatabase database) {
+    MessageUserDataSource(SQLiteDatabase database) {
         mSqLiteDatabase = database;
     }
 
@@ -49,7 +50,7 @@ public class MessageUserDataSource {
      *
      * @return boolean value. If insertion successful returns true else returns false.
      */
-    public boolean insertUser(User user) {
+    private boolean insertUser(User user) {
         boolean result = false;
         try{
             ContentValues contentValues = new ContentValues();
@@ -62,9 +63,63 @@ public class MessageUserDataSource {
 
             result = mSqLiteDatabase.insert(MESSAGE_USER_TABLE_NAME, null, contentValues) > 0;
         }finally {
-            Log.i(TAG, "New User insertion successful");
+            Logger.d("New User insertion successful");
         }
         return result;
+    }
+
+    public boolean saveUser(User user) {
+        if (!isUserExists(user.getID())) {
+            return insertUser(user);
+        } else {
+            return false;
+        }
+    }
+
+    /**
+     * Updates given user in database.<br>
+     *
+     * @param user {@link User User}<br>
+     *
+     * @return boolean value. If update successful returns true else returns false.
+     */
+    private boolean updateUser(User user) {
+        boolean result = false;
+        try {
+            ContentValues contentValues = new ContentValues();
+            contentValues.put(MESSAGE_USER_COLUMN_ID, user.getID());
+            contentValues.put(MESSAGE_USER_COLUMN_NAME, user.getName());
+            contentValues.put(MESSAGE_USER_COLUMN_IMAGE_URL, user.getImageUrl());
+            contentValues.put(MESSAGE_USER_COLUMN_THUMBNAIL_URL, user.getThumbnailUrl());
+            contentValues.put(MESSAGE_USER_COLUMN_LATITUDE, (user.getLocation() != null) ? user.getLocation().latitude : null);
+            contentValues.put(MESSAGE_USER_COLUMN_LONGITUDE, (user.getLocation() != null) ? user.getLocation().longitude : null);
+
+            result = mSqLiteDatabase.update(MESSAGE_USER_TABLE_NAME, contentValues, MESSAGE_USER_COLUMN_ID + "=" + user.getID(), null) > 0;
+        }finally {
+
+            if (result){
+                Logger.d("Message user update successful.");
+            }else{
+                Logger.e("Error occurred during user update!");
+            }
+        }
+        return result;
+    }
+
+    /**
+     * Checks the user exists. Updates given user in database if its not exist.<br>
+     *
+     * @param user {@link User User}<br>
+     *
+     * @return boolean value. If insertion successful returns true else returns false.
+     */
+    public boolean checkAndUpdateUser(User user) {
+
+        if (isUserExists(user.getID())) {
+            return updateUser(user);
+        } else {
+            return false;
+        }
     }
 
     /**
@@ -159,12 +214,15 @@ public class MessageUserDataSource {
      *
      * @param userID {@link User User's} id, ({@link User#getID()})
      */
-    public void deleteUser(Integer userID) {
+    public boolean deleteUser(Integer userID) {
+        boolean result = false;
         try{
-            mSqLiteDatabase.delete(MESSAGE_USER_TABLE_NAME, MESSAGE_USER_COLUMN_ID + " = ?", new String[] { userID.toString() });
+            result = mSqLiteDatabase.delete(MESSAGE_USER_TABLE_NAME, MESSAGE_USER_COLUMN_ID + " = ?", new String[] { userID.toString() }) > 0;
         }finally {
-            Log.i(TAG, "User deleted from database");
+            Logger.d("User deleted from database");
         }
+
+        return result;
     }
 
     /**
@@ -172,22 +230,39 @@ public class MessageUserDataSource {
      *
      * @param user {@link User User}
      */
-    public void deleteUser(User user) {
+    public boolean deleteUser(User user) {
+        boolean result = false;
         try{
-            mSqLiteDatabase.delete(MESSAGE_USER_TABLE_NAME, MESSAGE_USER_COLUMN_ID + " = ?", new String[] { ((Integer)user.getID()).toString() });
+            result = mSqLiteDatabase.delete(MESSAGE_USER_TABLE_NAME, MESSAGE_USER_COLUMN_ID + " = ?", new String[] { ((Integer)user.getID()).toString() }) > 0;
         }finally {
-            Log.i(TAG, "User deleted from database");
+            Logger.d("User deleted from database");
         }
+
+        return result;
     }
 
     /**
      * Deletes all {@link User users} from database.<br>
      */
-    public void deleteAllUsers() {
+    public boolean deleteAllUsers() {
+        boolean result = false;
         try{
-            mSqLiteDatabase.delete(MESSAGE_USER_TABLE_NAME, null, null);
+            result = mSqLiteDatabase.delete(MESSAGE_USER_TABLE_NAME, null, null) > 0;
         }finally {
-            Log.i(TAG, "All users deleted from database");
+            Logger.d("All users deleted from database");
         }
+
+        return result;
     }
+
+    //Callable Methods
+    public Callable<Boolean> cCheckAndUpdateUser(final User user){
+        return new Callable<Boolean>() {
+            @Override
+            public Boolean call() throws Exception {
+                return checkAndUpdateUser(user);
+            }
+        };
+    }
+
 }

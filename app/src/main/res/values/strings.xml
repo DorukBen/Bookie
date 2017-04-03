@@ -178,7 +178,7 @@
     <string name="genre_value_31">Autobiographies</string>
     <string name="genre_value_32">Fantasy</string>
     <string name="nothing_to_show">Search for books, users and genres.</string>
-    <string name="no_result_found">No result found.</string>
+    <string name="no_result_found">No results found</string>
     <string name="nothing_to_show_book_and_profile">Nothing to show here.</string>
     <string name="delete_prompt_message_user">Delete chat with %s?</string>
     <string name="delete_prompt_conversation_message_single">Delete message from %s?</string>
@@ -306,4 +306,8 @@
     <string name="forgot_password_info">We will send temporary password to your email. Don\'t forget to look your spam mail inbox. You can change your password in your profile settings anytime.</string>
     <string name="new_password_sent_info_short">Your new password sent!</string>
     <string name="new_password_sent_info">Please check your email and activate your new password. You can change your password in your profile settings anytime. Don\'t forget to check your spam folder!</string>
+    <string name="notification_empty_state_text">Your notifications will appear here…</string>
+    <string name="sharing_is_closed_for_x">Sharing is closed for %s</string>
+    <string name="click_search_for_more">Click search button for more results</string>
+    <string name="search_user">Search user</string>
 </resources>

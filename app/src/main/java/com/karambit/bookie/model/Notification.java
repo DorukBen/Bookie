@@ -3,10 +3,10 @@ package com.karambit.bookie.model;
 import android.os.Parcel;
 import android.os.Parcelable;
 
-import java.util.ArrayList;
+import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.GregorianCalendar;
-import java.util.Random;
+import java.util.Locale;
 
 /**
  * Created by doruk on 24.12.2016.
@@ -31,19 +31,18 @@ public class Notification implements Parcelable {
         }
 
         public static Type valueOf(int typeCode) {
-            switch (typeCode) {
-                case 0:
-                    return Type.REQUESTED;
-                case 1:
-                    return Type.REQUEST_ACCEPTED;
-                case 2:
-                    return Type.REQUEST_REJECTED;
-                case 3:
-                    return Type.BOOK_OWNER_CHANGED;
-                case 4:
-                    return Type.BOOK_LOST;
-                default:
-                    return null;
+            if (typeCode == REQUESTED.mTypeCode) {
+                return Type.REQUESTED;
+            } else if (typeCode == REQUEST_ACCEPTED.mTypeCode) {
+                return Type.REQUEST_ACCEPTED;
+            } else if (typeCode == REQUEST_REJECTED.mTypeCode) {
+                return Type.REQUEST_REJECTED;
+            } else if (typeCode == BOOK_OWNER_CHANGED.mTypeCode) {
+                return Type.BOOK_OWNER_CHANGED;
+            } else if (typeCode == BOOK_LOST.mTypeCode) {
+                return Type.BOOK_LOST;
+            } else {
+                throw new IllegalArgumentException("Invalid Notification type");
             }
         }
     }
@@ -63,7 +62,7 @@ public class Notification implements Parcelable {
     }
 
     protected Notification(Parcel in) {
-        mType = Notification.Type.values()[in.readInt()];
+        mType = Notification.Type.valueOf(in.readInt());
         Calendar cal = GregorianCalendar.getInstance();
         cal.setTimeInMillis(in.readLong());
         mCreatedAt = cal;
@@ -112,21 +111,6 @@ public class Notification implements Parcelable {
         mSeen = seen;
     }
 
-    public static class GENERATOR {
-        public static Notification generateNotification() {
-            Type randomType = Type.values()[new Random().nextInt(Type.values().length)];
-            return new Notification(randomType, Calendar.getInstance(), Book.GENERATOR.generateBook(), User.GENERATOR.generateUser(), false);
-        }
-
-        public static ArrayList<Notification> generateNotificationList(int size) {
-            ArrayList<Notification> notifications = new ArrayList<>(size);
-            for (int i = 0; i < size; i++) {
-                notifications.add(generateNotification());
-            }
-            return notifications;
-        }
-    }
-
     public static final Parcelable.Creator<Notification> CREATOR = new Parcelable.Creator<Notification>() {
         @Override
         public Notification createFromParcel(Parcel in) {
@@ -153,5 +137,18 @@ public class Notification implements Parcelable {
         dest.writeByte((byte) (mSeen ? 1 : 0));
     }
 
+    @Override
+    public String toString() {
 
+        SimpleDateFormat dateFormat = new SimpleDateFormat("dd/MM/yyyy hh:mm:ss a", Locale.getDefault());
+        String createdAt = dateFormat.format(mCreatedAt.getTime());
+
+        return "Notification{" +
+            "\n\tmType=" + mType + "," +
+            "\n\tmBook=" + mBook.toShortString() + "," +
+            "\n\tmOppositeUser=" + mOppositeUser + "," +
+            "\n\tmSeen=" + mSeen + "," +
+            "\n\tmCreatedAt=" + createdAt +
+            "\n}";
+    }
 }

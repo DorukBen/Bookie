@@ -8,7 +8,6 @@ import android.support.v7.app.AppCompatActivity;
 import android.text.Spannable;
 import android.text.SpannableString;
 import android.text.style.AbsoluteSizeSpan;
-import android.util.Log;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
@@ -20,6 +19,7 @@ import com.karambit.bookie.helper.IntentHelper;
 import com.karambit.bookie.helper.SessionManager;
 import com.karambit.bookie.helper.TypefaceSpan;
 import com.karambit.bookie.model.User;
+import com.orhanobut.logger.Logger;
 
 public class ProfileActivity extends AppCompatActivity {
 
@@ -96,7 +96,7 @@ public class ProfileActivity extends AppCompatActivity {
 
                 } else {
                     final InformationDialog informationDialog = new InformationDialog(this);
-                    informationDialog.setCancelable(false);
+                    informationDialog.setCancelable(true);
                     informationDialog.setPrimaryMessage(R.string.unverified_email_info_short);
                     informationDialog.setSecondaryMessage(R.string.unverified_email_message_info);
                     informationDialog.setDefaultClickListener(new InformationDialog.DefaultClickListener() {
@@ -135,12 +135,12 @@ public class ProfileActivity extends AppCompatActivity {
         if (requestCode == REQUEST_CODE_OTHER_USER_SETTINGS) {
             if (resultCode == OtherUserProfileSettingsActivity.RESULT_USER_BLOCKED) {
 
-                Log.i(TAG, mUser.getName() + " blocked");
+                Logger.d(mUser.getName() + " blocked");
                 finish();
             }
         }else if (requestCode == REQUEST_CODE_MESSAGE_PROCESS){
             if (resultCode == ConversationActivity.RESULT_ALL_MESSAGES_DELETED){
-                mDbManager.getMessageDataSource().deleteConversation((User) data.getParcelableExtra(ConversationActivity.EXTRA_OPPOSITE_USER));
+                mDbManager.Threaded(mDbManager.getMessageDataSource().cDeleteConversation((User) data.getParcelableExtra(ConversationActivity.EXTRA_OPPOSITE_USER)));
             }
         }
     }
