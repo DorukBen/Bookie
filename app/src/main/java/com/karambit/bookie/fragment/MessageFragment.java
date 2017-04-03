@@ -12,6 +12,7 @@ import android.support.v4.app.Fragment;
 import android.support.v4.content.LocalBroadcastManager;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
+import android.util.Log;
 import android.util.SparseIntArray;
 import android.view.LayoutInflater;
 import android.view.MotionEvent;
@@ -41,6 +42,7 @@ import org.json.JSONObject;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.concurrent.Callable;
 
 import okhttp3.ResponseBody;
 import retrofit2.Call;
@@ -196,8 +198,8 @@ public class MessageFragment extends Fragment {
                                 mLastMessages.remove(message);
                                 mLastMessageAdapter.notifyDataSetChanged();
 
-                                User oppositeUser = message.getOppositeUser(currentUser);
-                                mDBManager.getMessageDataSource().deleteConversation(oppositeUser);
+                                final User oppositeUser = message.getOppositeUser(currentUser);
+                                mDBManager.Threaded(mDBManager.getMessageDataSource().cDeleteConversation(oppositeUser));
 
                                 deleteMessageUserOnServer(oppositeUser);
 
@@ -330,7 +332,7 @@ public class MessageFragment extends Fragment {
 
                             if (!error) {
                                 ArrayList<Message> messages = Message.jsonObjectToMessageList(responseObject);
-                                for (Message message: messages){
+                                for (final Message message: messages){
                                     if (message.getReceiver().equals(currentUserDetails.getUser()) &&
                                         message.getState() == Message.State.SENT) {
 
@@ -344,6 +346,7 @@ public class MessageFragment extends Fragment {
                                 }
 
                                 mLastMessages = mDBManager.getMessageDataSource().getLastMessages(SessionManager.getCurrentUser(getContext()));
+
                                 Collections.sort(mLastMessages);
                                 mLastMessageAdapter.setLastMessages(mLastMessages);
                                 fetchUnseenCounts();
@@ -535,7 +538,7 @@ public class MessageFragment extends Fragment {
             } else if (resultCode == ConversationActivity.RESULT_ALL_MESSAGES_DELETED) {
 
                 User currentUser = SessionManager.getCurrentUser(getContext());
-                User oppositeUser = data.getParcelableExtra(ConversationActivity.EXTRA_OPPOSITE_USER);
+                final User oppositeUser = data.getParcelableExtra(ConversationActivity.EXTRA_OPPOSITE_USER);
 
                 for (int i = 0; i < mLastMessages.size(); i++) {
                     Message message = mLastMessages.get(i);
@@ -544,8 +547,7 @@ public class MessageFragment extends Fragment {
                         mLastMessageAdapter.notifyItemRemoved(i);
                     }
                 }
-
-                mDBManager.getMessageDataSource().deleteConversation(oppositeUser);
+                mDBManager.Threaded(mDBManager.getMessageDataSource().cDeleteConversation(oppositeUser));
 
                 Logger.d("All messages deleted in ConversationActivity with " + oppositeUser.getName() + " (message user deleted)");
             }

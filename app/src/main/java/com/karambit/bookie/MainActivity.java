@@ -380,7 +380,7 @@ public class MainActivity extends AppCompatActivity implements TabHost.OnTabChan
 
             case REQUEST_CODE_CONVERSATION_ACTIVITY:
                 if (resultCode == ConversationActivity.RESULT_ALL_MESSAGES_DELETED){
-                    mDbManager.getMessageDataSource().deleteConversation((User) data.getParcelableExtra(EXTRA_OPPOSITE_USER));
+                    mDbManager.Threaded(mDbManager.getMessageDataSource().cDeleteConversation((User) data.getParcelableExtra(EXTRA_OPPOSITE_USER)));
                 }
                 break;
 

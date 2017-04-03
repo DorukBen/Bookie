@@ -572,7 +572,7 @@ public class PhotoViewerActivity extends AppCompatActivity implements View.OnTou
                             String pictureUrl = responseObject.optString("pictureURL");
                             String thumbnailUrl = responseObject.optString("thumbnailURL");
 
-                            mDbManager.getUserDataSource().updateUserImage(pictureUrl, thumbnailUrl);
+                            mDbManager.Threaded(mDbManager.getUserDataSource().cUpdateUserImage(pictureUrl, thumbnailUrl));
 
                             Intent data = new Intent(BookieIntentFilters.INTENT_FILTER_PROFILE_PICTURE_CHANGED);
 

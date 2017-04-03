@@ -140,7 +140,7 @@ public class ProfileActivity extends AppCompatActivity {
             }
         }else if (requestCode == REQUEST_CODE_MESSAGE_PROCESS){
             if (resultCode == ConversationActivity.RESULT_ALL_MESSAGES_DELETED){
-                mDbManager.getMessageDataSource().deleteConversation((User) data.getParcelableExtra(ConversationActivity.EXTRA_OPPOSITE_USER));
+                mDbManager.Threaded(mDbManager.getMessageDataSource().cDeleteConversation((User) data.getParcelableExtra(ConversationActivity.EXTRA_OPPOSITE_USER)));
             }
         }
     }
