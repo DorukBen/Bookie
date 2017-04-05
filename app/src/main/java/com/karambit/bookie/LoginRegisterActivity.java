@@ -313,7 +313,6 @@ public class LoginRegisterActivity extends AppCompatActivity {
                                     @Override
                                     public void onMoreInfoClick() {
                                         Intent intent = new Intent(LoginRegisterActivity.this, InfoActivity.class);
-                                        // TODO Put related header extras array
                                         startActivity(intent);
                                     }
                                 });

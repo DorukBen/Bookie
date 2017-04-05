@@ -23,11 +23,11 @@
     <string name="x_opened_sharing_for_this_book">%s opened sharing for the book</string>
     <string name="x_took">%s took the book</string>
     <string name="x_sent_the_book_to_y">%1$s sent the book to %2$s</string>
-    <string name="book_sent_from_x_to_y_and_its_lost">Book sent from %1$s to %2$s and its lost!</string>
+    <string name="book_sent_from_x_to_y_and_its_lost">Book lost while %1$s sending the book to %2$s!</string>
     <string name="x_sent_request_to_y">%1$s sent request to %2$s</string>
     <string name="x_accepted_ys_request">%1$s accepted %2$s\'s request</string>
     <string name="x_rejected_ys_request">%1$s rejected %2$s\'s request</string>
-    <string name="search_book_hint">Search for books</string>
+    <string name="search_book_hint">Search for books, users and genres…</string>
     <string name="type_message">Type a message…</string>
     <string name="pick_image_intent_text">Pick Image</string>
     <string name="desc">description</string>
@@ -124,9 +124,9 @@
 
     <string name="you_took">You took the book</string>
     <string name="you_sent_the_book_to_x">You sent the book to %s</string>
-    <string name="you_lost_the_book_while_sending_to_x">You lost the book while sending the book to %s</string>
+    <string name="book_lost_while_on_road_to_x_if_mistake_z">Book lost while you sending the book to %s</string>
     <string name="x_sent_the_book_to_you">%s sent the book to you</string>
-    <string name="book_lost_while_x_sending_to_you">Book lost while %s sending the book to you</string>
+    <string name="book_lost_while_x_sending_to_you_if_mistake_z">Book lost while %s sending the book to you</string>
     <string name="you_sent_request">You sent request to %s</string>
     <string name="you_accepted_request">You accepted %s\'s request</string>
     <string name="you_rejected_request">You rejected %s\'s request</string>
@@ -265,9 +265,9 @@
     <string name="loved_genres">Loved genres</string>
     <string name="resend_verification_code">Resend verification code</string>
     <string name="verification_code_sent">Verification code sent!</string>
-    <string name="verification">Verification</string>
+    <string name="verification">Email verification</string>
     <string name="verification_sent_info">Your verification code has sent to your email. Check your email and click the verification link.</string>
-    <string name="book_lost">You lost the book!</string>
+    <string name="you_lost_the_book">You lost the book!</string>
     <string name="feedback_info">Our team always consider your ideas and our developer team makes the dreamwork. Keep sharing your thoughts and complaints. Thanks in advance!</string>
     <string name="transactions">Transactions</string>
     <string name="who_are_we">Who are we?</string>
@@ -310,4 +310,14 @@
     <string name="sharing_is_closed_for_x">Sharing is closed for %s</string>
     <string name="click_search_for_more">Click search button for more results</string>
     <string name="search_user">Search user</string>
+    <string name="verification_info">Email verification required almost all processes in the app. This increases the security of your account and your book transactions.\nCheck your email and and click the verification link. Don\'t forget to check your spam folder in your inbox.\nIf you could not found the email, you can resend new verification link in your profile settings.</string>
+    <string name="location">Location</string>
+    <string name="location_info">The app uses your location for book transactions. So the other users can know where your books are. Also our search algorith brings to best combination of books with your location info.\nYou can change your location in your profile settings anytime.</string>
+    <string name="book_counter_info">When you join our community you can get one book. After that you have to succesfully share a book for getting more books.\nKeep sharing…</string>
+    <string name="verification_accepted_info">Your email has been verified. Keep sharing!</string>
+    <string name="bookie_support">Mantreads Support</string>
+    <string name="book_lost_info_short">Book lost!</string>
+    <string name="book_lost_info">Book lost while it is on road. So you and the other user lost 20 points!.\n\nIf you think there is a mistake please contact with %s</string>
+    <string name="add_book_page_title">Add Book</string>
+    <string name="notification_page_title">Notifications</string>
 </resources>

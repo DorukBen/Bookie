@@ -7,6 +7,7 @@ import android.support.v4.content.ContextCompat;
 import android.support.v7.app.ActionBar;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
+import android.support.v7.widget.Toolbar;
 import android.text.Editable;
 import android.text.Spannable;
 import android.text.SpannableString;
@@ -70,17 +71,27 @@ public class OtherUserProfileSettingsActivity extends AppCompatActivity {
 
         mUser = getIntent().getParcelableExtra(EXTRA_USER);
 
+        SpannableString s = new SpannableString(mUser.getName());
+        s.setSpan(new TypefaceSpan(this, MainActivity.FONT_GENERAL_TITLE), 0, s.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+        float titleSize = getResources().getDimension(R.dimen.actionbar_title_size);
+        s.setSpan(new AbsoluteSizeSpan((int) titleSize), 0, s.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+
+        Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
+        setSupportActionBar(toolbar);
         final ActionBar actionBar = getSupportActionBar();
         if (actionBar != null) {
             actionBar.setElevation(getResources().getDimension(R.dimen.actionbar_starting_elevation));
-            SpannableString s = new SpannableString(mUser.getName());
-            s.setSpan(new TypefaceSpan(this, MainActivity.FONT_GENERAL_TITLE), 0, s.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
-            float titleSize = getResources().getDimension(R.dimen.actionbar_title_size);
-            s.setSpan(new AbsoluteSizeSpan((int) titleSize), 0, s.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
-            actionBar.setTitle(s);
 
-            actionBar.setDisplayHomeAsUpEnabled(true);
-            actionBar.setHomeAsUpIndicator(R.drawable.ic_arrow_back_primary_text_color);
+            actionBar.setTitle("");
+
+            ((TextView) toolbar.findViewById(R.id.toolbarTitle)).setText(s);
+
+            toolbar.findViewById(R.id.closeButton).setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    finish();
+                }
+            });
         }
 
         final ScrollView scrollView = (ScrollView) findViewById(R.id.settingsScrollView);

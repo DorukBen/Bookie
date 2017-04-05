@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<RelativeLayout
+<LinearLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
@@ -7,90 +7,132 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@color/colorPrimary"
+    android:orientation="vertical"
     tools:context="com.karambit.bookie.ConversationActivity">
 
-    <android.support.v7.widget.CardView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        app:cardUseCompatPadding="true"
-        android:layout_centerHorizontal="true"
-        android:layout_marginTop="4dp"
-        app:cardElevation="4dp">
+    <android.support.v7.widget.Toolbar
+        android:id="@+id/toolbar"
+        android:layout_width="match_parent"
+        android:layout_height="?attr/actionBarSize"
+        android:layout_weight="0"
+        android:background="@color/colorPrimary"
+        android:contentInsetLeft="0dp"
+        android:contentInsetStart="0dp"
+        android:theme="@style/ThemeOverlay.AppCompat.ActionBar"
+        app:contentInsetLeft="0dp"
+        app:contentInsetStart="0dp"
+        app:popupTheme="@style/ThemeOverlay.AppCompat.Light">
 
-        <TextView
-            android:id="@+id/dateLabelTextView"
+        <ImageButton
+            android:id="@+id/closeButton"
+            style="@style/Base.Widget.AppCompat.ActionButton"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:textSize="14sp"
-            android:padding="6dp"
-            android:textAllCaps="true"
-            android:textColor="@color/secondaryTextColor"
-            android:visibility="gone"
-            android:text="DATE"/>
+            android:layout_alignParentLeft="true"
+            android:layout_centerVertical="true"
+            android:src="@drawable/ic_arrow_back_black_24dp"
+            android:tint="@color/primaryTextColor"/>
 
-    </android.support.v7.widget.CardView>
-
-    <android.support.v7.widget.RecyclerView
-        android:id="@+id/conversationRecyclerView"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:layout_above="@+id/messageInputCardView"
-        android:clipToPadding="false"
-        android:overScrollMode="never"
-        android:paddingBottom="8dp"
-        android:paddingTop="48dp"/>
-
-    <android.support.v7.widget.CardView
-        android:id="@+id/messageInputCardView"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_alignParentBottom="true"
-        android:layout_marginBottom="16dp"
-        android:layout_marginLeft="16dp"
-        android:layout_marginRight="16dp"
-        app:cardCornerRadius="@dimen/cardview_default_radius"
-        app:cardElevation="4dp">
-
-        <RelativeLayout
-            android:layout_width="match_parent"
+        <TextView
+            android:id="@+id/toolbarTitle"
+            style="@style/TextAppearance.AppCompat.Widget.ActionBar.Title"
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:gravity="center_vertical"
-            android:orientation="horizontal">
+            android:layout_centerVertical="true"
+            android:layout_toLeftOf="@+id/doneButton"
+            android:layout_toRightOf="@+id/closeButton"
+            android:singleLine="true"
+            android:text="@string/add_book_page_title"
+            android:textColor="@color/primaryTextColor"/>
+    </android.support.v7.widget.Toolbar>
 
-            <EditText
-                android:id="@+id/messageEditText"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginRight="4dp"
-                android:layout_toLeftOf="@+id/messageSendButton"
-                android:background="@color/transparent"
-                android:hint="@string/type_message"
-                android:inputType="textMultiLine|textCapSentences"
-                android:maxLength="10000"
-                android:maxLines="6"
-                android:minHeight="48dp"
-                android:paddingBottom="8dp"
-                android:paddingLeft="16dp"
-                android:paddingRight="4dp"
-                android:paddingTop="8dp"
-                android:textColor="@color/primaryTextColor"
-                android:textColorHint="@color/secondaryTextColor"
-                android:textSize="16sp"
-                />
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
 
-            <ImageButton
-                android:id="@+id/messageSendButton"
-                style="@style/Widget.AppCompat.ActionButton"
+        <android.support.v7.widget.CardView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_centerHorizontal="true"
+            android:layout_marginTop="4dp"
+            app:cardElevation="4dp"
+            app:cardUseCompatPadding="true">
+
+            <TextView
+                android:id="@+id/dateLabelTextView"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_alignParentRight="true"
-                android:alpha="0.5"
-                android:clickable="false"
-                android:src="@drawable/ic_send_black_24dp"
-                android:tint="@color/secondaryTextColor"/>
+                android:padding="6dp"
+                android:text="DATE"
+                android:textAllCaps="true"
+                android:textColor="@color/secondaryTextColor"
+                android:textSize="14sp"
+                android:visibility="gone"/>
 
-        </RelativeLayout>
+        </android.support.v7.widget.CardView>
 
-    </android.support.v7.widget.CardView>
+        <android.support.v7.widget.RecyclerView
+            android:id="@+id/conversationRecyclerView"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:layout_above="@+id/messageInputCardView"
+            android:clipToPadding="false"
+            android:overScrollMode="never"
+            android:paddingBottom="8dp"
+            android:paddingTop="48dp"/>
 
-</RelativeLayout>
+        <android.support.v7.widget.CardView
+            android:id="@+id/messageInputCardView"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_alignParentBottom="true"
+            android:layout_marginBottom="16dp"
+            android:layout_marginLeft="16dp"
+            android:layout_marginRight="16dp"
+            app:cardCornerRadius="@dimen/cardview_default_radius"
+            app:cardElevation="4dp">
+
+            <RelativeLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
+
+                <EditText
+                    android:id="@+id/messageEditText"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginRight="4dp"
+                    android:layout_toLeftOf="@+id/messageSendButton"
+                    android:background="@color/transparent"
+                    android:hint="@string/type_message"
+                    android:inputType="textMultiLine|textCapSentences"
+                    android:maxLength="10000"
+                    android:maxLines="6"
+                    android:minHeight="48dp"
+                    android:paddingBottom="8dp"
+                    android:paddingLeft="16dp"
+                    android:paddingRight="4dp"
+                    android:paddingTop="8dp"
+                    android:textColor="@color/primaryTextColor"
+                    android:textColorHint="@color/secondaryTextColor"
+                    android:textSize="16sp"
+                    />
+
+                <ImageButton
+                    android:id="@+id/messageSendButton"
+                    style="@style/Widget.AppCompat.ActionButton"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_alignParentRight="true"
+                    android:alpha="0.5"
+                    android:clickable="false"
+                    android:src="@drawable/ic_send_black_24dp"
+                    android:tint="@color/secondaryTextColor"/>
+
+            </RelativeLayout>
+
+        </android.support.v7.widget.CardView>
+
+    </RelativeLayout>
+</LinearLayout>

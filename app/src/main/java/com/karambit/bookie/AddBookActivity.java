@@ -3,7 +3,10 @@ package com.karambit.bookie;
 import android.Manifest;
 import android.app.Dialog;
 import android.app.ProgressDialog;
+import android.content.BroadcastReceiver;
+import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.pm.PackageManager;
 import android.content.res.Resources;
 import android.graphics.Bitmap;
@@ -15,6 +18,7 @@ import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
 import android.support.v4.content.LocalBroadcastManager;
 import android.support.v7.app.AppCompatActivity;
+import android.support.v7.widget.Toolbar;
 import android.text.InputType;
 import android.text.Spannable;
 import android.text.SpannableString;
@@ -26,8 +30,10 @@ import android.view.WindowManager;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageView;
+import android.widget.TextView;
 import android.widget.Toast;
 
+import com.google.android.gms.maps.model.LatLng;
 import com.karambit.bookie.helper.FileNameGenerator;
 import com.karambit.bookie.helper.GenrePickerDialog;
 import com.karambit.bookie.helper.ImagePicker;
@@ -60,9 +66,7 @@ public class AddBookActivity extends AppCompatActivity {
 
     private static final String UPLOAD_IMAGE_URL = "BookCreate";
 
-    public static final int RESULT_BOOK_CREATED = 1;
     private static final int REQUEST_CODE_CUSTOM_PERMISSIONS = 2;
-    private static final int REQUEST_CODE_LOCATION = 3;
 
     private int mScreenHeight;
     private int mScreenWidth;
@@ -78,6 +82,8 @@ public class AddBookActivity extends AppCompatActivity {
     private File mSavedBookImageFile;
     private ProgressDialog mProgressDialog;
     private InformationDialog mInformationDialog;
+
+    private BroadcastReceiver mMessageReceiver;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -103,7 +109,10 @@ public class AddBookActivity extends AppCompatActivity {
                 @Override
                 public void onMoreInfoClick() {
                     Intent intent = new Intent(AddBookActivity.this, InfoActivity.class);
-                    // TODO Put related header extras array
+                    intent.putExtra(InfoActivity.EXTRA_INFO_CODES, new int[]{
+                        InfoActivity.INFO_CODE_VERIFICATION,
+                        InfoActivity.INFO_CODE_LOCATION
+                    });
                     startActivity(intent);
                 }
             });
@@ -134,7 +143,9 @@ public class AddBookActivity extends AppCompatActivity {
                 @Override
                 public void onMoreInfoClick() {
                     Intent intent = new Intent(AddBookActivity.this, InfoActivity.class);
-                    // TODO Put related header extras array
+                    intent.putExtra(InfoActivity.EXTRA_INFO_CODES, new int[]{
+                        InfoActivity.INFO_CODE_VERIFICATION
+                    });
                     startActivity(intent);
                 }
             });
@@ -163,7 +174,9 @@ public class AddBookActivity extends AppCompatActivity {
                 @Override
                 public void onMoreInfoClick() {
                     Intent intent = new Intent(AddBookActivity.this, InfoActivity.class);
-                    // TODO Put related header extras array
+                    intent.putExtra(InfoActivity.EXTRA_INFO_CODES, new int[]{
+                        InfoActivity.INFO_CODE_LOCATION
+                    });
                     startActivity(intent);
                 }
             });
@@ -171,7 +184,7 @@ public class AddBookActivity extends AppCompatActivity {
                 @Override
                 public void onExtraButtonClick() {
                     Intent intent = new Intent(AddBookActivity.this, LocationActivity.class);
-                    startActivityForResult(intent, REQUEST_CODE_LOCATION);
+                    startActivity(intent);
                 }
             });
             mInformationDialog.show();
@@ -179,15 +192,32 @@ public class AddBookActivity extends AppCompatActivity {
 
         //Changes action bar font style by getting font.ttf from assets/fonts action bars font style doesn't
         // change from styles.xml
-        SpannableString s = new SpannableString(getResources().getString(R.string.app_name));
-        s.setSpan(new TypefaceSpan(this, MainActivity.FONT_APP_NAME_TITLE), 0, s.length(),
+        SpannableString s = new SpannableString(getResources().getString(R.string.add_book_page_title));
+        s.setSpan(new TypefaceSpan(this, MainActivity.FONT_GENERAL_TITLE), 0, s.length(),
                 Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
         float titleSize = getResources().getDimension(R.dimen.actionbar_app_name_title_size);
         s.setSpan(new AbsoluteSizeSpan((int) titleSize), 0, s.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
 
         // Update the action bar title with the TypefaceSpan instance
+        Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
+        setSupportActionBar(toolbar);
         if (getSupportActionBar() != null) {
-            getSupportActionBar().setTitle(s);
+
+            ((TextView) toolbar.findViewById(R.id.toolbarTitle)).setText(s);
+
+            toolbar.findViewById(R.id.closeButton).setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    finish();
+                }
+            });
+
+            toolbar.findViewById(R.id.doneButton).setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    addBookDone();
+                }
+            });
         }
 
         mNameEditText = (EditText) findViewById(R.id.bookNameEditText);
@@ -209,68 +239,6 @@ public class AddBookActivity extends AppCompatActivity {
         View parallaxLayout = findViewById(R.id.parallaxLayout);
         parallaxLayout.getLayoutParams().height = mScreenHeight / 5 * 3;
         parallaxLayout.requestLayout();
-
-        findViewById(R.id.closeButton).setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                finish();
-            }
-        });
-
-        findViewById(R.id.doneButton).setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-
-                if (areAllInputsValid()) {
-
-                    // State prompt dialog
-                    final Dialog statePromptDialog = new Dialog(AddBookActivity.this);
-                    statePromptDialog.setContentView(R.layout.book_state_prompt_dialog);
-
-//                    WindowManager.LayoutParams lp = new WindowManager.LayoutParams();
-//                    Window window = statePromptDialog.getWindow();
-//
-//                    lp.copyFrom(window.getAttributes());
-//                    lp.width = WindowManager.LayoutParams.MATCH_PARENT;
-//                    lp.height = WindowManager.LayoutParams.WRAP_CONTENT;
-//
-//                    window.setAttributes(lp);
-
-                    Button stateReadingButton = (Button) statePromptDialog.findViewById(R.id.stateReadingButton);
-                    Button stateOpenButton = (Button) statePromptDialog.findViewById(R.id.stateOpenToShareButton);
-                    Button stateClosedButton = (Button) statePromptDialog.findViewById(R.id.stateClosedToShareButton);
-
-                    stateReadingButton.setOnClickListener(new View.OnClickListener() {
-                        @Override
-                        public void onClick(View v) {
-                            statePromptDialog.dismiss();
-                            mSelectedState = Book.State.READING;
-                            attemptUploadBook(mNameEditText.getText().toString(), mAuthorEditText.getText().toString(), mSelectedState.getStateCode(), mSelectedGenre);
-                        }
-                    });
-
-                    stateOpenButton.setOnClickListener(new View.OnClickListener() {
-                        @Override
-                        public void onClick(View v) {
-                            statePromptDialog.dismiss();
-                            mSelectedState = Book.State.OPENED_TO_SHARE;
-                            attemptUploadBook(mNameEditText.getText().toString(), mAuthorEditText.getText().toString(), mSelectedState.getStateCode(), mSelectedGenre);
-                        }
-                    });
-
-                    stateClosedButton.setOnClickListener(new View.OnClickListener() {
-                        @Override
-                        public void onClick(View v) {
-                            statePromptDialog.dismiss();
-                            mSelectedState = Book.State.CLOSED_TO_SHARE;
-                            attemptUploadBook(mNameEditText.getText().toString(), mAuthorEditText.getText().toString(), mSelectedState.getStateCode(), mSelectedGenre);
-                        }
-                    });
-
-                    statePromptDialog.show();
-                }
-            }
-        });
 
         findViewById(R.id.bookImageImageView).setOnClickListener(new View.OnClickListener() {
             @Override
@@ -313,6 +281,72 @@ public class AddBookActivity extends AppCompatActivity {
                 genrePickerDialog.show();
             }
         });
+
+        mMessageReceiver = new BroadcastReceiver() {
+            @Override
+            public void onReceive(Context context, Intent intent) {
+                if (intent.getAction().equalsIgnoreCase(BookieIntentFilters.INTENT_FILTER_LOCATION_UPDATED)) {
+                    LatLng location = intent.getParcelableExtra(BookieIntentFilters.EXTRA_LOCATION);
+                    if (location != null) {
+                        if (mInformationDialog != null && mInformationDialog.isShowing()) {
+                            Toast.makeText(AddBookActivity.this, R.string.you_can_add_book, Toast.LENGTH_SHORT).show();
+                            mInformationDialog.dismiss();
+                        }
+                    }
+                }
+            }
+        };
+
+        LocalBroadcastManager.getInstance(this).registerReceiver(mMessageReceiver, new IntentFilter(BookieIntentFilters.INTENT_FILTER_LOCATION_UPDATED));
+
+    }
+
+    private void addBookDone() {
+        if (areAllInputsValid()) {
+
+            // State prompt dialog
+            final Dialog statePromptDialog = new Dialog(AddBookActivity.this);
+            statePromptDialog.setContentView(R.layout.book_state_prompt_dialog);
+
+            Button stateReadingButton = (Button) statePromptDialog.findViewById(R.id.stateReadingButton);
+            Button stateOpenButton = (Button) statePromptDialog.findViewById(R.id.stateOpenToShareButton);
+            Button stateClosedButton = (Button) statePromptDialog.findViewById(R.id.stateClosedToShareButton);
+
+            stateReadingButton.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    statePromptDialog.dismiss();
+                    mSelectedState = Book.State.READING;
+                    attemptUploadBook(mNameEditText.getText().toString(), mAuthorEditText.getText().toString(), mSelectedState.getStateCode(), mSelectedGenre);
+                }
+            });
+
+            stateOpenButton.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    statePromptDialog.dismiss();
+                    mSelectedState = Book.State.OPENED_TO_SHARE;
+                    attemptUploadBook(mNameEditText.getText().toString(), mAuthorEditText.getText().toString(), mSelectedState.getStateCode(), mSelectedGenre);
+                }
+            });
+
+            stateClosedButton.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    statePromptDialog.dismiss();
+                    mSelectedState = Book.State.CLOSED_TO_SHARE;
+                    attemptUploadBook(mNameEditText.getText().toString(), mAuthorEditText.getText().toString(), mSelectedState.getStateCode(), mSelectedGenre);
+                }
+            });
+
+            statePromptDialog.show();
+        }
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        LocalBroadcastManager.getInstance(this).unregisterReceiver(mMessageReceiver);
     }
 
     @Override
@@ -333,11 +367,6 @@ public class AddBookActivity extends AppCompatActivity {
 
                 findViewById(R.id.parallaxLayout).getLayoutParams().height = mScreenWidth * 96 / 72;
                 findViewById(R.id.parallaxLayout).requestLayout();
-            }
-        } else if (requestCode == REQUEST_CODE_LOCATION && mInformationDialog.isShowing()) {
-            if (resultCode == LocationActivity.RESULT_LOCATION_UPDATED) {
-                Toast.makeText(this, R.string.you_can_add_book, Toast.LENGTH_SHORT).show();
-                mInformationDialog.dismiss();
             }
         }
     }

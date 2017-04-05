@@ -3,13 +3,13 @@ package com.karambit.bookie;
 import android.content.Intent;
 import android.os.Bundle;
 import android.support.v4.content.ContextCompat;
+import android.support.v4.content.LocalBroadcastManager;
 import android.support.v7.app.ActionBar;
 import android.support.v7.app.AppCompatActivity;
+import android.support.v7.widget.Toolbar;
 import android.text.Spannable;
 import android.text.SpannableString;
-import android.view.Menu;
-import android.view.MenuInflater;
-import android.view.MenuItem;
+import android.text.style.AbsoluteSizeSpan;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
@@ -24,13 +24,12 @@ import com.google.android.gms.location.places.ui.SupportPlaceAutocompleteFragmen
 import com.google.android.gms.maps.model.LatLng;
 import com.karambit.bookie.database.DBManager;
 import com.karambit.bookie.helper.ComfortableProgressDialog;
-import com.karambit.bookie.helper.ElevationScrollListener;
-import com.karambit.bookie.helper.LayoutUtils;
 import com.karambit.bookie.helper.SessionManager;
 import com.karambit.bookie.helper.TypefaceSpan;
 import com.karambit.bookie.model.User;
 import com.karambit.bookie.rest_api.BookieClient;
 import com.karambit.bookie.rest_api.UserApi;
+import com.karambit.bookie.service.BookieIntentFilters;
 import com.orhanobut.logger.Logger;
 
 import org.json.JSONException;
@@ -47,11 +46,6 @@ public class LocationActivity extends AppCompatActivity {
 
     public static final String TAG = LocationActivity.class.getSimpleName();
 
-    public static final int RESULT_LOCATION_UPDATED = 1;
-
-    public static final String EXTRA_LATITUDE = "latitude";
-    public static final String EXTRA_LONGITUDE = "longitude";
-
     private LatLng mLatLng;
 
     private DBManager mDbManager;
@@ -61,14 +55,32 @@ public class LocationActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_location);
 
+        Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
+        setSupportActionBar(toolbar);
         ActionBar actionBar = getSupportActionBar();
         if (actionBar != null){
             SpannableString s = new SpannableString(getString(R.string.select_location));
             s.setSpan(new TypefaceSpan(this, MainActivity.FONT_GENERAL_TITLE), 0, s.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
-            actionBar.setElevation(LayoutUtils.DP * ElevationScrollListener.ACTIONBAR_ELEVATION_DP);
-            actionBar.setTitle(s);
-            actionBar.setDisplayHomeAsUpEnabled(true);
-            actionBar.setHomeAsUpIndicator(R.drawable.ic_close_primary_text_color);
+            float elevation = getResources().getDimension(R.dimen.actionbar_max_elevation);
+            actionBar.setElevation(elevation);
+            float titleSize = getResources().getDimension(R.dimen.actionbar_title_size);
+            s.setSpan(new AbsoluteSizeSpan((int) titleSize), 0, s.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+
+            ((TextView) toolbar.findViewById(R.id.toolbarTitle)).setText(s);
+
+            toolbar.findViewById(R.id.closeButton).setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    finish();
+                }
+            });
+
+            toolbar.findViewById(R.id.doneButton).setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    doneLocation();
+                }
+            });
         }
 
         mDbManager = new DBManager(this);
@@ -115,51 +127,35 @@ public class LocationActivity extends AppCompatActivity {
             @Override
             public void onClick(View v) {
                 Intent intent = new Intent(LocationActivity.this, InfoActivity.class);
-                // TODO Put related header extras array
+                intent.putExtra(InfoActivity.EXTRA_INFO_CODES, new int[]{
+                    InfoActivity.INFO_CODE_LOCATION
+                });
                 startActivity(intent);
             }
         });
     }
 
-    @Override
-    public boolean onCreateOptionsMenu(Menu menu) {
-        MenuInflater inflater = getMenuInflater();
-        inflater.inflate(R.menu.done_menu, menu);
-        return super.onCreateOptionsMenu(menu);
-    }
+    private void doneLocation() {
+        if (BookieApplication.hasNetwork()) {
+            if (mLatLng != null && getSupportFragmentManager().findFragmentById(R.id.place_autocomplete_fragment).getView() != null) {
 
-    @Override
-    public boolean onOptionsItemSelected(MenuItem item) {
-        switch (item.getItemId()) {
+                final ComfortableProgressDialog progressDialog = new ComfortableProgressDialog(LocationActivity.this);
+                progressDialog.setMessage(R.string.please_wait);
+                progressDialog.setCancelable(false);
+                progressDialog.show();
 
-            case android.R.id.home:
-                finish();
-                return true;
+                User.Details currentUserDetails = SessionManager.getCurrentUserDetails(LocationActivity.this);
+                String email = currentUserDetails.getEmail();
+                String password = currentUserDetails.getPassword();
 
-            case R.id.action_done: {
+                updateLocation(email, password, mLatLng.latitude, mLatLng.longitude, progressDialog);
 
-                if (mLatLng != null && getSupportFragmentManager().findFragmentById(R.id.place_autocomplete_fragment).getView() != null) {
-
-                    final ComfortableProgressDialog progressDialog = new ComfortableProgressDialog(LocationActivity.this);
-                    progressDialog.setMessage(R.string.please_wait);
-                    progressDialog.setCancelable(false);
-                    progressDialog.show();
-
-                    User.Details currentUserDetails = SessionManager.getCurrentUserDetails(LocationActivity.this);
-                    String email = currentUserDetails.getEmail();
-                    String password = currentUserDetails.getPassword();
-
-                    updateLocation(email, password, mLatLng.latitude, mLatLng.longitude, progressDialog);
-
-                } else {
-                    Toast.makeText(this, R.string.select_location_warning, Toast.LENGTH_SHORT).show();
-                }
-
-                return true;
+            } else {
+                Toast.makeText(LocationActivity.this, R.string.select_location_warning, Toast.LENGTH_SHORT).show();
             }
+        } else {
+            Toast.makeText(this, R.string.no_internet_connection, Toast.LENGTH_SHORT).show();
         }
-
-        return super.onOptionsItemSelected(item);
     }
 
     private void updateLocation(String email, String password, final double latitude, final double longitude, final ComfortableProgressDialog progressDialog) {
@@ -193,9 +189,12 @@ public class LocationActivity extends AppCompatActivity {
                                 mDbManager.Threaded(mDbManager.getUserDataSource().cUpdateUserLocation(latitude, longitude));
                                 SessionManager.updateCurrentUserFromDB(LocationActivity.this);
                                 SessionManager.setLocationText(null);
-                                getIntent().putExtra(EXTRA_LATITUDE, latitude);
-                                getIntent().putExtra(EXTRA_LONGITUDE, longitude);
-                                setResult(RESULT_LOCATION_UPDATED, getIntent());
+
+                                Intent intent = new Intent(BookieIntentFilters.INTENT_FILTER_LOCATION_UPDATED);
+                                intent.putExtra(BookieIntentFilters.EXTRA_LOCATION, new LatLng(latitude, longitude));
+
+                                LocalBroadcastManager.getInstance(LocationActivity.this).sendBroadcast(intent);
+
                                 finish();
                             } else {
                                 int errorCode = responseObject.getInt("errorCode");

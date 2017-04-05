@@ -14,18 +14,22 @@ import android.support.v4.view.ViewCompat;
 import android.support.v4.view.ViewPager;
 import android.support.v7.app.ActionBar;
 import android.support.v7.app.AppCompatActivity;
+import android.support.v7.widget.Toolbar;
 import android.text.Spannable;
 import android.text.SpannableString;
 import android.text.style.AbsoluteSizeSpan;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.MotionEvent;
 import android.view.View;
+import android.widget.EditText;
+import android.widget.ImageButton;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.TabHost;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import com.karambit.bookie.database.DBManager;
@@ -33,13 +37,14 @@ import com.karambit.bookie.fragment.HomeFragment;
 import com.karambit.bookie.fragment.MessageFragment;
 import com.karambit.bookie.fragment.ProfileFragment;
 import com.karambit.bookie.fragment.SearchFragment;
+import com.karambit.bookie.helper.ElevationScrollListener;
+import com.karambit.bookie.helper.LayoutUtils;
 import com.karambit.bookie.helper.SessionManager;
 import com.karambit.bookie.helper.TabFactory;
 import com.karambit.bookie.helper.TypefaceSpan;
 import com.karambit.bookie.helper.ViewPagerAdapter;
 import com.karambit.bookie.model.User;
 import com.karambit.bookie.rest_api.BookieClient;
-import com.karambit.bookie.rest_api.ErrorCodes;
 import com.karambit.bookie.rest_api.FcmApi;
 import com.karambit.bookie.service.BookieIntentFilters;
 import com.karambit.bookie.service.FcmPrefManager;
@@ -73,7 +78,6 @@ public class MainActivity extends AppCompatActivity implements TabHost.OnTabChan
 
     private static final int REQUEST_CODE_LOGIN_REGISTER_ACTIVITY = 1;
     private static final int REQUEST_CODE_CURRENT_USER_PROFILE_SETTINGS_ACTIVITY = 2;
-    private static final int REQUEST_CODE_ADD_BOOK_ACTIVITY = 3;
     private static final int REQUEST_CODE_CONVERSATION_ACTIVITY = 4;
     private static final int REQUEST_CODE_NOTIFICATION_ACTIVITY = 5;
 
@@ -99,6 +103,8 @@ public class MainActivity extends AppCompatActivity implements TabHost.OnTabChan
     private boolean mIsBackPressed = false;
     private BroadcastReceiver mMessageReceiver;
     private Menu mMenu;
+    private TextView mErrorView;
+    private LinearLayout mSearchContainer;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -110,6 +116,8 @@ public class MainActivity extends AppCompatActivity implements TabHost.OnTabChan
 
         mDbManager = new DBManager(this);
         mDbManager.open();
+
+        mErrorView = ((TextView) findViewById(R.id.errorView));
 
         boolean loggedIn = SessionManager.isLoggedIn(this);
         if (!loggedIn) {
@@ -129,7 +137,7 @@ public class MainActivity extends AppCompatActivity implements TabHost.OnTabChan
             }
         }
 
-            //Changes action bar font style by getting font.ttf from assets/fonts action bars font style doesn't
+        //Changes action bar font style by getting font.ttf from assets/fonts action bars font style doesn't
         // change from styles.xml
         SpannableString s = new SpannableString(getResources().getString(R.string.app_name));
         s.setSpan(new TypefaceSpan(this, FONT_APP_NAME_TITLE), 0, s.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
@@ -137,12 +145,16 @@ public class MainActivity extends AppCompatActivity implements TabHost.OnTabChan
         s.setSpan(new AbsoluteSizeSpan((int) titleSize), 0, s.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
 
         // Update the action bar title with the TypefaceSpan instance
-        if(getSupportActionBar() != null){
+        Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
+        setSupportActionBar(toolbar);
+        if (getSupportActionBar() != null) {
             mActionBar = getSupportActionBar();
             mActionBar.setTitle(s);
             float elevation = getResources().getDimension(R.dimen.actionbar_starting_elevation);
             mActionBar.setElevation(elevation);
         }
+
+        mSearchContainer = (LinearLayout) findViewById(R.id.searchContainer);
 
         initializeTabHost(mTabHost);
 
@@ -180,7 +192,13 @@ public class MainActivity extends AppCompatActivity implements TabHost.OnTabChan
     public boolean onOptionsItemSelected(MenuItem item) {
         switch (item.getItemId()) {
             case R.id.action_more:
-                startActivityForResult(new Intent(this,CurrentUserProfileSettingsActivity.class), REQUEST_CODE_CURRENT_USER_PROFILE_SETTINGS_ACTIVITY);
+                // startActivityForResult for logout
+                if (BookieApplication.hasNetwork()) {
+                    startActivityForResult(new Intent(this, CurrentUserProfileSettingsActivity.class), REQUEST_CODE_CURRENT_USER_PROFILE_SETTINGS_ACTIVITY);
+                } else {
+                    showConnectionError();
+                    Toast.makeText(this, R.string.no_internet_connection, Toast.LENGTH_SHORT).show();
+                }
                 return true;
 
             case R.id.action_notification:
@@ -288,10 +306,12 @@ public class MainActivity extends AppCompatActivity implements TabHost.OnTabChan
 
         mElevations = new float[5];
         Arrays.fill(mElevations, 0);
+        mElevations[SearchFragment.VIEW_PAGER_INDEX] = ElevationScrollListener.ACTIONBAR_ELEVATION_DP * LayoutUtils.DP;
 
         return fList;
     }
 
+    @SuppressWarnings("RestrictedApi")
     @Override
     public void onTabChanged(String s) {
         int pos = mTabHost.getCurrentTab();
@@ -314,11 +334,10 @@ public class MainActivity extends AppCompatActivity implements TabHost.OnTabChan
             }
 
             if (pos == SearchFragment.TAB_INDEX) {
-                mActionBar.setShowHideAnimationEnabled(false);
-                mActionBar.hide();
+                mSearchContainer.setVisibility(View.VISIBLE);
+                getSearchEditText().requestFocus();
             } else {
-                mActionBar.setShowHideAnimationEnabled(false);
-                mActionBar.show();
+                mSearchContainer.setVisibility(View.GONE);
             }
 
             mActionBar.setElevation(mElevations[pos]);
@@ -328,7 +347,7 @@ public class MainActivity extends AppCompatActivity implements TabHost.OnTabChan
         }else {
             mIndicator.setSelected(false);
             mTabHost.setCurrentTab(mOldPos);
-            startActivityForResult(new Intent(this,AddBookActivity.class), REQUEST_CODE_ADD_BOOK_ACTIVITY);
+            startActivity(new Intent(this,AddBookActivity.class));
         }
     }
 
@@ -366,15 +385,6 @@ public class MainActivity extends AppCompatActivity implements TabHost.OnTabChan
                     //Using SessionManager here to use startActivityForResult() on MainActivity
                     SessionManager.logout(this);
                     startActivityForResult(new Intent(this, LoginRegisterActivity.class), REQUEST_CODE_LOGIN_REGISTER_ACTIVITY);
-
-                } else if (resultCode == CurrentUserProfileSettingsActivity.RESULT_USER_UPDATED) {
-                    mProfileFragment.refreshProfilePage();
-                }
-                break;
-
-            case REQUEST_CODE_ADD_BOOK_ACTIVITY:
-                if (resultCode == AddBookActivity.RESULT_BOOK_CREATED){
-                    mProfileFragment.refreshProfilePage();
                 }
                 break;
 
@@ -421,7 +431,7 @@ public class MainActivity extends AppCompatActivity implements TabHost.OnTabChan
                 Intent conversationIntent = new Intent(this, ConversationActivity.class);
 
                 conversationIntent.putExtra(ConversationActivity.EXTRA_USER, intent.getParcelableExtra(EXTRA_MESSAGE_USER));
-                startActivityForResult(conversationIntent, REQUEST_CODE_CONVERSATION_ACTIVITY);
+                startActivityForResult(conversationIntent, REQUEST_CODE_CONVERSATION_ACTIVITY); // TODO Bureye bak Result olması lazım mı?
             }
 
             mViewPager.setCurrentItem(MessageFragment.TAB_INDEX, false);
@@ -430,13 +440,6 @@ public class MainActivity extends AppCompatActivity implements TabHost.OnTabChan
         } else if (intent.getParcelableExtra(EXTRA_NOTIFICATION) != null){
             startActivity(new Intent(this, NotificationActivity.class));
         }
-    }
-
-    public void setActionBarElevation(float dp, int tabIndex) {
-        if (mActionBar != null && tabIndex == mTabHost.getCurrentTab()) {
-            mActionBar.setElevation(dp);
-        }
-        mElevations[tabIndex] = dp;
     }
 
     public void fetchNotificationMenuItemValue() {
@@ -589,7 +592,51 @@ public class MainActivity extends AppCompatActivity implements TabHost.OnTabChan
             }
 
         }
+    }
 
+    public void hideError() {
+        if (mErrorView != null) {
+            mErrorView.setVisibility(View.GONE);
+        }
+    }
 
+    public void showUnknownError() {
+        if (mErrorView != null) {
+            mErrorView.setVisibility(View.VISIBLE);
+            mErrorView.setText(R.string.unknown_error);
+        }
+    }
+
+    public void showConnectionError() {
+        if (mErrorView != null) {
+            mErrorView.setVisibility(View.VISIBLE);
+            mErrorView.setText(R.string.no_internet_connection);
+        }
+    }
+
+    public boolean isErrorShowing() {
+        return mErrorView.getVisibility() == View.VISIBLE;
+    }
+
+    public void setErrorViewElevation(float dp, int tabIndex) {
+        if (mErrorView != null && tabIndex == mTabHost.getCurrentTab()) {
+            ViewCompat.setElevation(mErrorView, dp);
+        }
+        mElevations[tabIndex] = dp;
+    }
+
+    public void setActionBarElevation(float dp, int tabIndex) {
+        if (mActionBar != null && tabIndex == mTabHost.getCurrentTab()) {
+            mActionBar.setElevation(dp);
+        }
+        mElevations[tabIndex] = dp;
+    }
+
+    public EditText getSearchEditText(){
+        return (EditText) mSearchContainer.findViewById(R.id.searchEditText);
+    }
+
+    public ImageButton getSearchImageButton() {
+        return (ImageButton) mSearchContainer.findViewById(R.id.searchButton);
     }
 }

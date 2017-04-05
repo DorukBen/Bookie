@@ -9,7 +9,6 @@ import android.support.v4.view.ViewCompat;
 import android.support.v7.widget.CardView;
 import android.support.v7.widget.RecyclerView;
 import android.text.TextUtils;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -75,6 +74,7 @@ public class ProfileTimelineAdapter extends RecyclerView.Adapter<RecyclerView.Vi
 
     private boolean mProgressBarActive;
     private HorizontalPagerAdapter mHorizontalPagerAdapter;
+    private boolean mNotifyItemChanged = false;
 
     public ProfileTimelineAdapter(Context context, User.Details userDetails) {
         mContext = context;
@@ -765,6 +765,7 @@ public class ProfileTimelineAdapter extends RecyclerView.Adapter<RecyclerView.Vi
                         headerViewHolder.mLocation.setVisibility(View.GONE);
                     }
                 } else {
+                    headerViewHolder.mLocation.setVisibility(View.VISIBLE);
                     headerViewHolder.mLocation.setText(SessionManager.getLocationText());
                 }
 
@@ -780,9 +781,12 @@ public class ProfileTimelineAdapter extends RecyclerView.Adapter<RecyclerView.Vi
                 CurrentlyReadingViewHolder currentlyReadingHolder = (CurrentlyReadingViewHolder) holder;
 
                 if (mHorizontalPagerAdapter != null){
-                    mHorizontalPagerAdapter.setBooks(mUserDetails.getCurrentlyReading());
-                    currentlyReadingHolder.mCycleViewPager.notifyDataSetChanged();
-                    currentlyReadingHolder.mCycleViewPager.setInfiniteCyclerManagerPagerAdapter(mHorizontalPagerAdapter);
+                    if (mNotifyItemChanged) {
+                        mHorizontalPagerAdapter.setBooks(mUserDetails.getCurrentlyReading());
+                        currentlyReadingHolder.mCycleViewPager.notifyDataSetChanged();
+                        currentlyReadingHolder.mCycleViewPager.setInfiniteCyclerManagerPagerAdapter(mHorizontalPagerAdapter);
+                        mNotifyItemChanged = false;
+                    }
                 }else{
                     mHorizontalPagerAdapter = new HorizontalPagerAdapter(mContext, mUserDetails.getCurrentlyReading());
                     currentlyReadingHolder.mCycleViewPager.setAdapter(mHorizontalPagerAdapter);
@@ -1115,6 +1119,11 @@ public class ProfileTimelineAdapter extends RecyclerView.Adapter<RecyclerView.Vi
         mUserDetails = userDetails;
         setProgressBarActive(false);
         notifyDataSetChanged();
+        mNotifyItemChanged = true;
+    }
+
+    public void setCurrentlyReadingNotifyItemChanged() {
+        mNotifyItemChanged = true;
     }
 
     public void setProgressBarActive(boolean active) {

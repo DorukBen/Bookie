@@ -1,13 +1,17 @@
 package com.karambit.bookie.fragment;
 
 
+import android.content.BroadcastReceiver;
+import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.graphics.Typeface;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
 import android.support.v4.app.Fragment;
 import android.support.v4.content.ContextCompat;
+import android.support.v4.content.LocalBroadcastManager;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.text.Editable;
@@ -29,6 +33,7 @@ import com.karambit.bookie.BookActivity;
 import com.karambit.bookie.BookieApplication;
 import com.karambit.bookie.InfoActivity;
 import com.karambit.bookie.LocationActivity;
+import com.karambit.bookie.MainActivity;
 import com.karambit.bookie.ProfileActivity;
 import com.karambit.bookie.R;
 import com.karambit.bookie.adapter.SearchAdapter;
@@ -40,6 +45,7 @@ import com.karambit.bookie.model.Book;
 import com.karambit.bookie.model.User;
 import com.karambit.bookie.rest_api.BookieClient;
 import com.karambit.bookie.rest_api.SearchApi;
+import com.karambit.bookie.service.BookieIntentFilters;
 import com.orhanobut.logger.Logger;
 
 import org.json.JSONArray;
@@ -81,12 +87,15 @@ public class SearchFragment extends Fragment {
     private ArrayList<Integer> mGenreCodes = new ArrayList<>();
     private ArrayList<Book> mBooks = new ArrayList<>();
     private ArrayList<User> mUsers = new ArrayList<>();
+    private ArrayList<User> mHistoryUsers = new ArrayList<>();
+    private ArrayList<Book> mHistoryBooks = new ArrayList<>();
 
     private int mFetchGenreCode = -1;
     private SearchAdapter mSearchAdapter;
     private DBManager mDbManager;
     private EditText mSearchEditText;
     private ImageButton mSearchButton;
+    private BroadcastReceiver mMessageReceiver;
 
     public SearchFragment() {
         // Required empty public constructor
@@ -101,7 +110,7 @@ public class SearchFragment extends Fragment {
 
         RecyclerView recyclerView = (RecyclerView) rootView.findViewById(R.id.searchResultsRecyclerView);
         recyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
-        mSearchEditText = (EditText) rootView.findViewById(R.id.searchEditText);
+        mSearchEditText = ((MainActivity) getActivity()).getSearchEditText();
 
         mDbManager = new DBManager(getContext());
         mDbManager.open();
@@ -159,7 +168,7 @@ public class SearchFragment extends Fragment {
 
         recyclerView.setAdapter(mSearchAdapter);
 
-        mSearchButton = (ImageButton) rootView.findViewById(R.id.searchButton);
+        mSearchButton = ((MainActivity) getActivity()).getSearchImageButton();
 
         mSearchButton.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -217,7 +226,7 @@ public class SearchFragment extends Fragment {
                             }
                         }
                     }, INTERVAL_SEARCH_TEXT_CHANGED_MILLIS);
-                }else {
+                } else {
                     Spannable spannable = mSearchEditText.getText();
                     if (spannable.getSpans(0, before, StyleSpan.class).length == 0) {
                         mFetchGenreCode = UNSELECTED_GENRE_CODE;
@@ -252,7 +261,9 @@ public class SearchFragment extends Fragment {
                                 @Override
                                 public void onMoreInfoClick() {
                                     Intent intent = new Intent(getActivity(), InfoActivity.class);
-                                    // TODO Put related header extras array
+                                    intent.putExtra(InfoActivity.EXTRA_INFO_CODES, new int[]{
+                                        InfoActivity.INFO_CODE_LOCATION
+                                    });
                                     startActivity(intent);
                                 }
                             });
@@ -275,7 +286,50 @@ public class SearchFragment extends Fragment {
         });
 
         showSearchHistory();
+
+        mMessageReceiver = new BroadcastReceiver() {
+            @Override
+            public void onReceive(Context context, Intent intent) {
+                if (intent.getAction().equalsIgnoreCase(BookieIntentFilters.INTENT_FILTER_DATABASE_USER_CHANGED)) {
+                    User updatedUser = intent.getParcelableExtra(BookieIntentFilters.EXTRA_USER);
+                    if (updatedUser != null) {
+                        if (mSearchAdapter.isShowHistory()) {
+                            for (int i = 0; i < mHistoryUsers.size(); i++) {
+                                User user = mHistoryUsers.get(i);
+                                if (updatedUser.equals(user)) {
+                                    mHistoryUsers.set(i, updatedUser);
+                                }
+                            }
+                            mSearchAdapter.notifyDataSetChanged();
+                        }
+                    }
+                } else if (intent.getAction().equalsIgnoreCase(BookieIntentFilters.INTENT_FILTER_DATABASE_BOOK_CHANGED)) {
+                    Book updatedBook = intent.getParcelableExtra(BookieIntentFilters.INTENT_FILTER_DATABASE_BOOK_CHANGED);
+                    if (updatedBook != null) {
+                        if (mSearchAdapter.isShowHistory()) {
+                            for (int i = 0; i < mHistoryBooks.size(); i++) {
+                                Book book = mHistoryBooks.get(i);
+                                if (updatedBook.equals(book)) {
+                                    mHistoryBooks.set(i, updatedBook);
+                                }
+                            }
+                            mSearchAdapter.notifyDataSetChanged();
+                        }
+                    }
+                }
+            }
+        };
+
+        LocalBroadcastManager.getInstance(getContext()).registerReceiver(mMessageReceiver, new IntentFilter(BookieIntentFilters.INTENT_FILTER_DATABASE_USER_CHANGED));
+        LocalBroadcastManager.getInstance(getContext()).registerReceiver(mMessageReceiver, new IntentFilter(BookieIntentFilters.INTENT_FILTER_DATABASE_BOOK_CHANGED));
+
         return rootView;
+    }
+
+    @Override
+    public void onDestroy() {
+        super.onDestroy();
+        LocalBroadcastManager.getInstance(getContext()).unregisterReceiver(mMessageReceiver);
     }
 
     private void getSearchResults(final String searchString, final boolean isSearchButtonPressed) {
@@ -334,6 +388,8 @@ public class SearchFragment extends Fragment {
                                     }
                                 }
 
+                                ((MainActivity) getActivity()).hideError();
+
                                 Logger.d("Search fetched:" +
                                              "\n\n" + Book.listToShortString(mBooks) +
                                              "\n\n" + User.listToShortString(mUsers));
@@ -344,22 +400,35 @@ public class SearchFragment extends Fragment {
 
                                 Logger.e("Error true in response: errorCode = " + errorCode);
 
+                                ((MainActivity) getActivity()).showUnknownError();
+
+                                // TODO Error sadece resim gösterilecek
                                 mSearchAdapter.setError(SearchAdapter.ERROR_TYPE_UNKNOWN_ERROR);
+
+                                ((MainActivity) getActivity()).showUnknownError();
                             }
                         } else {
                             Logger.e("Response body is null. (Search Page Error)");
+
                             mSearchAdapter.setError(SearchAdapter.ERROR_TYPE_UNKNOWN_ERROR);
+
+                            ((MainActivity) getActivity()).showUnknownError();
                         }
                     } else {
                         Logger.e("Response object is null. (Search Page Error)");
+
                         mSearchAdapter.setError(SearchAdapter.ERROR_TYPE_UNKNOWN_ERROR);
+
+                        ((MainActivity) getActivity()).showUnknownError();
                     }
                 } catch (IOException | JSONException e) {
                     Logger.e("IOException or JSONException caught: " + e.getMessage());
 
                     if (BookieApplication.hasNetwork()) {
+                        ((MainActivity) getActivity()).showUnknownError();
                         mSearchAdapter.setError(SearchAdapter.ERROR_TYPE_UNKNOWN_ERROR);
                     } else {
+                        ((MainActivity) getActivity()).showConnectionError();
                         mSearchAdapter.setError(SearchAdapter.ERROR_TYPE_NO_CONNECTION);
                     }
 
@@ -369,8 +438,10 @@ public class SearchFragment extends Fragment {
             @Override
             public void onFailure(Call<ResponseBody> call, Throwable t) {
                 if (BookieApplication.hasNetwork()) {
+                    ((MainActivity) getActivity()).showUnknownError();
                     mSearchAdapter.setError(SearchAdapter.ERROR_TYPE_UNKNOWN_ERROR);
                 } else {
+                    ((MainActivity) getActivity()).showConnectionError();
                     mSearchAdapter.setError(SearchAdapter.ERROR_TYPE_NO_CONNECTION);
                 }
 
@@ -446,11 +517,11 @@ public class SearchFragment extends Fragment {
     }
 
     private void showSearchHistory() {
-        ArrayList<Book> historyBooks = mDbManager.getSearchBookDataSource().getAllBooks();
-        ArrayList<User> historyUsers = mDbManager.getSearchUserDataSource().getAllUsers();
+        mHistoryBooks = mDbManager.getSearchBookDataSource().getAllBooks();
+        mHistoryUsers = mDbManager.getSearchUserDataSource().getAllUsers();
 
-        if (historyBooks.size() + historyUsers.size() > 0) {
-            mSearchAdapter.showHistory(historyBooks, historyUsers);
+        if (mHistoryBooks.size() + mHistoryUsers.size() > 0) {
+            mSearchAdapter.showHistory(mHistoryBooks, mHistoryUsers);
         } else {
             mSearchAdapter.hideHistory();
             mSearchAdapter.setWarning(SearchAdapter.WARNING_TYPE_NOTHING_TO_SHOW);

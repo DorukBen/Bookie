@@ -152,4 +152,14 @@ public class InformationDialog extends Dialog {
             }
         });
     }
+
+    public void setTopSectionColor(int color) {
+        findViewById(R.id.dialogInformationTopSection).setBackgroundColor(color);
+    }
+
+    public void setButtonColor(int color) {
+        mOkButton.setTextColor(color);
+        mMoreInfoButton.setTextColor(color);
+        mExtraButton.setTextColor(color);
+    }
 }

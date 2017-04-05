@@ -14,6 +14,7 @@ import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.SimpleItemAnimator;
+import android.support.v7.widget.Toolbar;
 import android.text.Editable;
 import android.text.Spannable;
 import android.text.SpannableString;
@@ -94,7 +95,25 @@ public class ConversationActivity extends AppCompatActivity {
                 Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
         final float titleSize = getResources().getDimension(R.dimen.actionbar_title_size);
         s.setSpan(new AbsoluteSizeSpan((int) titleSize), 0, s.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
-        getSupportActionBar().setTitle(s);
+
+        Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
+        setSupportActionBar(toolbar);
+        if (getSupportActionBar() != null){
+            getSupportActionBar().setTitle("");
+            float elevation = getResources().getDimension(R.dimen.actionbar_max_elevation);
+            getSupportActionBar().setElevation(elevation);
+
+            ((TextView) toolbar.findViewById(R.id.toolbarTitle)).setText(s);
+
+            toolbar.findViewById(R.id.closeButton).setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    finish();
+                }
+            });
+
+            //TODO isme tıklanınca gitsin
+        }
 
         mDbManager = new DBManager(this);
         mDbManager.open();

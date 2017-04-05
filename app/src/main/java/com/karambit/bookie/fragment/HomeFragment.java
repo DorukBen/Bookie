@@ -9,7 +9,6 @@ import android.support.v7.widget.RecyclerView;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.Toast;
 
 import com.karambit.bookie.BookActivity;
 import com.karambit.bookie.BookieApplication;
@@ -56,7 +55,6 @@ public class HomeFragment extends Fragment {
     private PullRefreshLayout mPullRefreshLayout;
     private boolean mIsBooksFetching = false;
 
-
     public HomeFragment() {
         // Required empty public constructor
     }
@@ -70,7 +68,7 @@ public class HomeFragment extends Fragment {
 
         mRecyclerView = (RecyclerView) rootView.findViewById(R.id.homeRecyclerView);
 
-        mRecyclerView.setOnScrollListener(new ElevationScrollListener((MainActivity) getActivity(), TAB_INDEX));
+        mRecyclerView.addOnScrollListener(new ElevationScrollListener((MainActivity) getActivity(), TAB_INDEX));
 
         final LinearLayoutManager linearLayoutManager = new LinearLayoutManager(getContext());
         mRecyclerView.setLayoutManager(linearLayoutManager);
@@ -80,8 +78,8 @@ public class HomeFragment extends Fragment {
             public void onScrolled(RecyclerView recyclerView, int dx, int dy) {
                 super.onScrolled(recyclerView, dx, dy);
 
-                if (isLastItemVisible() && !mIsBooksFetching){
-                    fetchHomePageBooks(false);
+                if (isLastItemVisible() && !mIsBooksFetching) {
+                    fetchHomePageBooks();
                 }
             }
         });
@@ -108,7 +106,7 @@ public class HomeFragment extends Fragment {
                 // start refresh
                 if (!mIsBooksFetching){
                     mListBooks = new ArrayList<>();
-                    fetchHomePageBooks(true);
+                    fetchHomePageBooks();
                     ((MainActivity) getActivity()).fetchNotificationMenuItemValue();
                 }
             }
@@ -122,7 +120,7 @@ public class HomeFragment extends Fragment {
         });
 
         mPullRefreshLayout.setRefreshing(true);
-        fetchHomePageBooks(true);
+        fetchHomePageBooks();
         return rootView;
     }
 
@@ -134,7 +132,7 @@ public class HomeFragment extends Fragment {
         return (pos >= numItems);
     }
 
-    private void fetchHomePageBooks(final boolean isFromTop) {
+    private void fetchHomePageBooks() {
         mIsBooksFetching = true;
         BookApi bookApi = BookieClient.getClient().create(BookApi.class);
         String fetchedBookIds;
@@ -178,6 +176,7 @@ public class HomeFragment extends Fragment {
                             boolean error = responseObject.getBoolean("error");
 
                             if (!error) {
+
                                 if (mListBooks.size() > 0){
                                     JSONArray listBooksArray = responseObject.getJSONArray("listBooks");
                                     ArrayList<Book> feedBooks = Book.jsonArrayToBookList(listBooksArray);
@@ -206,37 +205,57 @@ public class HomeFragment extends Fragment {
                                              "\n\nHeader Books:\n" + Book.listToShortString(mHeaderBooks) +
                                              "\nList books:\n" + Book.listToShortString(mListBooks));
 
+                                if (BookieApplication.hasNetwork()) {
+                                    ((MainActivity) getActivity()).hideError();
+                                } else {
+                                    ((MainActivity) getActivity()).showConnectionError();
+                                }
+
                             } else {
 
                                 int errorCode = responseObject.getInt("errorCode");
 
                                 Logger.e("Error true in response: errorCode = " + errorCode);
 
-                                mHomeTimelineAdapter.setError(HomeTimelineAdapter.ERROR_TYPE_UNKNOWN_ERROR);
+                                if (mHeaderBooks.isEmpty() && mListBooks.isEmpty()) {
+                                    mHomeTimelineAdapter.setError(HomeTimelineAdapter.ERROR_TYPE_UNKNOWN_ERROR);
+                                }
+
+                                ((MainActivity) getActivity()).showUnknownError();
                             }
                         }else{
                             Logger.e("Response body is null. (Home Page Error)");
-                            mHomeTimelineAdapter.setError(HomeTimelineAdapter.ERROR_TYPE_UNKNOWN_ERROR);
+
+                            if (mHeaderBooks.isEmpty() && mListBooks.isEmpty()) {
+                                mHomeTimelineAdapter.setError(HomeTimelineAdapter.ERROR_TYPE_UNKNOWN_ERROR);
+                            }
+
+                            ((MainActivity) getActivity()).showUnknownError();
                         }
                     }else {
                         Logger.e("Response object is null. (Home Page Error)");
-                        mHomeTimelineAdapter.setError(HomeTimelineAdapter.ERROR_TYPE_UNKNOWN_ERROR);
+
+                        if (mHeaderBooks.isEmpty() && mListBooks.isEmpty()) {
+                            mHomeTimelineAdapter.setError(HomeTimelineAdapter.ERROR_TYPE_UNKNOWN_ERROR);
+                        }
+
+                        ((MainActivity) getActivity()).showUnknownError();
                     }
                 } catch (IOException | JSONException e) {
                     Logger.e("IOException or JSONException caught: " + e.getMessage());
 
-                    if (BookieApplication.hasNetwork()){
-                        if(!isFromTop){
-                            Toast.makeText(getContext(), getString(R.string.unknown_error), Toast.LENGTH_SHORT).show();
-                        }else {
+                    if (mHeaderBooks.isEmpty() && mListBooks.isEmpty()) {
+                        if (BookieApplication.hasNetwork()) {
                             mHomeTimelineAdapter.setError(HomeTimelineAdapter.ERROR_TYPE_UNKNOWN_ERROR);
-                        }
-                    }else {
-                        if(!isFromTop){
-                            Toast.makeText(getContext(), getString(R.string.no_internet_connection), Toast.LENGTH_SHORT).show();
-                        }else {
+                        } else {
                             mHomeTimelineAdapter.setError(HomeTimelineAdapter.ERROR_TYPE_NO_CONNECTION);
                         }
+                    }
+
+                    if (BookieApplication.hasNetwork()) {
+                        ((MainActivity) getActivity()).showUnknownError();
+                    } else {
+                        ((MainActivity) getActivity()).showConnectionError();
                     }
                 }
 
@@ -248,18 +267,18 @@ public class HomeFragment extends Fragment {
             public void onFailure(Call<ResponseBody> call, Throwable t) {
                 Logger.e("getHomePageBooks Failure: " + t.getMessage());
 
-                if (BookieApplication.hasNetwork()){
-                    if(!isFromTop){
-                        Toast.makeText(getContext(), getString(R.string.unknown_error), Toast.LENGTH_SHORT).show();
-                    }else {
+                if (mHeaderBooks.isEmpty() && mListBooks.isEmpty()) {
+                    if (BookieApplication.hasNetwork()) {
                         mHomeTimelineAdapter.setError(HomeTimelineAdapter.ERROR_TYPE_UNKNOWN_ERROR);
-                    }
-                }else {
-                    if(!isFromTop){
-                        Toast.makeText(getContext(), getString(R.string.no_internet_connection), Toast.LENGTH_SHORT).show();
-                    }else {
+                    } else {
                         mHomeTimelineAdapter.setError(HomeTimelineAdapter.ERROR_TYPE_NO_CONNECTION);
                     }
+                }
+
+                if (BookieApplication.hasNetwork()) {
+                    ((MainActivity) getActivity()).showUnknownError();
+                } else {
+                    ((MainActivity) getActivity()).showConnectionError();
                 }
 
                 mPullRefreshLayout.setRefreshing(false);

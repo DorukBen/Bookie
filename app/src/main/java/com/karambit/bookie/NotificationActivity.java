@@ -10,9 +10,12 @@ import android.support.v7.app.ActionBar;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
+import android.support.v7.widget.Toolbar;
 import android.text.Spannable;
 import android.text.SpannableString;
 import android.text.style.AbsoluteSizeSpan;
+import android.view.View;
+import android.widget.TextView;
 
 import com.karambit.bookie.adapter.NotificationAdapter;
 import com.karambit.bookie.database.DBManager;
@@ -30,6 +33,7 @@ import java.util.ArrayList;
 public class NotificationActivity extends AppCompatActivity {
 
     public static final int RESULT_CODE_ALL_NOTIFICATION_SEENS_DELETED = 1009;
+
     private BroadcastReceiver mMessageReceiver;
     private NotificationAdapter mNotificationAdapter;
     private ArrayList<Notification> mNotifications = new ArrayList<>();
@@ -43,18 +47,29 @@ public class NotificationActivity extends AppCompatActivity {
 
         //Changes action bar font style by getting font.ttf from assets/fonts action bars font style doesn't
         // change from styles.xml
-        SpannableString s = new SpannableString(getResources().getString(R.string.app_name));
-        s.setSpan(new TypefaceSpan(this, MainActivity.FONT_APP_NAME_TITLE), 0, s.length(),
+        SpannableString s = new SpannableString(getResources().getString(R.string.notification_page_title));
+        s.setSpan(new TypefaceSpan(this, MainActivity.FONT_GENERAL_TITLE), 0, s.length(),
                 Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
         float titleSize = getResources().getDimension(R.dimen.actionbar_app_name_title_size);
         s.setSpan(new AbsoluteSizeSpan((int) titleSize), 0, s.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
 
         // Update the action bar title with the TypefaceSpan instance
+        Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
+        setSupportActionBar(toolbar);
         final ActionBar actionBar = getSupportActionBar();
         if (actionBar != null) {
-            actionBar.setTitle(s);
+            actionBar.setTitle("");
             float elevation = getResources().getDimension(R.dimen.actionbar_starting_elevation);
             actionBar.setElevation(elevation);
+
+            ((TextView) toolbar.findViewById(R.id.toolbarTitle)).setText(s);
+
+            toolbar.findViewById(R.id.closeButton).setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    finish();
+                }
+            });
         }
 
         RecyclerView recyclerView = (RecyclerView) findViewById(R.id.notificationRecyclerView);
@@ -137,11 +152,6 @@ public class NotificationActivity extends AppCompatActivity {
                 Logger.d("Notifications fetch from Local DB: " + mNotifications);
             }
         });
-    }
-
-    @Override
-    protected void onResume() {
-        super.onResume();
 
         mMessageReceiver = new BroadcastReceiver() {
             @Override
@@ -174,6 +184,28 @@ public class NotificationActivity extends AppCompatActivity {
                         mNotificationAdapter.setNotifications(mNotifications);
                         Logger.d("Book owner changed received from FCM: " + notification);
                     }
+                } else if (intent.getAction().equalsIgnoreCase(BookieIntentFilters.INTENT_FILTER_DATABASE_USER_CHANGED)) {
+                    User user = intent.getParcelableExtra(BookieIntentFilters.EXTRA_USER);
+                    if (user != null) {
+                        for (Notification notification : mNotifications) {
+                            if (notification.getOppositeUser().equals(user)) {
+                                notification.setOppositeUser(user);
+
+                                mNotificationAdapter.notifyItemChanged(mNotifications.indexOf(notification));
+                            }
+                        }
+                    }
+                } else if (intent.getAction().equalsIgnoreCase(BookieIntentFilters.INTENT_FILTER_DATABASE_BOOK_CHANGED)) {
+                    Book book = intent.getParcelableExtra(BookieIntentFilters.EXTRA_BOOK);
+                    if (book != null) {
+                        for (Notification notification : mNotifications) {
+                            if (notification.getBook().equals(book)) {
+                                notification.setBook(book);
+
+                                mNotificationAdapter.notifyItemChanged(mNotifications.indexOf(notification));
+                            }
+                        }
+                    }
                 }
             }
         };
@@ -182,18 +214,19 @@ public class NotificationActivity extends AppCompatActivity {
         LocalBroadcastManager.getInstance(this).registerReceiver(mMessageReceiver, new IntentFilter(BookieIntentFilters.FCM_INTENT_FILTER_REJECTED_REQUEST_RECEIVED));
         LocalBroadcastManager.getInstance(this).registerReceiver(mMessageReceiver, new IntentFilter(BookieIntentFilters.FCM_INTENT_FILTER_ACCEPTED_REQUEST_RECEIVED));
         LocalBroadcastManager.getInstance(this).registerReceiver(mMessageReceiver, new IntentFilter(BookieIntentFilters.FCM_INTENT_FILTER_BOOK_OWNER_CHANGED_RECEIVED));
+        LocalBroadcastManager.getInstance(this).registerReceiver(mMessageReceiver, new IntentFilter(BookieIntentFilters.INTENT_FILTER_DATABASE_USER_CHANGED));
+        LocalBroadcastManager.getInstance(this).registerReceiver(mMessageReceiver, new IntentFilter(BookieIntentFilters.INTENT_FILTER_DATABASE_BOOK_CHANGED));
+    }
 
-        mDbManager.Threaded(mDbManager.getNotificationDataSource().cUpdateAllNotificationsSeen());
-
-        setResult(NotificationActivity.RESULT_CODE_ALL_NOTIFICATION_SEENS_DELETED);
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        LocalBroadcastManager.getInstance(this).unregisterReceiver(mMessageReceiver);
     }
 
     @Override
     protected void onPause() {
         super.onPause();
-
-        LocalBroadcastManager.getInstance(this).unregisterReceiver(mMessageReceiver);
-
         mDbManager.Threaded(mDbManager.getNotificationDataSource().cUpdateAllNotificationsSeen());
 
         setResult(NotificationActivity.RESULT_CODE_ALL_NOTIFICATION_SEENS_DELETED);

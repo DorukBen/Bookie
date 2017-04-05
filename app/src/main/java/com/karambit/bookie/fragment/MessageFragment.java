@@ -12,13 +12,13 @@ import android.support.v4.app.Fragment;
 import android.support.v4.content.LocalBroadcastManager;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
-import android.util.Log;
 import android.util.SparseIntArray;
 import android.view.LayoutInflater;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
 
+import com.karambit.bookie.BookieApplication;
 import com.karambit.bookie.ConversationActivity;
 import com.karambit.bookie.MainActivity;
 import com.karambit.bookie.R;
@@ -42,7 +42,6 @@ import org.json.JSONObject;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.concurrent.Callable;
 
 import okhttp3.ResponseBody;
 import retrofit2.Call;
@@ -355,20 +354,35 @@ public class MessageFragment extends Fragment {
 
                                 Logger.d("Messages fetched from server:\n\nLast Messages:\n\n" + mLastMessages);
 
+                                ((MainActivity) getActivity()).hideError();
+
                             } else {
                                 int errorCode = responseObject.getInt("errorCode");
 
                                 Logger.e("Error true in response. errorCode = " + errorCode);
+
+                                ((MainActivity) getActivity()).showUnknownError();
                             }
                         }else{
                             Logger.e("Response body is null. (Message Fragment Error)");
+
+                            ((MainActivity) getActivity()).showUnknownError();
                         }
                     }else{
                         Logger.e("Response object is null. (Message Fragment Error)");
+
+                        ((MainActivity) getActivity()).showUnknownError();
                     }
                 } catch (IOException | JSONException e) {
                     Logger.e("JSONException or IOException caught: " + e.getMessage());
+
+                    if (!BookieApplication.hasNetwork()) {
+                        ((MainActivity) getActivity()).showConnectionError();
+                    } else {
+                        ((MainActivity) getActivity()).hideError();
+                    }
                 }
+
                 mPullRefreshLayout.setRefreshing(false);
             }
             @Override
@@ -376,6 +390,12 @@ public class MessageFragment extends Fragment {
                 Logger.e("fetchMessages() Failure: " + t.getMessage());
 
                 mPullRefreshLayout.setRefreshing(false);
+
+                if (!BookieApplication.hasNetwork()) {
+                    ((MainActivity) getActivity()).showConnectionError();
+                } else {
+                    ((MainActivity) getActivity()).hideError();
+                }
             }
         });
     }
@@ -471,6 +491,7 @@ public class MessageFragment extends Fragment {
 
                                 Logger.e("Error true in response: errorCode = " + errorCode);
                             }
+
                         }else{
                             Logger.e("Response body is null. (Upload Message State Error)");
                         }

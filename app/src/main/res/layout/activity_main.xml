@@ -1,27 +1,90 @@
 <?xml version="1.0" encoding="utf-8"?>
-<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:tools="http://schemas.android.com/tools"
-    android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    tools:context="com.karambit.bookie.MainActivity">
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+              xmlns:app="http://schemas.android.com/apk/res-auto"
+              xmlns:tools="http://schemas.android.com/tools"
+              android:layout_width="match_parent"
+              android:layout_height="match_parent"
+              android:animateLayoutChanges="true"
+              android:orientation="vertical"
+              tools:context="com.karambit.bookie.MainActivity">
+
+    <android.support.v7.widget.Toolbar
+        android:id="@+id/toolbar"
+        android:layout_width="match_parent"
+        android:layout_height="?attr/actionBarSize"
+        android:layout_weight="0"
+        android:background="@color/colorPrimary"
+        android:theme="@style/ThemeOverlay.AppCompat.ActionBar"
+        app:popupTheme="@style/ThemeOverlay.AppCompat.Light">
+
+        <LinearLayout
+            android:id="@+id/searchContainer"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:gravity="center"
+            android:orientation="horizontal"
+            android:layout_marginTop="8dp"
+            android:layout_marginBottom="8dp"
+            android:visibility="gone">
+
+            <EditText
+                android:id="@+id/searchEditText"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:imeOptions="actionDone"
+                android:hint="@string/search_book_hint"
+                android:singleLine="true"
+                android:padding="8dp"
+                android:background="@color/transparent"
+                android:textColor="@color/primaryTextColor"
+                android:textColorHint="@color/secondaryTextColor"
+                android:textSize="16sp"/>
+
+            <ImageButton
+                android:id="@+id/searchButton"
+                style="@style/Widget.AppCompat.ActionButton"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:layout_weight="0"
+                android:src="@drawable/ic_search_black_24dp"
+                android:tint="@color/primaryTextColor"/>
+
+        </LinearLayout>
+
+
+    </android.support.v7.widget.Toolbar>
+
+    <TextView
+        android:id="@+id/errorView"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_weight="0"
+        android:background="@color/error_red"
+        android:gravity="center"
+        android:minHeight="36dp"
+        android:text="@string/no_internet_connection"
+        android:textColor="@color/colorPrimary"
+        android:textSize="14sp"
+        android:textStyle="bold"
+        android:visibility="gone"/>
 
     <com.karambit.bookie.helper.NonSwipeableViewPager
         android:id="@+id/viewpager"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:layout_above="@+id/tabhost"
-        android:layout_marginBottom="-2dp"/>
+        android:layout_marginBottom="-2dp"
+        android:layout_weight="1"/>
 
     <TabHost
         android:id="@+id/tabhost"
         android:layout_width="match_parent"
-        android:layout_height="@dimen/pager_tab_strip_height"
-        android:layout_alignParentBottom="true">
+        android:layout_height="@dimen/pager_tab_strip_height">
 
         <LinearLayout
             android:layout_width="fill_parent"
             android:layout_height="wrap_content"
-            android:orientation="vertical" >
+            android:orientation="vertical">
 
             <FrameLayout
                 android:id="@android:id/tabcontent"
@@ -31,10 +94,10 @@
 
             <TabWidget
                 android:id="@android:id/tabs"
-                android:orientation="horizontal"
                 android:layout_width="fill_parent"
                 android:layout_height="wrap_content"
                 android:layout_weight="0"
+                android:orientation="horizontal"
                 android:showDividers="none"
                 android:tabStripEnabled="false"/>
 
@@ -42,4 +105,4 @@
 
     </TabHost>
 
-</RelativeLayout>
+</LinearLayout>

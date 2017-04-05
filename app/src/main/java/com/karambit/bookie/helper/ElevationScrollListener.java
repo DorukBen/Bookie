@@ -33,8 +33,16 @@ public class ElevationScrollListener extends RecyclerView.OnScrollListener {
         float elevation = getActionbarElevation(recyclerView.computeVerticalScrollOffset());
 
         if (mA != null){
+            if (mA.isErrorShowing()) {
+                mA.setErrorViewElevation(elevation, mTabIndex);
+            }
+
             mA.setActionBarElevation(elevation, mTabIndex);
         }else{
+            if (mP.isErrorShowing()) {
+                mP.setErrorViewElevation(elevation);
+            }
+
             mP.setActionBarElevation(elevation);
         }
 

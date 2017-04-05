@@ -779,4 +779,7 @@ public class SearchAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder>
         notifyDataSetChanged();
     }
 
+    public boolean isShowHistory() {
+        return mShowHistory;
+    }
 }

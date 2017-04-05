@@ -2,7 +2,8 @@
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="56dp"
-    android:paddingLeft="16dp">
+    android:paddingLeft="16dp"
+    android:layout_marginTop="12dp">
 
     <ImageButton
         android:id="@+id/clearHistory"
@@ -12,7 +13,7 @@
         android:layout_alignParentEnd="true"
         android:layout_marginRight="16dp"
         android:layout_centerVertical="true"
-        android:src="@drawable/ic_close_white_24dp"
+        android:src="@drawable/ic_conversation_delete"
         android:tint="@color/actionBarTextColor"
         style="@style/Widget.AppCompat.ActionButton"/>
 
