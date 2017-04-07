@@ -7,7 +7,6 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.os.Bundle;
-import android.support.annotation.IntegerRes;
 import android.support.v4.content.ContextCompat;
 import android.support.v4.content.LocalBroadcastManager;
 import android.support.v4.view.ViewCompat;
@@ -120,9 +119,17 @@ public class BookActivity extends AppCompatActivity {
                     if (BookieApplication.hasNetwork()) {
                         Intent intent = new Intent(BookActivity.this, BookSettingsActivity.class);
                         intent.putExtra(BookSettingsActivity.EXTRA_BOOK, mBook);
-                        User currentUser = SessionManager.getCurrentUser(BookActivity.this);
-                        boolean isAdder = mBookDetails.getAddedBy().equals(currentUser);
-                        intent.putExtra(BookSettingsActivity.EXTRA_IS_ADDER, isAdder);
+
+                        boolean hasAnyTransactions = false;
+                        int i = 0;
+                        while (i < mBookDetails.getBookProcesses().size() && hasAnyTransactions == false) {
+                            if (mBookDetails.getBookProcesses().get(i) instanceof Transaction) {
+                                hasAnyTransactions = true;
+                            }
+                            i++;
+                        }
+
+                        intent.putExtra(BookSettingsActivity.EXTRA_HAS_ANY_TRANSACTIONS, hasAnyTransactions);
                         startActivity(intent);
                     } else {
                         showConnectionError();

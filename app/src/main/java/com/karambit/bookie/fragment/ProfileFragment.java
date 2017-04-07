@@ -137,7 +137,6 @@ public class ProfileFragment extends Fragment {
         mProfileRecyclerView.getItemAnimator().setMoveDuration(DURATION_RECYCLER_VIEW_MOVE);
         mProfileRecyclerView.getItemAnimator().setRemoveDuration(DURATION_RECYCLER_VIEW_REMOVE);
 
-
         mDbManager = new DBManager(getContext());
         mDbManager.open();
 
@@ -268,11 +267,16 @@ public class ProfileFragment extends Fragment {
 
                             mUserDetails.getOnRoadBooks().add(0, notification.getBook());
 
+                            mProfileTimelineAdapter.getGlowingBooks().add(notification.getBook());
+
                             mProfileTimelineAdapter.notifyItemInserted(mProfileTimelineAdapter.getFirstOnRoadBookIndex());
 
                             if (onRoadBookCountBeforeAdding == 0) {
                                 mProfileTimelineAdapter.notifyItemInserted(mProfileTimelineAdapter.getOnRoadBookSubtitleIndex(false));
                             }
+
+                            ((LinearLayoutManager) mProfileRecyclerView.getLayoutManager())
+                                .scrollToPositionWithOffset(mProfileTimelineAdapter.getOnRoadBookSubtitleIndex(false), 0);
 
                         }
                     }
@@ -619,14 +623,24 @@ public class ProfileFragment extends Fragment {
                             case OPENED_TO_SHARE:
                             case CLOSED_TO_SHARE: {
                                 mUserDetails.getBooksOnHand().add(0, book);
+                                mProfileTimelineAdapter.getGlowingBooks().add(book);
                                 mProfileTimelineAdapter.notifyItemInserted(mProfileTimelineAdapter.getFirstBookOnHandIndex());
+
+                                ((LinearLayoutManager) mProfileRecyclerView.getLayoutManager())
+                                    .scrollToPositionWithOffset(mProfileTimelineAdapter.getBooksOnHandSubtitleIndex(false), 0);
+
                                 break;
                             }
 
                             case READING: {
-                                mUserDetails.getCurrentlyReading().add(book);
+                                mUserDetails.getCurrentlyReading().add(0, book);
+                                mProfileTimelineAdapter.setGlowCurrentlyReading(true);
                                 mProfileTimelineAdapter.setCurrentlyReadingNotifyItemChanged();
                                 mProfileTimelineAdapter.notifyItemChanged(mProfileTimelineAdapter.getCurrentlyReadingIndex());
+
+                                ((LinearLayoutManager) mProfileRecyclerView.getLayoutManager())
+                                    .scrollToPositionWithOffset(mProfileTimelineAdapter.getCurrentlyReadingIndex(), 0);
+
                                 break;
                             }
 

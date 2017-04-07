@@ -62,7 +62,7 @@ public class BookSettingsActivity extends AppCompatActivity {
     private static final String TAG = BookSettingsActivity.class.getSimpleName();
 
     public static final String EXTRA_BOOK = "book";
-    public static final String EXTRA_IS_ADDER = "is_adder";
+    public static final String EXTRA_HAS_ANY_TRANSACTIONS = "has_any_transactions";
 
     private static final int REPORT_BOOK_WRONG_NAME = 1;
     private static final int REPORT_BOOK_WRONG_AUTHOR = 2;
@@ -72,7 +72,7 @@ public class BookSettingsActivity extends AppCompatActivity {
     private static final int REPORT_BOOK_OTHER = 6;
 
     private Book mBook;
-    private boolean mIsAdder;
+    private boolean mHasAnyTransactions;
     private EditText mReportEditText;
     private Button mSendReportButton;
     private ImageButton mDoneButton;
@@ -88,7 +88,7 @@ public class BookSettingsActivity extends AppCompatActivity {
         setContentView(R.layout.activity_book_settings);
 
         mBook = getIntent().getParcelableExtra(EXTRA_BOOK);
-        mIsAdder = getIntent().getBooleanExtra(EXTRA_IS_ADDER, false);
+        mHasAnyTransactions = getIntent().getBooleanExtra(EXTRA_HAS_ANY_TRANSACTIONS, true);
 
         SpannableString s = new SpannableString(mBook.getName());
         s.setSpan(new TypefaceSpan(this, MainActivity.FONT_GENERAL_TITLE), 0, s.length(),
@@ -131,7 +131,7 @@ public class BookSettingsActivity extends AppCompatActivity {
 
             User currentUser = SessionManager.getCurrentUser(this);
 
-            if (mIsAdder && mBook.getOwner().equals(currentUser)) {
+            if (!mHasAnyTransactions && mBook.getOwner().equals(currentUser)) {
                 findViewById(R.id.bookEditContainer).setVisibility(View.VISIBLE);
                 findViewById(R.id.reportBookContainer).setVisibility(View.GONE);
 
@@ -180,7 +180,7 @@ public class BookSettingsActivity extends AppCompatActivity {
                         Intent intent = new Intent(BookSettingsActivity.this, PhotoViewerActivity.class);
                         Bundle bundle = new Bundle();
                         bundle.putString(PhotoViewerActivity.EXTRA_IMAGE, mBook.getImageURL());
-                        if (mIsAdder && mBook.getOwner().getID() == SessionManager.getCurrentUser(BookSettingsActivity.this).getID()){
+                        if (!mHasAnyTransactions && mBook.getOwner().equals(SessionManager.getCurrentUser(BookSettingsActivity.this))){
                             bundle.putBoolean(PhotoViewerActivity.EXTRA_CAN_EDIT_BOOK_IMAGE, true);
                             bundle.putInt(PhotoViewerActivity.EXTRA_BOOK_ID, mBook.getID());
                         }

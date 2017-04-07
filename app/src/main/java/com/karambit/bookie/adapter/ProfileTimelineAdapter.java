@@ -1,5 +1,7 @@
 package com.karambit.bookie.adapter;
 
+import android.animation.ArgbEvaluator;
+import android.animation.ObjectAnimator;
 import android.app.Activity;
 import android.content.Context;
 import android.graphics.Bitmap;
@@ -63,6 +65,7 @@ public class ProfileTimelineAdapter extends RecyclerView.Adapter<RecyclerView.Vi
     public static final int ERROR_TYPE_NONE = 0;
     public static final int ERROR_TYPE_NO_CONNECTION = 1;
     public static final int ERROR_TYPE_UNKNOWN_ERROR = 2;
+    private static final int COLOR_CHANGE_DURATION = 3000;
     private int mErrorType = ERROR_TYPE_NONE;
 
     private Context mContext;
@@ -78,6 +81,9 @@ public class ProfileTimelineAdapter extends RecyclerView.Adapter<RecyclerView.Vi
     private boolean mProgressBarActive;
     private HorizontalPagerAdapter mHorizontalPagerAdapter;
     private boolean mNotifyItemChanged = false;
+
+    private ArrayList<Book> mGlowingBooks = new ArrayList<>();
+    private boolean mGlowCurrentlyReading = false;
 
     public ProfileTimelineAdapter(Context context, User.Details userDetails) {
         mContext = context;
@@ -811,6 +817,24 @@ public class ProfileTimelineAdapter extends RecyclerView.Adapter<RecyclerView.Vi
                         mBookClickListener.onBookClick(book);
                     }
                 });
+
+                if (mGlowCurrentlyReading) {
+                    mGlowCurrentlyReading = false;
+
+                    int startingColor = ContextCompat.getColor(mContext, R.color.colorAccentTransparent);
+                    int endingColor = ContextCompat.getColor(mContext, R.color.colorPrimary);
+                    currentlyReadingHolder.itemView.setBackgroundColor(startingColor);
+
+                    final ObjectAnimator backgroundColorAnimator = ObjectAnimator.ofObject(currentlyReadingHolder.itemView,
+                                                                                           "backgroundColor",
+                                                                                           new ArgbEvaluator(),
+                                                                                           startingColor,
+                                                                                           endingColor);
+
+                    backgroundColorAnimator.setDuration(COLOR_CHANGE_DURATION);
+                    backgroundColorAnimator.start();
+                }
+
                 break;
             }
 
@@ -872,6 +896,25 @@ public class ProfileTimelineAdapter extends RecyclerView.Adapter<RecyclerView.Vi
                                 bookHolder.mBookImage.setImageBitmap(croppedBitmap);
                             }
                         });
+
+                // Glowing animation
+
+                if (mGlowingBooks.contains(book)) {
+                    mGlowingBooks.remove(book);
+
+                    int startingColor = ContextCompat.getColor(mContext, R.color.colorAccentTransparent);
+                    int endingColor = ContextCompat.getColor(mContext, R.color.colorPrimary);
+                    bookHolder.mElevatedSection.setBackgroundColor(startingColor);
+
+                    final ObjectAnimator backgroundColorAnimator = ObjectAnimator.ofObject(bookHolder.mElevatedSection,
+                                                                                           "backgroundColor",
+                                                                                           new ArgbEvaluator(),
+                                                                                           startingColor,
+                                                                                           endingColor);
+                    backgroundColorAnimator.setDuration(COLOR_CHANGE_DURATION);
+                    backgroundColorAnimator.start();
+                }
+
 
                 break;
             }
@@ -939,6 +982,25 @@ public class ProfileTimelineAdapter extends RecyclerView.Adapter<RecyclerView.Vi
                              bookHolder.mBookImage.setImageBitmap(croppedBitmap);
                          }
                      });
+
+                // Glow animation
+
+                if (mGlowingBooks.contains(book)) {
+                    mGlowingBooks.remove(book);
+
+                    int startingColor = ContextCompat.getColor(mContext, R.color.colorAccentTransparent);
+                    int endingColor = ContextCompat.getColor(mContext, R.color.colorPrimary);
+                    bookHolder.mElevatedSection.setBackgroundColor(startingColor);
+
+                    final ObjectAnimator backgroundColorAnimator = ObjectAnimator.ofObject(bookHolder.mElevatedSection,
+                                                                                           "backgroundColor",
+                                                                                           new ArgbEvaluator(),
+                                                                                           startingColor,
+                                                                                           endingColor);
+
+                    backgroundColorAnimator.setDuration(COLOR_CHANGE_DURATION);
+                    backgroundColorAnimator.start();
+                }
 
                 break;
             }
@@ -1216,5 +1278,21 @@ public class ProfileTimelineAdapter extends RecyclerView.Adapter<RecyclerView.Vi
 
     public void setStartReadingClickListener(StartReadingClickListener startReadingClickListener) {
         mStartReadingClickListener = startReadingClickListener;
+    }
+
+    public ArrayList<Book> getGlowingBooks() {
+        return mGlowingBooks;
+    }
+
+    public void setGlowingBooks(ArrayList<Book> glowingBooks) {
+        mGlowingBooks = glowingBooks;
+    }
+
+    public boolean isGlowCurrentlyReading() {
+        return mGlowCurrentlyReading;
+    }
+
+    public void setGlowCurrentlyReading(boolean glowCurrentlyReading) {
+        mGlowCurrentlyReading = glowCurrentlyReading;
     }
 }

@@ -171,6 +171,8 @@ public class MainActivity extends AppCompatActivity implements TabHost.OnTabChan
                     fetchNotificationMenuItemValue();
                 } else if (intent.getAction().equalsIgnoreCase(BookieIntentFilters.FCM_INTENT_FILTER_BOOK_OWNER_CHANGED_RECEIVED)){
                     fetchNotificationMenuItemValue();
+                } else if (intent.getAction().equalsIgnoreCase(BookieIntentFilters.INTENT_FILTER_BOOK_ADDED)) {
+                    setCurrentPage(ProfileFragment.VIEW_PAGER_INDEX);
                 }
             }
         };
@@ -179,6 +181,7 @@ public class MainActivity extends AppCompatActivity implements TabHost.OnTabChan
         LocalBroadcastManager.getInstance(this).registerReceiver(mMessageReceiver, new IntentFilter(BookieIntentFilters.FCM_INTENT_FILTER_REJECTED_REQUEST_RECEIVED));
         LocalBroadcastManager.getInstance(this).registerReceiver(mMessageReceiver, new IntentFilter(BookieIntentFilters.FCM_INTENT_FILTER_ACCEPTED_REQUEST_RECEIVED));
         LocalBroadcastManager.getInstance(this).registerReceiver(mMessageReceiver, new IntentFilter(BookieIntentFilters.FCM_INTENT_FILTER_BOOK_OWNER_CHANGED_RECEIVED));
+        LocalBroadcastManager.getInstance(this).registerReceiver(mMessageReceiver, new IntentFilter(BookieIntentFilters.INTENT_FILTER_BOOK_ADDED));
     }
 
     @Override
@@ -565,9 +568,9 @@ public class MainActivity extends AppCompatActivity implements TabHost.OnTabChan
         });
     }
 
-    public void setCurrentPage(int index) {
-        mViewPager.setCurrentItem(index, true);
-        mTabHost.setCurrentTab(index < 2 ? index : index + 1);
+    public void setCurrentPage(int viewpagerIndex) {
+        mViewPager.setCurrentItem(viewpagerIndex, true);
+        mTabHost.setCurrentTab(viewpagerIndex < 2 ? viewpagerIndex : viewpagerIndex + 1);
     }
 
     @Override

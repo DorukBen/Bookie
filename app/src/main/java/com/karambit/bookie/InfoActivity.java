@@ -1,7 +1,5 @@
 package com.karambit.bookie;
 
-import android.content.Context;
-import android.content.res.Resources;
 import android.os.Bundle;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.ActionBar;
@@ -11,7 +9,6 @@ import android.text.Spannable;
 import android.text.SpannableString;
 import android.text.style.AbsoluteSizeSpan;
 import android.text.style.ForegroundColorSpan;
-import android.util.DisplayMetrics;
 import android.view.View;
 import android.view.ViewTreeObserver;
 import android.widget.ImageView;
@@ -118,38 +115,38 @@ public class InfoActivity extends AppCompatActivity {
                         break;
 
                     case INFO_CODE_LOCATION:
-                        infoDropDown_0.setImageResource(R.drawable.ic_keyboard_arrow_up_black_24dp);
-                        infoContent_0.setVisibility(View.VISIBLE);
-                        break;
-
-                    case INFO_CODE_BOOK_COUNTER:
-                        infoDropDown_0.setImageResource(R.drawable.ic_keyboard_arrow_up_black_24dp);
-                        infoContent_0.setVisibility(View.VISIBLE);
-                        break;
-
-                    case INFO_CODE_REQUESTS:
-                        infoDropDown_0.setImageResource(R.drawable.ic_keyboard_arrow_up_black_24dp);
-                        infoContent_0.setVisibility(View.VISIBLE);
-                        break;
-
-                    case INFO_CODE_TRANSACTIONS:
                         infoDropDown_1.setImageResource(R.drawable.ic_keyboard_arrow_up_black_24dp);
                         infoContent_1.setVisibility(View.VISIBLE);
                         break;
 
-                    case INFO_CODE_POINT:
+                    case INFO_CODE_BOOK_COUNTER:
                         infoDropDown_2.setImageResource(R.drawable.ic_keyboard_arrow_up_black_24dp);
                         infoContent_2.setVisibility(View.VISIBLE);
                         break;
 
-                    case INFO_CODE_FEEDBACK:
+                    case INFO_CODE_REQUESTS:
                         infoDropDown_3.setImageResource(R.drawable.ic_keyboard_arrow_up_black_24dp);
                         infoContent_3.setVisibility(View.VISIBLE);
                         break;
 
-                    case INFO_CODE_CREDITS:
+                    case INFO_CODE_TRANSACTIONS:
                         infoDropDown_4.setImageResource(R.drawable.ic_keyboard_arrow_up_black_24dp);
                         infoContent_4.setVisibility(View.VISIBLE);
+                        break;
+
+                    case INFO_CODE_POINT:
+                        infoDropDown_5.setImageResource(R.drawable.ic_keyboard_arrow_up_black_24dp);
+                        infoContent_5.setVisibility(View.VISIBLE);
+                        break;
+
+                    case INFO_CODE_FEEDBACK:
+                        infoDropDown_6.setImageResource(R.drawable.ic_keyboard_arrow_up_black_24dp);
+                        infoContent_6.setVisibility(View.VISIBLE);
+                        break;
+
+                    case INFO_CODE_CREDITS:
+                        infoDropDown_7.setImageResource(R.drawable.ic_keyboard_arrow_up_black_24dp);
+                        infoContent_7.setVisibility(View.VISIBLE);
                         break;
                 }
             }
@@ -258,19 +255,5 @@ public class InfoActivity extends AppCompatActivity {
                 }
             }
         });
-    }
-
-    /**
-     * This method converts dp unit to equivalent pixels, depending on device density.
-     *
-     * @param dp      A value in dp (density independent pixels) unit. Which we need to convert into pixels
-     * @param context Context to get resources and device specific display metrics
-     * @return A float value to represent px equivalent to dp depending on device density
-     */
-    public static float convertDpToPixel(float dp, Context context) {
-        Resources resources = context.getResources();
-        DisplayMetrics metrics = resources.getDisplayMetrics();
-        float px = dp * ((float) metrics.densityDpi / DisplayMetrics.DENSITY_DEFAULT);
-        return px;
     }
 }

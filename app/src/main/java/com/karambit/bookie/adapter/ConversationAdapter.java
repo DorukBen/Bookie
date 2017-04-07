@@ -1,7 +1,6 @@
 package com.karambit.bookie.adapter;
 
 import android.content.Context;
-import android.graphics.Color;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.widget.CardView;
 import android.support.v7.widget.RecyclerView;
@@ -134,13 +133,10 @@ public class ConversationAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
     @Override
     public void onBindViewHolder(final RecyclerView.ViewHolder holder, int position) {
 
-        final int finalPosition = position;
-
         final Message message = mMessages.get(position);
 
         if (mSelectedIndexes.contains(position)) {
-            int color = ContextCompat.getColor(mContext, R.color.colorAccent);
-            color = Color.argb((int) (255 * 1f / 4f), Color.red(color), Color.green(color), Color.blue(color));
+            int color = ContextCompat.getColor(mContext, R.color.colorAccentTransparent);
             holder.itemView.setBackgroundColor(color);
         } else {
             holder.itemView.setBackgroundColor(0);
