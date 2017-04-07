@@ -8,7 +8,6 @@ import android.support.v7.widget.RecyclerView;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.ProgressBar;
 import android.widget.TextView;
@@ -17,10 +16,13 @@ import com.bumptech.glide.Glide;
 import com.karambit.bookie.R;
 import com.karambit.bookie.helper.LayoutUtils;
 import com.karambit.bookie.helper.pull_refresh_layout.SmartisanProgressBarDrawable;
+import com.karambit.bookie.helper.string_similarity.StringDistance;
 import com.karambit.bookie.model.Book;
 import com.karambit.bookie.model.User;
 
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Hashtable;
 
 /**
  * Created by orcan on 10/19/16.
@@ -50,7 +52,6 @@ public class SearchAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder>
     private static final int TYPE_NOTHING_TO_SHOW = 8;
     private static final int TYPE_NO_RESULT_FOUND = 9;
     public static final int TYPE_FOOTER = 10;
-    public static final int TYPE_HISTORY = 11;
 
 
     public static final int ERROR_TYPE_NONE = 0;
@@ -69,6 +70,8 @@ public class SearchAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder>
 
     private boolean mProgressBarActive;
     private boolean mShowHistory;
+
+    private Hashtable<Book, String> mBookLocations = new Hashtable<>();
 
     private SearchItemClickListener mSearchItemClickListener;
 
@@ -124,6 +127,8 @@ public class SearchAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder>
         private CardView mBookImageCard;
         private TextView mBookName;
         private TextView mBookAuthor;
+        private TextView mBookLocation;
+        private ImageView mBookState;
 
         private BookViewHolder(View itemBookView) {
             super(itemBookView);
@@ -137,7 +142,8 @@ public class SearchAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder>
             mBookImage = (ImageView) itemBookView.findViewById(R.id.itemBookImageView);
             mBookName = (TextView) itemBookView.findViewById(R.id.itemBookNameTextView);
             mBookAuthor = (TextView) itemBookView.findViewById(R.id.itemBookAuthorTextView);
-
+            mBookLocation = (TextView) itemBookView.findViewById(R.id.itemBookLocationTextView);
+            mBookState = (ImageView) itemBookView.findViewById(R.id.itemBookState);
         }
     }
 
@@ -227,19 +233,6 @@ public class SearchAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder>
             super(footerView);
 
             mProgressBar = (ProgressBar) footerView.findViewById(R.id.footerProgressBar);
-        }
-    }
-
-    private static class HistoryViewHolder extends RecyclerView.ViewHolder {
-
-        private ImageButton mClearHistory;
-        private TextView mHistoryTextView;
-
-        private HistoryViewHolder(View noResultFoundView) {
-            super(noResultFoundView);
-
-            mClearHistory = (ImageButton) noResultFoundView.findViewById(R.id.clearHistory);
-            mHistoryTextView = (TextView) noResultFoundView.findViewById(R.id.historyTextView);
         }
     }
 
@@ -341,17 +334,15 @@ public class SearchAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder>
                 }
             } else if (mGenreCodes.size() < 1 && mBooks.size() > 0 && mUsers.size() > 0) {
                 if (mShowHistory){
-                    bookPosition = 2;
-                    userPosition = mBooks.size() + 3;
-                    if (position == 0){
-                        return TYPE_HISTORY;
-                    }else if (position == 1) {
+                    bookPosition = 1;
+                    userPosition = mBooks.size() + 2;
+                    if (position == 0) {
                         return TYPE_BOOK_SUBTITLE;
-                    } else if (position < mBooks.size() + 2) {
+                    } else if (position < mBooks.size() + 1) {
                         return TYPE_BOOK;
-                    } else if (position == mBooks.size() + 2) {
+                    } else if (position == mBooks.size() + 1) {
                         return TYPE_USER_SUBTITLE;
-                    } else if (position < mBooks.size() + mUsers.size() + 3) {
+                    } else if (position < mBooks.size() + mUsers.size() + 2) {
                         return TYPE_USER;
                     } else {
                         throw new IllegalArgumentException("Invalid view type at position " + position);
@@ -384,12 +375,10 @@ public class SearchAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder>
                 }
             } else if (mGenreCodes.size() < 1 && mBooks.size() < 1 && mUsers.size() > 0) {
                 if (mShowHistory){
-                    userPosition = 2;
-                    if (position == 0){
-                        return TYPE_HISTORY;
-                    } else if (position == 1) {
+                    userPosition = 1;
+                    if (position == 0) {
                         return TYPE_USER_SUBTITLE;
-                    } else if (position < mUsers.size() + 2) {
+                    } else if (position < mUsers.size() + 1) {
                         return TYPE_USER;
                     } else {
                         throw new IllegalArgumentException("Invalid view type at position " + position);
@@ -406,12 +395,10 @@ public class SearchAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder>
                 }
             } else if (mGenreCodes.size() < 1 && mBooks.size() > 0 && mUsers.size() < 1) {
                 if (mShowHistory){
-                    bookPosition = 2;
-                    if (position == 0){
-                        return TYPE_HISTORY;
-                    }else if (position == 1) {
+                    bookPosition = 1;
+                    if (position == 0) {
                         return TYPE_BOOK_SUBTITLE;
-                    } else if (position < mBooks.size() + 2) {
+                    } else if (position < mBooks.size() + 1) {
                         return TYPE_BOOK;
                     } else {
                         throw new IllegalArgumentException("Invalid view type at position " + position);
@@ -479,10 +466,6 @@ public class SearchAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder>
                 View noResultFoundView = LayoutInflater.from(parent.getContext()).inflate(R.layout.item_no_result_found, parent, false);
                 return new NoResultFoundViewHolder(noResultFoundView);
 
-            case TYPE_HISTORY:
-                View historyView = LayoutInflater.from(parent.getContext()).inflate(R.layout.item_search_history, parent, false);
-                return new HistoryViewHolder(historyView);
-
             case TYPE_FOOTER:
                 View footerView = LayoutInflater.from(parent.getContext()).inflate(R.layout.item_footer, parent, false);
                 return new FooterViewHolder(footerView);
@@ -543,6 +526,41 @@ public class SearchAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder>
                 bookHolder.mBookName.setText(book.getName());
 
                 bookHolder.mBookAuthor.setText(book.getAuthor());
+
+                if (mBookLocations.containsKey(book)) {
+                    bookHolder.mBookLocation.setVisibility(View.VISIBLE);
+                    bookHolder.mBookLocation.setText(mBookLocations.get(book));
+                } else {
+                    bookHolder.mBookLocation.setVisibility(View.GONE);
+                }
+
+                switch (book.getState()) {
+
+                    case READING:
+                        bookHolder.mBookState.setImageResource(R.drawable.ic_book_timeline_read_start_stop_36dp);
+                        bookHolder.mBookState.setColorFilter(ContextCompat.getColor(mContext, R.color.secondaryTextColor));
+                        break;
+
+                    case OPENED_TO_SHARE:
+                        bookHolder.mBookState.setImageResource(R.drawable.ic_book_timeline_opened_to_share_36dp);
+                        bookHolder.mBookState.setColorFilter(ContextCompat.getColor(mContext, R.color.secondaryTextColor));
+                        break;
+
+                    case CLOSED_TO_SHARE:
+                        bookHolder.mBookState.setImageResource(R.drawable.ic_book_timeline_closed_to_share_36dp);
+                        bookHolder.mBookState.setColorFilter(ContextCompat.getColor(mContext, R.color.secondaryTextColor));
+                        break;
+
+                    case ON_ROAD:
+                        bookHolder.mBookState.setImageResource(R.drawable.ic_book_timeline_dispatch_36dp);
+                        bookHolder.mBookState.setColorFilter(ContextCompat.getColor(mContext, R.color.secondaryTextColor));
+                        break;
+
+                    case LOST:
+                        bookHolder.mBookState.setImageResource(R.drawable.ic_close_dark);
+                        bookHolder.mBookState.setColorFilter(ContextCompat.getColor(mContext, R.color.error_red));
+                        break;
+                }
 
                 Glide.with(mContext)
                         .load(book.getThumbnailURL())
@@ -624,20 +642,6 @@ public class SearchAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder>
                 break;
             }
 
-            case TYPE_HISTORY: {
-
-                HistoryViewHolder historyViewHolder = (HistoryViewHolder) holder;
-                historyViewHolder.mHistoryTextView.setText(mContext.getString(R.string.search_history));
-                historyViewHolder.mClearHistory.setOnClickListener(new View.OnClickListener() {
-                    @Override
-                    public void onClick(View v) {
-                        mSearchItemClickListener.onClearHistoryClick();
-                    }
-                });
-
-                break;
-            }
-
             case TYPE_FOOTER: {
 
                 FooterViewHolder footerHolder = (FooterViewHolder) holder;
@@ -656,10 +660,6 @@ public class SearchAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder>
 
     private int calculateItemCount() {
         int totalSize = mGenreCodes.size();
-
-        if (mShowHistory){
-            totalSize++;
-        }
 
         if (mGenreCodes.size() > 0) {
             totalSize++; //GenreSubtitle
@@ -690,6 +690,31 @@ public class SearchAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder>
         return totalSize;
     }
 
+    public int getFirstBookPosition() {
+        int totalSize = mGenreCodes.size();
+
+        if (mGenreCodes.size() > 0) {
+            totalSize++; //GenreSubtitle
+        }
+
+        return totalSize + 1; // Book Subtitle
+    }
+
+    public int getFirstUserPosition() {
+        int totalSize = mGenreCodes.size();
+
+        if (mGenreCodes.size() > 0) {
+            totalSize++; //GenreSubtitle
+        }
+
+        totalSize += mBooks.size();
+        if (mBooks.size() > 0) {
+            totalSize++; //BookSubtitle
+        }
+
+        return totalSize + 1; // User Subtitle
+    }
+
     public boolean isProgressBarActive() {
         return mProgressBarActive;
     }
@@ -705,8 +730,6 @@ public class SearchAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder>
         void onBookClick(Book book);
 
         void onUserClick(User user);
-
-        void onClearHistoryClick();
     }
 
     public void setBookClickListener(SearchItemClickListener searchItemClickListener) {
@@ -781,5 +804,13 @@ public class SearchAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder>
 
     public boolean isShowHistory() {
         return mShowHistory;
+    }
+
+    public Hashtable<Book, String> getBookLocations() {
+        return mBookLocations;
+    }
+
+    public void setBookLocations(Hashtable<Book, String> bookLocations) {
+        mBookLocations = bookLocations;
     }
 }

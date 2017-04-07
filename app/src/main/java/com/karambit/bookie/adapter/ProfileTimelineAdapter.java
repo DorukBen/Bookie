@@ -5,6 +5,7 @@ import android.content.Context;
 import android.graphics.Bitmap;
 import android.location.Address;
 import android.location.Geocoder;
+import android.support.v4.content.ContextCompat;
 import android.support.v4.view.ViewCompat;
 import android.support.v7.widget.CardView;
 import android.support.v7.widget.RecyclerView;
@@ -67,6 +68,8 @@ public class ProfileTimelineAdapter extends RecyclerView.Adapter<RecyclerView.Vi
     private Context mContext;
     private User mUser;
     private User.Details mUserDetails;
+
+    private String mLocationString;
 
     private BookClickListener mBookClickListener;
     private HeaderClickListeners mHeaderClickListeners;
@@ -143,6 +146,7 @@ public class ProfileTimelineAdapter extends RecyclerView.Adapter<RecyclerView.Vi
         private CardView mBookImageCard;
         private TextView mBookName;
         private TextView mBookAuthor;
+        private ImageView mBookState;
 
         private BookViewHolder(View itemBookView) {
             super(itemBookView);
@@ -156,7 +160,7 @@ public class ProfileTimelineAdapter extends RecyclerView.Adapter<RecyclerView.Vi
             mBookImage = (ImageView) itemBookView.findViewById(R.id.itemBookImageView);
             mBookName = (TextView) itemBookView.findViewById(R.id.itemBookNameTextView);
             mBookAuthor = (TextView) itemBookView.findViewById(R.id.itemBookAuthorTextView);
-
+            mBookState = (ImageView) itemBookView.findViewById(R.id.itemBookState);
         }
     }
 
@@ -702,7 +706,11 @@ public class ProfileTimelineAdapter extends RecyclerView.Adapter<RecyclerView.Vi
                 // Location
                 //
 
-                if (TextUtils.isEmpty(SessionManager.getLocationText())) {
+                if (mUserDetails.getUser().equals(SessionManager.getCurrentUser(mContext))){
+                    mLocationString = SessionManager.getLocationText();
+                }
+
+                if (TextUtils.isEmpty(mLocationString)) {
                     if (mUserDetails.getUser().getLocation() != null && BookieApplication.hasNetwork()) {
                         new Thread(new Runnable() {
                             @Override
@@ -749,7 +757,11 @@ public class ProfileTimelineAdapter extends RecyclerView.Adapter<RecyclerView.Vi
                                                 headerViewHolder.mLocation.setVisibility(View.GONE);
                                             } else {
 
-                                                SessionManager.setLocationText(locationString);
+                                                mLocationString = locationString;
+
+                                                if (mUserDetails.getUser().equals(SessionManager.getCurrentUser(mContext))){
+                                                    SessionManager.setLocationText(mLocationString);
+                                                }
 
                                                 headerViewHolder.mLocation.setText(locationString);
                                                 headerViewHolder.mLocation.setVisibility(View.VISIBLE);
@@ -766,7 +778,7 @@ public class ProfileTimelineAdapter extends RecyclerView.Adapter<RecyclerView.Vi
                     }
                 } else {
                     headerViewHolder.mLocation.setVisibility(View.VISIBLE);
-                    headerViewHolder.mLocation.setText(SessionManager.getLocationText());
+                    headerViewHolder.mLocation.setText(mLocationString);
                 }
 
                 headerViewHolder.mReadBooks.setText(String.valueOf(mUserDetails.getReadBooksCount()));
@@ -845,6 +857,9 @@ public class ProfileTimelineAdapter extends RecyclerView.Adapter<RecyclerView.Vi
 
                 bookHolder.mBookAuthor.setText(book.getAuthor());
 
+                bookHolder.mBookState.setImageResource(R.drawable.ic_book_timeline_dispatch_36dp);
+                bookHolder.mBookState.setColorFilter(ContextCompat.getColor(mContext, R.color.secondaryTextColor));
+
                 Glide.with(mContext)
                         .load(book.getThumbnailURL())
                         .asBitmap()
@@ -889,6 +904,29 @@ public class ProfileTimelineAdapter extends RecyclerView.Adapter<RecyclerView.Vi
 
                 bookHolder.mBookAuthor.setText(book.getAuthor());
 
+                switch (book.getState()) {
+
+                    case OPENED_TO_SHARE:
+                        bookHolder.mBookState.setImageResource(R.drawable.ic_book_timeline_opened_to_share_36dp);
+                        bookHolder.mBookState.setColorFilter(ContextCompat.getColor(mContext, R.color.secondaryTextColor));
+                        break;
+
+                    case CLOSED_TO_SHARE:
+                        bookHolder.mBookState.setImageResource(R.drawable.ic_book_timeline_closed_to_share_36dp);
+                        bookHolder.mBookState.setColorFilter(ContextCompat.getColor(mContext, R.color.secondaryTextColor));
+                        break;
+
+                    case ON_ROAD:
+                        bookHolder.mBookState.setImageResource(R.drawable.ic_book_timeline_dispatch_36dp);
+                        bookHolder.mBookState.setColorFilter(ContextCompat.getColor(mContext, R.color.secondaryTextColor));
+                        break;
+
+                    case LOST:
+                        bookHolder.mBookState.setImageResource(R.drawable.ic_close_dark);
+                        bookHolder.mBookState.setColorFilter(ContextCompat.getColor(mContext, R.color.error_red));
+                        break;
+                }
+
                 Glide.with(mContext)
                      .load(book.getThumbnailURL())
                      .asBitmap()
@@ -932,6 +970,8 @@ public class ProfileTimelineAdapter extends RecyclerView.Adapter<RecyclerView.Vi
                 bookHolder.mBookName.setText(book.getName());
 
                 bookHolder.mBookAuthor.setText(book.getAuthor());
+
+                bookHolder.mBookState.setVisibility(View.GONE);
 
                 Glide.with(mContext)
                      .load(book.getThumbnailURL())

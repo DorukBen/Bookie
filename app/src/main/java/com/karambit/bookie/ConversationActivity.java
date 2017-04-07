@@ -8,6 +8,7 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.os.Bundle;
+import android.support.v4.content.ContextCompat;
 import android.support.v4.content.LocalBroadcastManager;
 import android.support.v7.app.ActionBar;
 import android.support.v7.app.AppCompatActivity;
@@ -21,6 +22,7 @@ import android.text.SpannableString;
 import android.text.TextUtils;
 import android.text.TextWatcher;
 import android.text.style.AbsoluteSizeSpan;
+import android.text.style.ForegroundColorSpan;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
@@ -95,6 +97,7 @@ public class ConversationActivity extends AppCompatActivity {
                 Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
         final float titleSize = getResources().getDimension(R.dimen.actionbar_title_size);
         s.setSpan(new AbsoluteSizeSpan((int) titleSize), 0, s.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+        s.setSpan(new ForegroundColorSpan(ContextCompat.getColor(this, R.color.primaryTextColor)), 0, s.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
 
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
@@ -104,6 +107,18 @@ public class ConversationActivity extends AppCompatActivity {
             getSupportActionBar().setElevation(elevation);
 
             ((TextView) toolbar.findViewById(R.id.toolbarTitle)).setText(s);
+
+            toolbar.findViewById(R.id.toolbarTitle).setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    //If not admin or support user
+                    if(mOppositeUser.getID() >= 0){
+                        Intent intent = new Intent(ConversationActivity.this, ProfileActivity.class);
+                        intent.putExtra(ProfileActivity.EXTRA_USER, mOppositeUser);
+                        startActivity(intent);
+                    }
+                }
+            });
 
             toolbar.findViewById(R.id.closeButton).setOnClickListener(new View.OnClickListener() {
                 @Override
@@ -263,6 +278,13 @@ public class ConversationActivity extends AppCompatActivity {
             @Override
             public void onMessageErrorClick(Message message, int position) {
                 sendMessageToServer(message);
+            }
+
+            @Override
+            public void onUserClick(User user) {
+                Intent intent = new Intent(ConversationActivity.this, ProfileActivity.class);
+                intent.putExtra(ProfileActivity.EXTRA_USER, user);
+                startActivity(intent);
             }
         });
 

@@ -18,9 +18,11 @@ import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
 
+import com.karambit.bookie.BookActivity;
 import com.karambit.bookie.BookieApplication;
 import com.karambit.bookie.ConversationActivity;
 import com.karambit.bookie.MainActivity;
+import com.karambit.bookie.ProfileActivity;
 import com.karambit.bookie.R;
 import com.karambit.bookie.adapter.LastMessageAdapter;
 import com.karambit.bookie.database.DBHelper;
@@ -182,6 +184,13 @@ public class MessageFragment extends Fragment {
                 }
 
                 return true;
+            }
+
+            @Override
+            public void onUserClick(User user) {
+                Intent intent = new Intent(getContext(), ProfileActivity.class);
+                intent.putExtra(ProfileActivity.EXTRA_USER, user);
+                startActivity(intent);
             }
         });
 

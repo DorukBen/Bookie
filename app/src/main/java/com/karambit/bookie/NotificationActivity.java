@@ -5,6 +5,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.os.Bundle;
+import android.support.v4.content.ContextCompat;
 import android.support.v4.content.LocalBroadcastManager;
 import android.support.v7.app.ActionBar;
 import android.support.v7.app.AppCompatActivity;
@@ -14,6 +15,7 @@ import android.support.v7.widget.Toolbar;
 import android.text.Spannable;
 import android.text.SpannableString;
 import android.text.style.AbsoluteSizeSpan;
+import android.text.style.ForegroundColorSpan;
 import android.view.View;
 import android.widget.TextView;
 
@@ -52,6 +54,7 @@ public class NotificationActivity extends AppCompatActivity {
                 Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
         float titleSize = getResources().getDimension(R.dimen.actionbar_app_name_title_size);
         s.setSpan(new AbsoluteSizeSpan((int) titleSize), 0, s.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+        s.setSpan(new ForegroundColorSpan(ContextCompat.getColor(this, R.color.primaryTextColor)), 0, s.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
 
         // Update the action bar title with the TypefaceSpan instance
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);

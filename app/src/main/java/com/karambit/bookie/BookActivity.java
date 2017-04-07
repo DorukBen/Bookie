@@ -7,6 +7,7 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.os.Bundle;
+import android.support.annotation.IntegerRes;
 import android.support.v4.content.ContextCompat;
 import android.support.v4.content.LocalBroadcastManager;
 import android.support.v4.view.ViewCompat;
@@ -19,6 +20,7 @@ import android.support.v7.widget.Toolbar;
 import android.text.Spannable;
 import android.text.SpannableString;
 import android.text.style.AbsoluteSizeSpan;
+import android.text.style.ForegroundColorSpan;
 import android.view.View;
 import android.widget.Button;
 import android.widget.ImageView;
@@ -93,6 +95,7 @@ public class BookActivity extends AppCompatActivity {
                   Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
         float titleSize = getResources().getDimension(R.dimen.actionbar_app_name_title_size);
         s.setSpan(new AbsoluteSizeSpan((int) titleSize), 0, s.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+        s.setSpan(new ForegroundColorSpan(ContextCompat.getColor(this, R.color.primaryTextColor)), 0, s.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
 
         // Update the action bar title with the TypefaceSpan instance
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
@@ -268,9 +271,7 @@ public class BookActivity extends AppCompatActivity {
             @Override
             public void onOwnerClick(User owner) {
                 Intent intent = new Intent(BookActivity.this, ProfileActivity.class);
-                Bundle bundle = new Bundle();
-                bundle.putParcelable(ProfileActivity.EXTRA_USER, owner);
-                intent.putExtras(bundle);
+                intent.putExtra(ProfileActivity.EXTRA_USER, owner);
                 startActivity(intent);
             }
         });

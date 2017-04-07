@@ -24,6 +24,7 @@ import android.text.Spannable;
 import android.text.SpannableString;
 import android.text.TextUtils;
 import android.text.style.AbsoluteSizeSpan;
+import android.text.style.ForegroundColorSpan;
 import android.view.Display;
 import android.view.View;
 import android.view.WindowManager;
@@ -197,6 +198,7 @@ public class AddBookActivity extends AppCompatActivity {
                 Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
         float titleSize = getResources().getDimension(R.dimen.actionbar_app_name_title_size);
         s.setSpan(new AbsoluteSizeSpan((int) titleSize), 0, s.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+        s.setSpan(new ForegroundColorSpan(ContextCompat.getColor(this, R.color.primaryTextColor)), 0, s.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
 
         // Update the action bar title with the TypefaceSpan instance
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);

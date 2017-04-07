@@ -18,10 +18,14 @@
         android:paddingLeft="84dp">
 
         <LinearLayout
+            android:id="@+id/itemBookInfoContainer"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:orientation="vertical"
             android:layout_centerVertical="true"
-            android:orientation="vertical">
+            android:layout_alignParentLeft="true"
+            android:layout_alignParentStart="true"
+            android:layout_toLeftOf="@id/itemBookState">
 
             <TextView
                 android:id="@+id/itemBookNameTextView"
@@ -38,11 +42,35 @@
                 android:layout_height="wrap_content"
                 android:maxLines="1"
                 android:text="Author"
+                android:layout_marginTop="2dp"
                 android:textColor="@color/secondaryTextColor"
                 android:textSize="12sp"/>
 
+            <TextView
+                android:id="@+id/itemBookLocationTextView"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:maxLines="1"
+                android:text="Location"
+                android:layout_marginTop="2dp"
+                android:textColor="@color/secondaryTextColor"
+                android:textSize="12sp"
+                android:visibility="gone"/>
+
 
         </LinearLayout>
+
+        <ImageView
+            android:id="@+id/itemBookState"
+            android:layout_width="24dp"
+            android:layout_height="24dp"
+            android:layout_alignParentRight="true"
+            android:layout_alignTop="@+id/itemBookInfoContainer"
+            android:layout_marginRight="12dp"
+            android:layout_marginLeft="8dp"
+            android:layout_marginBottom="8dp"
+            android:tint="@color/secondaryTextColor"
+            android:src="@drawable/ic_book_timeline_opened_to_share_36dp"/>
 
     </RelativeLayout>
 

@@ -10,6 +10,7 @@ import android.support.v7.widget.Toolbar;
 import android.text.Spannable;
 import android.text.SpannableString;
 import android.text.style.AbsoluteSizeSpan;
+import android.text.style.ForegroundColorSpan;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
@@ -65,6 +66,7 @@ public class LocationActivity extends AppCompatActivity {
             actionBar.setElevation(elevation);
             float titleSize = getResources().getDimension(R.dimen.actionbar_title_size);
             s.setSpan(new AbsoluteSizeSpan((int) titleSize), 0, s.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+            s.setSpan(new ForegroundColorSpan(ContextCompat.getColor(this, R.color.primaryTextColor)), 0, s.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
 
             ((TextView) toolbar.findViewById(R.id.toolbarTitle)).setText(s);
 

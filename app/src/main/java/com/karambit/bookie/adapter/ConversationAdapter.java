@@ -272,6 +272,16 @@ public class ConversationAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
                     oppositeUserHolder.mProfilePicture.setImageResource(R.drawable.placeholder_36dp);
                 }
 
+                oppositeUserHolder.mProfilePicture.setOnClickListener(new View.OnClickListener() {
+                    @Override
+                    public void onClick(View v) {
+                        //If not admin or support user
+                        if (mOppositeUser.getID() >= 0){
+                            mOnMessageClickListener.onUserClick(mOppositeUser);
+                        }
+                    }
+                });
+
                 if (position == getItemCount() - 1) {
                     oppositeUserHolder.mProfilePicture.setVisibility(View.VISIBLE);
 
@@ -303,6 +313,7 @@ public class ConversationAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
         void onMessageClick(Message message, int position);
         boolean onMessageLongClick(Message message, int position);
         void onMessageErrorClick(Message message, int position);
+        void onUserClick(User user);
     }
 
     public OnMessageClickListener getOnMessageClickListener() {
