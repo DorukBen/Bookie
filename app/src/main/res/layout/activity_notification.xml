@@ -48,15 +48,6 @@
                 android:text="@string/add_book_page_title"
                 android:textColor="@color/primaryTextColor"/>
 
-            <ImageButton
-                android:id="@+id/doneButton"
-                style="@style/Base.Widget.AppCompat.ActionButton"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_alignParentRight="true"
-                android:layout_centerVertical="true"
-                android:src="@drawable/ic_done_white_24dp"
-                android:tint="@color/primaryTextColor"/>
         </RelativeLayout>
 
     </android.support.v7.widget.Toolbar>

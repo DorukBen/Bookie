@@ -1,8 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="colorPrimary">#FFFFFF</color>
-    <color name="colorPrimaryDark">#ECEFF1</color>
-    <color name="colorPrimaryDarker">#CFD8DC</color>
+    <color name="colorPrimary">#FAFAFA</color>
+    <color name="colorPrimaryDark">#CFD8DC</color>
+    <color name="textBackgroundLight">#ECEFF1</color>
+    <color name="locationBackground">#CFD8DC</color>
     <color name="colorAccent">#0DD199</color>
     <color name="colorAccentTransparent">#3F0DD199</color>
     <color name="actionBarTextColor">#455A64</color>
@@ -17,7 +18,10 @@
 
     <color name="black">#212121</color>
 
-    <color name="error_red">#E00</color>
+    <color name="errorRed">#D32F2F</color>
+    <color name="errorYellow">#FFA000</color>
+    <!--red 9E1A39-->
+    <!--duruncu D74E43-->
 
     <!-- Screens background color-->
     <color name="bg_screen1">#f64c73</color>

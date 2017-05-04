@@ -1,7 +1,7 @@
 <resources>
     <string name="app_name">Mantreads</string>
 
-    <string name="hello_blank_fragment">Hello blank fragment</string>
+    <string name="hello_blank_fragment" translatable="false">Hello blank fragment</string>
     <string name="x_books_read">"%s books read"</string>
     <string name="x_books_on_hand">"%s books on hand"</string>
     <string name="point">POINT</string>
@@ -66,9 +66,9 @@
     <string name="state_prompt_open_to_share">I want to share this book</string>
     <string name="state_prompt_closed_to_share">Just add this book</string>
     <string name="permission_request_message">Grant permissions to add new book</string>
-    <string name="action_more">settings</string>
+    <string name="action_more">Settings</string>
 
-    <string name="introduction_page_1_title">Welcome to Bookie!</string>
+    <string name="introduction_page_1_title">Welcome to Mantreads!</string>
     <string name="introduction_page_1_desc">A user based book share platform.</string>
 
     <string name="introduction_page_2_title">Share and read</string>
@@ -251,7 +251,7 @@
     <string name="existing_book">Select a book that exists in your profile!</string>
     <string name="select_one_genre">Please select at least one genre</string>
     <string name="press_back_again">Press back again to exit…</string>
-    <string name="message_notification">message_notification</string>
+    <string name="message_notification" translatable="false">message_notification</string>
     <string name="notification">notification</string>
     <string name="thanks_for_feedback">Thanks for your feedback!!</string>
     <string name="password_changed">Password Changed Successfully</string>
@@ -272,11 +272,11 @@
     <string name="transactions">Transactions</string>
     <string name="who_are_we">Who are we?</string>
     <string name="info">Info</string>
-    <string name="request_info">Book requests are required for book transactions in Mantreads. In the app, your book request limit is your given book count minus taken book count by you plus one. You can request any book from its owner unless its state is opened to share, on road or lost.\n\nYou will be notified for your rejection or acception.</string>
+    <string name="request_info">Book requests are required for book transactions in Mantreads. In the app, your book request limit is your given book count minus taken book count by you plus one. You can request any book from its owner unless its state is closed to share, on road or lost.\n\nYou will be notified for your rejection or acception.</string>
     <string name="transaction_info">If your book has requested, you can accept any users request who have requested your book. Before accepting a request, always communicate with the other user and consider the users point, location and info.\n\nIf you accept one of request for your book, you have to send the book to requester. So both of you agree with transportation and transaction. Keep in mind that if you accept a request, all the other requests rejected automatically.\n\nWhen you get the book you must notify the app by \"Arrived\" button in the books page.\n\nIf the book stayed on road more than 2 weeks, the book will be marked as lost and transaction supposed to be failed.</string>
     <string name="point_info">Book point is key element of trustworthiness across the whole app. Your point changes depends on your actions.\n\nAdding book is 2 points\nFinishing a book is 1 point\nGiving a book successfully is 5 points\nGetting a book is 3 points\n\nIf you lost a book you will lose 20 points\nIf your book lost while it is on road. Both of transaction users will lose 20 points.</string>
     <string name="credit_info">We are a group of developers who want to make the world better. With Mantreads our goal is getting closer to us. Each of shared book is prevents the book waste and saves one more tree.\n\nThank you for helping us, helping the world…</string>
-    <string name="more_info">More info</string>
+    <string name="more_info">Info</string>
     <string name="choose_email_app">Choose email app</string>
     <string name="check_email">Check email</string>
     <string name="set_location">Set location</string>
@@ -315,7 +315,7 @@
     <string name="location_info">The app uses your location for book transactions. So the other users can know where your books are. Also our search algorith brings to best combination of books with your location info.\nYou can change your location in your profile settings anytime.</string>
     <string name="book_counter_info">When you join our community you can get one book. After that you have to succesfully share a book for getting more books.\nKeep sharing…</string>
     <string name="verification_accepted_info">Your email has been verified. Keep sharing!</string>
-    <string name="bookie_support">Mantreads Support</string>
+    <string name="bookie_support">Support</string>
     <string name="book_lost_info_short">Book lost!</string>
     <string name="book_lost_info">Book lost while it is on road. So you and the other user lost 20 points!.\n\nIf you think there is a mistake please contact with %s</string>
     <string name="add_book_page_title">Add Book</string>

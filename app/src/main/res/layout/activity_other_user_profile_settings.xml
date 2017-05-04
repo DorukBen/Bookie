@@ -1,11 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
-<RelativeLayout
+<LinearLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@color/colorPrimary"
+    android:orientation="vertical"
     tools:context=".CurrentUserProfileSettingsActivity">
 
     <android.support.v7.widget.Toolbar
@@ -50,6 +51,7 @@
         </RelativeLayout>
 
     </android.support.v7.widget.Toolbar>
+
     <include
         android:id="@+id/noConnectionView"
         layout="@layout/item_empty_state"
@@ -150,7 +152,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="8dp"
-                    android:background="@color/colorPrimaryDark"
+                    android:background="@color/textBackgroundLight"
                     android:gravity="top"
                     android:hint="@string/report_hint_user_additional_info"
                     android:inputType="textCapSentences|textMultiLine"
@@ -190,7 +192,7 @@
                 android:padding="24dp"
                 android:text="@string/block"
                 android:textAllCaps="true"
-                android:textColor="@color/error_red"
+                android:textColor="@color/errorRed"
                 android:textSize="16sp"/>
 
 
@@ -198,4 +200,4 @@
 
     </ScrollView>
 
-</RelativeLayout>
+</LinearLayout>

@@ -966,7 +966,7 @@ public class ProfileTimelineAdapter extends RecyclerView.Adapter<RecyclerView.Vi
 
                     case LOST:
                         bookHolder.mBookState.setImageResource(R.drawable.ic_close_dark);
-                        bookHolder.mBookState.setColorFilter(ContextCompat.getColor(mContext, R.color.error_red));
+                        bookHolder.mBookState.setColorFilter(ContextCompat.getColor(mContext, R.color.errorRed));
                         break;
                 }
 

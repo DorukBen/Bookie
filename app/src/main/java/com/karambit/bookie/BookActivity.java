@@ -20,6 +20,7 @@ import android.text.Spannable;
 import android.text.SpannableString;
 import android.text.style.AbsoluteSizeSpan;
 import android.text.style.ForegroundColorSpan;
+import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.ImageView;
@@ -355,6 +356,8 @@ public class BookActivity extends AppCompatActivity {
                     ArrayList<Request> allRequests = new ArrayList<Request>();
                     allRequests.addAll(sendRequests);
                     allRequests.addAll(answeredRequests);
+
+                    Log.d(TAG, allRequests.toString());
 
                     Intent intent = new Intent(BookActivity.this, RequestActivity.class);
                     intent.putExtra(RequestActivity.EXTRA_BOOK, mBook);
@@ -1024,8 +1027,8 @@ public class BookActivity extends AppCompatActivity {
                                             informationDialog.setPrimaryMessage(R.string.book_lost_info_short);
                                             String bookieSupport = getString(R.string.bookie_support);
                                             informationDialog.setSecondaryMessage(getString(R.string.book_lost_info, bookieSupport));
-                                            informationDialog.setTopSectionColor(ContextCompat.getColor(BookActivity.this, R.color.error_red));
-                                            informationDialog.setButtonColor(ContextCompat.getColor(BookActivity.this, R.color.error_red));
+                                            informationDialog.setTopSectionColor(ContextCompat.getColor(BookActivity.this, R.color.errorRed));
+                                            informationDialog.setButtonColor(ContextCompat.getColor(BookActivity.this, R.color.errorRed));
 
                                             informationDialog.setDefaultClickListener(new InformationDialog.DefaultClickListener() {
                                                 @Override

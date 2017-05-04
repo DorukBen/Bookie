@@ -210,7 +210,7 @@ public class LastMessageAdapter extends RecyclerView.Adapter<RecyclerView.ViewHo
 
                         case ERROR:
                             messageHolder.mState.setImageResource(R.drawable.ic_messaging_error_24dp);
-                            messageHolder.mState.setColorFilter(ContextCompat.getColor(mContext, R.color.error_red));
+                            messageHolder.mState.setColorFilter(ContextCompat.getColor(mContext, R.color.errorRed));
                             break;
 
                         default:

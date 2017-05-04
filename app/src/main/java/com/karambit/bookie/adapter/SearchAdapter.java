@@ -16,12 +16,10 @@ import com.bumptech.glide.Glide;
 import com.karambit.bookie.R;
 import com.karambit.bookie.helper.LayoutUtils;
 import com.karambit.bookie.helper.pull_refresh_layout.SmartisanProgressBarDrawable;
-import com.karambit.bookie.helper.string_similarity.StringDistance;
 import com.karambit.bookie.model.Book;
 import com.karambit.bookie.model.User;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.Hashtable;
 
 /**
@@ -558,7 +556,7 @@ public class SearchAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder>
 
                     case LOST:
                         bookHolder.mBookState.setImageResource(R.drawable.ic_close_dark);
-                        bookHolder.mBookState.setColorFilter(ContextCompat.getColor(mContext, R.color.error_red));
+                        bookHolder.mBookState.setColorFilter(ContextCompat.getColor(mContext, R.color.errorRed));
                         break;
                 }
 

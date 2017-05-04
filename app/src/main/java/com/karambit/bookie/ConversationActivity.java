@@ -10,7 +10,6 @@ import android.content.IntentFilter;
 import android.os.Bundle;
 import android.support.v4.content.ContextCompat;
 import android.support.v4.content.LocalBroadcastManager;
-import android.support.v7.app.ActionBar;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
@@ -123,11 +122,15 @@ public class ConversationActivity extends AppCompatActivity {
             toolbar.findViewById(R.id.closeButton).setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
-                    finish();
+                    if (mConversationAdapter.getSelectedIndexes().size() > 0) {
+                        setSelectionMode(false);
+                        mConversationAdapter.getSelectedIndexes().clear();
+                        mConversationAdapter.notifyDataSetChanged();
+                    } else {
+                        finish();
+                    }
                 }
             });
-
-            //TODO isme tıklanınca gitsin
         }
 
         mDbManager = new DBManager(this);
@@ -528,22 +531,16 @@ public class ConversationActivity extends AppCompatActivity {
     }
 
     private void setSelectionMode(boolean toggle) {
-        ActionBar actionBar = getSupportActionBar();
 
         if (toggle) {
             String selectedTitle = getString(R.string.x_messages_selected, mConversationAdapter.getSelectedIndexes().size());
             setActionBarTitle(selectedTitle);
-
-            actionBar.setDisplayHomeAsUpEnabled(true);
-            actionBar.setHomeAsUpIndicator(R.drawable.ic_arrow_back_primary_text_color);
 
             mDeleteMenuItem.setVisible(true);
 
             Logger.d("Message selection mode on");
         } else {
             setActionBarTitle(mOppositeUser.getName());
-
-            actionBar.setDisplayHomeAsUpEnabled(false);
 
             mDeleteMenuItem.setVisible(false);
 
@@ -552,7 +549,6 @@ public class ConversationActivity extends AppCompatActivity {
     }
 
     private void setActionBarTitle(String selectedTitle) {
-        ActionBar actionBar = getSupportActionBar();
 
         SpannableString title = new SpannableString(selectedTitle);
         title.setSpan(new TypefaceSpan(this, MainActivity.FONT_GENERAL_TITLE), 0, title.length(),
@@ -561,7 +557,7 @@ public class ConversationActivity extends AppCompatActivity {
         title.setSpan(new AbsoluteSizeSpan((int) titleSize), 0, title.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
 
         // Update the action bar title with the TypefaceSpan instance
-        actionBar.setTitle(title);
+        ((TextView) findViewById(R.id.toolbar).findViewById(R.id.toolbarTitle)).setText(title);
     }
 
     @Override
@@ -633,9 +629,6 @@ public class ConversationActivity extends AppCompatActivity {
                 break;
 
             case android.R.id.home:
-                setSelectionMode(false);
-                mConversationAdapter.getSelectedIndexes().clear();
-                mConversationAdapter.notifyDataSetChanged();
 
                 break;
         }

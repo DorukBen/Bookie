@@ -182,6 +182,10 @@ public class MainActivity extends AppCompatActivity implements TabHost.OnTabChan
         LocalBroadcastManager.getInstance(this).registerReceiver(mMessageReceiver, new IntentFilter(BookieIntentFilters.FCM_INTENT_FILTER_ACCEPTED_REQUEST_RECEIVED));
         LocalBroadcastManager.getInstance(this).registerReceiver(mMessageReceiver, new IntentFilter(BookieIntentFilters.FCM_INTENT_FILTER_BOOK_OWNER_CHANGED_RECEIVED));
         LocalBroadcastManager.getInstance(this).registerReceiver(mMessageReceiver, new IntentFilter(BookieIntentFilters.INTENT_FILTER_BOOK_ADDED));
+
+        if (getIntent().getParcelableExtra(EXTRA_MESSAGE_USER) != null || getIntent().getParcelableExtra(EXTRA_NOTIFICATION) != null) {
+            onNewIntent(getIntent());
+        }
     }
 
     @Override
@@ -609,6 +613,7 @@ public class MainActivity extends AppCompatActivity implements TabHost.OnTabChan
         if (mErrorView != null) {
             mErrorView.setVisibility(View.VISIBLE);
             mErrorView.setText(R.string.unknown_error);
+            mErrorView.setBackgroundColor(ContextCompat.getColor(this, R.color.errorYellow));
         }
     }
 
@@ -616,6 +621,7 @@ public class MainActivity extends AppCompatActivity implements TabHost.OnTabChan
         if (mErrorView != null) {
             mErrorView.setVisibility(View.VISIBLE);
             mErrorView.setText(R.string.no_internet_connection);
+            mErrorView.setBackgroundColor(ContextCompat.getColor(this, R.color.errorRed));
         }
     }
 

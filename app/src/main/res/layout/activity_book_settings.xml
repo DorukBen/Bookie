@@ -147,7 +147,7 @@
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:layout_marginLeft="16dp"
-                        android:background="@color/colorPrimaryDark"
+                        android:background="@color/textBackgroundLight"
                         android:hint="@string/book_name_hint"
                         android:inputType="textCapWords"
                         android:padding="12dp"
@@ -162,7 +162,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginLeft="40dp"
-                    android:background="@color/colorPrimaryDark"
+                    android:background="@color/textBackgroundLight"
                     android:hint="@string/author_hint"
                     android:inputType="textCapWords"
                     android:padding="12dp"
@@ -270,7 +270,7 @@
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="8dp"
-                        android:background="@color/colorPrimaryDark"
+                        android:background="@color/textBackgroundLight"
                         android:gravity="top"
                         android:hint="@string/report_hint_book_additional_info"
                         android:inputType="textCapSentences|textMultiLine"
@@ -317,7 +317,7 @@
                     android:padding="24dp"
                     android:text="@string/lost"
                     android:textAllCaps="true"
-                    android:textColor="@color/error_red"
+                    android:textColor="@color/errorRed"
                     android:textSize="16sp"/>
 
             </LinearLayout>

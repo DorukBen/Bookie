@@ -37,7 +37,6 @@ import android.widget.Toast;
 import com.karambit.bookie.adapter.RequestAdapter;
 import com.karambit.bookie.helper.ComfortableProgressDialog;
 import com.karambit.bookie.helper.ElevationScrollListener;
-import com.karambit.bookie.helper.LayoutUtils;
 import com.karambit.bookie.helper.SessionManager;
 import com.karambit.bookie.helper.TypefaceSpan;
 import com.karambit.bookie.helper.pull_refresh_layout.PullRefreshLayout;
@@ -149,6 +148,17 @@ public class RequestActivity extends AppCompatActivity {
                 actionBar.setElevation(ElevationScrollListener.getActionbarElevation(totalScrolled));
             }
         });
+
+        for (final Request request : mRequests) {
+            if (request.getType() == Request.Type.ACCEPT) {
+                mAcceptedRequestTextView.post(new Runnable() {
+                    @Override
+                    public void run() {
+                        setAcceptedRequestText(request);
+                    }
+                });
+            }
+        }
 
         mRequestAdapter.setRequestClickListeners(new RequestAdapter.RequestClickListeners() {
             @Override
@@ -517,10 +527,12 @@ public class RequestActivity extends AppCompatActivity {
         mAcceptedRequestTextView.setHighlightColor(Color.TRANSPARENT);
         mAcceptedRequestTextView.setText(spanAcceptRequest);
 
-        getSupportActionBar().setElevation(getResources().getDimension(R.dimen.actionbar_starting_elevation));
-        mRequestRecyclerView.setOnScrollListener(null);
+//        mRequestRecyclerView.removeOnScrollListener(m);
+        float elevation = getResources().getDimension(R.dimen.actionbar_max_elevation);
 
-        ViewCompat.setElevation(mAcceptedRequestTextView, 8f * LayoutUtils.DP);
+        getSupportActionBar().setElevation(elevation);
+
+        ViewCompat.setElevation(mAcceptedRequestTextView, elevation);
     }
 
     @Override

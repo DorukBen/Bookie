@@ -207,7 +207,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginLeft="16dp"
-                    android:background="@color/colorPrimaryDark"
+                    android:background="@color/textBackgroundLight"
                     android:hint="@string/your_name_hint"
                     android:inputType="textCapWords"
                     android:padding="12dp"
@@ -224,7 +224,7 @@
                 android:layout_marginBottom="4dp"
                 android:layout_marginLeft="40dp"
                 android:layout_marginTop="4dp"
-                android:background="@color/colorPrimaryDark"
+                android:background="@color/textBackgroundLight"
                 android:hint="@string/bio_hint"
                 android:inputType="textMultiLine|textCapSentences"
                 android:padding="12dp"
@@ -338,7 +338,7 @@
                 android:id="@+id/feedbackEditText"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:background="@color/colorPrimaryDark"
+                android:background="@color/textBackgroundLight"
                 android:gravity="top"
                 android:hint="@string/feedback_hint"
                 android:inputType="textCapSentences|textMultiLine"
@@ -374,7 +374,7 @@
                 android:padding="24dp"
                 android:text="@string/logout"
                 android:textAllCaps="true"
-                android:textColor="@color/error_red"
+                android:textColor="@color/errorRed"
                 android:textSize="16sp"/>
 
 
