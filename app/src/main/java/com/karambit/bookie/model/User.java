@@ -1,11 +1,13 @@
 package com.karambit.bookie.model;
 
+import android.content.Context;
 import android.os.Parcel;
 import android.os.Parcelable;
 import android.support.annotation.Nullable;
 import android.text.TextUtils;
 
 import com.google.android.gms.maps.model.LatLng;
+import com.karambit.bookie.R;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -46,6 +48,10 @@ public class User implements Parcelable {
         mImageUrl = in.readString();
         mThumbnailUrl = in.readString();
         mLocation = in.readParcelable(LatLng.class.getClassLoader());
+    }
+
+    public static User getBookieSupport(Context context) {
+        return new User(-1, context.getString(R.string.bookie_support), null, null, null);
     }
 
     @Override

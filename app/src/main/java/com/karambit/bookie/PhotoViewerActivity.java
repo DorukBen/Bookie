@@ -9,7 +9,6 @@ import android.content.pm.PackageManager;
 import android.content.res.Resources;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
-import android.graphics.Color;
 import android.graphics.Matrix;
 import android.graphics.Point;
 import android.graphics.PointF;
@@ -106,17 +105,8 @@ public class PhotoViewerActivity extends AppCompatActivity implements View.OnTou
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_photo_viewer);
 
-        if (getSupportActionBar() != null){
-            getSupportActionBar().setShowHideAnimationEnabled(false);
-            getSupportActionBar().hide();
-
-            getWindow().getDecorView().setSystemUiVisibility(
-                    View.SYSTEM_UI_FLAG_LAYOUT_STABLE
-                            | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN);
-
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-                getWindow().setStatusBarColor(Color.TRANSPARENT);
-            }
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+            getWindow().setStatusBarColor(ContextCompat.getColor(this, R.color.black));
         }
 
         mDbManager = new DBManager(PhotoViewerActivity.this);

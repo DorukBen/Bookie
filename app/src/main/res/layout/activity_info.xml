@@ -1,213 +1,373 @@
 <?xml version="1.0" encoding="utf-8"?>
-<ScrollView
+
+<LinearLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
-    android:id="@+id/infoScrollView"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/colorPrimary"
+    android:orientation="vertical"
     tools:context="com.karambit.bookie.InfoActivity">
 
-    <LinearLayout
+    <android.support.v7.widget.Toolbar
+        android:id="@+id/toolbar"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:animateLayoutChanges="true"
-        android:orientation="vertical"
-        android:paddingBottom="16dp"
-        android:paddingLeft="16dp"
-        android:paddingRight="16dp">
+        android:layout_height="?attr/actionBarSize"
+        android:layout_weight="0"
+        android:background="@color/colorPrimary"
+        android:contentInsetLeft="0dp"
+        android:contentInsetStart="0dp"
+        android:theme="@style/ThemeOverlay.AppCompat.ActionBar"
+        app:contentInsetLeft="0dp"
+        app:contentInsetStart="0dp"
+        app:popupTheme="@style/ThemeOverlay.AppCompat.Light">
+
+        <ImageButton
+            android:id="@+id/closeButton"
+            style="@style/Base.Widget.AppCompat.ActionButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentLeft="true"
+            android:layout_centerVertical="true"
+            android:src="@drawable/ic_arrow_back_black_24dp"
+            android:tint="@color/primaryTextColor"/>
+
+        <TextView
+            android:id="@+id/toolbarTitle"
+            style="@style/TextAppearance.AppCompat.Widget.ActionBar.Title"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_centerVertical="true"
+            android:layout_toLeftOf="@+id/doneButton"
+            android:layout_toRightOf="@+id/closeButton"
+            android:singleLine="true"
+            android:text="@string/info"
+            android:textColor="@color/primaryTextColor"/>
+
+    </android.support.v7.widget.Toolbar>
+
+    <ScrollView
+        android:id="@+id/infoScrollView"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="@color/colorPrimary">
 
         <LinearLayout
-            android:id="@+id/infoTitleContainer_0"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:background="?android:selectableItemBackground"
-            android:gravity="center_vertical"
-            android:orientation="horizontal">
+            android:animateLayoutChanges="true"
+            android:orientation="vertical"
+            android:paddingBottom="16dp"
+            android:paddingLeft="16dp"
+            android:paddingRight="16dp">
 
-            <ImageView
-                android:id="@+id/infoDropDownImage_0"
-                android:layout_width="24dp"
-                android:layout_height="24dp"
-                android:src="@drawable/ic_keyboard_arrow_down_black_24dp"
-                android:tint="@color/secondaryTextColor"/>
+            <LinearLayout
+                android:id="@+id/infoTitleContainer_0"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:background="?android:selectableItemBackground"
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
+
+                <ImageView
+                    android:id="@+id/infoDropDownImage_0"
+                    android:layout_width="24dp"
+                    android:layout_height="24dp"
+                    android:src="@drawable/ic_keyboard_arrow_down_black_24dp"
+                    android:tint="@color/secondaryTextColor"/>
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="56dp"
+                    android:layout_marginLeft="8dp"
+                    android:gravity="center_vertical"
+                    android:text="@string/verification"
+                    android:textAllCaps="true"
+                    android:textColor="@color/primaryTextColor"
+                    android:textSize="14sp"/>
+
+            </LinearLayout>
 
             <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="56dp"
-                android:layout_marginLeft="8dp"
-                android:gravity="center_vertical"
-                android:text="@string/requests"
-                android:textAllCaps="true"
+                android:id="@+id/infoContent_0"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:background="@color/textBackgroundLight"
+                android:padding="12dp"
+                android:text="@string/verification_info"
                 android:textColor="@color/primaryTextColor"
-                android:textSize="14sp"/>
+                android:textSize="16sp"
+                android:visibility="gone"/>
+
+            <LinearLayout
+                android:id="@+id/infoTitleContainer_1"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:background="?android:selectableItemBackground"
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
+
+                <ImageView
+                    android:id="@+id/infoDropDownImage_1"
+                    android:layout_width="24dp"
+                    android:layout_height="24dp"
+                    android:src="@drawable/ic_keyboard_arrow_down_black_24dp"
+                    android:tint="@color/secondaryTextColor"/>
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="56dp"
+                    android:layout_marginLeft="8dp"
+                    android:gravity="center_vertical"
+                    android:text="@string/location"
+                    android:textAllCaps="true"
+                    android:textColor="@color/primaryTextColor"
+                    android:textSize="14sp"/>
+
+            </LinearLayout>
+
+            <TextView
+                android:id="@+id/infoContent_1"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:background="@color/textBackgroundLight"
+                android:padding="12dp"
+                android:text="@string/location_info"
+                android:textColor="@color/primaryTextColor"
+                android:textSize="16sp"
+                android:visibility="gone"/>
+
+            <LinearLayout
+                android:id="@+id/infoTitleContainer_2"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:background="?android:selectableItemBackground"
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
+
+                <ImageView
+                    android:id="@+id/infoDropDownImage_2"
+                    android:layout_width="24dp"
+                    android:layout_height="24dp"
+                    android:src="@drawable/ic_keyboard_arrow_down_black_24dp"
+                    android:tint="@color/secondaryTextColor"/>
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="56dp"
+                    android:layout_marginLeft="8dp"
+                    android:gravity="center_vertical"
+                    android:text="@string/insufficient_book_count_info_short"
+                    android:textAllCaps="true"
+                    android:textColor="@color/primaryTextColor"
+                    android:textSize="14sp"/>
+
+            </LinearLayout>
+
+            <TextView
+                android:id="@+id/infoContent_2"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:background="@color/textBackgroundLight"
+                android:padding="12dp"
+                android:text="@string/book_counter_info"
+                android:textColor="@color/primaryTextColor"
+                android:textSize="16sp"
+                android:visibility="gone"/>
+
+            <LinearLayout
+                android:id="@+id/infoTitleContainer_3"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:background="?android:selectableItemBackground"
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
+
+                <ImageView
+                    android:id="@+id/infoDropDownImage_3"
+                    android:layout_width="24dp"
+                    android:layout_height="24dp"
+                    android:src="@drawable/ic_keyboard_arrow_down_black_24dp"
+                    android:tint="@color/secondaryTextColor"/>
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="56dp"
+                    android:layout_marginLeft="8dp"
+                    android:gravity="center_vertical"
+                    android:text="@string/requests"
+                    android:textAllCaps="true"
+                    android:textColor="@color/primaryTextColor"
+                    android:textSize="14sp"/>
+
+            </LinearLayout>
+
+            <TextView
+                android:id="@+id/infoContent_3"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:background="@color/textBackgroundLight"
+                android:padding="12dp"
+                android:text="@string/request_info"
+                android:textColor="@color/primaryTextColor"
+                android:textSize="16sp"
+                android:visibility="gone"/>
+
+            <LinearLayout
+                android:id="@+id/infoTitleContainer_4"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:background="?android:selectableItemBackground"
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
+
+                <ImageView
+                    android:id="@+id/infoDropDownImage_4"
+                    android:layout_width="24dp"
+                    android:layout_height="24dp"
+                    android:src="@drawable/ic_keyboard_arrow_down_black_24dp"
+                    android:tint="@color/secondaryTextColor"/>
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="56dp"
+                    android:layout_marginLeft="8dp"
+                    android:gravity="center_vertical"
+                    android:text="@string/transactions"
+                    android:textAllCaps="true"
+                    android:textColor="@color/primaryTextColor"
+                    android:textSize="14sp"/>
+
+            </LinearLayout>
+
+            <TextView
+                android:id="@+id/infoContent_4"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:background="@color/textBackgroundLight"
+                android:padding="12dp"
+                android:text="@string/transaction_info"
+                android:textColor="@color/primaryTextColor"
+                android:textSize="16sp"
+                android:visibility="gone"/>
+
+            <LinearLayout
+                android:id="@+id/infoTitleContainer_5"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:background="?android:selectableItemBackground"
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
+
+                <ImageView
+                    android:id="@+id/infoDropDownImage_5"
+                    android:layout_width="24dp"
+                    android:layout_height="24dp"
+                    android:src="@drawable/ic_keyboard_arrow_down_black_24dp"
+                    android:tint="@color/secondaryTextColor"/>
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="56dp"
+                    android:layout_marginLeft="8dp"
+                    android:gravity="center_vertical"
+                    android:text="@string/point"
+                    android:textAllCaps="true"
+                    android:textColor="@color/primaryTextColor"
+                    android:textSize="14sp"/>
+
+            </LinearLayout>
+
+            <TextView
+                android:id="@+id/infoContent_5"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:background="@color/textBackgroundLight"
+                android:padding="12dp"
+                android:text="@string/point_info"
+                android:textColor="@color/primaryTextColor"
+                android:textSize="16sp"
+                android:visibility="gone"/>
+
+            <LinearLayout
+                android:id="@+id/infoTitleContainer_6"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:background="?android:selectableItemBackground"
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
+
+                <ImageView
+                    android:id="@+id/infoDropDownImage_6"
+                    android:layout_width="24dp"
+                    android:layout_height="24dp"
+                    android:src="@drawable/ic_keyboard_arrow_down_black_24dp"
+                    android:tint="@color/secondaryTextColor"/>
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="56dp"
+                    android:layout_marginLeft="8dp"
+                    android:gravity="center_vertical"
+                    android:text="@string/feedback"
+                    android:textAllCaps="true"
+                    android:textColor="@color/primaryTextColor"
+                    android:textSize="14sp"/>
+
+            </LinearLayout>
+
+            <TextView
+                android:id="@+id/infoContent_6"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:background="@color/textBackgroundLight"
+                android:padding="12dp"
+                android:text="@string/feedback_info"
+                android:textColor="@color/primaryTextColor"
+                android:textSize="16sp"
+                android:visibility="gone"/>
+
+
+            <LinearLayout
+                android:id="@+id/infoTitleContainer_7"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:background="?android:selectableItemBackground"
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
+
+                <ImageView
+                    android:id="@+id/infoDropDownImage_7"
+                    android:layout_width="24dp"
+                    android:layout_height="24dp"
+                    android:src="@drawable/ic_keyboard_arrow_down_black_24dp"
+                    android:tint="@color/secondaryTextColor"/>
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="56dp"
+                    android:layout_marginLeft="8dp"
+                    android:gravity="center_vertical"
+                    android:text="@string/who_are_we"
+                    android:textAllCaps="true"
+                    android:textColor="@color/primaryTextColor"
+                    android:textSize="14sp"/>
+
+            </LinearLayout>
+
+            <TextView
+                android:id="@+id/infoContent_7"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:background="@color/textBackgroundLight"
+                android:padding="12dp"
+                android:text="@string/credit_info"
+                android:textColor="@color/primaryTextColor"
+                android:textSize="16sp"
+                android:visibility="gone"/>
 
         </LinearLayout>
 
-        <TextView
-            android:id="@+id/infoContent_0"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:background="@color/colorPrimaryDark"
-            android:padding="12dp"
-            android:text="@string/request_info"
-            android:textColor="@color/primaryTextColor"
-            android:textSize="16sp"
-            android:visibility="gone"/>
+    </ScrollView>
 
-        <LinearLayout
-            android:id="@+id/infoTitleContainer_1"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:background="?android:selectableItemBackground"
-            android:gravity="center_vertical"
-            android:orientation="horizontal">
-
-            <ImageView
-                android:id="@+id/infoDropDownImage_1"
-                android:layout_width="24dp"
-                android:layout_height="24dp"
-                android:src="@drawable/ic_keyboard_arrow_down_black_24dp"
-                android:tint="@color/secondaryTextColor"/>
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="56dp"
-                android:layout_marginLeft="8dp"
-                android:gravity="center_vertical"
-                android:text="@string/transactions"
-                android:textAllCaps="true"
-                android:textColor="@color/primaryTextColor"
-                android:textSize="14sp"/>
-
-        </LinearLayout>
-
-        <TextView
-            android:id="@+id/infoContent_1"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:background="@color/colorPrimaryDark"
-            android:padding="12dp"
-            android:text="@string/transaction_info"
-            android:textColor="@color/primaryTextColor"
-            android:textSize="16sp"
-            android:visibility="gone"/>
-
-        <LinearLayout
-            android:id="@+id/infoTitleContainer_2"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:background="?android:selectableItemBackground"
-            android:gravity="center_vertical"
-            android:orientation="horizontal">
-
-            <ImageView
-                android:id="@+id/infoDropDownImage_2"
-                android:layout_width="24dp"
-                android:layout_height="24dp"
-                android:src="@drawable/ic_keyboard_arrow_down_black_24dp"
-                android:tint="@color/secondaryTextColor"/>
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="56dp"
-                android:layout_marginLeft="8dp"
-                android:gravity="center_vertical"
-                android:text="@string/point"
-                android:textAllCaps="true"
-                android:textColor="@color/primaryTextColor"
-                android:textSize="14sp"/>
-
-        </LinearLayout>
-
-        <TextView
-            android:id="@+id/infoContent_2"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:background="@color/colorPrimaryDark"
-            android:padding="12dp"
-            android:text="@string/point_info"
-            android:textColor="@color/primaryTextColor"
-            android:textSize="16sp"
-            android:visibility="gone"/>
-
-        <LinearLayout
-            android:id="@+id/infoTitleContainer_3"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:background="?android:selectableItemBackground"
-            android:gravity="center_vertical"
-            android:orientation="horizontal">
-
-            <ImageView
-                android:id="@+id/infoDropDownImage_3"
-                android:layout_width="24dp"
-                android:layout_height="24dp"
-                android:src="@drawable/ic_keyboard_arrow_down_black_24dp"
-                android:tint="@color/secondaryTextColor"/>
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="56dp"
-                android:layout_marginLeft="8dp"
-                android:gravity="center_vertical"
-                android:text="@string/feedback"
-                android:textAllCaps="true"
-                android:textColor="@color/primaryTextColor"
-                android:textSize="14sp"/>
-
-        </LinearLayout>
-
-        <TextView
-            android:id="@+id/infoContent_3"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:background="@color/colorPrimaryDark"
-            android:padding="12dp"
-            android:text="@string/feedback_info"
-            android:textColor="@color/primaryTextColor"
-            android:textSize="16sp"
-            android:visibility="gone"/>
-
-
-        <LinearLayout
-            android:id="@+id/infoTitleContainer_4"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:background="?android:selectableItemBackground"
-            android:gravity="center_vertical"
-            android:orientation="horizontal">
-
-            <ImageView
-                android:id="@+id/infoDropDownImage_4"
-                android:layout_width="24dp"
-                android:layout_height="24dp"
-                android:src="@drawable/ic_keyboard_arrow_down_black_24dp"
-                android:tint="@color/secondaryTextColor"/>
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="56dp"
-                android:layout_marginLeft="8dp"
-                android:gravity="center_vertical"
-                android:text="@string/who_are_we"
-                android:textAllCaps="true"
-                android:textColor="@color/primaryTextColor"
-                android:textSize="14sp"/>
-
-        </LinearLayout>
-
-        <TextView
-            android:id="@+id/infoContent_4"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:background="@color/colorPrimaryDark"
-            android:padding="12dp"
-            android:text="@string/credit_info"
-            android:textColor="@color/primaryTextColor"
-            android:textSize="16sp"
-            android:visibility="gone"/>
-
-    </LinearLayout>
-
-</ScrollView>
+</LinearLayout>

@@ -20,6 +20,7 @@
     <dimen name="actionbar_title_size">18dp</dimen>
 
     <dimen name="actionbar_starting_elevation">0dp</dimen>
+    <dimen name="actionbar_max_elevation">8dp</dimen>
     <dimen name="tab_host_item_elevation">8dp</dimen>
 
 </resources>

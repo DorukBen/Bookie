@@ -908,6 +908,8 @@ public class BookTimelineAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
                         String giverName = transaction.getGiver().getName();
                         String takerName = transaction.getTaker().getName();
 
+                        String bookieSupport = mContext.getString(R.string.bookie_support);
+
                         ClickableSpan clickableSpanGiverName = new ClickableSpan() {
                             @Override
                             public void onClick(View textView) {
@@ -973,13 +975,14 @@ public class BookTimelineAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
                                 }
 
                                 case LOST: {
-                                    String lostBookString = mContext.getString(R.string.you_lost_the_book_while_sending_to_x, takerName);
+                                    String lostBookString = mContext.getString(R.string.book_lost_while_on_road_to_x_if_mistake_z, takerName);
                                     SpannableString spanLostBook = new SpannableString(lostBookString);
-                                    int startIndex = lostBookString.indexOf(takerName);
-                                    int endIndex = startIndex + takerName.length();
 
-                                    spanLostBook.setSpan(clickableSpanTakerName, startIndex, endIndex, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
-                                    spanLostBook.setSpan(new StyleSpan(Typeface.BOLD), startIndex, endIndex, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+                                    int startIndexTaker = lostBookString.indexOf(takerName);
+                                    int endIndexTaker = startIndexTaker + takerName.length();
+
+                                    spanLostBook.setSpan(clickableSpanTakerName, startIndexTaker, endIndexTaker, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+                                    spanLostBook.setSpan(new StyleSpan(Typeface.BOLD), startIndexTaker, endIndexTaker, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
                                     spanLostBook.setSpan(new ForegroundColorSpan(ContextCompat.getColor(mContext, R.color.primaryTextColor)),
                                                          0, spanLostBook.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
 
@@ -1022,13 +1025,14 @@ public class BookTimelineAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
                                 }
 
                                 case LOST: {
-                                    String lostBookString = mContext.getString(R.string.book_lost_while_x_sending_to_you, giverName);
+                                    String lostBookString = mContext.getString(R.string.book_lost_while_x_sending_to_you_if_mistake_z, giverName);
                                     SpannableString spanLostBook = new SpannableString(lostBookString);
-                                    int startIndex = lostBookString.indexOf(giverName);
-                                    int endIndex = startIndex + giverName.length();
 
-                                    spanLostBook.setSpan(clickableSpanGiverName, startIndex, endIndex, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
-                                    spanLostBook.setSpan(new StyleSpan(Typeface.BOLD), startIndex, endIndex, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+                                    int startIndexGiver = lostBookString.indexOf(giverName);
+                                    int endIndexGiver = startIndexGiver + giverName.length();
+
+                                    spanLostBook.setSpan(clickableSpanGiverName, startIndexGiver, endIndexGiver, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+                                    spanLostBook.setSpan(new StyleSpan(Typeface.BOLD), startIndexGiver, endIndexGiver, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
                                     spanLostBook.setSpan(new ForegroundColorSpan(ContextCompat.getColor(mContext, R.color.primaryTextColor)),
                                                          0, spanLostBook.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
 

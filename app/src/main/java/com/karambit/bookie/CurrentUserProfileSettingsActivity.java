@@ -13,16 +13,15 @@ import android.support.v4.content.LocalBroadcastManager;
 import android.support.v7.app.ActionBar;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
+import android.support.v7.widget.Toolbar;
 import android.text.Editable;
 import android.text.Spannable;
 import android.text.SpannableString;
 import android.text.TextUtils;
 import android.text.TextWatcher;
 import android.text.style.AbsoluteSizeSpan;
+import android.text.style.ForegroundColorSpan;
 import android.view.LayoutInflater;
-import android.view.Menu;
-import android.view.MenuInflater;
-import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewTreeObserver;
 import android.widget.Button;
@@ -63,11 +62,7 @@ public class CurrentUserProfileSettingsActivity extends AppCompatActivity {
 
     private static final String TAG = CurrentUserProfileSettingsActivity.class.getSimpleName();
 
-    private static final int REQUEST_CODE_UPDATE_PROFILE_PICTURE = 1;
-    private static final int REQUEST_CODE_LOCATION = 2;
-
     public static final int RESULT_USER_LOGOUT = 1;
-    public static final int RESULT_USER_UPDATED = 2;
 
     private TextView mLocationTextView;
     private Button mChangeLocationButton;
@@ -78,6 +73,7 @@ public class CurrentUserProfileSettingsActivity extends AppCompatActivity {
 
     private DBManager mDbManager;
     private BroadcastReceiver mMessageReceiver;
+    private CircleImageView mProfilePicture;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -86,6 +82,8 @@ public class CurrentUserProfileSettingsActivity extends AppCompatActivity {
 
         mScrollView = (ScrollView) findViewById(R.id.settingsScrollView);
 
+        Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
+        setSupportActionBar(toolbar);
         final ActionBar actionBar = getSupportActionBar();
         if (actionBar != null) {
             float elevation = getResources().getDimension(R.dimen.actionbar_starting_elevation);
@@ -94,11 +92,34 @@ public class CurrentUserProfileSettingsActivity extends AppCompatActivity {
             s.setSpan(new TypefaceSpan(this, MainActivity.FONT_GENERAL_TITLE), 0, s.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
             float titleSize = getResources().getDimension(R.dimen.actionbar_title_size);
             s.setSpan(new AbsoluteSizeSpan((int) titleSize), 0, s.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+            s.setSpan(new ForegroundColorSpan(ContextCompat.getColor(this, R.color.primaryTextColor)), 0, s.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
 
-            actionBar.setTitle(s);
+            ((TextView) toolbar.findViewById(R.id.toolbarTitle)).setText(s);
 
-            actionBar.setDisplayHomeAsUpEnabled(true);
-            actionBar.setHomeAsUpIndicator(R.drawable.ic_close_primary_text_color);
+            toolbar.findViewById(R.id.closeButton).setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    finish();
+                }
+            });
+
+            toolbar.findViewById(R.id.doneButton).setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    if (BookieApplication.hasNetwork()) {
+                        saveChanges();
+                    } else {
+                        Toast.makeText(CurrentUserProfileSettingsActivity.this, R.string.no_internet_connection, Toast.LENGTH_SHORT).show();
+                    }
+                }
+            });
+
+            toolbar.findViewById(R.id.infoButton).setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    startActivity(new Intent(CurrentUserProfileSettingsActivity.this, InfoActivity.class));
+                }
+            });
         }
 
         mScrollView.getViewTreeObserver().addOnScrollChangedListener(new ViewTreeObserver.OnScrollChangedListener() {
@@ -135,14 +156,14 @@ public class CurrentUserProfileSettingsActivity extends AppCompatActivity {
                 }
             });
 
-            CircleImageView circleImageView = (CircleImageView) findViewById(R.id.profilePictureImageView);
+            mProfilePicture = (CircleImageView) findViewById(R.id.profilePictureImageView);
 
             Glide.with(this)
                  .load(mCurrentUserDetails.getUser().getThumbnailUrl())
                  .asBitmap()
                  .placeholder(R.drawable.placeholder_88dp)
                  .error(R.drawable.error_88dp)
-                 .into(circleImageView);
+                 .into(mProfilePicture);
 
             findViewById(R.id.profilePictureContainer).setOnClickListener(new View.OnClickListener() {
                 @Override
@@ -150,7 +171,7 @@ public class CurrentUserProfileSettingsActivity extends AppCompatActivity {
                     Intent intent = new Intent(CurrentUserProfileSettingsActivity.this, PhotoViewerActivity.class);
                     intent.putExtra(PhotoViewerActivity.EXTRA_USER, mCurrentUserDetails.getUser());
                     intent.putExtra(PhotoViewerActivity.EXTRA_IMAGE, mCurrentUserDetails.getUser().getImageUrl());
-                    startActivityForResult(intent, REQUEST_CODE_UPDATE_PROFILE_PICTURE);
+                    startActivity(intent);
                 }
             });
 
@@ -164,7 +185,7 @@ public class CurrentUserProfileSettingsActivity extends AppCompatActivity {
                 @Override
                 public void onClick(View v) {
                     Intent intent = new Intent(CurrentUserProfileSettingsActivity.this, LocationActivity.class);
-                    startActivityForResult(intent, REQUEST_CODE_LOCATION);
+                    startActivity(intent);
                 }
             });
 
@@ -273,28 +294,56 @@ public class CurrentUserProfileSettingsActivity extends AppCompatActivity {
             noConnectionView.setVisibility(View.VISIBLE);
             ((TextView) noConnectionView.findViewById(R.id.emptyStateTextView)).setText(R.string.no_internet_connection);
         }
-    }
-
-    @Override
-    protected void onResume() {
-        super.onResume();
 
         mMessageReceiver = new BroadcastReceiver(){
 
             @Override
             public void onReceive(Context context, Intent intent) {
                 if (intent.getAction().equalsIgnoreCase(BookieIntentFilters.FCM_INTENT_FILTER_USER_VERIFIED)){
-                    //TODO When user verified
+                    View verificationButtonContainer = findViewById(R.id.verificationButtonContainer);
+                    verificationButtonContainer.setVisibility(View.GONE);
+
+                    TextView verificationInfoTextView = (TextView) findViewById(R.id.verificationInfoTextView);
+                    verificationInfoTextView.setText(R.string.verification_accepted_info);
+
+                } else if (intent.getAction().equalsIgnoreCase(BookieIntentFilters.INTENT_FILTER_PROFILE_PICTURE_CHANGED)) {
+
+                    String profilePictureUrl = intent.getStringExtra(BookieIntentFilters.EXTRA_PROFILE_PICTURE_URL);
+                    String thumbnailUrl = intent.getStringExtra(BookieIntentFilters.EXTRA_PROFILE_THUMBNAIL_URL);
+
+                    if (profilePictureUrl != null && thumbnailUrl != null) {
+
+                        mCurrentUserDetails.getUser().setImageUrl(profilePictureUrl);
+                        mCurrentUserDetails.getUser().setThumbnailUrl(thumbnailUrl);
+
+                        Logger.d("Profile picture changed received from Local Broadcast: \n" +
+                                     "Profile Picture URL: " + profilePictureUrl + "\nThumbnail URL: " + thumbnailUrl);
+
+                        Glide.with(context)
+                             .load(mCurrentUserDetails.getUser().getThumbnailUrl())
+                             .asBitmap()
+                             .placeholder(R.drawable.placeholder_88dp)
+                             .error(R.drawable.error_88dp)
+                             .into(mProfilePicture);
+                    }
+                } else if (intent.getAction().equalsIgnoreCase(BookieIntentFilters.INTENT_FILTER_LOCATION_UPDATED)) {
+                    LatLng location = intent.getParcelableExtra(BookieIntentFilters.EXTRA_LOCATION);
+                    if (location != null) {
+                        mCurrentUserDetails.getUser().setLocation(location);
+                        fetchLocation();
+                    }
                 }
             }
         };
 
         LocalBroadcastManager.getInstance(this).registerReceiver(mMessageReceiver, new IntentFilter(BookieIntentFilters.FCM_INTENT_FILTER_USER_VERIFIED));
+        LocalBroadcastManager.getInstance(this).registerReceiver(mMessageReceiver, new IntentFilter(BookieIntentFilters.INTENT_FILTER_PROFILE_PICTURE_CHANGED));
+        LocalBroadcastManager.getInstance(this).registerReceiver(mMessageReceiver, new IntentFilter(BookieIntentFilters.INTENT_FILTER_LOCATION_UPDATED));
     }
 
     @Override
-    protected void onPause() {
-        super.onPause();
+    protected void onDestroy() {
+        super.onDestroy();
 
         LocalBroadcastManager.getInstance(this).unregisterReceiver(mMessageReceiver);
     }
@@ -307,26 +356,6 @@ public class CurrentUserProfileSettingsActivity extends AppCompatActivity {
         progressDialog.show();
 
         resendVerificationCode(resendVerificationCodeButton, verificationImageView, verificationInfoTextView, progressDialog);
-    }
-
-    @Override
-    public void onActivityResult(int requestCode, int resultCode, Intent data) {
-        super.onActivityResult(requestCode, resultCode, data);
-
-        if (requestCode == REQUEST_CODE_UPDATE_PROFILE_PICTURE) {
-            if (resultCode == PhotoViewerActivity.RESULT_PROFILE_PICTURE_UPDATED) {
-                setResult(RESULT_USER_UPDATED);
-                finish();
-            }
-        } else if (requestCode == REQUEST_CODE_LOCATION) {
-            if (resultCode == LocationActivity.RESULT_LOCATION_UPDATED) {
-                LatLng previousLocation = mCurrentUserDetails.getUser().getLocation();
-                double newLatitude = data.getDoubleExtra(LocationActivity.EXTRA_LATITUDE, previousLocation != null ? previousLocation.latitude : Long.MIN_VALUE);
-                double newLongitude = data.getDoubleExtra(LocationActivity.EXTRA_LONGITUDE, previousLocation != null ? previousLocation.longitude : Long.MIN_VALUE);
-                mCurrentUserDetails.getUser().setLocation(new LatLng(newLatitude, newLongitude));
-                fetchLocation();
-            }
-        }
     }
 
     private void oldPasswordDialog() {
@@ -573,7 +602,7 @@ public class CurrentUserProfileSettingsActivity extends AppCompatActivity {
                             List<Address> addresses = geocoder.getFromLocation(userLocation.latitude, userLocation.longitude, 1);
 
                             // Admin area equals Istanbul
-                            // Subadmin are equals Bahçelievler
+                            // Subadmin area equals Bahçelievler
 
                             if (addresses.size() > 0) {
                                 String locationString = "";
@@ -589,23 +618,22 @@ public class CurrentUserProfileSettingsActivity extends AppCompatActivity {
                                 }
 
                                 final String finalLocationString = locationString;
-                                runOnUiThread(
-                                    new Runnable() {
-                                        @Override
-                                        public void run() {
+                                runOnUiThread(new Runnable() {
+                                    @Override
+                                    public void run() {
+                                        if (!TextUtils.isEmpty(finalLocationString)) {
+                                            SessionManager.setLocationText(finalLocationString);
+                                            mLocationTextView.setText(finalLocationString);
+                                            mChangeLocationButton.setText(R.string.change_location);
 
-                                            if (!TextUtils.isEmpty(finalLocationString)) {
-                                                mLocationTextView.setText(finalLocationString);
-                                                mChangeLocationButton.setText(R.string.change_location);
-
-                                            } else {
-                                                mLocationTextView.setText(R.string.no_location_info);
-                                                mChangeLocationButton.setText(R.string.add_location);
-                                            }
-                                            mChangeLocationButton.setVisibility(View.VISIBLE);
-                                            mLocationTextView.setTextColor(ContextCompat.getColor(CurrentUserProfileSettingsActivity.this,
-                                                                                                  R.color.primaryTextColor));
+                                        } else {
+                                            mLocationTextView.setText(R.string.no_location_info);
+                                            mChangeLocationButton.setText(R.string.add_location);
                                         }
+                                        mChangeLocationButton.setVisibility(View.VISIBLE);
+                                        mLocationTextView.setTextColor(ContextCompat.getColor(CurrentUserProfileSettingsActivity.this,
+                                                                                              R.color.primaryTextColor));
+                                    }
                                     }
                                 );
 
@@ -734,40 +762,6 @@ public class CurrentUserProfileSettingsActivity extends AppCompatActivity {
         });
     }
 
-    @Override
-    public boolean onCreateOptionsMenu(Menu menu) {
-        if (BookieApplication.hasNetwork()) {
-            MenuInflater inflater = getMenuInflater();
-            inflater.inflate(R.menu.done_menu, menu);
-            return super.onCreateOptionsMenu(menu);
-        } else {
-            return false;
-        }
-    }
-
-    @Override
-    public boolean onOptionsItemSelected(MenuItem item) {
-        switch (item.getItemId()) {
-
-            case android.R.id.home: {
-                finish();
-                return true;
-            }
-
-            case R.id.action_done: {
-                if (BookieApplication.hasNetwork()) {
-                    saveChanges();
-                } else {
-                    Toast.makeText(this, R.string.no_internet_connection, Toast.LENGTH_SHORT).show();
-                }
-                return true;
-            }
-
-            default:
-                return super.onOptionsItemSelected(item);
-        }
-    }
-
     private void saveChanges() {
         ComfortableProgressDialog progressDialog = new ComfortableProgressDialog(this);
         progressDialog.setMessage(R.string.please_wait);
@@ -786,7 +780,7 @@ public class CurrentUserProfileSettingsActivity extends AppCompatActivity {
         }
     }
 
-    private void uploadUserParamsToServer(String name, String bio, LatLng location, final ComfortableProgressDialog progressDialog) {
+    private void uploadUserParamsToServer(String name, String bio, final LatLng location, final ComfortableProgressDialog progressDialog) {
         final UserApi userApi = BookieClient.getClient().create(UserApi.class);
 
         String email = mCurrentUserDetails.getEmail();
@@ -794,27 +788,16 @@ public class CurrentUserProfileSettingsActivity extends AppCompatActivity {
 
         name = upperCaseString(name);
 
-        if (TextUtils.isEmpty(bio)){
-            bio = null;
-        }
-
         Call<ResponseBody> uploadUserDetails;
-        if (location != null){
-            uploadUserDetails = userApi.updateUserDetails(email, password, name, bio, location.latitude, location.longitude);
 
-            Logger.d("updateUserDetails() API called with parameters: \n" +
-                         "\temail=" + email + ", \n\tpassword=" + password +
-                         ", \n\tname=" + name + ", \n\tbio=" + bio +
-                         ", \n\tlatitude=" + location.latitude + ", \n\tlongitude=" + location.longitude);
+        uploadUserDetails = userApi.updateUserDetails(email, password, name, bio);
 
-        }else{
-            uploadUserDetails = userApi.updateUserDetails(email, password, name, bio);
+        Logger.d("updateUserDetails() API called with parameters: \n" +
+                     "\temail=" + email + ", \n\tpassword=" + password +
+                     ", \n\tname=" + name + ", \n\tbio=" + bio);
 
-            Logger.d("updateUserDetails() API called with parameters: \n" +
-                         "\temail=" + email + ", \n\tpassword=" + password +
-                         ", \n\tname=" + name + ", \n\tbio=" + bio);
-        }
-
+        final String finalBio = bio;
+        final String finalName = name;
         uploadUserDetails.enqueue(new Callback<ResponseBody>() {
             @Override
             public void onResponse(Call<ResponseBody> call, Response<ResponseBody> response) {
@@ -830,7 +813,12 @@ public class CurrentUserProfileSettingsActivity extends AppCompatActivity {
                             boolean error = responseObject.getBoolean("error");
 
                             if (!error) {
-                                setResult(RESULT_USER_UPDATED);
+                                Intent intent = new Intent(BookieIntentFilters.INTENT_FILTER_PROFILE_PREFERENCES_CHANGED);
+                                intent.putExtra(BookieIntentFilters.EXTRA_NAME_SURNAME, finalName);
+                                intent.putExtra(BookieIntentFilters.EXTRA_BIO, finalBio);
+
+                                LocalBroadcastManager.getInstance(CurrentUserProfileSettingsActivity.this).sendBroadcast(intent);
+
                                 finish();
                             } else {
                                 int errorCode = responseObject.getInt("errorCode");

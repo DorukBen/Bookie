@@ -18,6 +18,7 @@ import android.support.v7.app.ActionBar;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
+import android.support.v7.widget.Toolbar;
 import android.text.Spannable;
 import android.text.SpannableString;
 import android.text.Spanned;
@@ -36,7 +37,6 @@ import android.widget.Toast;
 import com.karambit.bookie.adapter.RequestAdapter;
 import com.karambit.bookie.helper.ComfortableProgressDialog;
 import com.karambit.bookie.helper.ElevationScrollListener;
-import com.karambit.bookie.helper.LayoutUtils;
 import com.karambit.bookie.helper.SessionManager;
 import com.karambit.bookie.helper.TypefaceSpan;
 import com.karambit.bookie.helper.pull_refresh_layout.PullRefreshLayout;
@@ -87,22 +87,28 @@ public class RequestActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_request);
 
+        SpannableString s = new SpannableString(getResources().getString(R.string.request_activity_title));
+        s.setSpan(new TypefaceSpan(this, MainActivity.FONT_GENERAL_TITLE), 0, s.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+        float titleSize = getResources().getDimension(R.dimen.actionbar_title_size);
+        s.setSpan(new AbsoluteSizeSpan((int) titleSize), 0, s.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+        s.setSpan(new ForegroundColorSpan(ContextCompat.getColor(this, R.color.primaryTextColor)), 0, s.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+
+
+        Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
+        setSupportActionBar(toolbar);
         final ActionBar actionBar = getSupportActionBar();
-
         if (actionBar != null) {
-            actionBar.setDisplayHomeAsUpEnabled(true);
-
-            SpannableString s = new SpannableString(getResources().getString(R.string.request_activity_title));
-            s.setSpan(new TypefaceSpan(this, MainActivity.FONT_GENERAL_TITLE), 0, s.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
-            float titleSize = getResources().getDimension(R.dimen.actionbar_title_size);
-            s.setSpan(new AbsoluteSizeSpan((int) titleSize), 0, s.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
-
-            actionBar.setTitle(s);
-
             float elevation = getResources().getDimension(R.dimen.actionbar_starting_elevation);
             actionBar.setElevation(elevation);
-            actionBar.setHomeAsUpIndicator(R.drawable.ic_arrow_back_primary_text_color);
-            actionBar.setElevation(0);
+
+            ((TextView) toolbar.findViewById(R.id.toolbarTitle)).setText(s);
+
+            toolbar.findViewById(R.id.closeButton).setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    finish();
+                }
+            });
         }
 
         mBook = getIntent().getParcelableExtra(EXTRA_BOOK);
@@ -127,7 +133,7 @@ public class RequestActivity extends AppCompatActivity {
 
         mRequestRecyclerView.setAdapter(mRequestAdapter);
 
-        mRequestRecyclerView.setOnScrollListener(new RecyclerView.OnScrollListener() {
+        mRequestRecyclerView.addOnScrollListener(new RecyclerView.OnScrollListener() {
 
             int totalScrolled = 0;
             ActionBar actionBar = getSupportActionBar();
@@ -142,6 +148,17 @@ public class RequestActivity extends AppCompatActivity {
                 actionBar.setElevation(ElevationScrollListener.getActionbarElevation(totalScrolled));
             }
         });
+
+        for (final Request request : mRequests) {
+            if (request.getType() == Request.Type.ACCEPT) {
+                mAcceptedRequestTextView.post(new Runnable() {
+                    @Override
+                    public void run() {
+                        setAcceptedRequestText(request);
+                    }
+                });
+            }
+        }
 
         mRequestAdapter.setRequestClickListeners(new RequestAdapter.RequestClickListeners() {
             @Override
@@ -510,10 +527,12 @@ public class RequestActivity extends AppCompatActivity {
         mAcceptedRequestTextView.setHighlightColor(Color.TRANSPARENT);
         mAcceptedRequestTextView.setText(spanAcceptRequest);
 
-        getSupportActionBar().setElevation(getResources().getDimension(R.dimen.actionbar_starting_elevation));
-        mRequestRecyclerView.setOnScrollListener(null);
+//        mRequestRecyclerView.removeOnScrollListener(m);
+        float elevation = getResources().getDimension(R.dimen.actionbar_max_elevation);
 
-        ViewCompat.setElevation(mAcceptedRequestTextView, 8f * LayoutUtils.DP);
+        getSupportActionBar().setElevation(elevation);
+
+        ViewCompat.setElevation(mAcceptedRequestTextView, elevation);
     }
 
     @Override

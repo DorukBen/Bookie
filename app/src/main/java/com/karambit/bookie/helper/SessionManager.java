@@ -49,6 +49,7 @@ public class SessionManager {
         dbManager.Threaded(dbManager.getSearchUserDataSource().cDeleteAllUsers());
         dbManager.Threaded(dbManager.getSearchBookDataSource().cDeleteAllBooks());
         changeLoginStatus(context, false);
+        mLocationText = null;
         mUserDetails = null;
     }
 

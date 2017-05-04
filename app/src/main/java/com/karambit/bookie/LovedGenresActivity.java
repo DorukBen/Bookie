@@ -2,15 +2,19 @@ package com.karambit.bookie;
 
 import android.app.ProgressDialog;
 import android.os.Bundle;
+import android.support.v4.content.ContextCompat;
+import android.support.v7.app.ActionBar;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.GridLayoutManager;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
+import android.support.v7.widget.Toolbar;
 import android.text.Spannable;
 import android.text.SpannableString;
 import android.text.style.AbsoluteSizeSpan;
-import android.view.Menu;
-import android.view.MenuItem;
+import android.text.style.ForegroundColorSpan;
+import android.view.View;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import com.karambit.bookie.adapter.LovedGenreAdapter;
@@ -53,7 +57,25 @@ public class LovedGenresActivity extends AppCompatActivity {
         s.setSpan(new TypefaceSpan(this, MainActivity.FONT_GENERAL_TITLE), 0, s.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
         float titleSize = getResources().getDimension(R.dimen.actionbar_title_size);
         s.setSpan(new AbsoluteSizeSpan((int) titleSize), 0, s.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
-        setTitle(s);
+        s.setSpan(new ForegroundColorSpan(ContextCompat.getColor(this, R.color.primaryTextColor)), 0, s.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+
+        Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
+        setSupportActionBar(toolbar);
+        ActionBar actionBar = getSupportActionBar();
+        if (actionBar != null) {
+            actionBar.setTitle("");
+            float elevation = getResources().getDimension(R.dimen.actionbar_max_elevation);
+            actionBar.setElevation(elevation);
+
+            ((TextView) toolbar.findViewById(R.id.toolbarTitle)).setText(s);
+
+            toolbar.findViewById(R.id.doneButton).setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    commitSelectedGenres();
+                }
+            });
+        }
 
         mDbManager = new DBManager(this);
         mDbManager.open();
@@ -72,39 +94,25 @@ public class LovedGenresActivity extends AppCompatActivity {
         genreRecyclerView.setAdapter(mLovedGenreAdapter);
     }
 
-    @Override
-    public boolean onOptionsItemSelected(MenuItem item) {
-        switch (item.getItemId()) {
-            case R.id.action_done:
-                commitSelectedGenres();
-                return true;
-
-            default:
-                return super.onOptionsItemSelected(item);
-        }
-    }
-
-    @Override
-    public boolean onCreateOptionsMenu(Menu menu) {
-        getMenuInflater().inflate(R.menu.done_menu, menu);
-        return super.onCreateOptionsMenu(menu);
-    }
-
     private void commitSelectedGenres() {
-        Integer[] selectedGenreCodes = mLovedGenreAdapter.getSelectedGenreCodes();
-        if (selectedGenreCodes.length < 1){
-            Toast.makeText(this, R.string.select_one_genre, Toast.LENGTH_SHORT).show();
-        }else{
-            mProgressDialog = new ProgressDialog(this);
-            mProgressDialog.setMessage(getString(R.string.please_wait));
-            mProgressDialog.setIndeterminate(true);
-            mProgressDialog.setCanceledOnTouchOutside(false);
-            mProgressDialog.setCancelable(false);
-            mProgressDialog.show();
+        if (BookieApplication.hasNetwork()) {
+            Integer[] selectedGenreCodes = mLovedGenreAdapter.getSelectedGenreCodes();
+            if (selectedGenreCodes.length < 1) {
+                Toast.makeText(this, R.string.select_one_genre, Toast.LENGTH_SHORT).show();
+            } else {
+                mProgressDialog = new ProgressDialog(this);
+                mProgressDialog.setMessage(getString(R.string.please_wait));
+                mProgressDialog.setIndeterminate(true);
+                mProgressDialog.setCanceledOnTouchOutside(false);
+                mProgressDialog.setCancelable(false);
+                mProgressDialog.show();
 
-            writeToLocalDatabase(selectedGenreCodes);
+                writeToLocalDatabase(selectedGenreCodes);
 
-            postToServer(selectedGenreCodes);
+                postToServer(selectedGenreCodes);
+            }
+        } else {
+            Toast.makeText(this, R.string.no_internet_connection, Toast.LENGTH_SHORT).show();
         }
     }
 

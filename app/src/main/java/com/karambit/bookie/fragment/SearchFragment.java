@@ -1,15 +1,22 @@
 package com.karambit.bookie.fragment;
 
 
+import android.content.BroadcastReceiver;
+import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.graphics.Typeface;
+import android.location.Address;
+import android.location.Geocoder;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
 import android.support.v4.app.Fragment;
 import android.support.v4.content.ContextCompat;
+import android.support.v4.content.LocalBroadcastManager;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
+import android.support.v7.widget.SimpleItemAnimator;
 import android.text.Editable;
 import android.text.Spannable;
 import android.text.SpannableStringBuilder;
@@ -29,6 +36,7 @@ import com.karambit.bookie.BookActivity;
 import com.karambit.bookie.BookieApplication;
 import com.karambit.bookie.InfoActivity;
 import com.karambit.bookie.LocationActivity;
+import com.karambit.bookie.MainActivity;
 import com.karambit.bookie.ProfileActivity;
 import com.karambit.bookie.R;
 import com.karambit.bookie.adapter.SearchAdapter;
@@ -40,6 +48,7 @@ import com.karambit.bookie.model.Book;
 import com.karambit.bookie.model.User;
 import com.karambit.bookie.rest_api.BookieClient;
 import com.karambit.bookie.rest_api.SearchApi;
+import com.karambit.bookie.service.BookieIntentFilters;
 import com.orhanobut.logger.Logger;
 
 import org.json.JSONArray;
@@ -52,6 +61,9 @@ import java.util.Calendar;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.Hashtable;
+import java.util.List;
+import java.util.Locale;
 import java.util.concurrent.TimeUnit;
 
 import okhttp3.ResponseBody;
@@ -81,12 +93,16 @@ public class SearchFragment extends Fragment {
     private ArrayList<Integer> mGenreCodes = new ArrayList<>();
     private ArrayList<Book> mBooks = new ArrayList<>();
     private ArrayList<User> mUsers = new ArrayList<>();
+    private ArrayList<User> mHistoryUsers = new ArrayList<>();
+    private ArrayList<Book> mHistoryBooks = new ArrayList<>();
 
     private int mFetchGenreCode = -1;
     private SearchAdapter mSearchAdapter;
     private DBManager mDbManager;
     private EditText mSearchEditText;
     private ImageButton mSearchButton;
+    private BroadcastReceiver mMessageReceiver;
+    private Hashtable<Book, Object> mBookLocations;
 
     public SearchFragment() {
         // Required empty public constructor
@@ -101,7 +117,7 @@ public class SearchFragment extends Fragment {
 
         RecyclerView recyclerView = (RecyclerView) rootView.findViewById(R.id.searchResultsRecyclerView);
         recyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
-        mSearchEditText = (EditText) rootView.findViewById(R.id.searchEditText);
+        mSearchEditText = ((MainActivity) getActivity()).getSearchEditText();
 
         mDbManager = new DBManager(getContext());
         mDbManager.open();
@@ -130,7 +146,7 @@ public class SearchFragment extends Fragment {
                 addBookToSearchHistory(book);
 
                 Intent intent = new Intent(getContext(), BookActivity.class);
-                intent.putExtra("book", book);
+                intent.putExtra(BookActivity.EXTRA_BOOK, book);
                 getContext().startActivity(intent);
             }
 
@@ -144,22 +160,13 @@ public class SearchFragment extends Fragment {
                 intent.putExtras(bundle);
                 startActivity(intent);
             }
-
-            @Override
-            public void onClearHistoryClick() {
-                //Clear history
-
-                mDbManager.Threaded(mDbManager.getSearchBookDataSource().cDeleteAllBooks());
-                mDbManager.Threaded(mDbManager.getSearchUserDataSource().cDeleteAllUsers());
-
-                mSearchAdapter.hideHistory();
-                mSearchAdapter.setWarning(SearchAdapter.WARNING_TYPE_NOTHING_TO_SHOW);
-            }
         });
 
         recyclerView.setAdapter(mSearchAdapter);
 
-        mSearchButton = (ImageButton) rootView.findViewById(R.id.searchButton);
+        recyclerView.getItemAnimator().setChangeDuration(100);
+
+        mSearchButton = ((MainActivity) getActivity()).getSearchImageButton();
 
         mSearchButton.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -217,7 +224,7 @@ public class SearchFragment extends Fragment {
                             }
                         }
                     }, INTERVAL_SEARCH_TEXT_CHANGED_MILLIS);
-                }else {
+                } else {
                     Spannable spannable = mSearchEditText.getText();
                     if (spannable.getSpans(0, before, StyleSpan.class).length == 0) {
                         mFetchGenreCode = UNSELECTED_GENRE_CODE;
@@ -252,7 +259,9 @@ public class SearchFragment extends Fragment {
                                 @Override
                                 public void onMoreInfoClick() {
                                     Intent intent = new Intent(getActivity(), InfoActivity.class);
-                                    // TODO Put related header extras array
+                                    intent.putExtra(InfoActivity.EXTRA_INFO_CODES, new int[]{
+                                        InfoActivity.INFO_CODE_LOCATION
+                                    });
                                     startActivity(intent);
                                 }
                             });
@@ -275,7 +284,50 @@ public class SearchFragment extends Fragment {
         });
 
         showSearchHistory();
+
+        mMessageReceiver = new BroadcastReceiver() {
+            @Override
+            public void onReceive(Context context, Intent intent) {
+                if (intent.getAction().equalsIgnoreCase(BookieIntentFilters.INTENT_FILTER_DATABASE_USER_CHANGED)) {
+                    User updatedUser = intent.getParcelableExtra(BookieIntentFilters.EXTRA_USER);
+                    if (updatedUser != null) {
+                        if (mSearchAdapter.isShowHistory()) {
+                            for (int i = 0; i < mHistoryUsers.size(); i++) {
+                                User user = mHistoryUsers.get(i);
+                                if (updatedUser.equals(user)) {
+                                    mHistoryUsers.set(i, updatedUser);
+                                }
+                            }
+                            mSearchAdapter.notifyDataSetChanged();
+                        }
+                    }
+                } else if (intent.getAction().equalsIgnoreCase(BookieIntentFilters.INTENT_FILTER_DATABASE_BOOK_CHANGED)) {
+                    Book updatedBook = intent.getParcelableExtra(BookieIntentFilters.INTENT_FILTER_DATABASE_BOOK_CHANGED);
+                    if (updatedBook != null) {
+                        if (mSearchAdapter.isShowHistory()) {
+                            for (int i = 0; i < mHistoryBooks.size(); i++) {
+                                Book book = mHistoryBooks.get(i);
+                                if (updatedBook.equals(book)) {
+                                    mHistoryBooks.set(i, updatedBook);
+                                }
+                            }
+                            mSearchAdapter.notifyDataSetChanged();
+                        }
+                    }
+                }
+            }
+        };
+
+        LocalBroadcastManager.getInstance(getContext()).registerReceiver(mMessageReceiver, new IntentFilter(BookieIntentFilters.INTENT_FILTER_DATABASE_USER_CHANGED));
+        LocalBroadcastManager.getInstance(getContext()).registerReceiver(mMessageReceiver, new IntentFilter(BookieIntentFilters.INTENT_FILTER_DATABASE_BOOK_CHANGED));
+
         return rootView;
+    }
+
+    @Override
+    public void onDestroy() {
+        super.onDestroy();
+        LocalBroadcastManager.getInstance(getContext()).unregisterReceiver(mMessageReceiver);
     }
 
     private void getSearchResults(final String searchString, final boolean isSearchButtonPressed) {
@@ -332,7 +384,11 @@ public class SearchFragment extends Fragment {
                                     } else {
                                         mSearchAdapter.setWarning(SearchAdapter.WARNING_TYPE_NO_RESULT_FOUND);
                                     }
+                                } else {
+                                    fetchBookLocations(mSearchAdapter.isShowHistory());
                                 }
+
+                                ((MainActivity) getActivity()).hideError();
 
                                 Logger.d("Search fetched:" +
                                              "\n\n" + Book.listToShortString(mBooks) +
@@ -344,22 +400,35 @@ public class SearchFragment extends Fragment {
 
                                 Logger.e("Error true in response: errorCode = " + errorCode);
 
+                                ((MainActivity) getActivity()).showUnknownError();
+
+                                // TODO Error sadece resim gösterilecek
                                 mSearchAdapter.setError(SearchAdapter.ERROR_TYPE_UNKNOWN_ERROR);
+
+                                ((MainActivity) getActivity()).showUnknownError();
                             }
                         } else {
                             Logger.e("Response body is null. (Search Page Error)");
+
                             mSearchAdapter.setError(SearchAdapter.ERROR_TYPE_UNKNOWN_ERROR);
+
+                            ((MainActivity) getActivity()).showUnknownError();
                         }
                     } else {
                         Logger.e("Response object is null. (Search Page Error)");
+
                         mSearchAdapter.setError(SearchAdapter.ERROR_TYPE_UNKNOWN_ERROR);
+
+                        ((MainActivity) getActivity()).showUnknownError();
                     }
                 } catch (IOException | JSONException e) {
                     Logger.e("IOException or JSONException caught: " + e.getMessage());
 
                     if (BookieApplication.hasNetwork()) {
+                        ((MainActivity) getActivity()).showUnknownError();
                         mSearchAdapter.setError(SearchAdapter.ERROR_TYPE_UNKNOWN_ERROR);
                     } else {
+                        ((MainActivity) getActivity()).showConnectionError();
                         mSearchAdapter.setError(SearchAdapter.ERROR_TYPE_NO_CONNECTION);
                     }
 
@@ -369,8 +438,10 @@ public class SearchFragment extends Fragment {
             @Override
             public void onFailure(Call<ResponseBody> call, Throwable t) {
                 if (BookieApplication.hasNetwork()) {
+                    ((MainActivity) getActivity()).showUnknownError();
                     mSearchAdapter.setError(SearchAdapter.ERROR_TYPE_UNKNOWN_ERROR);
                 } else {
+                    ((MainActivity) getActivity()).showConnectionError();
                     mSearchAdapter.setError(SearchAdapter.ERROR_TYPE_NO_CONNECTION);
                 }
 
@@ -446,15 +517,17 @@ public class SearchFragment extends Fragment {
     }
 
     private void showSearchHistory() {
-        ArrayList<Book> historyBooks = mDbManager.getSearchBookDataSource().getAllBooks();
-        ArrayList<User> historyUsers = mDbManager.getSearchUserDataSource().getAllUsers();
+        mHistoryBooks = mDbManager.getSearchBookDataSource().getAllBooks();
+        mHistoryUsers = mDbManager.getSearchUserDataSource().getAllUsers();
 
-        if (historyBooks.size() + historyUsers.size() > 0) {
-            mSearchAdapter.showHistory(historyBooks, historyUsers);
+        if (mHistoryBooks.size() + mHistoryUsers.size() > 0) {
+            mSearchAdapter.showHistory(mHistoryBooks, mHistoryUsers);
         } else {
             mSearchAdapter.hideHistory();
             mSearchAdapter.setWarning(SearchAdapter.WARNING_TYPE_NOTHING_TO_SHOW);
         }
+
+        fetchBookLocations(mSearchAdapter.isShowHistory());
     }
 
     private void addBookToSearchHistory(Book book) {
@@ -496,5 +569,65 @@ public class SearchFragment extends Fragment {
     public void clearSearchEditText() {
         mFetchGenreCode = UNSELECTED_GENRE_CODE;
         mSearchEditText.setText("");
+    }
+
+    private void fetchBookLocations(final boolean isHistoryShowing) {
+
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                ArrayList<Book> books = isHistoryShowing ? mHistoryBooks : mBooks;
+
+                mSearchAdapter.setBookLocations(new Hashtable<Book, String>(books.size()));
+
+                for (int i = 0; i < books.size(); i++) {
+                    final Book book = books.get(i);
+                    User owner = book.getOwner();
+
+                    if (owner.getLocation() != null) {
+
+                        final double latitude = owner.getLocation().latitude;
+                        final double longitude = owner.getLocation().longitude;
+
+                        try {
+                            Geocoder geocoder = new Geocoder(getContext(), Locale.getDefault());
+                            List<Address> addresses = geocoder.getFromLocation(latitude, longitude, 1);
+
+                            // Admin area equals Istanbul
+                            // Subadmin are equals Bahçelievler
+
+                            if (addresses.size() > 0) {
+                                String locationString = "";
+
+                                String subAdminArea = addresses.get(0).getSubAdminArea();
+                                if (!TextUtils.isEmpty(subAdminArea) && !subAdminArea.equals("null")) {
+                                    locationString += subAdminArea + " / ";
+                                }
+
+                                String adminArea = addresses.get(0).getAdminArea();
+                                if (!TextUtils.isEmpty(adminArea) && !adminArea.equals("null")) {
+                                    locationString += adminArea;
+                                }
+
+                                if (!TextUtils.isEmpty(locationString)) {
+                                    mSearchAdapter.getBookLocations().put(book, locationString);
+                                    final int finalI = i;
+                                    getActivity().runOnUiThread(new Runnable() {
+                                        @Override
+                                        public void run() {
+                                            int adapterBookPosition = mSearchAdapter.getFirstBookPosition() + finalI;
+                                            mSearchAdapter.notifyItemChanged(adapterBookPosition);
+                                        }
+                                    });
+                                }
+
+                            }
+                        } catch (IOException e) {
+                            e.printStackTrace();
+                        }
+                    }
+                }
+            }
+        }).start();
     }
 }

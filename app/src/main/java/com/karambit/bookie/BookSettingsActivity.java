@@ -1,28 +1,31 @@
 package com.karambit.bookie;
 
+import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.os.Bundle;
 import android.support.v4.content.ContextCompat;
 import android.support.v4.content.LocalBroadcastManager;
 import android.support.v7.app.ActionBar;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
+import android.support.v7.widget.Toolbar;
 import android.text.Editable;
 import android.text.Spannable;
 import android.text.SpannableString;
 import android.text.TextUtils;
 import android.text.TextWatcher;
 import android.text.style.AbsoluteSizeSpan;
-import android.view.Menu;
-import android.view.MenuInflater;
-import android.view.MenuItem;
+import android.text.style.ForegroundColorSpan;
 import android.view.View;
 import android.view.ViewTreeObserver;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.ImageButton;
+import android.widget.ImageView;
 import android.widget.RadioButton;
 import android.widget.RadioGroup;
 import android.widget.ScrollView;
@@ -58,11 +61,8 @@ public class BookSettingsActivity extends AppCompatActivity {
 
     private static final String TAG = BookSettingsActivity.class.getSimpleName();
 
-    public static final int RESULT_LOST = 1;
-    public static final int RESULT_BOOK_UPDATED = 2;
-
     public static final String EXTRA_BOOK = "book";
-    public static final String EXTRA_IS_ADDER = "is_adder";
+    public static final String EXTRA_HAS_ANY_TRANSACTIONS = "has_any_transactions";
 
     private static final int REPORT_BOOK_WRONG_NAME = 1;
     private static final int REPORT_BOOK_WRONG_AUTHOR = 2;
@@ -72,13 +72,15 @@ public class BookSettingsActivity extends AppCompatActivity {
     private static final int REPORT_BOOK_OTHER = 6;
 
     private Book mBook;
-    private boolean mIsAdder;
+    private boolean mHasAnyTransactions;
     private EditText mReportEditText;
     private Button mSendReportButton;
+    private ImageButton mDoneButton;
     private RadioGroup mReportRadioGroup;
     private EditText mBookNameEditText;
     private EditText mBookAuthorEditText;
     private int mSelectedGenre;
+    private BroadcastReceiver mMessageReceiver;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -86,20 +88,31 @@ public class BookSettingsActivity extends AppCompatActivity {
         setContentView(R.layout.activity_book_settings);
 
         mBook = getIntent().getParcelableExtra(EXTRA_BOOK);
-        mIsAdder = getIntent().getBooleanExtra(EXTRA_IS_ADDER, false);
+        mHasAnyTransactions = getIntent().getBooleanExtra(EXTRA_HAS_ANY_TRANSACTIONS, true);
 
+        SpannableString s = new SpannableString(mBook.getName());
+        s.setSpan(new TypefaceSpan(this, MainActivity.FONT_GENERAL_TITLE), 0, s.length(),
+                  Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+        float titleSize = getResources().getDimension(R.dimen.actionbar_title_size);
+        s.setSpan(new AbsoluteSizeSpan((int) titleSize), 0, s.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+        s.setSpan(new ForegroundColorSpan(ContextCompat.getColor(this, R.color.primaryTextColor)), 0, s.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+
+        Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
+        setSupportActionBar(toolbar);
         final ActionBar actionBar = getSupportActionBar();
         if (actionBar != null) {
-            actionBar.setElevation(0);
-            SpannableString s = new SpannableString(mBook.getName());
-            s.setSpan(new TypefaceSpan(this, MainActivity.FONT_GENERAL_TITLE), 0, s.length(),
-                      Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
-            float titleSize = getResources().getDimension(R.dimen.actionbar_title_size);
-            s.setSpan(new AbsoluteSizeSpan((int) titleSize), 0, s.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
-            actionBar.setTitle(s);
+            float elevation = getResources().getDimension(R.dimen.actionbar_starting_elevation);
+            actionBar.setElevation(elevation);
+            actionBar.setTitle("");
 
-            actionBar.setDisplayHomeAsUpEnabled(true);
-            actionBar.setHomeAsUpIndicator(R.drawable.ic_arrow_back_primary_text_color);
+            ((TextView) toolbar.findViewById(R.id.toolbarTitle)).setText(s);
+
+            toolbar.findViewById(R.id.closeButton).setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    finish();
+                }
+            });
         }
 
         final ScrollView scrollView = (ScrollView) findViewById(R.id.settingsScrollView);
@@ -118,13 +131,39 @@ public class BookSettingsActivity extends AppCompatActivity {
 
             User currentUser = SessionManager.getCurrentUser(this);
 
-            if (mIsAdder && mBook.getOwner().equals(currentUser)) {
+            if (!mHasAnyTransactions && mBook.getOwner().equals(currentUser)) {
                 findViewById(R.id.bookEditContainer).setVisibility(View.VISIBLE);
                 findViewById(R.id.reportBookContainer).setVisibility(View.GONE);
 
                 mBookNameEditText = (EditText) findViewById(R.id.bookNameEditText);
                 mBookAuthorEditText = (EditText) findViewById(R.id.bookAuthorEditText);
                 CircleImageView bookPicture = (CircleImageView) findViewById(R.id.bookPictureImageView);
+
+                mDoneButton = (ImageButton) findViewById(R.id.doneButton);
+                mDoneButton.setVisibility(View.VISIBLE);
+
+                mDoneButton.setOnClickListener(new View.OnClickListener() {
+                    @Override
+                    public void onClick(View v) {
+                        boolean ok = true;
+
+                        String newBookName = mBookNameEditText.getText().toString().trim();
+                        String newAuthor = mBookAuthorEditText.getText().toString().trim();
+
+                        if (TextUtils.isEmpty(newBookName)) {
+                            mBookNameEditText.setError(getString(R.string.empty_field_message));
+                            ok = false;
+                        }
+                        if (TextUtils.isEmpty(newAuthor)) {
+                            mBookAuthorEditText.setError(getString(R.string.empty_field_message));
+                            ok = false;
+                        }
+
+                        if (ok) {
+                            saveChanges();
+                        }
+                    }
+                });
 
                 Glide.with(this)
                      .load(mBook.getThumbnailURL())
@@ -141,7 +180,7 @@ public class BookSettingsActivity extends AppCompatActivity {
                         Intent intent = new Intent(BookSettingsActivity.this, PhotoViewerActivity.class);
                         Bundle bundle = new Bundle();
                         bundle.putString(PhotoViewerActivity.EXTRA_IMAGE, mBook.getImageURL());
-                        if (mIsAdder && mBook.getOwner().getID() == SessionManager.getCurrentUser(BookSettingsActivity.this).getID()){
+                        if (!mHasAnyTransactions && mBook.getOwner().equals(SessionManager.getCurrentUser(BookSettingsActivity.this))){
                             bundle.putBoolean(PhotoViewerActivity.EXTRA_CAN_EDIT_BOOK_IMAGE, true);
                             bundle.putInt(PhotoViewerActivity.EXTRA_BOOK_ID, mBook.getID());
                         }
@@ -364,6 +403,42 @@ public class BookSettingsActivity extends AppCompatActivity {
             noConnectionView.setVisibility(View.VISIBLE);
             ((TextView) noConnectionView.findViewById(R.id.emptyStateTextView)).setText(R.string.no_internet_connection);
         }
+
+        mMessageReceiver = new BroadcastReceiver() {
+            @Override
+            public void onReceive(Context context, Intent intent) {
+                if (intent.getAction().equalsIgnoreCase(BookieIntentFilters.INTENT_FILTER_BOOK_PICTURE_CHANGED)) {
+                    String bookPictureUrl = intent.getStringExtra(BookieIntentFilters.EXTRA_BOOK_PICTURE_URL);
+                    String thumbnailUrl = intent.getStringExtra(BookieIntentFilters.EXTRA_BOOK_THUMBNAIL_URL);
+
+                    if (bookPictureUrl != null && thumbnailUrl != null) {
+
+                        mBook.setImageURL(bookPictureUrl);
+                        mBook.setThumbnailURL(thumbnailUrl);
+
+                        Glide.with(context)
+                             .load(mBook.getThumbnailURL())
+                             .asBitmap()
+                             .placeholder(R.drawable.placeholder_88dp)
+                             .error(R.drawable.error_88dp)
+                             .centerCrop()
+                             .into((ImageView) findViewById(R.id.bookPictureImageView));
+
+                        Logger.d("Book picture changed received from Local Broadcast: \n" +
+                                     "Book Picture URL: " + bookPictureUrl + "\nThumbnail URL: " + thumbnailUrl);
+                    }
+                }
+            }
+        };
+
+        LocalBroadcastManager.getInstance(this).registerReceiver(mMessageReceiver, new IntentFilter(BookieIntentFilters.INTENT_FILTER_BOOK_PICTURE_CHANGED));
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+
+        LocalBroadcastManager.getInstance(this).unregisterReceiver(mMessageReceiver);
     }
 
     private void lostProcesses() {
@@ -406,7 +481,6 @@ public class BookSettingsActivity extends AppCompatActivity {
                                 Logger.d("Book lost sent to server successfully");
 
                                 comfortableProgressDialog.dismiss();
-                                Toast.makeText(BookSettingsActivity.this, getString(R.string.book_lost), Toast.LENGTH_SHORT).show();
 
                                 mBook.setState(Book.State.LOST);
 
@@ -548,50 +622,6 @@ public class BookSettingsActivity extends AppCompatActivity {
         }
     }
 
-    @Override
-    public boolean onCreateOptionsMenu(Menu menu) {
-        if (BookieApplication.hasNetwork() && mIsAdder) {
-            MenuInflater inflater = getMenuInflater();
-            inflater.inflate(R.menu.done_menu, menu);
-            return super.onCreateOptionsMenu(menu);
-        } else {
-            return false;
-        }
-    }
-
-    @Override
-    public boolean onOptionsItemSelected(MenuItem item) {
-        switch (item.getItemId()) {
-            case android.R.id.home:
-                finish();
-                return true;
-
-            case R.id.action_done:
-                boolean ok = true;
-
-                String newBookName = mBookNameEditText.getText().toString().trim();
-                String newAuthor = mBookAuthorEditText.getText().toString().trim();
-
-                if (TextUtils.isEmpty(newBookName)) {
-                    mBookNameEditText.setError(getString(R.string.empty_field_message));
-                    ok = false;
-                }
-                if (TextUtils.isEmpty(newAuthor)) {
-                    mBookAuthorEditText.setError(getString(R.string.empty_field_message));
-                    ok = false;
-                }
-
-                if (ok) {
-                    saveChanges();
-                }
-
-                return true;
-
-            default:
-                return super.onOptionsItemSelected(item);
-        }
-    }
-
     private void saveChanges() {
         String bookName = mBookNameEditText.getText().toString();
         String author = mBookAuthorEditText.getText().toString();
@@ -641,7 +671,7 @@ public class BookSettingsActivity extends AppCompatActivity {
                                 mBook.setAuthor(author);
                                 mBook.setGenreCode(genreCode);
 
-                                Intent intent = new Intent(BookieIntentFilters.INTENT_FILTER_ACCEPTED_REQUEST);
+                                Intent intent = new Intent(BookieIntentFilters.INTENT_FILTER_BOOK_UPDATED);
                                 intent.putExtra(BookieIntentFilters.EXTRA_BOOK, mBook);
                                 LocalBroadcastManager.getInstance(BookSettingsActivity.this).sendBroadcast(intent);
 

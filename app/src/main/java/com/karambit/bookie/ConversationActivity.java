@@ -8,18 +8,20 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.os.Bundle;
+import android.support.v4.content.ContextCompat;
 import android.support.v4.content.LocalBroadcastManager;
-import android.support.v7.app.ActionBar;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.SimpleItemAnimator;
+import android.support.v7.widget.Toolbar;
 import android.text.Editable;
 import android.text.Spannable;
 import android.text.SpannableString;
 import android.text.TextUtils;
 import android.text.TextWatcher;
 import android.text.style.AbsoluteSizeSpan;
+import android.text.style.ForegroundColorSpan;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
@@ -94,7 +96,42 @@ public class ConversationActivity extends AppCompatActivity {
                 Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
         final float titleSize = getResources().getDimension(R.dimen.actionbar_title_size);
         s.setSpan(new AbsoluteSizeSpan((int) titleSize), 0, s.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
-        getSupportActionBar().setTitle(s);
+        s.setSpan(new ForegroundColorSpan(ContextCompat.getColor(this, R.color.primaryTextColor)), 0, s.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+
+        Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
+        setSupportActionBar(toolbar);
+        if (getSupportActionBar() != null){
+            getSupportActionBar().setTitle("");
+            float elevation = getResources().getDimension(R.dimen.actionbar_max_elevation);
+            getSupportActionBar().setElevation(elevation);
+
+            ((TextView) toolbar.findViewById(R.id.toolbarTitle)).setText(s);
+
+            toolbar.findViewById(R.id.toolbarTitle).setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    //If not admin or support user
+                    if(mOppositeUser.getID() >= 0){
+                        Intent intent = new Intent(ConversationActivity.this, ProfileActivity.class);
+                        intent.putExtra(ProfileActivity.EXTRA_USER, mOppositeUser);
+                        startActivity(intent);
+                    }
+                }
+            });
+
+            toolbar.findViewById(R.id.closeButton).setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    if (mConversationAdapter.getSelectedIndexes().size() > 0) {
+                        setSelectionMode(false);
+                        mConversationAdapter.getSelectedIndexes().clear();
+                        mConversationAdapter.notifyDataSetChanged();
+                    } else {
+                        finish();
+                    }
+                }
+            });
+        }
 
         mDbManager = new DBManager(this);
         mDbManager.open();
@@ -244,6 +281,13 @@ public class ConversationActivity extends AppCompatActivity {
             @Override
             public void onMessageErrorClick(Message message, int position) {
                 sendMessageToServer(message);
+            }
+
+            @Override
+            public void onUserClick(User user) {
+                Intent intent = new Intent(ConversationActivity.this, ProfileActivity.class);
+                intent.putExtra(ProfileActivity.EXTRA_USER, user);
+                startActivity(intent);
             }
         });
 
@@ -487,22 +531,16 @@ public class ConversationActivity extends AppCompatActivity {
     }
 
     private void setSelectionMode(boolean toggle) {
-        ActionBar actionBar = getSupportActionBar();
 
         if (toggle) {
             String selectedTitle = getString(R.string.x_messages_selected, mConversationAdapter.getSelectedIndexes().size());
             setActionBarTitle(selectedTitle);
-
-            actionBar.setDisplayHomeAsUpEnabled(true);
-            actionBar.setHomeAsUpIndicator(R.drawable.ic_arrow_back_primary_text_color);
 
             mDeleteMenuItem.setVisible(true);
 
             Logger.d("Message selection mode on");
         } else {
             setActionBarTitle(mOppositeUser.getName());
-
-            actionBar.setDisplayHomeAsUpEnabled(false);
 
             mDeleteMenuItem.setVisible(false);
 
@@ -511,7 +549,6 @@ public class ConversationActivity extends AppCompatActivity {
     }
 
     private void setActionBarTitle(String selectedTitle) {
-        ActionBar actionBar = getSupportActionBar();
 
         SpannableString title = new SpannableString(selectedTitle);
         title.setSpan(new TypefaceSpan(this, MainActivity.FONT_GENERAL_TITLE), 0, title.length(),
@@ -520,7 +557,7 @@ public class ConversationActivity extends AppCompatActivity {
         title.setSpan(new AbsoluteSizeSpan((int) titleSize), 0, title.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
 
         // Update the action bar title with the TypefaceSpan instance
-        actionBar.setTitle(title);
+        ((TextView) findViewById(R.id.toolbar).findViewById(R.id.toolbarTitle)).setText(title);
     }
 
     @Override
@@ -592,9 +629,6 @@ public class ConversationActivity extends AppCompatActivity {
                 break;
 
             case android.R.id.home:
-                setSelectionMode(false);
-                mConversationAdapter.getSelectedIndexes().clear();
-                mConversationAdapter.notifyDataSetChanged();
 
                 break;
         }

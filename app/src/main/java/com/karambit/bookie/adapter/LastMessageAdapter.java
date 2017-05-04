@@ -157,7 +157,7 @@ public class LastMessageAdapter extends RecyclerView.Adapter<RecyclerView.ViewHo
 
                 MessageViewHolder messageHolder = (MessageViewHolder) holder;
 
-                User currentUser = SessionManager.getCurrentUser(mContext);
+                final User currentUser = SessionManager.getCurrentUser(mContext);
                 User oppositeUser = message.getOppositeUser(currentUser);
 
                 if (! TextUtils.isEmpty(oppositeUser.getThumbnailUrl())) {
@@ -171,6 +171,16 @@ public class LastMessageAdapter extends RecyclerView.Adapter<RecyclerView.ViewHo
                 } else {
                     messageHolder.mProfilePicture.setImageResource(R.drawable.placeholder_56dp);
                 }
+
+                messageHolder.mProfilePicture.setOnClickListener(new View.OnClickListener() {
+                    @Override
+                    public void onClick(View v) {
+                        //If not admin or support user
+                        if (message.getOppositeUser(currentUser).getID() >= 0){
+                            mOnMessageClickListener.onUserClick(message.getOppositeUser(currentUser));
+                        }
+                    }
+                });
 
                 messageHolder.mUserName.setText(oppositeUser.getName());
 
@@ -200,7 +210,7 @@ public class LastMessageAdapter extends RecyclerView.Adapter<RecyclerView.ViewHo
 
                         case ERROR:
                             messageHolder.mState.setImageResource(R.drawable.ic_messaging_error_24dp);
-                            messageHolder.mState.setColorFilter(ContextCompat.getColor(mContext, R.color.error_red));
+                            messageHolder.mState.setColorFilter(ContextCompat.getColor(mContext, R.color.errorRed));
                             break;
 
                         default:
@@ -319,6 +329,7 @@ public class LastMessageAdapter extends RecyclerView.Adapter<RecyclerView.ViewHo
     public interface OnMessageClickListener {
         void onMessageClick(Message lastMessage, int position);
         boolean onMessageLongClick(Message lastMessage, int position);
+        void onUserClick(User user);
     }
 
     public interface OnSelectedStateClickListener {

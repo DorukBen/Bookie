@@ -1,15 +1,17 @@
 package com.karambit.bookie.adapter;
 
+import android.animation.ArgbEvaluator;
+import android.animation.ObjectAnimator;
 import android.app.Activity;
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.location.Address;
 import android.location.Geocoder;
+import android.support.v4.content.ContextCompat;
 import android.support.v4.view.ViewCompat;
 import android.support.v7.widget.CardView;
 import android.support.v7.widget.RecyclerView;
 import android.text.TextUtils;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -63,11 +65,14 @@ public class ProfileTimelineAdapter extends RecyclerView.Adapter<RecyclerView.Vi
     public static final int ERROR_TYPE_NONE = 0;
     public static final int ERROR_TYPE_NO_CONNECTION = 1;
     public static final int ERROR_TYPE_UNKNOWN_ERROR = 2;
+    private static final int COLOR_CHANGE_DURATION = 3000;
     private int mErrorType = ERROR_TYPE_NONE;
 
     private Context mContext;
     private User mUser;
     private User.Details mUserDetails;
+
+    private String mLocationString;
 
     private BookClickListener mBookClickListener;
     private HeaderClickListeners mHeaderClickListeners;
@@ -75,6 +80,10 @@ public class ProfileTimelineAdapter extends RecyclerView.Adapter<RecyclerView.Vi
 
     private boolean mProgressBarActive;
     private HorizontalPagerAdapter mHorizontalPagerAdapter;
+    private boolean mNotifyItemChanged = false;
+
+    private ArrayList<Book> mGlowingBooks = new ArrayList<>();
+    private boolean mGlowCurrentlyReading = false;
 
     public ProfileTimelineAdapter(Context context, User.Details userDetails) {
         mContext = context;
@@ -143,6 +152,7 @@ public class ProfileTimelineAdapter extends RecyclerView.Adapter<RecyclerView.Vi
         private CardView mBookImageCard;
         private TextView mBookName;
         private TextView mBookAuthor;
+        private ImageView mBookState;
 
         private BookViewHolder(View itemBookView) {
             super(itemBookView);
@@ -156,7 +166,7 @@ public class ProfileTimelineAdapter extends RecyclerView.Adapter<RecyclerView.Vi
             mBookImage = (ImageView) itemBookView.findViewById(R.id.itemBookImageView);
             mBookName = (TextView) itemBookView.findViewById(R.id.itemBookNameTextView);
             mBookAuthor = (TextView) itemBookView.findViewById(R.id.itemBookAuthorTextView);
-
+            mBookState = (ImageView) itemBookView.findViewById(R.id.itemBookState);
         }
     }
 
@@ -702,7 +712,11 @@ public class ProfileTimelineAdapter extends RecyclerView.Adapter<RecyclerView.Vi
                 // Location
                 //
 
-                if (TextUtils.isEmpty(SessionManager.getLocationText())) {
+                if (mUserDetails.getUser().equals(SessionManager.getCurrentUser(mContext))){
+                    mLocationString = SessionManager.getLocationText();
+                }
+
+                if (TextUtils.isEmpty(mLocationString)) {
                     if (mUserDetails.getUser().getLocation() != null && BookieApplication.hasNetwork()) {
                         new Thread(new Runnable() {
                             @Override
@@ -749,7 +763,11 @@ public class ProfileTimelineAdapter extends RecyclerView.Adapter<RecyclerView.Vi
                                                 headerViewHolder.mLocation.setVisibility(View.GONE);
                                             } else {
 
-                                                SessionManager.setLocationText(locationString);
+                                                mLocationString = locationString;
+
+                                                if (mUserDetails.getUser().equals(SessionManager.getCurrentUser(mContext))){
+                                                    SessionManager.setLocationText(mLocationString);
+                                                }
 
                                                 headerViewHolder.mLocation.setText(locationString);
                                                 headerViewHolder.mLocation.setVisibility(View.VISIBLE);
@@ -765,7 +783,8 @@ public class ProfileTimelineAdapter extends RecyclerView.Adapter<RecyclerView.Vi
                         headerViewHolder.mLocation.setVisibility(View.GONE);
                     }
                 } else {
-                    headerViewHolder.mLocation.setText(SessionManager.getLocationText());
+                    headerViewHolder.mLocation.setVisibility(View.VISIBLE);
+                    headerViewHolder.mLocation.setText(mLocationString);
                 }
 
                 headerViewHolder.mReadBooks.setText(String.valueOf(mUserDetails.getReadBooksCount()));
@@ -780,9 +799,12 @@ public class ProfileTimelineAdapter extends RecyclerView.Adapter<RecyclerView.Vi
                 CurrentlyReadingViewHolder currentlyReadingHolder = (CurrentlyReadingViewHolder) holder;
 
                 if (mHorizontalPagerAdapter != null){
-                    mHorizontalPagerAdapter.setBooks(mUserDetails.getCurrentlyReading());
-                    currentlyReadingHolder.mCycleViewPager.notifyDataSetChanged();
-                    currentlyReadingHolder.mCycleViewPager.setInfiniteCyclerManagerPagerAdapter(mHorizontalPagerAdapter);
+                    if (mNotifyItemChanged) {
+                        mHorizontalPagerAdapter.setBooks(mUserDetails.getCurrentlyReading());
+                        currentlyReadingHolder.mCycleViewPager.notifyDataSetChanged();
+                        currentlyReadingHolder.mCycleViewPager.setInfiniteCyclerManagerPagerAdapter(mHorizontalPagerAdapter);
+                        mNotifyItemChanged = false;
+                    }
                 }else{
                     mHorizontalPagerAdapter = new HorizontalPagerAdapter(mContext, mUserDetails.getCurrentlyReading());
                     currentlyReadingHolder.mCycleViewPager.setAdapter(mHorizontalPagerAdapter);
@@ -795,6 +817,24 @@ public class ProfileTimelineAdapter extends RecyclerView.Adapter<RecyclerView.Vi
                         mBookClickListener.onBookClick(book);
                     }
                 });
+
+                if (mGlowCurrentlyReading) {
+                    mGlowCurrentlyReading = false;
+
+                    int startingColor = ContextCompat.getColor(mContext, R.color.colorAccentTransparent);
+                    int endingColor = ContextCompat.getColor(mContext, R.color.colorPrimary);
+                    currentlyReadingHolder.itemView.setBackgroundColor(startingColor);
+
+                    final ObjectAnimator backgroundColorAnimator = ObjectAnimator.ofObject(currentlyReadingHolder.itemView,
+                                                                                           "backgroundColor",
+                                                                                           new ArgbEvaluator(),
+                                                                                           startingColor,
+                                                                                           endingColor);
+
+                    backgroundColorAnimator.setDuration(COLOR_CHANGE_DURATION);
+                    backgroundColorAnimator.start();
+                }
+
                 break;
             }
 
@@ -841,6 +881,9 @@ public class ProfileTimelineAdapter extends RecyclerView.Adapter<RecyclerView.Vi
 
                 bookHolder.mBookAuthor.setText(book.getAuthor());
 
+                bookHolder.mBookState.setImageResource(R.drawable.ic_book_timeline_dispatch_36dp);
+                bookHolder.mBookState.setColorFilter(ContextCompat.getColor(mContext, R.color.secondaryTextColor));
+
                 Glide.with(mContext)
                         .load(book.getThumbnailURL())
                         .asBitmap()
@@ -853,6 +896,25 @@ public class ProfileTimelineAdapter extends RecyclerView.Adapter<RecyclerView.Vi
                                 bookHolder.mBookImage.setImageBitmap(croppedBitmap);
                             }
                         });
+
+                // Glowing animation
+
+                if (mGlowingBooks.contains(book)) {
+                    mGlowingBooks.remove(book);
+
+                    int startingColor = ContextCompat.getColor(mContext, R.color.colorAccentTransparent);
+                    int endingColor = ContextCompat.getColor(mContext, R.color.colorPrimary);
+                    bookHolder.mElevatedSection.setBackgroundColor(startingColor);
+
+                    final ObjectAnimator backgroundColorAnimator = ObjectAnimator.ofObject(bookHolder.mElevatedSection,
+                                                                                           "backgroundColor",
+                                                                                           new ArgbEvaluator(),
+                                                                                           startingColor,
+                                                                                           endingColor);
+                    backgroundColorAnimator.setDuration(COLOR_CHANGE_DURATION);
+                    backgroundColorAnimator.start();
+                }
+
 
                 break;
             }
@@ -885,6 +947,29 @@ public class ProfileTimelineAdapter extends RecyclerView.Adapter<RecyclerView.Vi
 
                 bookHolder.mBookAuthor.setText(book.getAuthor());
 
+                switch (book.getState()) {
+
+                    case OPENED_TO_SHARE:
+                        bookHolder.mBookState.setImageResource(R.drawable.ic_book_timeline_opened_to_share_36dp);
+                        bookHolder.mBookState.setColorFilter(ContextCompat.getColor(mContext, R.color.secondaryTextColor));
+                        break;
+
+                    case CLOSED_TO_SHARE:
+                        bookHolder.mBookState.setImageResource(R.drawable.ic_book_timeline_closed_to_share_36dp);
+                        bookHolder.mBookState.setColorFilter(ContextCompat.getColor(mContext, R.color.secondaryTextColor));
+                        break;
+
+                    case ON_ROAD:
+                        bookHolder.mBookState.setImageResource(R.drawable.ic_book_timeline_dispatch_36dp);
+                        bookHolder.mBookState.setColorFilter(ContextCompat.getColor(mContext, R.color.secondaryTextColor));
+                        break;
+
+                    case LOST:
+                        bookHolder.mBookState.setImageResource(R.drawable.ic_close_dark);
+                        bookHolder.mBookState.setColorFilter(ContextCompat.getColor(mContext, R.color.errorRed));
+                        break;
+                }
+
                 Glide.with(mContext)
                      .load(book.getThumbnailURL())
                      .asBitmap()
@@ -897,6 +982,25 @@ public class ProfileTimelineAdapter extends RecyclerView.Adapter<RecyclerView.Vi
                              bookHolder.mBookImage.setImageBitmap(croppedBitmap);
                          }
                      });
+
+                // Glow animation
+
+                if (mGlowingBooks.contains(book)) {
+                    mGlowingBooks.remove(book);
+
+                    int startingColor = ContextCompat.getColor(mContext, R.color.colorAccentTransparent);
+                    int endingColor = ContextCompat.getColor(mContext, R.color.colorPrimary);
+                    bookHolder.mElevatedSection.setBackgroundColor(startingColor);
+
+                    final ObjectAnimator backgroundColorAnimator = ObjectAnimator.ofObject(bookHolder.mElevatedSection,
+                                                                                           "backgroundColor",
+                                                                                           new ArgbEvaluator(),
+                                                                                           startingColor,
+                                                                                           endingColor);
+
+                    backgroundColorAnimator.setDuration(COLOR_CHANGE_DURATION);
+                    backgroundColorAnimator.start();
+                }
 
                 break;
             }
@@ -928,6 +1032,8 @@ public class ProfileTimelineAdapter extends RecyclerView.Adapter<RecyclerView.Vi
                 bookHolder.mBookName.setText(book.getName());
 
                 bookHolder.mBookAuthor.setText(book.getAuthor());
+
+                bookHolder.mBookState.setVisibility(View.GONE);
 
                 Glide.with(mContext)
                      .load(book.getThumbnailURL())
@@ -1115,6 +1221,11 @@ public class ProfileTimelineAdapter extends RecyclerView.Adapter<RecyclerView.Vi
         mUserDetails = userDetails;
         setProgressBarActive(false);
         notifyDataSetChanged();
+        mNotifyItemChanged = true;
+    }
+
+    public void setCurrentlyReadingNotifyItemChanged() {
+        mNotifyItemChanged = true;
     }
 
     public void setProgressBarActive(boolean active) {
@@ -1167,5 +1278,21 @@ public class ProfileTimelineAdapter extends RecyclerView.Adapter<RecyclerView.Vi
 
     public void setStartReadingClickListener(StartReadingClickListener startReadingClickListener) {
         mStartReadingClickListener = startReadingClickListener;
+    }
+
+    public ArrayList<Book> getGlowingBooks() {
+        return mGlowingBooks;
+    }
+
+    public void setGlowingBooks(ArrayList<Book> glowingBooks) {
+        mGlowingBooks = glowingBooks;
+    }
+
+    public boolean isGlowCurrentlyReading() {
+        return mGlowCurrentlyReading;
+    }
+
+    public void setGlowCurrentlyReading(boolean glowCurrentlyReading) {
+        mGlowCurrentlyReading = glowCurrentlyReading;
     }
 }

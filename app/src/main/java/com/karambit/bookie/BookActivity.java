@@ -7,18 +7,20 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.os.Bundle;
+import android.support.v4.content.ContextCompat;
 import android.support.v4.content.LocalBroadcastManager;
+import android.support.v4.view.ViewCompat;
 import android.support.v7.app.ActionBar;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
+import android.support.v7.widget.Toolbar;
 import android.text.Spannable;
 import android.text.SpannableString;
 import android.text.style.AbsoluteSizeSpan;
-import android.view.Menu;
-import android.view.MenuInflater;
-import android.view.MenuItem;
+import android.text.style.ForegroundColorSpan;
+import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.ImageView;
@@ -64,12 +66,12 @@ public class BookActivity extends AppCompatActivity {
 
     private static final String TAG = BookActivity.class.getSimpleName();
 
-    public static final int RESULT_BOOK_PROCESS_CHANGED = 1;
-    private static final int REQUEST_CODE_REQUEST_CHANGED = 2;
-    private static final int REQUEST_CODE_EDIT_BOOK = 3;
-    private static final int REQUEST_CODE_LOCATION = 4;
-
     public static final String EXTRA_BOOK = "book";
+
+    private static final long DURATION_RECYCLER_VIEW_ADD = 500;
+    private static final long DURATION_RECYCLER_VIEW_CHANGE = 500;
+    private static final long DURATION_RECYCLER_VIEW_MOVE = 500;
+    private static final long DURATION_RECYCLER_VIEW_REMOVE = 500;
 
     private Book mBook;
     private BookTimelineAdapter mBookTimelineAdapter;
@@ -78,6 +80,8 @@ public class BookActivity extends AppCompatActivity {
     private BroadcastReceiver mMessageReceiver;
     private InformationDialog mLocationInfoDialog;
     private DBManager mDBManager;
+    private ActionBar mActionBar;
+    private TextView mErrorView;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -91,18 +95,60 @@ public class BookActivity extends AppCompatActivity {
                   Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
         float titleSize = getResources().getDimension(R.dimen.actionbar_app_name_title_size);
         s.setSpan(new AbsoluteSizeSpan((int) titleSize), 0, s.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+        s.setSpan(new ForegroundColorSpan(ContextCompat.getColor(this, R.color.primaryTextColor)), 0, s.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
 
         // Update the action bar title with the TypefaceSpan instance
-        final ActionBar actionBar = getSupportActionBar();
-        if (actionBar != null) {
-            actionBar.setTitle(s);
+        Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
+        setSupportActionBar(toolbar);
+        mActionBar = getSupportActionBar();
+        if (mActionBar != null) {
+            ((TextView) toolbar.findViewById(R.id.toolbarTitle)).setText(s);
             float elevation = getResources().getDimension(R.dimen.actionbar_starting_elevation);
-            actionBar.setElevation(elevation);
+            mActionBar.setElevation(elevation);
+            mActionBar.setTitle("");
+
+            toolbar.findViewById(R.id.closeButton).setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    finish();
+                }
+            });
+
+            toolbar.findViewById(R.id.settingsButton).setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    if (BookieApplication.hasNetwork()) {
+                        Intent intent = new Intent(BookActivity.this, BookSettingsActivity.class);
+                        intent.putExtra(BookSettingsActivity.EXTRA_BOOK, mBook);
+
+                        boolean hasAnyTransactions = false;
+                        int i = 0;
+                        while (i < mBookDetails.getBookProcesses().size() && hasAnyTransactions == false) {
+                            if (mBookDetails.getBookProcesses().get(i) instanceof Transaction) {
+                                hasAnyTransactions = true;
+                            }
+                            i++;
+                        }
+
+                        intent.putExtra(BookSettingsActivity.EXTRA_HAS_ANY_TRANSACTIONS, hasAnyTransactions);
+                        startActivity(intent);
+                    } else {
+                        showConnectionError();
+                        Toast.makeText(BookActivity.this, R.string.no_internet_connection, Toast.LENGTH_SHORT).show();
+                    }
+                }
+            });
         }
+
+        mErrorView = ((TextView) findViewById(R.id.errorView));
 
         mBook = getIntent().getParcelableExtra(EXTRA_BOOK);
 
         RecyclerView bookRecyclerView = (RecyclerView) findViewById(R.id.bookRecyclerView);
+        bookRecyclerView.getItemAnimator().setAddDuration(DURATION_RECYCLER_VIEW_ADD);
+        bookRecyclerView.getItemAnimator().setChangeDuration(DURATION_RECYCLER_VIEW_CHANGE);
+        bookRecyclerView.getItemAnimator().setMoveDuration(DURATION_RECYCLER_VIEW_MOVE);
+        bookRecyclerView.getItemAnimator().setRemoveDuration(DURATION_RECYCLER_VIEW_REMOVE);
 
         mDBManager = new DBManager(BookActivity.this);
         mDBManager.open();
@@ -132,100 +178,108 @@ public class BookActivity extends AppCompatActivity {
             @Override
             public void onRequestButtonClick(Book.Details details) {
 
-                new android.app.AlertDialog.Builder(BookActivity.this)
-                    .setMessage(getString(R.string.send_request_to_x, mBook.getOwner().getName()))
-                    .setPositiveButton(R.string.accept, new DialogInterface.OnClickListener() {
-                        @Override
-                        public void onClick(DialogInterface dialog, int which) {
-                            Request request = new Request(mBookDetails.getBook(),
-                                                          SessionManager.getCurrentUser(BookActivity.this),
-                                                          mBookDetails.getBook().getOwner(),
-                                                          Request.Type.SEND,
-                                                          Calendar.getInstance());
+                if (BookieApplication.hasNetwork()) {
+                    new android.app.AlertDialog.Builder(BookActivity.this)
+                        .setMessage(getString(R.string.send_request_to_x, mBook.getOwner().getName()))
+                        .setPositiveButton(R.string.accept, new DialogInterface.OnClickListener() {
+                            @Override
+                            public void onClick(DialogInterface dialog, int which) {
+                                Request request = new Request(mBookDetails.getBook(),
+                                                              SessionManager.getCurrentUser(BookActivity.this),
+                                                              mBookDetails.getBook().getOwner(),
+                                                              Request.Type.SEND,
+                                                              Calendar.getInstance());
 
-                            bookProcessToServer(request);
-                        }
-                    })
-                    .setNegativeButton(android.R.string.no, null)
-                    .create()
-                    .show();
+                                bookProcessToServer(request);
+                            }
+                        })
+                        .setNegativeButton(android.R.string.no, null)
+                        .create()
+                        .show();
+                } else {
+                    showConnectionError();
+                    Toast.makeText(BookActivity.this, R.string.no_internet_connection, Toast.LENGTH_SHORT).show();
+                }
             }
 
             @Override
             public void onArrivedButtonClick(Book.Details details) {
 
-                new AlertDialog.Builder(BookActivity.this)
-                    .setTitle(R.string.are_you_sure)
-                    .setMessage(R.string.arrived_prompt)
-                    .setNegativeButton(R.string.no, null)
-                    .setPositiveButton(R.string.i_get_the_book, new DialogInterface.OnClickListener() {
-                        @Override
-                        public void onClick(DialogInterface dialog, int which) {
+                if (BookieApplication.hasNetwork()) {
+                    new AlertDialog.Builder(BookActivity.this)
+                        .setTitle(R.string.are_you_sure)
+                        .setMessage(R.string.arrived_prompt)
+                        .setNegativeButton(R.string.no, null)
+                        .setPositiveButton(R.string.i_get_the_book, new DialogInterface.OnClickListener() {
+                            @Override
+                            public void onClick(DialogInterface dialog, int which) {
 
-                            Toast.makeText(BookActivity.this, R.string.owner_change_notification, Toast.LENGTH_SHORT).show();
+                                Toast.makeText(BookActivity.this, R.string.owner_change_notification, Toast.LENGTH_SHORT).show();
 
-                            final User currentUser = SessionManager.getCurrentUser(BookActivity.this);
+                                final User currentUser = SessionManager.getCurrentUser(BookActivity.this);
 
-                            Transaction transaction = new Transaction(mBook,
-                                                                      mBook.getOwner(),
-                                                                      currentUser,
-                                                                      Transaction.Type.COME_TO_HAND,
-                                                                      Calendar.getInstance());
+                                Transaction transaction = new Transaction(mBook,
+                                                                          mBook.getOwner(),
+                                                                          currentUser,
+                                                                          Transaction.Type.COME_TO_HAND,
+                                                                          Calendar.getInstance());
 
-                            mBookDetails.getBookProcesses().add(transaction);
+                                mBookDetails.getBookProcesses().add(transaction);
 
-                            mBookTimelineAdapter.notifyItemRangeChanged(3, mBookDetails.getBookProcesses().size());
+                                mBookTimelineAdapter.notifyItemRangeChanged(3, mBookDetails.getBookProcesses().size());
 
-                            mBookDetails.getBook().setState(Book.State.CLOSED_TO_SHARE);
-                            mBook.setState(Book.State.CLOSED_TO_SHARE);
+                                mBookDetails.getBook().setState(Book.State.CLOSED_TO_SHARE);
+                                mBook.setState(Book.State.CLOSED_TO_SHARE);
 
-                            mBook.setOwner(currentUser);
+                                mBook.setOwner(currentUser);
 
-                            Logger.d("Book owned by current user: " + transaction);
+                                Logger.d("Book owned by current user: " + transaction);
 
-                            new AlertDialog.Builder(BookActivity.this)
-                                .setMessage(R.string.start_reading_prompt)
-                                .setPositiveButton(R.string.start_reading, new DialogInterface.OnClickListener() {
-                                    @Override
-                                    public void onClick(DialogInterface dialog, int which) {
+                                new AlertDialog.Builder(BookActivity.this)
+                                    .setMessage(R.string.start_reading_prompt)
+                                    .setPositiveButton(R.string.start_reading, new DialogInterface.OnClickListener() {
+                                        @Override
+                                        public void onClick(DialogInterface dialog, int which) {
 
-                                        Interaction startReading = new Interaction(mBook,
-                                                                                   currentUser,
-                                                                                   Interaction.Type.READ_START,
-                                                                                   Calendar.getInstance());
+                                            Interaction startReading = new Interaction(mBook,
+                                                                                       currentUser,
+                                                                                       Interaction.Type.READ_START,
+                                                                                       Calendar.getInstance());
 
-                                        mBookDetails.getBookProcesses().add(startReading);
+                                            mBookDetails.getBookProcesses().add(startReading);
 
-                                        mBookTimelineAdapter.notifyItemRangeChanged(3, mBookDetails.getBookProcesses().size());
+                                            mBookTimelineAdapter.notifyItemRangeChanged(3, mBookDetails.getBookProcesses().size());
 
-                                        mBookDetails.getBook().setState(Book.State.READING);
-                                        mBook.setState(Book.State.READING);
-                                        mBookTimelineAdapter.notifyItemChanged(1);
+                                            mBookDetails.getBook().setState(Book.State.READING);
+                                            mBook.setState(Book.State.READING);
+                                            mBookTimelineAdapter.notifyItemChanged(1);
 
-                                        bookProcessToServer(startReading);
-                                    }
-                                })
-                                .setNegativeButton(R.string.no, new DialogInterface.OnClickListener() {
-                                    @Override
-                                    public void onClick(DialogInterface dialog, int which) {
-                                        mBookDetails.getBook().setState(null);
-                                        mBook.setState(null);
-                                        new StateSelectorDialog().show();
-                                    }
-                                })
-                                .setCancelable(false)
-                                .create().show();
-                        }
+                                            bookProcessToServer(startReading);
+                                        }
+                                    })
+                                    .setNegativeButton(R.string.no, new DialogInterface.OnClickListener() {
+                                        @Override
+                                        public void onClick(DialogInterface dialog, int which) {
+                                            mBookDetails.getBook().setState(null);
+                                            mBook.setState(null);
+                                            new StateSelectorDialog().show();
+                                        }
+                                    })
+                                    .setCancelable(false)
+                                    .create().show();
+                            }
 
-                    }).create().show();
+                        }).create().show();
+                } else {
+                    showConnectionError();
+                    Toast.makeText(BookActivity.this, R.string.no_internet_connection, Toast.LENGTH_SHORT).show();
+                }
             }
 
             @Override
             public void onOwnerClick(User owner) {
                 Intent intent = new Intent(BookActivity.this, ProfileActivity.class);
-                Bundle bundle = new Bundle();
-                bundle.putParcelable(ProfileActivity.EXTRA_USER, owner);
-                intent.putExtras(bundle);
+                intent.putExtra(ProfileActivity.EXTRA_USER, owner);
                 startActivity(intent);
             }
         });
@@ -234,22 +288,27 @@ public class BookActivity extends AppCompatActivity {
             @Override
             public void onStateClick(Book.Details bookDetails) {
 
-                if (mBook.getState() == Book.State.READING) {
+                if (BookieApplication.hasNetwork()) {
+                    if (mBook.getState() == Book.State.READING) {
 
-                    new AlertDialog.Builder(BookActivity.this)
-                        .setMessage(R.string.finish_reading_prompt)
-                        .setIcon(R.drawable.ic_book_timeline_read_start_stop_36dp)
-                        .setPositiveButton(R.string.finished, new DialogInterface.OnClickListener() {
-                            @Override
-                            public void onClick(DialogInterface dialog, int which) {
-                                new StateSelectorDialog().show();
-                            }
-                        })
-                        .setNegativeButton(R.string.no, null)
-                        .create().show();
+                        new AlertDialog.Builder(BookActivity.this)
+                            .setMessage(R.string.finish_reading_prompt)
+                            .setIcon(R.drawable.ic_book_timeline_read_start_stop_36dp)
+                            .setPositiveButton(R.string.finished, new DialogInterface.OnClickListener() {
+                                @Override
+                                public void onClick(DialogInterface dialog, int which) {
+                                    new StateSelectorDialog().show();
+                                }
+                            })
+                            .setNegativeButton(R.string.no, null)
+                            .create().show();
 
+                    } else {
+                        new StateSelectorDialog().show();
+                    }
                 } else {
-                    new StateSelectorDialog().show();
+                    showConnectionError();
+                    Toast.makeText(BookActivity.this, R.string.no_internet_connection, Toast.LENGTH_SHORT).show();
                 }
             }
 
@@ -257,50 +316,57 @@ public class BookActivity extends AppCompatActivity {
             public void onRequestButtonClick(Book.Details bookDetails) {
                 // TODO When another user who owns a book that I requested, clicks accept to another users request. My rejected does not display in th page and the counter will wrong
 
-                ArrayList<Request> sendRequests = new ArrayList<>();
-                ArrayList<Request> answeredRequests = new ArrayList<>();
+                if (BookieApplication.hasNetwork()) {
+                    ArrayList<Request> sendRequests = new ArrayList<>();
+                    ArrayList<Request> answeredRequests = new ArrayList<>();
 
-                int i = mBookDetails.getBookProcesses().size();
-                Book.BookProcess bookProcess;
-                do {
+                    int i = mBookDetails.getBookProcesses().size();
+                    Book.BookProcess bookProcess;
+                    do {
 
-                    i--;
+                        i--;
 
-                    bookProcess = mBookDetails.getBookProcesses().get(i);
+                        bookProcess = mBookDetails.getBookProcesses().get(i);
 
-                    if (bookProcess instanceof Request) {
-                        if (((Request) bookProcess).getType() == Request.Type.SEND){
-                            sendRequests.add((Request) bookProcess);
-                        }else {
-                            answeredRequests.add((Request) bookProcess);
+                        if (bookProcess instanceof Request) {
+                            if (((Request) bookProcess).getType() == Request.Type.SEND) {
+                                sendRequests.add((Request) bookProcess);
+                            } else {
+                                answeredRequests.add((Request) bookProcess);
+                            }
+                        }
+
+                    } while
+                        (!(bookProcess instanceof Transaction &&
+                        ((Transaction) bookProcess).getType() == Transaction.Type.COME_TO_HAND &&
+                        ((Transaction) bookProcess).getTaker().equals(SessionManager.getCurrentUser(BookActivity.this))) &&
+                        i > 0);
+
+                    for (Request answeredRequest : answeredRequests) {
+                        Iterator<Request> iterator = sendRequests.iterator();
+                        while (iterator.hasNext()) {
+                            Request sendRequest = iterator.next();
+                            if (sendRequest.getRequester().equals(answeredRequest.getRequester()) &&
+                                sendRequest.getCreatedAt().getTimeInMillis() < answeredRequest.getCreatedAt().getTimeInMillis()) {
+
+                                iterator.remove();
+                            }
                         }
                     }
+                    ArrayList<Request> allRequests = new ArrayList<Request>();
+                    allRequests.addAll(sendRequests);
+                    allRequests.addAll(answeredRequests);
 
-                } while
-                    (!(bookProcess instanceof Transaction &&
-                    ((Transaction) bookProcess).getType() == Transaction.Type.COME_TO_HAND &&
-                    ((Transaction) bookProcess).getTaker().equals(SessionManager.getCurrentUser(BookActivity.this))) &&
-                    i > 0);
+                    Log.d(TAG, allRequests.toString());
 
-                for (Request answeredRequest: answeredRequests){
-                    Iterator<Request> iterator = sendRequests.iterator();
-                    while (iterator.hasNext()){
-                        Request sendRequest = iterator.next();
-                        if (sendRequest.getRequester().equals(answeredRequest.getRequester()) &&
-                            sendRequest.getCreatedAt().getTimeInMillis() < answeredRequest.getCreatedAt().getTimeInMillis()){
-
-                            iterator.remove();
-                        }
-                    }
+                    Intent intent = new Intent(BookActivity.this, RequestActivity.class);
+                    intent.putExtra(RequestActivity.EXTRA_BOOK, mBook);
+                    intent.putExtra(RequestActivity.EXTRA_REQUESTS, allRequests);
+                    startActivity(intent);
+                } else {
+                    showConnectionError();
+                    Toast.makeText(BookActivity.this, R.string.no_internet_connection, Toast.LENGTH_SHORT).show();
                 }
-                ArrayList<Request> allRequests = new ArrayList<Request>();
-                allRequests.addAll(sendRequests);
-                allRequests.addAll(answeredRequests);
-
-                Intent intent = new Intent(BookActivity.this, RequestActivity.class);
-                intent.putExtra(RequestActivity.EXTRA_BOOK, mBook);
-                intent.putExtra(RequestActivity.EXTRA_REQUESTS, allRequests);
-                startActivityForResult(intent, REQUEST_CODE_REQUEST_CHANGED);
             }
         });
 
@@ -328,7 +394,7 @@ public class BookActivity extends AppCompatActivity {
             }
         });
 
-        bookRecyclerView.setOnScrollListener(new RecyclerView.OnScrollListener() {
+        bookRecyclerView.addOnScrollListener(new RecyclerView.OnScrollListener() {
 
             int totalScrolled = 0;
 
@@ -339,7 +405,13 @@ public class BookActivity extends AppCompatActivity {
                 totalScrolled += dy;
                 totalScrolled = Math.abs(totalScrolled);
 
-                actionBar.setElevation(ElevationScrollListener.getActionbarElevation(totalScrolled));
+                float actionbarElevation = ElevationScrollListener.getActionbarElevation(totalScrolled);
+
+                mActionBar.setElevation(actionbarElevation);
+
+                if (isErrorShowing()) {
+                    setErrorViewElevation(actionbarElevation);
+                }
             }
         });
 
@@ -669,13 +741,23 @@ public class BookActivity extends AppCompatActivity {
                     String bookPictureUrl = intent.getStringExtra(BookieIntentFilters.EXTRA_BOOK_PICTURE_URL);
                     String thumbnailUrl = intent.getStringExtra(BookieIntentFilters.EXTRA_BOOK_THUMBNAIL_URL);
 
-                    mBookDetails.getBook().setImageURL(bookPictureUrl);
-                    mBookDetails.getBook().setThumbnailURL(thumbnailUrl);
+                    if (bookPictureUrl != null && thumbnailUrl != null) {
 
-                    Logger.d("Book picture changed received from Local Broadcast: \n" +
-                                 "Book Picture URL: " + bookPictureUrl + "\nThumbnail URL: " + thumbnailUrl);
+                        mBookDetails.getBook().setImageURL(bookPictureUrl);
+                        mBookDetails.getBook().setThumbnailURL(thumbnailUrl);
 
-                    mBookTimelineAdapter.notifyItemChanged(mBookTimelineAdapter.getHeaderIndex());
+                        Logger.d("Book picture changed received from Local Broadcast: \n" +
+                                     "Book Picture URL: " + bookPictureUrl + "\nThumbnail URL: " + thumbnailUrl);
+
+                        mBookTimelineAdapter.notifyItemChanged(mBookTimelineAdapter.getHeaderIndex());
+                    }
+
+                } else if (intent.getAction().equalsIgnoreCase(BookieIntentFilters.INTENT_FILTER_LOCATION_UPDATED)) {
+                    if (intent.getParcelableExtra(BookieIntentFilters.EXTRA_LOCATION) != null) {
+                        if (mLocationInfoDialog != null && mLocationInfoDialog.isShowing()) {
+                            mLocationInfoDialog.dismiss();
+                        }
+                    }
                 }
             }
         };
@@ -691,7 +773,7 @@ public class BookActivity extends AppCompatActivity {
         LocalBroadcastManager.getInstance(this).registerReceiver(mMessageReceiver, new IntentFilter(BookieIntentFilters.INTENT_FILTER_BOOK_UPDATED));
         LocalBroadcastManager.getInstance(this).registerReceiver(mMessageReceiver, new IntentFilter(BookieIntentFilters.INTENT_FILTER_BOOK_LOST));
         LocalBroadcastManager.getInstance(this).registerReceiver(mMessageReceiver, new IntentFilter(BookieIntentFilters.INTENT_FILTER_BOOK_PICTURE_CHANGED));
-
+        LocalBroadcastManager.getInstance(this).registerReceiver(mMessageReceiver, new IntentFilter(BookieIntentFilters.INTENT_FILTER_LOCATION_UPDATED));
     }
 
     @Override
@@ -701,55 +783,9 @@ public class BookActivity extends AppCompatActivity {
         LocalBroadcastManager.getInstance(this).unregisterReceiver(mMessageReceiver);
     }
 
-    @Override
-    public boolean onCreateOptionsMenu(Menu menu) {
-        MenuInflater inflater = getMenuInflater();
-        inflater.inflate(R.menu.main_menu, menu);
-        menu.findItem(R.id.action_more).setVisible(true);
-
-        return super.onCreateOptionsMenu(menu);
-    }
-
-    @Override
-    public boolean onOptionsItemSelected(MenuItem item) {
-        switch (item.getItemId()) {
-            case R.id.action_more:
-
-                if (mBookDetails != null) {
-                    Intent intent = new Intent(this, BookSettingsActivity.class);
-                    intent.putExtra(BookSettingsActivity.EXTRA_BOOK, mBook);
-                    User currentUser = SessionManager.getCurrentUser(this);
-                    boolean isAdder = mBookDetails.getAddedBy().equals(currentUser);
-                    intent.putExtra(BookSettingsActivity.EXTRA_IS_ADDER, isAdder);
-                    startActivityForResult(intent, REQUEST_CODE_EDIT_BOOK);
-                    return true;
-
-                } else {
-                    return false;
-                }
-
-            default:
-                startActivity(new Intent(this, BookSettingsActivity.class));
-                return super.onOptionsItemSelected(item);
-        }
-    }
-
-    @Override
-    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-        super.onActivityResult(requestCode, resultCode, data);
-
-        if (requestCode == REQUEST_CODE_LOCATION) {
-            if (resultCode == LocationActivity.RESULT_LOCATION_UPDATED) {
-                if (mLocationInfoDialog != null && mLocationInfoDialog.isShowing()) {
-                    mLocationInfoDialog.dismiss();
-                }
-            }
-        }
-    }
-
     private class StateSelectorDialog extends Dialog {
 
-        public StateSelectorDialog() {
+        private StateSelectorDialog() {
             super(BookActivity.this);
         }
 
@@ -972,11 +1008,61 @@ public class BookActivity extends AppCompatActivity {
 
                                         if (!mBook.getOwner().equals(SessionManager.getCurrentUser(BookActivity.this))) {
                                             mDBManager.checkAndUpdateAllBooks(mBook);
+
+                                            Intent intent = new Intent(BookieIntentFilters.INTENT_FILTER_DATABASE_BOOK_CHANGED);
+                                            intent.putExtra(BookieIntentFilters.EXTRA_BOOK, mBook);
+                                            LocalBroadcastManager.getInstance(BookActivity.this).sendBroadcast(intent);
                                         }
                                     }
                                     mBookTimelineAdapter.setBookDetails(mBookDetails);
 
+                                    if (mBookDetails.getBook().getState() == Book.State.LOST) {
+                                        Transaction lostTransaction = (Transaction) mBookDetails.getBookProcesses().get(mBookDetails.getBookProcesses().size() - 1);
+
+                                        if (lostTransaction.getGiver().equals(currentUserDetails.getUser()) ||
+                                            lostTransaction.getTaker().equals(currentUserDetails.getUser())) {
+
+                                            final InformationDialog informationDialog = new InformationDialog(BookActivity.this);
+                                            informationDialog.setCancelable(false);
+                                            informationDialog.setPrimaryMessage(R.string.book_lost_info_short);
+                                            String bookieSupport = getString(R.string.bookie_support);
+                                            informationDialog.setSecondaryMessage(getString(R.string.book_lost_info, bookieSupport));
+                                            informationDialog.setTopSectionColor(ContextCompat.getColor(BookActivity.this, R.color.errorRed));
+                                            informationDialog.setButtonColor(ContextCompat.getColor(BookActivity.this, R.color.errorRed));
+
+                                            informationDialog.setDefaultClickListener(new InformationDialog.DefaultClickListener() {
+                                                @Override
+                                                public void onOkClick() {
+                                                    informationDialog.dismiss();
+                                                }
+
+                                                @Override
+                                                public void onMoreInfoClick() {
+                                                    Intent intent = new Intent(BookActivity.this, InfoActivity.class);
+                                                    intent.putExtra(InfoActivity.EXTRA_INFO_CODES, new int[]{
+                                                        InfoActivity.INFO_CODE_TRANSACTIONS,
+                                                        InfoActivity.INFO_CODE_POINT
+                                                    });
+                                                    startActivity(intent);
+                                                }
+                                            });
+
+                                            informationDialog.setExtraButtonClickListener(R.string.bookie_support, new InformationDialog.ExtraButtonClickListener() {
+                                                @Override
+                                                public void onExtraButtonClick() {
+                                                    Intent intent = new Intent(BookActivity.this, ConversationActivity.class);
+                                                    intent.putExtra(ConversationActivity.EXTRA_USER, User.getBookieSupport(BookActivity.this));
+                                                    startActivity(intent);
+                                                }
+                                            });
+
+                                            informationDialog.show();
+                                        }
+                                    }
+
                                     // TODO Notifiy item changed
+
+                                    hideError();
 
                                     Logger.d("Book page fetched: " + "\n\n" + mBook + "\n\n" +
                                                  "BookProcesses:\n" + mBookDetails.getBookProcesses());
@@ -986,23 +1072,46 @@ public class BookActivity extends AppCompatActivity {
 
                                 Logger.e("Error true in response: errorCode = " + errorCode);
 
-                                mBookTimelineAdapter.setError(BookTimelineAdapter.ERROR_TYPE_UNKNOWN_ERROR);
+                                if (mBookDetails == null) {
+                                    mBookTimelineAdapter.setError(BookTimelineAdapter.ERROR_TYPE_UNKNOWN_ERROR);
+                                }
+
+                                showUnknownError();
                             }
                         }else{
                             Logger.e("Response body is null on fetchBookPageArguments(). (Book Page Error)");
-                            mBookTimelineAdapter.setError(BookTimelineAdapter.ERROR_TYPE_UNKNOWN_ERROR);
+
+                            if (mBookDetails == null) {
+                                mBookTimelineAdapter.setError(BookTimelineAdapter.ERROR_TYPE_UNKNOWN_ERROR);
+                            }
+
+                            showUnknownError();
                         }
                     }else {
                         Logger.e("Response object is null on fetchBookPageArguments. (Book Page Error)");
-                        mBookTimelineAdapter.setError(BookTimelineAdapter.ERROR_TYPE_UNKNOWN_ERROR);
+
+                        if (mBookDetails == null) {
+                            mBookTimelineAdapter.setError(BookTimelineAdapter.ERROR_TYPE_UNKNOWN_ERROR);
+                        }
+
+                        showUnknownError();
                     }
                 } catch (IOException | JSONException e) {
                     Logger.e("IOException or JSONException caught: " + e.getMessage());
 
                     if(BookieApplication.hasNetwork()){
-                        mBookTimelineAdapter.setError(ProfileTimelineAdapter.ERROR_TYPE_UNKNOWN_ERROR);
+                        if (mBookDetails == null) {
+                            mBookTimelineAdapter.setError(BookTimelineAdapter.ERROR_TYPE_UNKNOWN_ERROR);
+                        }
+
+                        showUnknownError();
+
                     }else{
-                        mBookTimelineAdapter.setError(ProfileTimelineAdapter.ERROR_TYPE_NO_CONNECTION);
+                        if (mBookDetails == null) {
+                            mBookTimelineAdapter.setError(BookTimelineAdapter.ERROR_TYPE_NO_CONNECTION);
+                        }
+
+                        showConnectionError();
                     }
                 }
 
@@ -1015,9 +1124,18 @@ public class BookActivity extends AppCompatActivity {
                 Logger.e("getBookPageArguments Failure: " + t.getMessage());
 
                 if(BookieApplication.hasNetwork()){
-                    mBookTimelineAdapter.setError(ProfileTimelineAdapter.ERROR_TYPE_UNKNOWN_ERROR);
+                    if (mBookDetails == null) {
+                        mBookTimelineAdapter.setError(BookTimelineAdapter.ERROR_TYPE_UNKNOWN_ERROR);
+                    }
+
+                    showUnknownError();
+
                 }else{
-                    mBookTimelineAdapter.setError(ProfileTimelineAdapter.ERROR_TYPE_NO_CONNECTION);
+                    if (mBookDetails == null) {
+                        mBookTimelineAdapter.setError(BookTimelineAdapter.ERROR_TYPE_NO_CONNECTION);
+                    }
+
+                    showConnectionError();
                 }
 
                 mPullRefreshLayout.setRefreshing(false);
@@ -1082,11 +1200,11 @@ public class BookActivity extends AppCompatActivity {
                                         mBookDetails.getBook().setState(Book.State.READING);
                                     }
                                     mBookTimelineAdapter.notifyDataSetChanged();
-
-                                    Intent intent = new Intent(BookieIntentFilters.INTENT_FILTER_BOOK_STATE_CHANGED);
-                                    intent.putExtra(BookieIntentFilters.EXTRA_BOOK, mBook);
-                                    LocalBroadcastManager.getInstance(BookActivity.this).sendBroadcast(intent);
                                 }
+
+                                Intent intent = new Intent(BookieIntentFilters.INTENT_FILTER_BOOK_STATE_CHANGED);
+                                intent.putExtra(BookieIntentFilters.EXTRA_BOOK, mBook);
+                                LocalBroadcastManager.getInstance(BookActivity.this).sendBroadcast(intent);
 
                                 comfortableProgressDialog.dismiss();
                             } else {
@@ -1193,7 +1311,10 @@ public class BookActivity extends AppCompatActivity {
                                         @Override
                                         public void onMoreInfoClick() {
                                             Intent intent = new Intent(BookActivity.this, InfoActivity.class);
-                                            // TODO Put related header extras array
+                                            intent.putExtra(InfoActivity.EXTRA_INFO_CODES, new int[]{
+                                                InfoActivity.INFO_CODE_VERIFICATION,
+                                                InfoActivity.INFO_CODE_REQUESTS
+                                            });
                                             startActivity(intent);
                                         }
                                     });
@@ -1229,7 +1350,9 @@ public class BookActivity extends AppCompatActivity {
                                         @Override
                                         public void onMoreInfoClick() {
                                             Intent intent = new Intent(BookActivity.this, InfoActivity.class);
-                                            // TODO Put related header extras array
+                                            intent.putExtra(InfoActivity.EXTRA_INFO_CODES, new int[]{
+                                                InfoActivity.INFO_CODE_LOCATION
+                                            });
                                             startActivity(intent);
                                         }
                                     });
@@ -1237,7 +1360,8 @@ public class BookActivity extends AppCompatActivity {
                                         @Override
                                         public void onExtraButtonClick() {
                                             Intent intent = new Intent(BookActivity.this, LocationActivity.class);
-                                            startActivityForResult(intent, REQUEST_CODE_LOCATION);                                        }
+                                            startActivity(intent);
+                                        }
                                     });
 
                                     mLocationInfoDialog.show();
@@ -1261,7 +1385,10 @@ public class BookActivity extends AppCompatActivity {
                                         @Override
                                         public void onMoreInfoClick() {
                                             Intent intent = new Intent(BookActivity.this, InfoActivity.class);
-                                            // TODO Put related header extras array
+                                            intent.putExtra(InfoActivity.EXTRA_INFO_CODES, new int[]{
+                                                InfoActivity.INFO_CODE_BOOK_COUNTER,
+                                                InfoActivity.INFO_CODE_REQUESTS
+                                            });
                                             startActivity(intent);
                                         }
                                     });
@@ -1270,10 +1397,10 @@ public class BookActivity extends AppCompatActivity {
 
                                 }else {
                                     Logger.e("Error true in response: errorCode = " + errorCode);
+                                    Toast.makeText(BookActivity.this, getString(R.string.unknown_error), Toast.LENGTH_SHORT).show();
                                 }
 
                                 comfortableProgressDialog.dismiss();
-                                Toast.makeText(BookActivity.this, getString(R.string.unknown_error), Toast.LENGTH_SHORT).show();
                             }
                         }else{
                             Logger.e("Response body is null addBookRequestToServer(). (Book Page Error)");
@@ -1299,5 +1426,35 @@ public class BookActivity extends AppCompatActivity {
                 Toast.makeText(BookActivity.this, getString(R.string.unknown_error), Toast.LENGTH_SHORT).show();
             }
         });
+    }
+
+    public void hideError() {
+        if (mErrorView != null) {
+            mErrorView.setVisibility(View.GONE);
+        }
+    }
+
+    public void showUnknownError() {
+        if (mErrorView != null) {
+            mErrorView.setVisibility(View.VISIBLE);
+            mErrorView.setText(R.string.unknown_error);
+        }
+    }
+
+    public void showConnectionError() {
+        if (mErrorView != null) {
+            mErrorView.setVisibility(View.VISIBLE);
+            mErrorView.setText(R.string.no_internet_connection);
+        }
+    }
+
+    public boolean isErrorShowing() {
+        return mErrorView.getVisibility() == View.VISIBLE;
+    }
+
+    public void setErrorViewElevation(float dp) {
+        if (mErrorView != null) {
+            ViewCompat.setElevation(mErrorView, dp);
+        }
     }
 }

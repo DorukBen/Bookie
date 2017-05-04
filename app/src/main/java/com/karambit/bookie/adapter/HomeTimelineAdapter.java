@@ -13,7 +13,6 @@ import android.widget.TextView;
 import com.bumptech.glide.Glide;
 import com.bumptech.glide.request.animation.GlideAnimation;
 import com.bumptech.glide.request.target.SimpleTarget;
-import com.karambit.bookie.BookActivity;
 import com.karambit.bookie.R;
 import com.karambit.bookie.helper.ImageScaler;
 import com.karambit.bookie.helper.infinite_viewpager.HorizontalInfiniteCycleViewPager;
@@ -21,7 +20,6 @@ import com.karambit.bookie.helper.pull_refresh_layout.SmartisanProgressBarDrawab
 import com.karambit.bookie.model.Book;
 
 import java.util.ArrayList;
-import java.util.Date;
 
 /**
  * Created by orcan on 10/16/16.
@@ -50,6 +48,7 @@ public class HomeTimelineAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
     private boolean mProgressBarActive;
     private HorizontalPagerAdapter mHorizontalPagerAdapter;
     private BookClickListener mBookClickListener;
+    private boolean mNotifyHeaderBooksChanged = false;
 
     public HomeTimelineAdapter(Context context) {
         mContext = context;
@@ -210,9 +209,12 @@ public class HomeTimelineAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
                 HeaderViewHolder headerViewHolder = (HeaderViewHolder) holder;
 
                 if (mHorizontalPagerAdapter != null){
-                    mHorizontalPagerAdapter.setBooks(mHeaderBooks);
-                    headerViewHolder.mCycleViewPager.notifyDataSetChanged();
-                    headerViewHolder.mCycleViewPager.setInfiniteCyclerManagerPagerAdapter(mHorizontalPagerAdapter);
+                    if (mNotifyHeaderBooksChanged) {
+                        mHorizontalPagerAdapter.setBooks(mHeaderBooks);
+                        headerViewHolder.mCycleViewPager.notifyDataSetChanged();
+                        headerViewHolder.mCycleViewPager.setInfiniteCyclerManagerPagerAdapter(mHorizontalPagerAdapter);
+                        mNotifyHeaderBooksChanged = false;
+                    }
                 }else{
                     mHorizontalPagerAdapter = new HorizontalPagerAdapter(mContext, mHeaderBooks);
                     headerViewHolder.mCycleViewPager.setAdapter(mHorizontalPagerAdapter);
@@ -327,6 +329,7 @@ public class HomeTimelineAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
         mHeaderBooks = headerBooks;
         mFeedBooks = feedBooks;
         setProgressBarActive(true);
+        mNotifyHeaderBooksChanged = true;
         notifyDataSetChanged();
     }
 
